@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Katalog mit Reitern — Baum als Umfang, Reiter als Darstellung</title>
+<!--
+  WIREFRAME. Layout and interaction only; the styling is intentionally this
+  file's own and not the portal's.
+
+  Content is the portal's REAL data: data/business-objects.json,
+  data-tables.json, reference-data.json, users.json. Where a layer carries no
+  metadata, the wireframe says so instead of inventing it.
+
+  Self-contained: no fonts, no icons, no scripts from anywhere.
+-->
+<style>
+:root{
+  --bg:#fff; --surface:#fbfcfd; --panel:#fafbfc; --ink:#1f2430; --ink-2:#5b6472; --ink-3:#8a93a1;
+  --line:#e6e9ee; --line-2:#d7dbe2; --accent:#3d5afe; --accent-bg:#eef1ff;
+  --ok-bg:#e8f5ec; --ok-ink:#1d6b3a; --warn-bg:#fdf3e2; --warn-ink:#8a5a10;
+  --fill:#4b5563; --r:8px; --r-sm:5px;
+  --f:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --m:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 var(--f);color:var(--ink);background:#f2f4f7}
+h1,h2,h3,h4{margin:0;font-weight:600;line-height:1.25}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+.ico{width:16px;height:16px;flex:none}
+.muted{color:var(--ink-3)}
+.doc{max-width:1240px;margin:0 auto;padding:30px 20px 60px}
+.doc h1{font-size:25px;margin-bottom:8px}
+.doc h2{font-size:18px;margin:34px 0 10px}
+.doc p{max-width:80ch;color:var(--ink-2);margin:0 0 10px}
+code{font-family:var(--m);font-size:12.5px;background:#eef0f4;padding:1px 5px;border-radius:4px}
+
+.frame{background:var(--bg);border:1px solid var(--line-2);border-radius:12px;overflow:hidden;
+  box-shadow:0 1px 3px rgba(20,30,60,.06)}
+.crumb{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-3);
+  padding:10px 20px;border-bottom:1px solid var(--line);background:var(--surface)}
+.crumb b{font-weight:400;color:var(--ink-2)}
+.head{padding:18px 20px 0}
+.head h2{font-size:22px}
+.head p{color:var(--ink-2);margin:6px 0 0;max-width:84ch}
+
+/* catbar: SCOPE controls — search narrows what is in the pane, like the tree */
+.catbar{display:flex;align-items:center;gap:14px;padding:14px 20px 0}
+.sfield{position:relative;flex:0 1 380px}
+.sfield input{width:100%;height:34px;padding:0 30px 0 32px;border:1px solid var(--line-2);
+  border-radius:var(--r);background:var(--surface);font:inherit;color:inherit}
+.sfield input:focus{outline:2px solid var(--accent);outline-offset:-1px;background:#fff}
+.sfield .ico{position:absolute;left:9px;top:9px;color:var(--ink-3)}
+.sclear{position:absolute;right:6px;top:6px;width:22px;height:22px;border:0;background:none;
+  color:var(--ink-3);cursor:pointer;border-radius:4px;font:inherit}
+.sclear:hover{background:#eceff3;color:var(--ink)}
+.count{font-size:13px;color:var(--ink-2)}
+.count b{color:var(--ink)}
+.catbar-right{margin-left:auto}
+
+.layout{display:grid;grid-template-columns:264px 1fr;gap:0;padding:14px 20px 22px;min-height:520px}
+.side{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:8px;
+  align-self:start;max-height:660px;overflow:auto}
+.side h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:6px 8px 8px}
+.pane{padding-left:20px;min-width:0}
+
+/* tree */
+.tree,.tree ul{list-style:none;margin:0;padding:0}
+.tnode{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;text-align:left;
+  padding:7px 9px;font:inherit;color:var(--ink-2);cursor:pointer;border-radius:var(--r-sm)}
+.tnode:hover{background:#eceff3;color:var(--ink)}
+.tnode.is-active{background:#e2e6ee;color:var(--ink);font-weight:600}
+.tnode.is-path{background:#eceff3;color:var(--ink)}
+.tnode .chev{transition:transform .12s;color:var(--ink-3)}
+.tnode[aria-expanded="false"] .chev{transform:rotate(-90deg)}
+.tcount{margin-left:auto;font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.t2{padding-left:30px}
+/* Level 3 rows carry two controls: the chevron folds, the label selects. */
+.trow{display:flex;align-items:center;border-radius:var(--r-sm);padding-left:34px}
+.trow:hover{background:#eceff3}
+.trow.is-active{background:#e2e6ee}
+.trow.is-path{background:#eceff3}
+.trow.is-active .tnode{color:var(--ink);font-weight:600}
+.trow .tnode{flex:1;min-width:0;padding-left:6px}
+.trow .tnode:hover{background:none}
+.tchev{display:flex;flex:none;align-items:center;background:none;border:0;padding:7px 3px;
+  color:var(--ink-3);cursor:pointer;border-radius:var(--r-sm)}
+.tchev:hover{color:var(--ink);background:#dfe3ea}
+.tchev .ico{transition:transform .12s}
+.tchev[aria-expanded="false"] .ico{transform:rotate(-90deg)}
+.t3{padding-left:52px;font-size:13.5px}
+.t4{padding-left:74px;font-size:13px}
+.tsep{height:1px;background:var(--line);margin:6px 6px}
+
+/* tab bar: PRESENTATION controls — they change the shape, never the scope */
+.tabs{display:flex;align-items:center;gap:2px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.tabs--bare{border-bottom:0;margin-bottom:10px;min-height:38px}
+.tab{background:none;border:0;border-bottom:2px solid transparent;padding:9px 13px;margin-bottom:-1px;
+  font:inherit;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab.is-active{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+.tabs-right{margin-left:auto;display:flex;gap:8px;padding-bottom:6px}
+.ctl{display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--line-2);
+  background:#fff;border-radius:var(--r-sm);font:inherit;font-size:13px;color:var(--ink-2);cursor:pointer}
+.ctl:hover:not(:disabled){border-color:var(--ink-3);color:var(--ink)}
+.ctl:disabled{opacity:.45;cursor:default}
+.ctl.is-on{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+/* Filter as a PANEL, not a menu: the dimensions sit side by side and stay open
+   while the table below reacts. A dropdown hid the other dimensions behind a
+   scroll and closed itself on every pick. */
+/* Level 0 only: the KPI cards and the two list sections. */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.kpi{border:1px solid var(--line-2);border-radius:var(--r);background:#fff;padding:15px 16px;
+  text-align:left;font:inherit;color:inherit;cursor:pointer}
+.kpi:hover{border-color:var(--accent);background:var(--accent-bg)}
+.kpi .ico{color:var(--ink-3);margin-bottom:12px}
+.kpi b{display:block;font-size:27px;line-height:1.05;font-weight:600}
+.kpi span{display:block;margin-top:4px}
+.kpi small{display:block;margin-top:6px;color:var(--ink-3);font-size:12.5px}
+.hsec{border:1px solid var(--line);border-radius:var(--r);background:#fff;overflow:hidden;margin-bottom:14px}
+.hsec h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);
+  margin:0;padding:13px 16px 11px;border-bottom:1px solid var(--line)}
+.hsec .tbl tbody tr:last-child td{border-bottom:0}
+.hsec .tbl tbody tr:hover{background:#f6f8fc;cursor:pointer}
+.fpanel{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:15px 18px;margin-bottom:16px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px 28px}
+.fpanel[hidden]{display:none}
+.fcol h4{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+.fopt{display:flex;align-items:center;gap:9px;padding:4px 0;font-size:13.5px;color:var(--ink-2);cursor:pointer}
+.fopt:hover{color:var(--ink)}
+.fopt input{margin:0;flex:none}
+.fopt .n{margin-left:auto;font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.fpanel-foot{grid-column:1/-1;border-top:1px solid var(--line);margin-top:2px;padding-top:11px;
+  display:flex;align-items:center;gap:14px;font-size:13px;color:var(--ink-3)}
+.linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--accent);cursor:pointer}
+.linkbtn:hover{text-decoration:underline}
+.ctl .chev{transition:transform .12s}
+.ctl[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.pop{position:relative}
+.pop-menu{position:absolute;right:0;top:34px;z-index:20;min-width:220px;max-height:320px;overflow:auto;
+  background:#fff;border:1px solid var(--line-2);border-radius:var(--r);box-shadow:0 8px 24px rgba(20,30,60,.13);padding:5px}
+.pop-menu[hidden]{display:none}
+.pop-item{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;text-align:left;
+  padding:7px 9px;border-radius:var(--r-sm);font:inherit;font-size:13px;color:var(--ink-2);cursor:pointer}
+.pop-item:hover{background:#f1f3f7;color:var(--ink)}
+.pop-item.is-on{color:var(--accent);font-weight:600}
+.pop-head{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:8px 9px 3px}
+
+/* cards (Übersicht at L1/L2) */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px}
+.card{border:1px solid var(--line-2);border-radius:var(--r);background:#fff;padding:13px 14px;
+  text-align:left;font:inherit;cursor:pointer}
+.card:hover{border-color:var(--accent);background:var(--accent-bg)}
+.card b{display:block;font-size:14.5px;margin-bottom:3px}
+.card p{margin:0;font-size:12.5px;color:var(--ink-3);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .n{display:inline-block;margin-top:8px;font-size:12px;color:var(--ink-2);background:#eef0f4;border-radius:20px;padding:1px 9px}
+
+/* diagram */
+.dia{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;align-items:start}
+.dbox{border:1px solid var(--line-2);border-radius:var(--r);background:#fff;overflow:hidden}
+.dbox h4{display:flex;justify-content:space-between;font-size:13px;padding:8px 10px;background:var(--surface);border-bottom:1px solid var(--line)}
+.dbox h4 span{color:var(--ink-3);font-weight:400}
+.dtiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;padding:10px}
+.dtile{background:var(--fill);color:#fff;border:0;border-radius:var(--r-sm);padding:8px 9px;
+  font:inherit;font-size:12.5px;text-align:left;cursor:pointer;min-height:44px}
+.dtile:hover{filter:brightness(1.15)}
+
+/* relations (Diagramm at L3) */
+.rel{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--line)}
+.rel:last-child{border-bottom:0}
+.rnode{display:flex;align-items:center;gap:9px;min-width:0}
+.rnode b{font-weight:600}
+.rnode small{display:block;color:var(--ink-3)}
+.rarrow{color:var(--ink-3);font-size:12px;white-space:nowrap}
+.rbtn{display:flex;align-items:center;gap:9px;background:none;border:1px solid transparent;border-radius:var(--r-sm);
+  padding:6px 8px;font:inherit;text-align:left;cursor:pointer;color:inherit;min-width:0}
+.rbtn:hover{border-color:var(--accent);background:var(--accent-bg)}
+
+/* table */
+.wrap{border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.wrap--flush{border:0;border-radius:0}
+.tbl{width:100%;border-collapse:collapse;background:#fff}
+.tbl th,.tbl td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl thead th,.tbl tr.colhead td{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);
+  background:var(--surface);font-weight:600;white-space:nowrap}
+.tbl thead th button{display:flex;align-items:center;gap:5px;background:none;border:0;padding:0;font:inherit;
+  color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer}
+.tbl thead th button:hover{color:var(--ink)}
+.sind{opacity:.3;font-size:9px} .sind.is-on{opacity:1;color:var(--accent)}
+.tbl tbody tr[data-open]:hover,.tbl tbody tr[data-attr]:hover{background:#f6f8fc;cursor:pointer}
+.grp th{background:#fff;border-bottom:0;padding:22px 0 7px;text-transform:none;letter-spacing:0}
+/* Only the FIRST group loses its top padding. «.grp:first-child» would match
+   every group row instead — each group is its own <tbody>, so every group row
+   is the first child of something, and the gap disappeared everywhere. */
+.tbl tbody:first-child .grp th{padding-top:0}
+.grp button{display:flex;align-items:center;gap:7px;background:none;border:0;padding:0;font:inherit;
+  font-size:15px;font-weight:600;color:var(--ink);cursor:pointer}
+.grp .chev{transition:transform .12s} .grp.is-shut .chev{transform:rotate(-90deg)}
+/* One value style in the table (Nutzerentscheid, 2026-08-13): no bold, no link
+   colour, no badge, no muted hint. Only <code> sets a value apart, and only
+   because it marks a technical string that must be copied exactly.
+   Rows stay discoverable through hover and the pointer, not through colour. */
+.num{font-variant-numeric:tabular-nums}
+.trunc{display:block;max-width:42ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbl td code{background:#eef0f4;border-radius:4px;padding:1px 6px}
+.badge{display:inline-block;font-size:12px;padding:1px 8px;border-radius:20px;background:#eef0f4;color:var(--ink-2);white-space:nowrap}
+.badge--ok{background:var(--ok-bg);color:var(--ok-ink)}
+.badge--warn{background:var(--warn-bg);color:var(--warn-ink)}
+.badge--key{background:var(--accent-bg);color:var(--accent);font-family:var(--m);font-size:11px}
+
+/* overview at L3 */
+.panel{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:14px 16px;margin-bottom:14px}
+.panel h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+.kv{display:grid;grid-template-columns:190px 1fr;margin:0}
+.kv dt{padding:9px 0;color:var(--ink-2);border-bottom:1px solid var(--line)}
+.kv dd{padding:9px 0;margin:0;border-bottom:1px solid var(--line)}
+.kv dt:last-of-type,.kv dd:last-of-type{border-bottom:0}
+.empty{border:1px dashed var(--line-2);border-radius:var(--r);padding:32px 20px;text-align:center;background:var(--surface)}
+.empty .ico{width:24px;height:24px;color:var(--line-2);margin-bottom:8px}
+.empty b{display:block;color:var(--ink-2);font-size:15px;margin-bottom:4px}
+.empty p{margin:0 auto;max-width:56ch;font-size:13px;color:var(--ink-3)}
+
+.log{background:#1d2330;color:#dfe4ec;font-family:var(--m);font-size:12px;border-radius:var(--r);
+  padding:12px 14px;max-height:230px;overflow:auto;margin-top:8px}
+.log b{color:#fff;font-weight:500} .log i{color:#93a0b4;font-style:normal}
+table.dtbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:var(--r)}
+table.dtbl th,table.dtbl td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13.5px}
+table.dtbl thead th{background:var(--surface);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+table.dtbl tr:last-child td{border-bottom:0}
+.url{font-family:var(--m);font-size:12.5px;background:#eef0f4;border-radius:var(--r-sm);padding:7px 10px;
+  color:var(--ink-2);word-break:break-all;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<h1>Katalog mit Reitern</h1>
+<p><strong>Baum = Umfang, Reiter = Darstellung.</strong> Die beiden stehen senkrecht zueinander: ein Klick im
+Baum ändert <em>welche</em> Datensätze, ein Klick auf einen Reiter ändert <em>in welcher Form</em>. Deshalb
+überlebt der Reiter jede Bewegung im Baum — wer in der Tabelle arbeitet, bleibt in der Tabelle.</p>
+<p>Der Gewinn: die frühere «Detailansicht» ist kein vierter Begriff mehr neben Baum, Gruppierung und
+Ansicht. Sie ist schlicht <em>Übersicht auf Stufe 3</em> — und <em>Tabelle auf Stufe 3</em> sind die
+Attribute dieses Datensatzes. Jede Zelle des Rasters Stufe × Reiter hat eine Bedeutung.</p>
+<p class="muted"><strong>Kein Designentwurf.</strong> Das Stylesheet ist ein eigenes, neutrales.</p>
+
+<div class="frame">
+  <div class="crumb" id="crumb"></div>
+  <div class="head">
+    <h2>Metadaten Katalog Bauten</h2>
+    <p>Fachbegriffe des BBL, ihre Realisierung in den Führungssystemen, und die Wertelisten, auf die
+    beide verweisen.</p>
+  </div>
+  <div class="catbar">
+    <div class="sfield">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <label class="sr-only" for="q" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Suchen</label>
+      <input id="q" type="search" autocomplete="off">
+      <button class="sclear" id="qclear" type="button" aria-label="Suche löschen" hidden>✕</button>
+    </div>
+    <div class="count" id="count"></div>
+  </div>
+  <div class="layout">
+    <aside class="side"><h3>Katalog</h3><ul class="tree" id="tree"></ul></aside>
+    <div class="pane"><div class="tabs" id="tabs"></div><div id="fpanel"></div><div id="view"></div></div>
+  </div>
+</div>
+
+<div class="url" id="url"></div>
+
+<h2>Das Raster</h2>
+<p>Jeder Reiter bedeutet auf jeder Stufe dasselbe; der Baum entscheidet nur, worüber.</p>
+<table class="dtbl">
+  <thead><tr><th style="width:16%">Stufe</th><th style="width:28%">Übersicht</th><th style="width:28%">Diagramm</th><th>Tabelle</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">L1 — Ast</th>
+      <td>Karten je Domäne / System / Thema. Echter Inhalt, keine Kennzahlen.</td>
+      <td>Landschaft: ein Kasten je Gruppe, eine Kachel je Datensatz.</td>
+      <td>Alle Datensätze des Astes, gruppiert und sortierbar.</td></tr>
+    <tr><th scope="row">L2 — Domäne, System, Thema</th>
+      <td>Karten je Datensatz mit der Zahl seiner Bestandteile.</td>
+      <td>Dieselbe Landschaft, nach der gewählten Achse umgelegt.</td>
+      <td>Nur die Datensätze dieser Gruppe; die Gruppierungsspalte entfällt.</td></tr>
+    <tr><th scope="row">L3 — Datensatz</th>
+      <td>Definition, Metadaten, Herkunft — die frühere Detailansicht.</td>
+      <td>Beziehungsbild: Geschäftsobjekt → Datentabelle → System, in beide Richtungen begehbar.</td>
+      <td>Seine Attribute, Felder bzw. Werte.</td></tr>
+  </tbody>
+</table>
+
+<h2>Wo die Bedienelemente sitzen — und warum</h2>
+<table class="dtbl">
+  <thead><tr><th style="width:22%">Element</th><th style="width:16%">Ort</th><th>Grund</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">Baum</th><td>links, stehend</td>
+      <td>Wählt den Umfang. Bleibt auf jeder Stufe und in jedem Reiter sichtbar.</td></tr>
+    <tr><th scope="row">Suchfeld</th><td>über den Reitern</td>
+      <td>Schränkt den <em>Umfang</em> ein, wie der Baum — deshalb steht es bei der Trefferzahl und
+      nicht in der Reiterleiste. Auf L1/L2 filtert es Datensätze, auf L3 deren Bestandteile.</td></tr>
+    <tr><th scope="row">Reiter</th><td>über dem Inhalt</td>
+      <td>Wählen die Form. Ändern nie den Umfang und überstehen jeden Klick im Baum.</td></tr>
+    <tr><th scope="row">Filter, Gruppieren</th><td>rechts in der Reiterleiste</td>
+      <td>Gehören zu Tabelle und Diagramm, nicht zum Baum. Auf L3 entfallen sie: sie ordnen viele
+      Datensätze, und dort ist nur einer im Umfang.</td></tr>
+  </tbody>
+</table>
+
+<h2>Interaktionsprotokoll</h2>
+<p>Jede Zeile nennt, welcher Teil des Zustands sich geändert hat — und welcher ausdrücklich nicht.</p>
+<div class="log" id="log"></div>
+
+<h2>Der Befund, den das Raster erzwingt: die mittlere Stufe hat keine Entität</h2>
+<p>Wenn «Übersicht» auf jeder Stufe dasselbe bedeutet — <em>die Metadaten dieses Knotens, dann Karten für
+seine Kinder</em> —, dann braucht auch die mittlere Stufe Metadaten. Und genau dort ist nichts. Eine
+Domäne hat einen Namen, eine Beschreibung und eine Verantwortung; im Datenmodell ist sie ein
+<code>key</code> mit einem <code>label</code>.</p>
+<table class="dtbl">
+  <thead><tr><th style="width:20%">Stufe 2</th><th style="width:26%">heute im Modell</th><th style="width:22%">was fehlt</th><th>wo es liegt</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">Domäne</th>
+      <td><code>{ key, label, icon }</code></td>
+      <td>Beschreibung, Verantwortung</td>
+      <td><code>reference-data.json → dataDomains</code></td></tr>
+    <tr><th scope="row">System</th>
+      <td>gar keine Entität — nur die Felder <code>system</code> und <code>systemName</code> auf jeder Tabelle</td>
+      <td>Beschreibung, Verantwortung, Betrieb, Schnittstelle</td>
+      <td>abgeleitet aus <code>data-tables.json</code></td></tr>
+    <tr><th scope="row">Thema (Referenzdaten)</th>
+      <td>existiert nur in dieser Studie</td>
+      <td>alles</td>
+      <td>hier im Wireframe gesetzt</td></tr>
+  </tbody>
+</table>
+<p>Solange das so ist, zeigt die Übersicht auf Stufe 2 schlicht «noch nicht erfasst». Eine frühere Fassung
+stellte daneben, ausdrücklich als <em>abgeleitet</em> ausgewiesen, wer die Datensätze dieser Gruppe faktisch
+verantwortet — eine ausgezählte Mehrheit. Das ist wieder entfallen: eine Auszählung an der Stelle, an die
+ein Entscheid gehört, lädt genau die Verwechslung ein, vor der sie warnt. Ein leeres Feld leer zu zeigen
+ist der ehrlichere Weg, und der Unterschied bleibt der Grund, die Entität einzuführen.</p>
+<p>Beim System wiegt es schwerer als bei der Domäne. Ein System ist im Katalog kein Etikett, sondern das,
+worauf sich «realisiert in» bezieht — der Endpunkt jeder Abbildung. Dass es als Zeichenkette auf zehn
+Tabellen lebt, heisst: es gibt keinen Ort für seinen Betrieb, seine Schnittstelle oder seine Ablösung.</p>
+
+<h2>Was die Daten hergeben</h2>
+<p>Alles auf dieser Seite ist gezählt, nicht gesetzt: <strong>19</strong> Geschäftsobjekte,
+<strong>10</strong> Datentabellen in <strong>2</strong>
+Systemen, <strong>15</strong> Wertelisten in <strong>4</strong> Themen —
+zusammen 44 Datensätze mit 493 Bestandteilen.</p>
+<p><strong>Der dritte Ast zeigt zwei offene Punkte — und behandelt sie unterschiedlich.</strong></p>
+<p><em>Verantwortung, Status und Freigabe</em> gehören zu einer Werteliste wie zu einem Geschäftsobjekt; sie
+fehlen bisher nur im Datenmodell und kommen mit der nächsten Iteration von <code>docs/data-model.md</code>
+nach. Diese Studie hält die Felder und Spalten deshalb bereits frei und trägt vorläufig
+«noch nicht erfasst» ein — die Ansicht wartet nicht auf die Daten, und der offene Punkt bleibt sichtbar,
+statt hinter einer Auslassung zu verschwinden. Sobald die Felder Werte haben, werden sie im selben Zug zu
+Gruppierungs- und Filterachsen; heute ergäben sie genau einen Kasten.</p>
+<p>Der zweite Punkt ist grösser: es gibt <em>keinen Verwendungsnachweis</em>. Nirgends ist festgehalten,
+welches Attribut auf welche Liste verweist. Deshalb bleibt das Beziehungsbild des dritten Astes leer,
+während es bei den anderen beiden die eigentliche Erkenntnis trägt. Ohne diese Kante ist der dritte Ast
+eine Insel im selben Katalog.</p>
+
+</div>
+
+<script>
+'use strict';
+const BRANCHES = [{"key":"objekt","label":"Fachliche Sicht","icon":"box","unit":"Geschäftsobjekte","kidUnit":"Attribute","l2Unit":"Domänen","axisLabel":"Domäne","lead":"Lösungsneutrale Geschäftsobjekte des BBL und ihre fachlichen Attribute.","rows":[{"id":"areal","name":"Areal","def":"Ein definiertes Landareal bestehend aus einer oder mehreren Parzellen, typischerweise ein Bundeskampus oder eine Anlage.","group":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"VILB, eCH-0071","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/areal","stand":"2024-06-01","kids":[{"name":"Areal-ID","def":"Eindeutige Kennung des Areals.","type":"Text","key":"PK","required":true,"std":"VILB","maps":[]},{"name":"Bezeichnung","def":"Bezeichnung des Areals.","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Fläche (m2)","def":"Gesamtfläche des Areals in Quadratmetern.","type":"Dezimalzahl","key":"","required":false,"std":"","maps":[]},{"name":"Standort-Kanton","def":"Kanton, in dem sich das Areal befindet.","type":"Text","key":"","required":true,"std":"eCH-0071","maps":[]},{"name":"Eigentümer","def":"Eigentümer des Areals (Bund, Kanton, Dritte).","type":"Text","key":"","required":false,"std":"","maps":[]}],"n":5},{"id":"kampus","name":"Kampus","def":"Eine zusammengehörende Gruppe von Gebäuden, die eine funktionale Einheit bilden, z.B. Bundeskampus Zollikofen.","group":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"VILB Anhang A","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/kampus","stand":"2024-06-01","kids":[{"name":"Kampus-ID","def":"Eindeutige Kennung des Kampus.","type":"Text","key":"PK","required":true,"std":"","maps":[]},{"name":"Bezeichnung","def":"Bezeichnung des Kampus.","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Anzahl Gebäude","def":"Anzahl der Gebäude auf dem Kampus.","type":"Ganzzahl","key":"","required":false,"std":"","maps":[]},{"name":"Hauptnutzung","def":"Hauptnutzungsart des Kampus.","type":"Text","key":"","required":false,"std":"","maps":[]}],"n":4},{"id":"grundstueck","name":"Grundstück","def":"Ein im Grundbuch eingetragenes, rechtlich definiertes Stück Land, identifiziert durch eine EGRID.","group":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"ZGB Art. 655, eCH-0071","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/grundstueck","stand":"2024-06-15","kids":[{"name":"Grundbuch-Nr","def":"Grundbuchnummer der Parzelle.","type":"Text","key":"PK","required":true,"std":"ZGB","maps":[{"a":"GIS IMMO","b":"Grundstück","c":"av_nr","match":"Exakt"}]},{"name":"EGRID","def":"Eidgenössischer Grundstücksidentifikator.","type":"Text","key":"UK","required":true,"std":"eCH-0071","maps":[{"a":"GIS IMMO","b":"Grundstück","c":"av_egrid","match":"Exakt"},{"a":"GIS IMMO","b":"Gebäude","c":"av_egrid","match":"Teilweise"},{"a":"GIS IMMO","b":"Bodenbedeckung","c":"av_egrid","match":"Exakt"}]},{"name":"Gemeinde-BFS-Nr","def":"BFS-Gemeindenummer des Standorts.","type":"Ganzzahl","key":"","required":true,"std":"eCH-0071","maps":[{"a":"GIS IMMO","b":"Grundstück","c":"bfs_gemnr","match":"Exakt"}]},{"name":"Fläche (m2)","def":"Gesamtfläche des Grundstücks in m2.","type":"Dezimalzahl","key":"","required":false,"std":"","maps":[{"a":"GIS IMMO","b":"Grundstück","c":"larea_gsf","match":"Exakt"}]},{"name":"Eigentumsart","def":"Art des Eigentums (Alleineigentum, Miteigentum, Stockwerkeigentum).","type":"Text","key":"","required":true,"std":"","maps":[{"a":"GIS IMMO","b":"Grundstück","c":"bbl_eigen","match":"Exakt"}]}],"n":5},{"id":"gebaeude","name":"Gebäude","def":"Ein dauerhaftes, überdachtes Bauwerk, das im eidgenössischen Gebäude- und Wohnungsregister (GWR) erfasst und durch eine EGID identifiziert wird.","group":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"eCH-0071 v2.0, GWR","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/gebaeude","stand":"2024-06-01","kids":[{"name":"Gebäude-ID (BBL)","def":"Kennung des Gebäudes im Führungssystem, zusammengesetzt aus Buchungskreis, Wirtschaftseinheit und Teilobjekt (z. B. 1080/4840/01).","type":"Text","key":"PK","required":true,"std":"","maps":[{"a":"SAP RE-FX","b":"Gebäude","c":"BUILDING","match":"Exakt"},{"a":"GIS IMMO","b":"Gebäude","c":"bbl_id","match":"Exakt"}]},{"name":"Bezeichnung","def":"Objektbezeichnung des Gebäudes, wie sie im Führungssystem geführt wird.","type":"Text","key":"","required":true,"std":"","maps":[{"a":"SAP RE-FX","b":"Gebäude","c":"BUILDING_TEXT","match":"Exakt"},{"a":"GIS IMMO","b":"Gebäude","c":"bbl_bez","match":"Exakt"}]},{"name":"EGID","def":"Eidgenössischer Gebäudeidentifikator aus dem GWR.","type":"Ganzzahl","key":"UK","required":true,"std":"eCH-0071","maps":[{"a":"GIS IMMO","b":"Gebäude","c":"av_egid","match":"Exakt"},{"a":"GIS IMMO","b":"Bodenbedeckung","c":"av_egid","match":"Exakt"}]},{"name":"Baujahr","def":"Jahr der Fertigstellung des Gebäudes.","type":"Ganzzahl","key":"","required":true,"std":"GWR","maps":[{"a":"SAP RE-FX","b":"Gebäude","c":"CONSTRUCTION_YEAR","match":"Exakt"},{"a":"GIS IMMO","b":"Gebäude","c":"bbl_bjahr","match":"Exakt"}]},{"name":"Gebäudekategorie","def":"Klassifikation des Gebäudetyps nach GWR-Katalog.","type":"Codeliste","key":"FK","required":true,"std":"eCH-0071","maps":[{"a":"SAP RE-FX","b":"Gebäude","c":"BUILDING_TYPE","match":"Nahe"},{"a":"GIS IMMO","b":"Gebäude","c":"bbl_gbda1","match":"Nahe"}]},{"name":"Anzahl Geschosse","def":"Gesamtzahl der ober- und unterirdischen Geschosse.","type":"Ganzzahl","key":"","required":false,"std":"GWR","maps":[{"a":"SAP RE-FX","b":"Gebäude","c":"FLOORS","match":"Exakt"},{"a":"GIS IMMO","b":"Gebäude","c":"gastw","match":"Exakt"}]},{"name":"Energieträger","def":"Hauptsächlicher Energieträger für Heizung.","type":"Codeliste","key":"FK","required":false,"std":"GWR","maps":[]}],"n":7},{"id":"nutzungseinheit","name":"Nutzungseinheit","def":"Ein in sich geschlossener Bereich innerhalb eines Gebäudes, der einem einzigen Zweck dient, klassifiziert nach SIA 416.","group":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"SIA 416 p3","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/nutzungseinheit","stand":"2024-07-15","kids":[{"name":"NE-Nummer","def":"Nummer der Nutzungseinheit.","type":"Text","key":"PK","required":true,"std":"","maps":[]},{"name":"Nutzungsart","def":"Art der Nutzung gemäss SIA 416.","type":"Codeliste","key":"FK","required":true,"std":"SIA 416","maps":[]},{"name":"Fläche (m2)","def":"Fläche der Nutzungseinheit in m2.","type":"Dezimalzahl","key":"","required":true,"std":"SIA 416","maps":[]},{"name":"Geschoss-Lage","def":"Geschoss, auf dem sich die Nutzungseinheit befindet.","type":"Text","key":"","required":false,"std":"","maps":[]}],"n":4},{"id":"geschoss","name":"Geschoss","def":"Eine horizontale Ebene innerhalb eines Gebäudes, gemessen nach SIA 416.","group":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"SIA 416","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/geschoss","stand":"2024-06-01","kids":[{"name":"Geschoss-Nr","def":"Nummer des Geschosses.","type":"Ganzzahl","key":"PK","required":true,"std":"","maps":[]},{"name":"Bezeichnung","def":"Bezeichnung des Geschosses (z.B. EG, 1.OG, UG1).","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Geschossfläche (m2)","def":"Bruttogeschossfläche in m2.","type":"Dezimalzahl","key":"","required":false,"std":"SIA 416","maps":[]},{"name":"Nutzfläche (m2)","def":"Nutzfläche in m2.","type":"Dezimalzahl","key":"","required":false,"std":"SIA 416","maps":[]}],"n":4},{"id":"raum","name":"Raum","def":"Ein einzelner umschlossener Raum innerhalb eines Geschosses, identifiziert durch eine Raumnummer.","group":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"SIA 416 p4","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/raum","stand":"2024-06-01","kids":[{"name":"Raum-Nr","def":"Eindeutige Raumnummer.","type":"Text","key":"PK","required":true,"std":"","maps":[]},{"name":"Bezeichnung","def":"Bezeichnung des Raums.","type":"Text","key":"","required":false,"std":"","maps":[]},{"name":"Fläche (m2)","def":"Fläche des Raums in m2.","type":"Dezimalzahl","key":"","required":true,"std":"","maps":[]},{"name":"Nutzungsart","def":"Art der Raumnutzung.","type":"Text","key":"","required":false,"std":"","maps":[]}],"n":4},{"id":"bemessung","name":"Bemessung","def":"Berechnete Flächen- und Volumenkennwerte für ein Gebäude oder eine Einheit (Geschossfläche, Nutzfläche etc.) nach SIA 416.","group":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"SIA 416 p3.6","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/bemessung","stand":"2024-08-01","kids":[{"name":"Berechnungsart","def":"Art der Flächenberechnung (GF, NF, EBF, etc.).","type":"Text","key":"","required":true,"std":"SIA 416","maps":[{"a":"SAP RE-FX","b":"Bemessungen","c":"MEASUREMENT","match":"Exakt"}]},{"name":"Bezugsfläche (m2)","def":"Berechnete Bezugsfläche in m2.","type":"Dezimalzahl","key":"","required":true,"std":"SIA 416","maps":[{"a":"SAP RE-FX","b":"Bemessungen","c":"VALUE_AVAIL","match":"Teilweise"},{"a":"SAP RE-FX","b":"Bemessungen","c":"VALUE_COMPL","match":"Teilweise"}]},{"name":"Norm-Referenz","def":"Referenz auf die angewandte Norm.","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Berechnungsdatum","def":"Datum der letzten Berechnung.","type":"Datum","key":"","required":false,"std":"","maps":[]}],"n":4},{"id":"mietobjekt","name":"Mietobjekt","def":"Eine vermietbare Einheit innerhalb eines Gebäudes, verwaltet durch das BBL, entsprechend einer Wirtschaftseinheit in SAP RE-FX.","group":"Mietverhältnisse","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-4102938"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"VILB Anhang A","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/mietobjekt","stand":"2024-07-01","kids":[{"name":"MO-Nummer","def":"Eindeutige Kennung des Mietobjekts in SAP RE-FX.","type":"Text","key":"PK","required":true,"std":"","maps":[]},{"name":"Bezeichnung","def":"Bezeichnung des Mietobjekts.","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Mietfläche (m2)","def":"Vermietbare Fläche des Mietobjekts in m2.","type":"Dezimalzahl","key":"","required":false,"std":"SIA 416","maps":[]},{"name":"Status","def":"Status des Mietobjekts (aktiv/passiv).","type":"Text","key":"","required":true,"std":"","maps":[]}],"n":4},{"id":"mietvertrag","name":"Mietvertrag","def":"Ein rechtsverbindlicher Vertrag zwischen dem Bund und einer Gegenpartei über die Nutzung eines Mietobjekts.","group":"Mietverhältnisse","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-4102938"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Entwurf","norm":"OR Art. 253ff","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/mietvertrag","stand":"2024-08-01","kids":[{"name":"Vertrags-Nr","def":"Eindeutige Kennung des Mietvertrags.","type":"Text","key":"PK","required":true,"std":"","maps":[{"a":"SAP RE-FX","b":"Mietverträge","c":"MVNR","match":"Exakt"}]},{"name":"Beginn","def":"Datum des Mietbeginns.","type":"Datum","key":"","required":true,"std":"","maps":[{"a":"SAP RE-FX","b":"Mietverträge","c":"MVBEG","match":"Exakt"}]},{"name":"Ende","def":"Datum des Mietendes (leer = unbefristet).","type":"Datum","key":"","required":false,"std":"","maps":[]},{"name":"Nettomiete (CHF)","def":"Jährliche Nettomiete in CHF.","type":"Dezimalzahl","key":"","required":true,"std":"","maps":[]},{"name":"Status","def":"Vertragsstatus (aktiv, gekündigt, abgelaufen).","type":"Text","key":"","required":true,"std":"","maps":[]}],"n":5},{"id":"kondition","name":"Kondition","def":"Finanzielle und vertragliche Konditionen eines Mietvertrags: Mietzins, Nebenkosten, Indexierung und Kautionen.","group":"Mietverhältnisse","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-4102938"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Entwurf","norm":"OR Art. 269ff","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/kondition","stand":"2024-08-15","kids":[{"name":"Konditions-Nr","def":"Eindeutige Nummer der Kondition im Mietvertrag.","type":"Text","key":"PK","required":true,"std":"","maps":[{"a":"SAP RE-FX","b":"Konditionen","c":"KDNR","match":"Exakt"}]},{"name":"Konditionsart","def":"Art der Kondition (Nettomiete, Nebenkosten, Indexanpassung, Kaution, Mieterausbau).","type":"Codeliste","key":"FK","required":true,"std":"","maps":[{"a":"SAP RE-FX","b":"Konditionen","c":"KDART","match":"Exakt"}]},{"name":"Betrag (CHF)","def":"Betrag der Kondition in CHF.","type":"Dezimalzahl","key":"","required":true,"std":"","maps":[]},{"name":"Periodizität","def":"Zahlungsintervall (monatlich, quartalsweise, jährlich).","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Index-Basis","def":"Basis für die Indexanpassung (z.B. LIK Dezember 2020 = 100).","type":"Text","key":"","required":false,"std":"","maps":[]}],"n":5},{"id":"heizzentrale","name":"Heizzentrale","def":"Zentrale Heizungsanlage für ein oder mehrere Gebäude, klassifiziert nach Energieträger (Öl, Gas, Wärmepumpe, Fernwärme).","group":"Energie","steward":"EDM","persons":[{"role":"Dateneigner","id":"p-5573046"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"SIA 380/1, EnDK","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/heizzentrale","stand":"2024-08-01","kids":[{"name":"HZ-Nummer","def":"Eindeutige Kennung der Heizzentrale.","type":"Text","key":"PK","required":true,"std":"","maps":[]},{"name":"Typ","def":"Typ der Heizzentrale (Öl, Gas, Wärmepumpe, Fernwärme).","type":"Codeliste","key":"FK","required":true,"std":"","maps":[]},{"name":"Leistung (kW)","def":"Nennleistung der Heizzentrale in Kilowatt.","type":"Dezimalzahl","key":"","required":false,"std":"","maps":[]},{"name":"Baujahr","def":"Baujahr der Heizzentrale.","type":"Ganzzahl","key":"","required":false,"std":"","maps":[]}],"n":4},{"id":"stromzaehler","name":"Stromzähler","def":"Messgerät für den Stromverbrauch innerhalb eines Gebäudes oder Gebäudeteils.","group":"Energie","steward":"EDM","persons":[{"role":"Dateneigner","id":"p-5573046"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"StromVV, ElCom","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/stromzaehler","stand":"2024-08-15","kids":[{"name":"Zähler-Nr","def":"Eindeutige Zählernummer.","type":"Text","key":"PK","required":true,"std":"","maps":[]},{"name":"Zählertyp","def":"Typ des Zählers (Hauptzähler, Unterzähler, Erzeugungszähler).","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Messbereich","def":"Messbereich des Zählers.","type":"Text","key":"","required":false,"std":"","maps":[]},{"name":"Standort","def":"Standort des Zählers im Gebäude.","type":"Text","key":"","required":false,"std":"","maps":[]}],"n":4},{"id":"betriebsmesswert","name":"Betriebsmesswert","def":"Ein erfasster Energie- oder Ressourcenverbrauchswert eines Messgeräts zu einem bestimmten Zeitpunkt.","group":"Energie","steward":"EDM","persons":[{"role":"Dateneigner","id":"p-5573046"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"SIA 380/1","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/betriebsmesswert","stand":"2024-09-01","kids":[{"name":"Messart","def":"Art der Messung (Strom, Wärme, Wasser, Gas).","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Wert","def":"Gemessener Wert.","type":"Dezimalzahl","key":"","required":true,"std":"","maps":[]},{"name":"Einheit","def":"Masseinheit (kWh, MWh, m3, l).","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Zeitstempel","def":"Zeitpunkt der Messung.","type":"Datum","key":"","required":true,"std":"","maps":[]},{"name":"Zähler-Referenz","def":"Referenz auf den zugehörigen Zähler.","type":"Text","key":"FK","required":true,"std":"","maps":[]}],"n":5},{"id":"person","name":"Person","def":"Eine natürliche Person im Immobilienmanagement: Mieter, Mitarbeitende oder Kontaktperson.","group":"Geschäftspartner","steward":"DRES","persons":[{"role":"Dateneigner","id":"p-6291057"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"eCH-0010, eCH-0011","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/person","stand":"2024-07-01","kids":[{"name":"Partner-Nr","def":"Nummer des Geschäftspartners im Partnerstamm.","type":"Text","key":"PK","required":true,"std":"","maps":[]},{"name":"AHV-Nr","def":"Sozialversicherungsnummer (AHV-Nr) der Person.","type":"Text","key":"UK","required":false,"std":"eCH-0011","maps":[]},{"name":"Vorname","def":"Vorname der Person.","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Nachname","def":"Nachname der Person.","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Geburtsdatum","def":"Geburtsdatum der Person.","type":"Datum","key":"","required":false,"std":"","maps":[]}],"n":5},{"id":"kontakt","name":"Kontakt","def":"Ein Kommunikationsendpunkt für eine Person oder Organisation: E-Mail, Telefon oder Postadresse.","group":"Geschäftspartner","steward":"DRES","persons":[{"role":"Dateneigner","id":"p-6291057"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"eCH-0010","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/kontakt","stand":"2024-07-15","kids":[{"name":"Kontaktart","def":"Art des Kontakts (Email, Telefon, Adresse).","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Wert","def":"Kontaktwert (z.B. E-Mail-Adresse, Telefonnummer).","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Gültig-ab","def":"Beginn der Gültigkeit des Kontakts.","type":"Datum","key":"","required":false,"std":"","maps":[]}],"n":3},{"id":"unternehmen","name":"Unternehmen","def":"Eine juristische Person oder Organisationseinheit, identifiziert durch die UID (Unternehmens-Identifikationsnummer). Stammdaten aus dem BFS-Unternehmensregister oder SAP MDG.","group":"Geschäftspartner","steward":"DRES","persons":[{"role":"Dateneigner","id":"p-6291057"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"UID-Register (BFS), eCH-0011","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/unternehmen","stand":"2024-07-01","kids":[{"name":"Partner-Nr","def":"Nummer des Geschäftspartners im Partnerstamm.","type":"Text","key":"PK","required":true,"std":"","maps":[]},{"name":"UID","def":"Unternehmens-Identifikationsnummer (UID).","type":"Text","key":"PK","required":true,"std":"UID-Register","maps":[]},{"name":"Firmenname","def":"Offizielle Firma des Unternehmens.","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Rechtsform","def":"Rechtsform des Unternehmens (AG, GmbH, Stiftung, etc.).","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Sitz","def":"Sitz des Unternehmens (Gemeinde).","type":"Text","key":"","required":true,"std":"","maps":[]}],"n":5},{"id":"wirtschaftseinheit","name":"Wirtschaftseinheit","def":"Eine eigenständige wirtschaftliche Einheit in der Immobilienbuchhaltung, typischerweise ein Gebäude oder eine Gebäudegruppe, die als ein Profit Center geführt wird. Zentrale Organisationseinheit in SAP RE-FX.","group":"Finanzen","steward":"PFM","persons":[{"role":"Dateneigner","id":"p-7150834"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"SAP RE-FX, VILB","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/wirtschaftseinheit","stand":"2024-06-01","kids":[{"name":"WE-Nummer","def":"Eindeutige Nummer der Wirtschaftseinheit in SAP RE-FX.","type":"Text","key":"PK","required":true,"std":"SAP RE-FX","maps":[{"a":"SAP RE-FX","b":"Wirtschaftseinheit","c":"BUSINESS_ENTITY","match":"Exakt"},{"a":"GIS IMMO","b":"Gebäude","c":"bbl_we","match":"Exakt"}]},{"name":"Bezeichnung","def":"Name/Bezeichnung der Wirtschaftseinheit.","type":"Text","key":"","required":true,"std":"","maps":[{"a":"SAP RE-FX","b":"Wirtschaftseinheit","c":"BUSINESS_ENTITY_TEXT","match":"Exakt"}]},{"name":"Buchungskreis","def":"Zugeordneter Buchungskreis der Wirtschaftseinheit.","type":"Text","key":"FK","required":true,"std":"SAP FI","maps":[{"a":"SAP RE-FX","b":"Wirtschaftseinheit","c":"COMP_CODE","match":"Exakt"}]},{"name":"Profit Center","def":"Zugeordnetes Profit Center für die Ergebnisrechnung.","type":"Text","key":"","required":false,"std":"SAP CO","maps":[]}],"n":4},{"id":"buchungskreis","name":"Buchungskreis","def":"Die höchste Organisationseinheit in der Finanzbuchhaltung (SAP FI). Jeder Buchungskreis repräsentiert eine eigenständige juristische Einheit mit eigener Bilanz und GuV. Das BBL operiert typischerweise unter einem Buchungskreis für Bundesimmobilien.","group":"Finanzen","steward":"PFM","persons":[{"role":"Dateneigner","id":"p-7150834"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Gültig","norm":"SAP FI, OR Art. 957ff","quelle":"https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/buchungskreis","stand":"2024-06-01","kids":[{"name":"Buchungskreis-Nr","def":"Vierstelliger SAP-Buchungskreisschlüssel.","type":"Text","key":"PK","required":true,"std":"SAP FI","maps":[{"a":"SAP RE-FX","b":"Wirtschaftseinheit","c":"COMP_CODE","match":"Exakt"},{"a":"SAP RE-FX","b":"Gebäude","c":"COMP_CODE","match":"Exakt"},{"a":"GIS IMMO","b":"Gebäude","c":"bbl_buch","match":"Exakt"}]},{"name":"Bezeichnung","def":"Name des Buchungskreises.","type":"Text","key":"","required":true,"std":"","maps":[]},{"name":"Währung","def":"Hauswährung des Buchungskreises (CHF).","type":"Text","key":"","required":true,"std":"ISO 4217","maps":[]},{"name":"Kontenplan","def":"Zugeordneter Kontenplan.","type":"Text","key":"","required":true,"std":"SAP FI","maps":[]}],"n":4}],"cols":[["name","Name"],["group","Domäne"],["steward","Verantwortung"],["def","Beschreibung"],["n","Attribute"],["status","Status"]],"group":[["group","Domäne"],["steward","Verantwortung"],["status","Status"]],"kidCols":[["name","Attribut"],["def","Beschreibung"],["type","Werttyp"],["key","Schlüssel"]]},{"key":"tabelle","label":"Systeme und Daten","icon":"database","unit":"Datentabellen","kidUnit":"Felder","l2Unit":"Systeme","axisLabel":"System","lead":"Führungssysteme, ihre Tabellen und die Felder, welche die Fachbegriffe tragen.","rows":[{"id":"sap-refx-vibdbe","name":"Wirtschaftseinheit","def":"SAP RE-FX Stammdatentabelle für Wirtschaftseinheiten (BUS_ENTITY). Exponiert über ZAPI_X4AI_BAPI_RE_BE_GET_DET.","group":"SAP RE-FX","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"}],"status":"Zertifiziert","schema":"SAP RE-FX Stammdaten","technisch":"VIBDBE","zeilen":0,"quelle":"","stand":"2026-04-20","kids":[{"name":"COMP_CODE","def":"Buchungskreis","type":"VARCHAR(4)","key":"FK","required":true,"maps":[{"a":"","b":"Wirtschaftseinheit","c":"Buchungskreis","match":"Exakt"},{"a":"","b":"Buchungskreis","c":"Buchungskreis-Nr","match":"Exakt"}]},{"name":"BUSINESS_ENTITY","def":"Nummer der Wirtschaftseinheit","type":"VARCHAR(8)","key":"","required":true,"maps":[{"a":"","b":"Wirtschaftseinheit","c":"WE-Nummer","match":"Exakt"}]},{"name":"IDENT_OBJECT_TYPE","def":"Ident-Teil Objektart, z.B. 'IS' (Immobilienvertrag)","type":"VARCHAR(2)","key":"","required":false,"maps":[]},{"name":"IDENT_KEY","def":"Ident-Teil Schlüssel, z.B. '1000/123'","type":"VARCHAR(45)","key":"PK","required":true,"maps":[]},{"name":"CREATION_USER","def":"Erfasser","type":"VARCHAR(12)","key":"","required":false,"maps":[]},{"name":"CREATION_DATE","def":"Zuerst erfasst am","type":"DATE","key":"","required":false,"maps":[]},{"name":"CREATION_TIME","def":"Angelegt um","type":"TIME","key":"","required":false,"maps":[]},{"name":"LASTCHANGE_USER","def":"Mitarbeiterkennung","type":"VARCHAR(12)","key":"","required":false,"maps":[]},{"name":"LASTCHANGE_DATE","def":"Zuletzt bearbeitet am","type":"DATE","key":"","required":false,"maps":[]},{"name":"LASTCHANGE_TIME","def":"Uhrzeit der letzten Bearbeitung","type":"TIME","key":"","required":false,"maps":[]},{"name":"BUSINESS_ENTITY_TEXT","def":"Bezeichnung der Wirtschaftseinheit","type":"VARCHAR(60)","key":"","required":false,"maps":[{"a":"","b":"Wirtschaftseinheit","c":"Bezeichnung","match":"Exakt"}]},{"name":"MAINTENANCE_AREA","def":"Instandhaltungsbezirk","type":"VARCHAR(5)","key":"","required":false,"maps":[]},{"name":"TRANSPORT_CONNECTION","def":"Verkehrsanbindung der WE","type":"VARCHAR(1)","key":"","required":false,"maps":[]},{"name":"LOCATION","def":"Nummer Lage der WE","type":"VARCHAR(4)","key":"","required":false,"maps":[]},{"name":"DISTRICT_LOCATION","def":"Kennzeichen Ortslage des Objektes","type":"VARCHAR(2)","key":"","required":false,"maps":[]},{"name":"REGIONAL_LOCATION","def":"Standort","type":"VARCHAR(10)","key":"","required":false,"maps":[]},{"name":"REPR_LIST_OF_RENTS","def":"Mietspiegel","type":"VARCHAR(6)","key":"","required":false,"maps":[]},{"name":"UNIT_AREA","def":"Flächeneinheit","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"UNIT_AREA_ISO","def":"ISO-Code Masseinheit","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"UNIT_VOLUME","def":"Einheit für Rauminhalt","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"UNIT_VOLUME_ISO","def":"ISO-Code Masseinheit","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"UNIT_LENGTH","def":"Längeneinheit","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"UNIT_LENGTH_ISO","def":"ISO-Code Masseinheit","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"TENANCY_LAW","def":"Mietrecht","type":"VARCHAR(5)","key":"","required":false,"maps":[]},{"name":"PREDEF_OPERATION_COSTS","def":"Vorbelegung Betriebskosten-Abrechnungsvariante","type":"VARCHAR(4)","key":"","required":false,"maps":[]},{"name":"PREDEF_HEATING_EXPENSES","def":"Vorbelegung Heizkosten-Abrechnungsvariante","type":"VARCHAR(4)","key":"","required":false,"maps":[]},{"name":"AUTHORIZATION_GROUP","def":"Berechtigungsgruppe","type":"VARCHAR(40)","key":"","required":false,"maps":[]},{"name":"AUTO_FUNC_LOC_DISABLED","def":"Verbietet das automatische Anlegen von Technischen Plätzen","type":"VARCHAR(1)","key":"","required":false,"maps":[]},{"name":"OBJECT_VALID_FROM","def":"Datum: Gültig ab","type":"DATE","key":"","required":false,"maps":[]},{"name":"OBJECT_VALID_TO","def":"Datum: Gültig bis","type":"DATE","key":"","required":false,"maps":[]},{"name":"RESPONSIBLE","def":"Verantwortlicher","type":"VARCHAR(12)","key":"","required":false,"maps":[]},{"name":"STAT_PROF","def":"Statusschema","type":"VARCHAR(8)","key":"","required":false,"maps":[]},{"name":"NEIGHBORHOOD_01","def":"Gegend","type":"VARCHAR(30)","key":"","required":false,"maps":[]},{"name":"NEIGHBORHOOD_02","def":"Gegend","type":"VARCHAR(30)","key":"","required":false,"maps":[]},{"name":"NEIGHBORHOOD_03","def":"Gegend","type":"VARCHAR(30)","key":"","required":false,"maps":[]},{"name":"MANDATE_OBJECT_ID","def":"Ident-Teil des Mandatsobjekts im Mandatsbukrs","type":"VARCHAR(45)","key":"","required":false,"maps":[]},{"name":"MANDATE_MNG_OBJECT_ID","def":"Ident-Teil des Mandatsobjekts im Verwaltungsbukrs","type":"VARCHAR(45)","key":"","required":false,"maps":[]},{"name":"MANDATE_CR_OBJECT_ID","def":"Ident-Teil des Mandatsobjekts im Sondereigentumsbukrs","type":"VARCHAR(45)","key":"","required":false,"maps":[]},{"name":"FUNCTION","def":"Funktion des Objektes","type":"VARCHAR(4)","key":"","required":false,"maps":[]}],"n":39},{"id":"sap-refx-vibdbu","name":"Gebäude","def":"SAP RE-FX Stammdatentabelle für Gebäude (BUILDING). Exponiert über ZAPI_X4AI_BAPI_RE_BU_GET_DET.","group":"SAP RE-FX","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Zertifiziert","schema":"SAP RE-FX Stammdaten","technisch":"VIBDBU","zeilen":8450,"quelle":"https://sap-refx.bbl.admin.ch/sap/bc/gui/sap/its/webgui?~transaction=VIBDBE","stand":"2026-04-20","kids":[{"name":"COMP_CODE","def":"Buchungskreis","type":"VARCHAR(4)","key":"FK","required":true,"maps":[{"a":"","b":"Buchungskreis","c":"Buchungskreis-Nr","match":"Exakt"}]},{"name":"BUSINESS_ENTITY","def":"Nummer der Wirtschaftseinheit","type":"VARCHAR(8)","key":"FK","required":true,"maps":[]},{"name":"BUILDING","def":"Nummer des Gebäudes","type":"VARCHAR(8)","key":"","required":true,"maps":[{"a":"","b":"Gebäude","c":"Gebäude-ID (BBL)","match":"Exakt"}]},{"name":"IDENT_OBJECT_TYPE","def":"Ident-Teil Objektart, z.B. 'IS' (Immobilienvertrag)","type":"VARCHAR(2)","key":"","required":false,"maps":[]},{"name":"IDENT_KEY","def":"Ident-Teil Schlüssel, z.B. '1000/123'","type":"VARCHAR(45)","key":"PK","required":true,"maps":[]},{"name":"CREATION_USER","def":"Erfasser","type":"VARCHAR(12)","key":"","required":false,"maps":[]},{"name":"CREATION_DATE","def":"Zuerst erfasst am","type":"DATE","key":"","required":false,"maps":[]},{"name":"CREATION_TIME","def":"Angelegt um","type":"TIME","key":"","required":false,"maps":[]},{"name":"LASTCHANGE_USER","def":"Mitarbeiterkennung","type":"VARCHAR(12)","key":"","required":false,"maps":[]},{"name":"LASTCHANGE_DATE","def":"Zuletzt bearbeitet am","type":"DATE","key":"","required":false,"maps":[]},{"name":"LASTCHANGE_TIME","def":"Uhrzeit der letzten Bearbeitung","type":"TIME","key":"","required":false,"maps":[]},{"name":"BUILDING_TEXT","def":"Bezeichnung des Gebäudes","type":"VARCHAR(60)","key":"","required":false,"maps":[{"a":"","b":"Gebäude","c":"Bezeichnung","match":"Exakt"}]},{"name":"BUILDING_TYPE","def":"Art des Gebäudes","type":"VARCHAR(2)","key":"","required":false,"maps":[{"a":"","b":"Gebäude","c":"Gebäudekategorie","match":"Nahe"}]},{"name":"BUILDING_CONDITION","def":"Allgemeiner Gebäudezustand","type":"VARCHAR(2)","key":"","required":false,"maps":[]},{"name":"CONSTRUCTION_YEAR","def":"Baujahr","type":"VARCHAR(4)","key":"","required":false,"maps":[{"a":"","b":"Gebäude","c":"Baujahr","match":"Exakt"}]},{"name":"MODERNIZATION_YEAR","def":"Jahr der Modernisierung","type":"VARCHAR(4)","key":"","required":false,"maps":[]},{"name":"RECONSTRUCTION_YEAR","def":"Jahr Wiederaufbau","type":"VARCHAR(4)","key":"","required":false,"maps":[]},{"name":"BEGIN_CONSTRUCTION_YEAR","def":"Datum Baubeginn","type":"DATE","key":"","required":false,"maps":[]},{"name":"READY_FOR_OCCUPANCY_DATE","def":"Bezugsfertigkeit","type":"DATE","key":"","required":false,"maps":[]},{"name":"COMPLETION_DATE","def":"Fertigstellung","type":"DATE","key":"","required":false,"maps":[]},{"name":"FINAL_INSPECTION_DATE","def":"Schlussabnahme","type":"DATE","key":"","required":false,"maps":[]},{"name":"PLANNING_INQUIRY_DATE","def":"Datum Bauvoranfrage","type":"DATE","key":"","required":false,"maps":[]},{"name":"PRIOR_NOTICE_DATE","def":"Datum Vorbescheid","type":"DATE","key":"","required":false,"maps":[]},{"name":"BUILDING_PERMIT_APPLIC_DATE","def":"Antrag Baugenehmigung","type":"DATE","key":"","required":false,"maps":[]},{"name":"BUILDING_PERMIT_DATE","def":"Baugenehmigung","type":"DATE","key":"","required":false,"maps":[]},{"name":"TRANSF_USE_AND_ENCUMBR_DATE","def":"Übergang Nutzung / Lasten","type":"DATE","key":"","required":false,"maps":[]},{"name":"SALE_DATE","def":"Verkaufsdatum","type":"DATE","key":"","required":false,"maps":[]},{"name":"PLANNED_SALE_DATE","def":"Geplanter Verkauf","type":"DATE","key":"","required":false,"maps":[]},{"name":"USAGE_END_DATE","def":"Nutzungsende","type":"DATE","key":"","required":false,"maps":[]},{"name":"BUILDING_PERMIT_NOTE","def":"Anmerkung zur Baugenehmigung","type":"VARCHAR(30)","key":"","required":false,"maps":[]},{"name":"BUILDING_VALUE","def":"BAPI: Bauwert","type":"DECIMAL(23,2)","key":"","required":false,"maps":[]},{"name":"CURRENT_BUILDING_VALUE","def":"BAPI: Aktueller Bauwert","type":"DECIMAL(23,2)","key":"","required":false,"maps":[]},{"name":"AMOUNT_PER_VOLUME","def":"BAPI: Betrag pro Raumeinheit","type":"DECIMAL(23,2)","key":"","required":false,"maps":[]},{"name":"HAS_HIST_SITE_PROTECTION","def":"Denkmalschutz","type":"VARCHAR(1)","key":"","required":false,"maps":[]},{"name":"ASSESSMENT_VALUE","def":"BAPI: Einheitswert des Gebäudes","type":"DECIMAL(23,2)","key":"","required":false,"maps":[]},{"name":"ASSESSMENT_VALUE_YEAR","def":"Basisjahr des Einheitswertes","type":"VARCHAR(4)","key":"","required":false,"maps":[]},{"name":"INSURANCE_VALUE","def":"BAPI: Betrag des Versicherungswertes","type":"DECIMAL(23,2)","key":"","required":false,"maps":[]},{"name":"INSURANCE_VALUE_TYPE","def":"Art des Versicherungswertes","type":"VARCHAR(1)","key":"","required":false,"maps":[]},{"name":"HERITABLE_BLDG_RIGHT_IND","def":"Kennzeichen Erbbaurecht","type":"VARCHAR(1)","key":"","required":false,"maps":[]},{"name":"REPR_LIST_OF_RENTS","def":"Mietspiegel","type":"VARCHAR(6)","key":"","required":false,"maps":[]},{"name":"LOCATION_CLASS","def":"Lageklasse","type":"VARCHAR(6)","key":"","required":false,"maps":[]},{"name":"MAIN_USAGE_TYPE","def":"Überwiegende Nutzungsart","type":"VARCHAR(8)","key":"","required":false,"maps":[]},{"name":"PUBLIC_FUNDING_FROM","def":"Öffentliche Förderung von","type":"DATE","key":"","required":false,"maps":[]},{"name":"PUBLIC_FUNDING_TO","def":"Öffentliche Förderung bis","type":"DATE","key":"","required":false,"maps":[]},{"name":"FLOORS","def":"Anzahl der Geschosse","type":"DECIMAL(4,2)","key":"","required":false,"maps":[{"a":"","b":"Gebäude","c":"Anzahl Geschosse","match":"Exakt"}]},{"name":"BASEMENTS","def":"Anzahl Untergeschosse","type":"DECIMAL(2,2)","key":"","required":false,"maps":[]},{"name":"TOP_FLOOR","def":"Oberstes Geschoss eines Gebäudes","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"ELEVATOR_TO_FLOOR","def":"Lift bis Geschoss im Gebäude","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"MUNICIPALITY_KEY","def":"Gemeindeschlüssel","type":"VARCHAR(8)","key":"","required":false,"maps":[]},{"name":"HAS_CURR_OCC_PRINC","def":"Nutzt das Raumschuldnerprinzip","type":"VARCHAR(1)","key":"","required":false,"maps":[]},{"name":"UNIT_VOLUME","def":"Einheit für Rauminhalt","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"UNIT_VOLUME_ISO","def":"ISO-Code Masseinheit","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"CURRENCY","def":"Währungsschlüssel","type":"VARCHAR(5)","key":"","required":false,"maps":[]},{"name":"CURRENCY_ISO","def":"Iso-Code Währung","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"AUTHORIZATION_GROUP","def":"Berechtigungsgruppe","type":"VARCHAR(40)","key":"","required":false,"maps":[]},{"name":"OBJECT_VALID_FROM","def":"Datum: Objekt gültig ab","type":"DATE","key":"","required":false,"maps":[]},{"name":"OBJECT_VALID_TO","def":"Datum: Objekt gültig bis","type":"DATE","key":"","required":false,"maps":[]},{"name":"REAL_VALID_FROM","def":"Datum: Gültig ab (effektiv)","type":"DATE","key":"","required":false,"maps":[]},{"name":"REAL_VALID_TO","def":"Datum: Gültig bis (effektiv)","type":"DATE","key":"","required":false,"maps":[]},{"name":"RESPONSIBLE","def":"Verantwortlicher","type":"VARCHAR(12)","key":"","required":false,"maps":[]},{"name":"STAT_PROF","def":"Statusschema","type":"VARCHAR(8)","key":"","required":false,"maps":[]},{"name":"MANDATE_OBJECT_ID","def":"Ident-Teil des Mandatsobjekts im Mandatsbukrs","type":"VARCHAR(45)","key":"","required":false,"maps":[]},{"name":"MANDATE_MNG_OBJECT_ID","def":"Ident-Teil des Mandatsobjekts im Verwaltungsbukrs","type":"VARCHAR(45)","key":"","required":false,"maps":[]},{"name":"MANDATE_CR_OBJECT_ID","def":"Ident-Teil des Mandatsobjekts im Sondereigentumsbukrs","type":"VARCHAR(45)","key":"","required":false,"maps":[]},{"name":"USES_REPR_LIST_OF_RENTS","def":"Mietspiegel wird verwendet","type":"VARCHAR(1)","key":"","required":false,"maps":[]},{"name":"FUNCTION","def":"Funktion des Objektes","type":"VARCHAR(4)","key":"","required":false,"maps":[]}],"n":66},{"id":"sap-refx-vibdkd","name":"Konditionen","def":"SAP RE-FX Konditionentabelle. Enthält Nettomiete, Nebenkosten, Indexanpassungen und Kautionen pro Mietvertrag.","group":"SAP RE-FX","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Nicht zertifiziert","schema":"SAP RE-FX Stammdaten","technisch":"VIBDKD","zeilen":42000,"quelle":"https://sap-refx.bbl.admin.ch/sap/bc/gui/sap/its/webgui?~transaction=VIBDKD","stand":"2024-10-15","kids":[{"name":"KDNR","def":"Primärschlüssel der Kondition.","type":"VARCHAR(20)","key":"PK","required":true,"maps":[{"a":"","b":"Kondition","c":"Konditions-Nr","match":"Exakt"}]},{"name":"MVNR","def":"Fremdschlüssel zum Mietvertrag.","type":"VARCHAR(20)","key":"FK","required":true,"maps":[]},{"name":"KDART","def":"Art der Kondition (NM, NK, IDX, KAU, MAB).","type":"VARCHAR(10)","key":"","required":true,"maps":[{"a":"","b":"Kondition","c":"Konditionsart","match":"Exakt"}]},{"name":"BETRAG","def":"Betrag der Kondition in CHF.","type":"DECIMAL(12,2)","key":"","required":true,"maps":[]},{"name":"PERIOD","def":"Zahlungsintervall.","type":"VARCHAR(20)","key":"","required":true,"maps":[]}],"n":5},{"id":"sap-refx-vibdme","name":"Bemessungen","def":"SAP RE-FX Bemessungsdaten zu Immobilienobjekten (MEASUREMENT). Exponiert über ZAPI_X4AI_BAPI_RE_BU_MEAS_EDM.","group":"SAP RE-FX","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Zertifiziert","schema":"SAP RE-FX Stammdaten","technisch":"VIBDME","zeilen":0,"quelle":"","stand":"2026-04-20","kids":[{"name":"OBJECT_TYPE","def":"Business-Objektart des Objekts","type":"VARCHAR(2)","key":"PK","required":true,"maps":[]},{"name":"OBJECT_ID","def":"Ident-Teil des Objekts","type":"VARCHAR(45)","key":"PK","required":true,"maps":[]},{"name":"MEASUREMENT","def":"Bemessungsart","type":"VARCHAR(4)","key":"PK","required":true,"maps":[{"a":"","b":"Bemessung","c":"Berechnungsart","match":"Exakt"}]},{"name":"VALID_FROM","def":"Datum: Bemessung gültig ab","type":"DATE","key":"PK","required":true,"maps":[]},{"name":"VALID_TO","def":"Datum: Bemessung gültig bis","type":"DATE","key":"","required":false,"maps":[]},{"name":"VALUE_AVAIL","def":"Bemessungsgrösse: Verfügbare","type":"DECIMAL(17,3)","key":"","required":false,"maps":[{"a":"","b":"Bemessung","c":"Bezugsfläche (m2)","match":"Teilweise"}]},{"name":"UNIT","def":"Bemessungseinheit","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"UNIT_ISO","def":"ISO-Code Masseinheit","type":"VARCHAR(3)","key":"","required":false,"maps":[]},{"name":"VALUE_COMPL","def":"Bemessungsgrösse: Kapazität","type":"DECIMAL(17,3)","key":"","required":false,"maps":[{"a":"","b":"Bemessung","c":"Bezugsfläche (m2)","match":"Teilweise"}]},{"name":"VALUE_SET_MANUALLY","def":"Kennzeichen: Bemessung ist manuell überschrieben","type":"VARCHAR(1)","key":"","required":false,"maps":[]},{"name":"VALUE_IS_HIERARCHICAL","def":"Kennzeichen: Es existieren hierarchisch unterg. Objekte","type":"VARCHAR(1)","key":"","required":false,"maps":[]},{"name":"TOTAL_MEASUREMENT","def":"Kennzeichen: Summenbemessung","type":"VARCHAR(1)","key":"","required":false,"maps":[]}],"n":12},{"id":"sap-refx-vibdmv","name":"Mietverträge","def":"SAP RE-FX Vertragstabelle für Mietverträge. Enthält Vertragsnummern, Laufzeiten, Mietkonditionen und Geschäftspartner-Referenzen.","group":"SAP RE-FX","steward":"Immobilienmanagement","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Nicht zertifiziert","schema":"SAP RE-FX Stammdaten","technisch":"VIBDMV","zeilen":15600,"quelle":"https://sap-refx.bbl.admin.ch/sap/bc/gui/sap/its/webgui?~transaction=VIBDMV","stand":"2024-10-01","kids":[{"name":"MVNR","def":"Primärschlüssel des Mietvertrags.","type":"VARCHAR(20)","key":"PK","required":true,"maps":[{"a":"","b":"Mietvertrag","c":"Vertrags-Nr","match":"Exakt"}]},{"name":"MIOBJNR","def":"Fremdschlüssel zum Mietobjekt.","type":"VARCHAR(20)","key":"FK","required":true,"maps":[]},{"name":"MVBEG","def":"Beginn des Mietvertrags.","type":"DATE","key":"","required":true,"maps":[{"a":"","b":"Mietvertrag","c":"Beginn","match":"Exakt"}]},{"name":"MVEND","def":"Ende des Mietvertrags (NULL = unbefristet).","type":"DATE","key":"","required":false,"maps":[]},{"name":"NMIETE","def":"Jährliche Nettomiete in CHF.","type":"DECIMAL(12,2)","key":"","required":true,"maps":[]},{"name":"STATUS","def":"Status des Vertrags (aktiv, gekündigt, abgelaufen).","type":"VARCHAR(20)","key":"","required":true,"maps":[]}],"n":6},{"id":"gis-immo-building","name":"Gebäude","def":"GIS-IMMO Feature-Layer 'Gebäude' (Point, Status LIVE).","group":"GIS IMMO","steward":"DRES","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Zertifiziert","schema":"BBL GIS IMMO","technisch":"BUILDING","zeilen":9200,"quelle":"https://gis.bbl.admin.ch/arcgis/rest/services/BUILDING/FeatureServer/0","stand":"2026-04-20","kids":[{"name":"bbl_id","def":"Interne BBL ID (Buchungskreis/WE/Teilobjekt)","type":"VARCHAR(50)","key":"","required":true,"maps":[{"a":"","b":"Gebäude","c":"Gebäude-ID (BBL)","match":"Exakt"}]},{"name":"bbl_buch","def":"Buchungskreis entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[{"a":"","b":"Buchungskreis","c":"Buchungskreis-Nr","match":"Exakt"}]},{"name":"bbl_we","def":"Wirtschaftseinheit, gruppiert Teilobjekte nach kaufmannischer Logik","type":"VARCHAR(50)","key":"FK","required":false,"maps":[{"a":"","b":"Wirtschaftseinheit","c":"WE-Nummer","match":"Exakt"}]},{"name":"bbl_obj","def":"Teilobjekt, pro Wirtschaftseinheit indexiert","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_bez","def":"Objektbezeichnung entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[{"a":"","b":"Gebäude","c":"Bezeichnung","match":"Exakt"}]},{"name":"bbl_stat","def":"Status entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_land","def":"Land","type":"VARCHAR(2)","key":"","required":false,"maps":[]},{"name":"adr_reg","def":"Region oder Kanton","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_ort","def":"Ort","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_plz","def":"Postleitzahl","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_str","def":"Strasse","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_hsnr","def":"Hausnummer","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_conct","def":"Verkettet aus Adressfeldern, ohne Trennzeichen","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"wgs84_lat","def":"Breitengrad WGS84","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"wgs84_lon","def":"Langengrad WGS84","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"lv95_e","def":"LV95 Ost, aus WGS84 hergeleitet","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"lv95_n","def":"LV95 Nord, aus WGS84 hergeleitet","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"egm_elev","def":"Absolute Hohe in Meter (EGM2008)","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"bbl_eigen","def":"Eigentum Art entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_ostr","def":"Objektstrategie entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_mietm","def":"Mietmodell entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_bjahr","def":"Baujahr","type":"INTEGER","key":"","required":false,"maps":[{"a":"","b":"Gebäude","c":"Baujahr","match":"Exakt"}]},{"name":"bbl_vjahr","def":"Verkaufsjahr (leer wenn nicht verkauft)","type":"INTEGER","key":"","required":false,"maps":[]},{"name":"bbl_port","def":"Teilportfolio entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_port2","def":"Teilportfoliogruppe entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_awrt","def":"Anschaffungswert in CHF","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"bbl_bwrt","def":"Buchwert des Gebäudeanlageguts in CHF","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"bbl_gbda1","def":"Gebäudeart Stufe 1","type":"VARCHAR(50)","key":"","required":false,"maps":[{"a":"","b":"Gebäude","c":"Gebäudekategorie","match":"Nahe"}]},{"name":"bbl_gbda2","def":"Gebäudeart Stufe 2","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_ovtw","def":"Objektverantwortliche Person","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_pvtw","def":"Portfoliomanager entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_rgrp","def":"Reinigungsgruppe","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"garea_rff","def":"Fensterflache fur Reinigung in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_rgf","def":"Glasflache fur Reinigung in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"av_egid","def":"Eidg. Gebäudeidentifikator (nur CH)","type":"VARCHAR(50)","key":"FK","required":false,"maps":[{"a":"","b":"Gebäude","c":"EGID","match":"Exakt"}]},{"name":"av_egrid","def":"Eidg. Grundstuckidentifikator (nur CH)","type":"VARCHAR(14)","key":"FK","required":false,"maps":[{"a":"","b":"Grundstück","c":"EGRID","match":"Teilweise"}]},{"name":"bfs_gem","def":"BFS Gemeindename","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bfs_gemnr","def":"BFS Gemeindenummer","type":"VARCHAR(50)","key":"FK","required":false,"maps":[]},{"name":"av_zbez","def":"Bauzonenbezeichnung (ARE / Kantone)","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"av_znut","def":"Bauzonennutzung","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"av_nrisk","def":"Naturgefahren-Klassifikation","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_hist","def":"Historische Ausstattung","type":"VARCHAR(20)","key":"","required":false,"maps":[]},{"name":"bbl_arch","def":"Archivwurdigkeit","type":"VARCHAR(20)","key":"","required":false,"maps":[]},{"name":"kgs_kat","def":"KGS-Inventar Kategorie","type":"VARCHAR(20)","key":"","required":false,"maps":[]},{"name":"kgs_nr","def":"KGS-Inventar ID","type":"INTEGER","key":"FK","required":false,"maps":[]},{"name":"objectid","def":"ESRI ID fur GIS-Updates","type":"INTEGER","key":"PK","required":true,"maps":[]},{"name":"bbl_api","def":"Aktuelle Anzahl Arbeitsplatze","type":"INTEGER","key":"","required":false,"maps":[]},{"name":"bbl_apr","def":"Anzahl Reserve-Arbeitsplatze","type":"INTEGER","key":"","required":false,"maps":[]},{"name":"bbl_aps","def":"Soll-Anzahl Arbeitsplatze","type":"INTEGER","key":"","required":false,"maps":[]},{"name":"garea_gf","def":"Geschossflache GF Total in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_gfo","def":"GF Oberirdisch in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_gfu","def":"GF Unterirdisch in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_acu","def":"Genauigkeit und Datenherkunft","type":"VARCHAR(20)","key":"","required":false,"maps":[]},{"name":"garea_ngf","def":"Netto-Geschossflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_nf","def":"Nutzflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_hnf","def":"Hauptnutzflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_nnf","def":"Nebennutzflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_ff","def":"Funktionsflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_vf","def":"Verkehrsflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_vmf","def":"Vermietbare Flache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_ebf","def":"Energiebezugsflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"gvol_gv","def":"Gebäudevolumen GV in m3","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"gvol_gvo","def":"GV Oberirdisch in m3","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"gvol_gvu","def":"GV Unterirdisch in m3","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"gvol_acu","def":"Genauigkeit und Datenherkunft","type":"VARCHAR(20)","key":"","required":false,"maps":[]},{"name":"gastw","def":"Anzahl Geschosse Total","type":"INTEGER","key":"","required":false,"maps":[{"a":"","b":"Gebäude","c":"Anzahl Geschosse","match":"Exakt"}]},{"name":"gastw_og","def":"Geschosse Oberirdisch","type":"INTEGER","key":"","required":false,"maps":[]},{"name":"gastw_ug","def":"Geschosse Unterirdisch","type":"INTEGER","key":"","required":false,"maps":[]},{"name":"gastw_acu","def":"Genauigkeit und Datenherkunft","type":"VARCHAR(20)","key":"","required":false,"maps":[]},{"name":"larea_ggf","def":"Gebäudegrundflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"larea_gsf","def":"Grundstucksflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"larea_uf","def":"Umgebungsflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"larea_acu","def":"Genauigkeit und Datenherkunft","type":"VARCHAR(20)","key":"","required":false,"maps":[]},{"name":"etl_ts","def":"Zeitstempel der letzten ETL-Synchronisation","type":"TIMESTAMP","key":"","required":false,"maps":[]},{"name":"img_url","def":"Liste von Bild-URLs für Karussell und Galerie (App-spezifisch)","type":"TEXT","key":"","required":false,"maps":[]}],"n":75},{"id":"gis-immo-building-envelope","name":"Gebäudehülle","def":"GIS-IMMO Feature-Layer 'Gebäudehülle' (Polygon, Status DEV).","group":"GIS IMMO","steward":"DRES","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Nicht zertifiziert","schema":"BBL GIS IMMO","technisch":"BUILDING_ENVELOPE","zeilen":125000,"quelle":"https://actanova.bbl.admin.ch/objects/DOC_BUILDING","stand":"2026-04-20","kids":[{"name":"bbl_id","def":"Interne BBL ID; Semikolon-getrennt bei Mehrfachzuordnung","type":"VARCHAR(50)","key":"FK","required":false,"maps":[]},{"name":"av_stat","def":"Status Amtliche Vermessung","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"av_egid","def":"Eidg. Gebäudeidentifikator (nur CH)","type":"VARCHAR(50)","key":"FK","required":false,"maps":[]},{"name":"av_egrid","def":"Eidg. Grundstuckidentifikator (nur CH)","type":"VARCHAR(14)","key":"FK","required":false,"maps":[]},{"name":"adr_land","def":"Land","type":"VARCHAR(2)","key":"","required":false,"maps":[]},{"name":"adr_reg","def":"Region oder Kanton","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_ort","def":"Ort","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_plz","def":"Postleitzahl","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_str","def":"Strasse","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_hsnr","def":"Hausnummer","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_conct","def":"Adresse verkettet","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"wgs84_lat","def":"Breitengrad WGS84","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"wgs84_lon","def":"Langengrad WGS84","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"lv95_e","def":"LV95 Ost, aus WGS84 hergeleitet","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"lv95_n","def":"LV95 Nord, aus WGS84 hergeleitet","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"egm_elev","def":"Absolute Hohe in Meter (EGM2008)","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_gf","def":"Geschossflache GF Total in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_acu","def":"Genauigkeit und Datenherkunft","type":"VARCHAR(20)","key":"","required":false,"maps":[]},{"name":"garea_ebf","def":"Energiebezugsflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"gvol_gv","def":"Gebäudevolumen GV in m3","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"gvol_acu","def":"Genauigkeit und Datenherkunft","type":"VARCHAR(20)","key":"","required":false,"maps":[]},{"name":"gastw","def":"Anzahl Geschosse Total","type":"INTEGER","key":"","required":false,"maps":[]},{"name":"gastw_acu","def":"Genauigkeit und Datenherkunft","type":"VARCHAR(20)","key":"","required":false,"maps":[]},{"name":"larea_ggf","def":"Gebäudegrundflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"larea_gsf","def":"Grundstucksflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"larea_uf","def":"Umgebungsflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"larea_acu","def":"Genauigkeit und Datenherkunft","type":"VARCHAR(20)","key":"","required":false,"maps":[]},{"name":"garea_daf","def":"Dachflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"garea_awf","def":"Aussenwandflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"fid","def":"Architektur-Objekt-ID","type":"VARCHAR(50)","key":"FK","required":false,"maps":[]},{"name":"fid_src","def":"Quelle der Geometrie","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"objectid","def":"ESRI ID fur GIS-Updates","type":"INTEGER","key":"PK","required":true,"maps":[]},{"name":"etl_ts","def":"Zeitstempel der letzten ETL-Synchronisation","type":"TIMESTAMP","key":"","required":false,"maps":[]}],"n":33},{"id":"gis-immo-construction-project","name":"Bauprojekt","def":"GIS-IMMO Feature-Layer 'Bauprojekt' (Point, Status DEV).","group":"GIS IMMO","steward":"DRES","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Nicht zertifiziert","schema":"BBL GIS IMMO","technisch":"CONSTRUCTION_PROJECT","zeilen":0,"quelle":"","stand":"2026-04-20","kids":[{"name":"bbl_stat","def":"Status entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_id","def":"Interne BBL ID","type":"VARCHAR(50)","key":"PK","required":true,"maps":[]},{"name":"bbl_bez","def":"Objektbezeichnung","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_buch","def":"Buchungskreis","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_we","def":"Wirtschaftseinheit","type":"VARCHAR(50)","key":"FK","required":false,"maps":[]},{"name":"adr_land","def":"Land","type":"VARCHAR(2)","key":"","required":false,"maps":[]},{"name":"adr_reg","def":"Region oder Kanton","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_ort","def":"Ort","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_plz","def":"Postleitzahl","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_str","def":"Strasse","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_hsnr","def":"Hausnummer","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_conct","def":"Adresse verkettet","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"wgs84_lat","def":"Breitengrad WGS84","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"wgs84_lon","def":"Langengrad WGS84","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"lv95_e","def":"LV95 Ost, aus WGS84 hergeleitet","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"lv95_n","def":"LV95 Nord, aus WGS84 hergeleitet","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"egm_elev","def":"Absolute Hohe in Meter (EGM2008)","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"bbl_ptag","def":"Typ des Auftraggebers","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_partb","def":"Art der Bauwerke","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_ptypb","def":"Typ der Bauwerke","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_part","def":"Projektart (Neubau, Sanierung, etc.)","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_pkost","def":"Gesamtkosten in CHF","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"bbl_pdtin","def":"Datum der Baueingabe","type":"TIMESTAMP","key":"","required":false,"maps":[]},{"name":"bbl_pdtok","def":"Datum der Baubewilligung","type":"TIMESTAMP","key":"","required":false,"maps":[]},{"name":"bbl_pdtbb","def":"Datum des Baubeginns","type":"TIMESTAMP","key":"","required":false,"maps":[]},{"name":"bbl_pdtbe","def":"Geplantes oder tatsachliches Bauende","type":"TIMESTAMP","key":"","required":false,"maps":[]},{"name":"bbl_pvbd","def":"Voraussichtliche Baudauer","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_ptxt1","def":"Freitextfeld fur Projektangaben","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_ptxt2","def":"Freitextfeld fur Projektangaben","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"etl_ts","def":"Zeitstempel der letzten ETL-Synchronisation","type":"TIMESTAMP","key":"","required":false,"maps":[]}],"n":30},{"id":"gis-immo-land-cover","name":"Bodenbedeckung","def":"GIS-IMMO Feature-Layer 'Bodenbedeckung' (Polygon, Status LIVE).","group":"GIS IMMO","steward":"DRES","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Zertifiziert","schema":"BBL GIS IMMO","technisch":"LAND_COVER","zeilen":12600,"quelle":"https://gis.bbl.admin.ch/arcgis/rest/services/ENERGY_METER/FeatureServer/0","stand":"2026-04-20","kids":[{"name":"bbl_id","def":"Grundstück-ID (FK zu Parcel bbl_id)","type":"VARCHAR(50)","key":"FK","required":false,"maps":[]},{"name":"geb_id","def":"Gebäude-ID (FK zu Building bbl_id); nur für av_type=Gebäude","type":"VARCHAR(100)","key":"FK","required":false,"maps":[]},{"name":"av_type","def":"Bodenbedeckungstyp","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"lc_area","def":"Fläche der Bodenbedeckung in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"av_stat","def":"Status entsprechend GWR (nur CH)","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"av_egid","def":"Eidg. Gebäudeidentifikator (nur CH); nur für Typ Gebäude","type":"VARCHAR(50)","key":"FK","required":false,"maps":[{"a":"","b":"Gebäude","c":"EGID","match":"Exakt"}]},{"name":"av_egrid","def":"Eidg. Grundstuckidentifikator (nur CH)","type":"VARCHAR(14)","key":"FK","required":false,"maps":[{"a":"","b":"Grundstück","c":"EGRID","match":"Exakt"}]},{"name":"wgs84_lat","def":"Breitengrad WGS84","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"wgs84_lon","def":"Langengrad WGS84","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"lv95_e","def":"LV95 Ost, aus WGS84 hergeleitet","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"lv95_n","def":"LV95 Nord, aus WGS84 hergeleitet","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"fid","def":"Architektur-Objekt-ID fur externe Geometrie","type":"VARCHAR(50)","key":"FK","required":false,"maps":[]},{"name":"fid_src","def":"Quelle der Geometrie","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"objectid","def":"ESRI ID fur GIS-Updates","type":"INTEGER","key":"PK","required":true,"maps":[]},{"name":"etl_ts","def":"Zeitstempel der letzten ETL-Synchronisation","type":"TIMESTAMP","key":"","required":false,"maps":[]}],"n":15},{"id":"gis-immo-parcel","name":"Grundstück","def":"GIS-IMMO Feature-Layer 'Grundstück' (Polygon, Status LIVE).","group":"GIS IMMO","steward":"DRES","persons":[{"role":"Dateneigner","id":"p-1YFBMPWKZ"},{"role":"Datenverwalter","id":"p-2560681"}],"status":"Zertifiziert","schema":"BBL GIS IMMO","technisch":"PARCEL","zeilen":3400,"quelle":"https://gis.bbl.admin.ch/arcgis/rest/services/PARCEL/FeatureServer/0","stand":"2026-04-20","kids":[{"name":"bbl_id","def":"Interne BBL ID (Buchungskreis/WE/Teilobjekt)","type":"VARCHAR(50)","key":"","required":true,"maps":[]},{"name":"bbl_buch","def":"Buchungskreis entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_we","def":"Wirtschaftseinheit","type":"VARCHAR(50)","key":"FK","required":false,"maps":[]},{"name":"bbl_obj","def":"Teilobjekt","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_bez","def":"Objektbezeichnung","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_stat","def":"Status entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_port","def":"Teilportfolio-Zuordnung","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_mietm","def":"Mietmodell entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bbl_eigen","def":"Eigentum Art entsprechend SAP","type":"VARCHAR(50)","key":"","required":false,"maps":[{"a":"","b":"Grundstück","c":"Eigentumsart","match":"Exakt"}]},{"name":"adr_land","def":"Land","type":"VARCHAR(2)","key":"","required":false,"maps":[]},{"name":"adr_reg","def":"Region oder Kanton","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_ort","def":"Ort","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_plz","def":"Postleitzahl","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_str","def":"Strasse","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_hsnr","def":"Hausnummer","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"adr_conct","def":"Adresse verkettet, ohne Trennzeichen","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"wgs84_lat","def":"Breitengrad WGS84 (Punkt im Polygon)","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"wgs84_lon","def":"Langengrad WGS84 (Punkt im Polygon)","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"lv95_e","def":"LV95 Ost, aus WGS84 hergeleitet","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"lv95_n","def":"LV95 Nord, aus WGS84 hergeleitet","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"egm_elev","def":"Absolute Hohe in Meter (EGM2008)","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"av_stat","def":"Status Amtliche Vermessung","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"av_egrid","def":"Eidg. Grundstuckidentifikator (nur CH)","type":"VARCHAR(14)","key":"FK","required":false,"maps":[{"a":"","b":"Grundstück","c":"EGRID","match":"Exakt"}]},{"name":"bbl_awrt","def":"Anschaffungswert in CHF","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"bbl_bwrt","def":"Kumulierte Baumassnahmen am Grundstuck in CHF","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"bbl_hgart","def":"Kennzeichnung als historischer Garten","type":"BOOLEAN","key":"","required":false,"maps":[]},{"name":"larea_ggf","def":"Summe Gebäudegrundflache pro Grundstuck in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"larea_gsf","def":"Grundstucksflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[{"a":"","b":"Grundstück","c":"Fläche (m2)","match":"Exakt"}]},{"name":"larea_uf","def":"Umgebungsflache pro Grundstuck in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"larea_buf","def":"Bearbeitete Umgebungsflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"larea_uuf","def":"Unbearbeitete Umgebungsflache in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"larea_acu","def":"Genauigkeit und Datenherkunft","type":"VARCHAR(20)","key":"","required":false,"maps":[]},{"name":"larea_ver","def":"Versiegelte Flache pro Grundstuck in m2","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"larea_gre","def":"Grunflachen, Grundlage fur Auswertung","type":"DECIMAL(18,3)","key":"","required":false,"maps":[]},{"name":"bfs_gem","def":"BFS Gemeindename","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"bfs_gemnr","def":"BFS Gemeindenummer","type":"VARCHAR(50)","key":"FK","required":false,"maps":[{"a":"","b":"Grundstück","c":"Gemeinde-BFS-Nr","match":"Exakt"}]},{"name":"av_nr","def":"Grundstucksnummer pro Gemeinde","type":"VARCHAR(50)","key":"","required":false,"maps":[{"a":"","b":"Grundstück","c":"Grundbuch-Nr","match":"Exakt"}]},{"name":"av_zbez","def":"Bauzonenbezeichnung","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"av_znut","def":"Bauzonennutzung","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"av_nrisk","def":"Naturgefahren-Klassifikation","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"fid","def":"Architektur-Objekt-ID fur externe Geometrie","type":"VARCHAR(50)","key":"FK","required":false,"maps":[]},{"name":"fid_src","def":"Quelle der Geometrie","type":"VARCHAR(50)","key":"","required":false,"maps":[]},{"name":"objectid","def":"ESRI ID fur GIS-Updates","type":"INTEGER","key":"PK","required":true,"maps":[]},{"name":"etl_ts","def":"Zeitstempel der letzten ETL-Synchronisation","type":"TIMESTAMP","key":"","required":false,"maps":[]}],"n":44}],"cols":[["name","Name"],["group","System"],["schema","Schema"],["def","Beschreibung"],["n","Felder"],["status","Zertifizierung"]],"group":[["group","System"],["status","Zertifizierung"],["schema","Schema"]],"kidCols":[["name","Feld"],["def","Beschreibung"],["type","Datentyp"],["key","Schlüssel"],["maps","Trägt Attribut"]]},{"key":"referenz","label":"Referenzdaten","icon":"list","unit":"Wertelisten","kidUnit":"Werte","l2Unit":"Themen","axisLabel":"Thema","lead":"Kontrollierte Wertelisten, auf die Attribute und Formulare verweisen.","rows":[{"id":"objectStatuses","name":"Objekt-Status","group":"Katalog und Metadaten","def":"Kontrollierte Werteliste; 4 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → objectStatuses","stand":"","kids":[{"name":"Entwurf","def":"Erfasst, noch nie freigegeben","type":"DRAFT","key":"","required":false,"maps":[]},{"name":"Gültig","def":"Freigegeben und aktiv bewirtschaftet","type":"VALID","key":"","required":false,"maps":[]},{"name":"Abgelöst","def":"Durch Nachfolgedatensatz ersetzt","type":"SUPERSEDED","key":"","required":false,"maps":[]},{"name":"Archiviert","def":"Keine Bewirtschaftung mehr, nur Aufbewahrung","type":"ARCHIVED","key":"","required":false,"maps":[]}],"n":4},{"id":"classificationTiers","name":"Klassifizierung","group":"Katalog und Metadaten","def":"Kontrollierte Werteliste; 3 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → classificationTiers","stand":"","kids":[{"name":"INTERN","def":"","type":"INTERN","key":"","required":false,"maps":[]},{"name":"VERTRAULICH","def":"","type":"VERTRAULICH","key":"","required":false,"maps":[]},{"name":"GEHEIM","def":"","type":"GEHEIM","key":"","required":false,"maps":[]}],"n":3},{"id":"mappingMatches","name":"Abbildungsgüte","group":"Katalog und Metadaten","def":"Kontrollierte Werteliste; 3 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → mappingMatches","stand":"","kids":[{"name":"Exakt","def":"","type":"exact","key":"","required":false,"maps":[]},{"name":"Nahe","def":"","type":"close","key":"","required":false,"maps":[]},{"name":"Teilweise","def":"","type":"partial","key":"","required":false,"maps":[]}],"n":3},{"id":"dataDomains","name":"Datendomänen","group":"Katalog und Metadaten","def":"Kontrollierte Werteliste; 5 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → dataDomains","stand":"","kids":[{"name":"Bauwerk und Liegenschaft","def":"","type":"bauwerk","key":"","required":false,"maps":[]},{"name":"Mietverhältnisse","def":"","type":"miete","key":"","required":false,"maps":[]},{"name":"Energie","def":"","type":"energie","key":"","required":false,"maps":[]},{"name":"Geschäftspartner","def":"","type":"partner","key":"","required":false,"maps":[]},{"name":"Finanzen","def":"","type":"finanzen","key":"","required":false,"maps":[]}],"n":5},{"id":"sourceRoles","name":"Quellen-Rollen","group":"Katalog und Metadaten","def":"Kontrollierte Werteliste; 3 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → sourceRoles","stand":"","kids":[{"name":"Architektur-Repository","def":"Führendes Modell für Prozesse und Geschäftsobjekte. Modellierung in Innovator, webbasierte Publikation über smartfacts — beide vorgegeben durch die IKT-Vorgabe A736.","type":"architektur-repository","key":"","required":false,"maps":[]},{"name":"Quellsystem","def":"Führendes System für die physische Realisierung: Tabellen, Felder und die darin geführten Werte.","type":"quellsystem","key":"","required":false,"maps":[]},{"name":"Kundenportal","def":"Im Portal selbst bewirtschaftet — heute der Datensatzkatalog nach DCAT-AP-CH.","type":"portal","key":"","required":false,"maps":[]}],"n":3},{"id":"gebaeudearten","name":"Gebäudearten","group":"Bauwerk und Liegenschaft","def":"Kontrollierte Werteliste; 4 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → gebaeudearten","stand":"","kids":[{"name":"Verwaltung","def":"","type":"Verwaltung","key":"","required":false,"maps":[]},{"name":"Industrie und Gewerbe","def":"","type":"Industrie und Gewerbe","key":"","required":false,"maps":[]},{"name":"Bildung und Forschung","def":"","type":"Bildung und Forschung","key":"","required":false,"maps":[]},{"name":"Wohnen","def":"","type":"Wohnen","key":"","required":false,"maps":[]}],"n":4},{"id":"buildingStatuses","name":"Gebäude-Status","group":"Bauwerk und Liegenschaft","def":"Kontrollierte Werteliste; 3 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → buildingStatuses","stand":"","kids":[{"name":"Aktiv","def":"","type":"Aktiv","key":"","required":false,"maps":[]},{"name":"Abgang","def":"","type":"Abgang","key":"","required":false,"maps":[]},{"name":"Löschvermerk","def":"","type":"Löschvermerk","key":"","required":false,"maps":[]}],"n":3},{"id":"teilportfolios","name":"Teilportfolios","group":"Bauwerk und Liegenschaft","def":"Kontrollierte Werteliste; 6 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → teilportfolios","stand":"","kids":[{"name":"Verwaltungsgebäude","def":"","type":"Verwaltungsgebäude","key":"","required":false,"maps":[]},{"name":"Diplomatische Vertretung","def":"","type":"Diplomatische Vertretung","key":"","required":false,"maps":[]},{"name":"Lager / Logistik","def":"","type":"Lager / Logistik","key":"","required":false,"maps":[]},{"name":"Ausbildung","def":"","type":"Ausbildung","key":"","required":false,"maps":[]},{"name":"Wohnliegenschaft","def":"","type":"Wohnliegenschaft","key":"","required":false,"maps":[]},{"name":"Infrastruktur IT","def":"","type":"Infrastruktur IT","key":"","required":false,"maps":[]}],"n":6},{"id":"nawClasses","name":"NAW-Klassen","group":"Bauwerk und Liegenschaft","def":"Kontrollierte Werteliste; 6 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → nawClasses","stand":"","kids":[{"name":"NAW 1 — Einzelarbeit / Konzentration","def":"","type":"naw1","key":"","required":false,"maps":[]},{"name":"NAW 2 — Standard Multispace","def":"","type":"naw2","key":"","required":false,"maps":[]},{"name":"NAW 3 — Kollaboration","def":"","type":"naw3","key":"","required":false,"maps":[]},{"name":"NAW 4 — Empfang / Publikum","def":"","type":"naw4","key":"","required":false,"maps":[]},{"name":"NAW 5 — Speziallabor / Technik","def":"","type":"naw5","key":"","required":false,"maps":[]},{"name":"NAW 6 — Lager / Archiv","def":"","type":"naw6","key":"","required":false,"maps":[]}],"n":6},{"id":"siaPhases","name":"SIA-Phasen","group":"Projekte und Bau","def":"Kontrollierte Werteliste; 8 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → siaPhases","stand":"","kids":[{"name":"Strategische Planung","def":"","type":"11","key":"","required":false,"maps":[]},{"name":"Vorstudien","def":"","type":"21","key":"","required":false,"maps":[]},{"name":"Vorprojekt","def":"","type":"31","key":"","required":false,"maps":[]},{"name":"Bauprojekt","def":"","type":"32","key":"","required":false,"maps":[]},{"name":"Ausschreibung","def":"","type":"33","key":"","required":false,"maps":[]},{"name":"Ausführung","def":"","type":"41","key":"","required":false,"maps":[]},{"name":"Inbetriebnahme","def":"","type":"51","key":"","required":false,"maps":[]},{"name":"Betrieb","def":"","type":"61","key":"","required":false,"maps":[]}],"n":8},{"id":"bkpGroups","name":"BKP-Gruppen","group":"Projekte und Bau","def":"Kontrollierte Werteliste; 7 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → bkpGroups","stand":"","kids":[{"name":"Grundstück","def":"","type":"0","key":"","required":false,"maps":[]},{"name":"Vorbereitungsarbeiten","def":"","type":"1","key":"","required":false,"maps":[]},{"name":"Gebäude","def":"","type":"2","key":"","required":false,"maps":[]},{"name":"Betriebseinrichtungen","def":"","type":"3","key":"","required":false,"maps":[]},{"name":"Umgebung","def":"","type":"4","key":"","required":false,"maps":[]},{"name":"Baunebenkosten","def":"","type":"5","key":"","required":false,"maps":[]},{"name":"Ausstattung","def":"","type":"9","key":"","required":false,"maps":[]}],"n":7},{"id":"projectStatuses","name":"Projekt-Status","group":"Projekte und Bau","def":"Kontrollierte Werteliste; 5 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → projectStatuses","stand":"","kids":[{"name":"Geplant","def":"","type":"geplant","key":"","required":false,"maps":[]},{"name":"Aktiv","def":"","type":"aktiv","key":"","required":false,"maps":[]},{"name":"Sistiert","def":"","type":"sistiert","key":"","required":false,"maps":[]},{"name":"Abgeschlossen","def":"","type":"abgeschlossen","key":"","required":false,"maps":[]},{"name":"Abgebrochen","def":"","type":"abgebrochen","key":"","required":false,"maps":[]}],"n":5},{"id":"domains","name":"Service-Domänen","group":"Services und Portal","def":"Kontrollierte Werteliste; 10 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → domains","stand":"","kids":[{"name":"Bauprojekte und Projektportfolio","def":"","type":"A","key":"","required":false,"maps":[]},{"name":"Stammdaten & Mutationen","def":"","type":"B","key":"","required":false,"maps":[]},{"name":"Unterbringung","def":"","type":"U","key":"","required":false,"maps":[]},{"name":"Objektbetrieb","def":"","type":"O","key":"","required":false,"maps":[]},{"name":"Sicherheit & Notfall","def":"","type":"G","key":"","required":false,"maps":[]},{"name":"Büroausrüstung & Arbeitsplatz","def":"","type":"C","key":"","required":false,"maps":[]},{"name":"Informatik & Arbeitsgeräte","def":"","type":"D","key":"","required":false,"maps":[]},{"name":"Beschaffung","def":"","type":"E","key":"","required":false,"maps":[]},{"name":"Publizieren, Drucken & Versenden","def":"","type":"F","key":"","required":false,"maps":[]},{"name":"Personal & Arbeiten beim BBL","def":"","type":"H","key":"","required":false,"maps":[]}],"n":10},{"id":"audiences","name":"Zielgruppen","group":"Services und Portal","def":"Kontrollierte Werteliste; 2 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → audiences","stand":"","kids":[{"name":"Mitarbeiter","def":"","type":"staff","key":"","required":false,"maps":[]},{"name":"Kunden","def":"","type":"customers","key":"","required":false,"maps":[]}],"n":2},{"id":"statusModel","name":"Status-Modell","group":"Services und Portal","def":"Kontrollierte Werteliste; 14 Werte.","steward":"noch nicht erfasst","persons":[],"status":"noch nicht erfasst","freigabe":"noch nicht erfasst","quelle":"","technisch":"reference-data.json → statusModel","stand":"","kids":[{"name":"Entwurf","def":"","type":"entwurf","key":"","required":false,"maps":[]},{"name":"Eingereicht","def":"","type":"eingereicht","key":"","required":false,"maps":[]},{"name":"In Prüfung (GS)","def":"","type":"in_pruefung_gs","key":"","required":false,"maps":[]},{"name":"In Prüfung (PFM)","def":"","type":"in_pruefung_pfm","key":"","required":false,"maps":[]},{"name":"Rückfrage","def":"","type":"rueckfrage","key":"","required":false,"maps":[]},{"name":"Genehmigt","def":"","type":"genehmigt","key":"","required":false,"maps":[]},{"name":"In Projekt überführt","def":"","type":"in_projekt","key":"","required":false,"maps":[]},{"name":"Triage","def":"","type":"triage","key":"","required":false,"maps":[]},{"name":"In Arbeit","def":"","type":"in_arbeit","key":"","required":false,"maps":[]},{"name":"In Bearbeitung","def":"","type":"in_bearbeitung","key":"","required":false,"maps":[]},{"name":"Geliefert","def":"","type":"geliefert","key":"","required":false,"maps":[]},{"name":"Erledigt","def":"","type":"erledigt","key":"","required":false,"maps":[]},{"name":"Abgeschlossen","def":"","type":"abgeschlossen","key":"","required":false,"maps":[]},{"name":"Abgelehnt","def":"","type":"abgelehnt","key":"","required":false,"maps":[]}],"n":14}],"cols":[["name","Name"],["group","Thema"],["steward","Verantwortung"],["def","Beschreibung"],["n","Werte"],["status","Status"]],"group":[["group","Thema"]],"kidCols":[["type","Schlüssel"],["name","Bezeichnung"],["def","Definition"]]}];
+const ICONS = {"box":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 2.8 20.5 7v10L12 21.2 3.5 17V7z\"/><path d=\"M3.5 7 12 11.4 20.5 7M12 11.4V21\"/></svg>","database":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><ellipse cx=\"12\" cy=\"5.5\" rx=\"8\" ry=\"3\"/><path d=\"M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13\"/><path d=\"M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3\"/></svg>","list":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01\"/></svg>","chev":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg>","search":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m20 20-3.5-3.5\"/></svg>","filter":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 5h18l-7 8v6l-4 2v-8z\"/></svg>","link":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M10 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 1 0-5.7-5.7L11.5 6.3\"/><path d=\"M14 10.5a4 4 0 0 0-5.7 0l-2.8 2.8a4 4 0 1 0 5.7 5.7l1.3-1.3\"/></svg>","branch":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"6\" cy=\"5\" r=\"2.5\"/><circle cx=\"6\" cy=\"19\" r=\"2.5\"/><circle cx=\"18\" cy=\"12\" r=\"2.5\"/><path d=\"M6 7.5v9M8.5 5H13a2.5 2.5 0 0 1 2.5 2.5V10M8.5 19H13a2.5 2.5 0 0 0 2.5-2.5V14\"/></svg>","info":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 11v5M12 8h.01\"/></svg>","download":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3v11\"/><path d=\"m8 10.5 4 4 4-4\"/><path d=\"M4 16v3.5h16V16\"/></svg>"};
+const B = Object.fromEntries(BRANCHES.map(b => [b.key, b]));
+
+// ---- Level 0: the catalogue itself ----------------------------------------
+// Home is not a special page bolted beside the model — it is one level ABOVE
+// the branches, and it takes the same three tabs. Übersicht is the landing
+// screen; Diagramm and Tabelle simply span all three branches at once, which
+// is the one thing no single branch can show.
+const ROOT_ROWS = BRANCHES.flatMap(b => b.rows.map(r =>
+  Object.assign({}, r, { kindKey: b.key, kindLabel: b.label })));
+const ROOT = {
+  key: '', label: 'Katalog', icon: 'branch', unit: 'Einträge', kidUnit: 'Bestandteile',
+  l2Unit: 'Äste', axisLabel: 'Typ',
+  lead: 'Alle drei Äste zusammen: die Fachbegriffe, ihre Realisierung in den Systemen und die Wertelisten.',
+  rows: ROOT_ROWS,
+  cols: [['name', 'Name'], ['kindLabel', 'Typ'], ['group', 'Gruppe'],
+    ['def', 'Beschreibung'], ['n', 'Bestandteile'], ['status', 'Status']],
+  group: [['kindLabel', 'Typ'], ['group', 'Gruppe'], ['status', 'Status']],
+  kidCols: [],
+};
+B[''] = ROOT;
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const el = (id) => document.getElementById(id);
+
+const TABS = [['uebersicht', 'Übersicht'], ['diagramm', 'Diagramm'], ['tabelle', 'Tabelle']];
+// Not every level offers every tab (Nutzerentscheid, 2026-08-13). A record has
+// no diagram — its relationships are already a column in its table — and an
+// attribute has nothing below it at all, so it is Übersicht and nothing else.
+// Level 0 has NO tabs (Nutzerentscheid, 2026-08-13). It is a landing page, not
+// a scope: nobody arrives at «Katalog» wanting a table of all 44 entries, they
+// arrive wanting to know where to go. Every other level is a scope and keeps
+// the grid.
+const TABS_AT = (lvl) => lvl === 0 ? [] : lvl >= 4 ? ['uebersicht']
+  : lvl === 3 ? ['uebersicht', 'tabelle'] : ['uebersicht', 'diagramm', 'tabelle'];
+const level = () => state.attr ? 4 : state.item ? 3 : state.leaf ? 2 : state.kind ? 1 : 0;
+
+// Each level opens on the tab that answers its own question (Nutzerentscheid,
+// 2026-08-13): a branch on what it is, a Domäne or System on how it clusters,
+// a record on what it contains, an attribute on what it means.
+const DEFAULT_TAB = { 1: 'uebersicht', 2: 'diagramm', 3: 'tabelle', 4: 'uebersicht' };
+
+// A default is only what happens BEFORE the reader says otherwise. Once a tab
+// is picked it is carried across every move in the tree — otherwise the tab
+// would silently change under the reader, which is exactly what this model
+// promises it will not do. The pick outranks the default; the default only
+// fills the gap, and a pick that this level cannot show falls back to it.
+const effTab = () => {
+  const av = TABS_AT(level());
+  if (state.tabPick && av.includes(state.tabPick)) return state.tabPick;
+  const d = DEFAULT_TAB[level()];
+  return av.includes(d) ? d : (av[0] || 'uebersicht');
+};
+
+// Scope and presentation are separate fields, and both are in the URL. That is
+// what makes «the tab survives a tree click» true by construction rather than
+// by remembering to preserve it at every call site.
+const state = { kind: '', leaf: '', item: '', attr: '', tabPick: '', fopen: false, exp: false,
+  group: 'group', sort: '', dir: 1, q: '', filters: {}, shut: {} };
+
+function readUrl(){
+  const p = new URLSearchParams(location.hash.replace(/^#\/?/, ''));
+  // Reset to the default when the parameter is ABSENT — never keep the previous
+  // value. Leaving it made the hash order-dependent: the same link resolved
+  // against whichever branch happened to be open, which is the one thing
+  // URL-as-state exists to prevent.
+  state.kind = B[p.get('kind')] ? p.get('kind') : '';
+  state.leaf = p.get('leaf') || '';
+  state.item = state.leaf ? (p.get('item') || '') : '';
+  state.attr = state.item ? (p.get('attr') || '') : '';
+  // Present in the URL means «the reader chose this»; absent means «use the
+  // level's default», so a shared link reproduces exactly what was on screen.
+  state.tabPick = TABS.some(t => t[0] === p.get('tab')) ? p.get('tab') : '';
+  const axes = B[state.kind].group.map(a => a[0]);
+  const g = p.get('group');
+  // Default axis depends on the level: on L2 the tree has ALREADY filtered on
+  // the tree's own axis, so grouping by it would produce a single box that
+  // groups nothing. An explicit ?group= in the URL always wins.
+  // «keine» is spelled out rather than left empty: an empty value in the hash
+  // reads like a bug and is indistinguishable from a truncated link.
+  state.group = g === null ? (state.leaf ? nextAxis(state.kind, state.leaf) : axes[0])
+    : (g === 'keine' ? '' : (axes.includes(g) ? g : ''));
+  state.sort = p.get('sort') || '';
+  state.dir = p.get('dir') === '-1' ? -1 : 1;
+  state.q = p.get('q') || '';
+  state.filters = {};
+  const f = p.get('f');
+  if (f) f.split(';').forEach(part => { const [k, v] = part.split(':'); if (k && v) state.filters[k] = v.split(','); });
+}
+let writing = false;
+function writeUrl(){
+  const p = new URLSearchParams();
+  if (state.kind) p.set('kind', state.kind);
+  if (state.leaf) p.set('leaf', state.leaf);
+  if (state.item) p.set('item', state.item);
+  if (state.attr) p.set('attr', state.attr);
+  if (state.tabPick) p.set('tab', state.tabPick);
+  // Write the axis only when it differs from what this level would pick anyway,
+  // so a default view produces a clean link instead of one carrying the
+  // auto-switch's result back as if the reader had chosen it.
+  const axes = B[state.kind].group.map(a => a[0]);
+  const defGroup = state.leaf ? nextAxis(state.kind, state.leaf) : axes[0];
+  if (state.group !== defGroup) p.set('group', state.group || 'keine');
+  if (state.sort) { p.set('sort', state.sort); if (state.dir === -1) p.set('dir', '-1'); }
+  if (state.q) p.set('q', state.q);
+  const f = Object.entries(state.filters).filter(([, v]) => v && v.length).map(([k, v]) => k + ':' + v.join(',')).join(';');
+  if (f) p.set('f', f);
+  const next = '#/' + p.toString();
+  el('url').textContent = decodeURIComponent(location.origin === 'null' ? next : next);
+  if (next === location.hash) return;
+  writing = true; history.replaceState(null, '', next); writing = false;
+}
+function log(what, why){
+  const d = document.createElement('div');
+  d.innerHTML = '<b>' + esc(what) + '</b>' + (why ? '  <i>— ' + esc(why) + '</i>' : '');
+  el('log').prepend(d);
+}
+
+// ---- Scope ----------------------------------------------------------------
+const br = () => B[state.kind];
+// The one rule that is not obvious. When the tree has already filtered on the
+// tree's own axis, grouping by it yields a single box that groups nothing — so
+// fall back to another axis. NOT simply «the next one»: it has to be one that
+// actually SEPARATES the records in scope. In «Bauwerk und Liegenschaft» every
+// object carries the same Verantwortung, so that axis is no better than the
+// first; the rule keeps looking, and lands on «keine» if nothing separates.
+function nextAxis(kind, leaf){
+  const rows = leaf ? B[kind].rows.filter(r => r.group === leaf) : B[kind].rows;
+  for (const [k] of B[kind].group) {
+    if (k === 'group') continue;
+    if (new Set(rows.map(r => String(r[k]))).size > 1) return k;
+  }
+  return '';
+}
+const l2s = (kind) => [...new Set(B[kind].rows.map(r => r.group))].sort((a, b) => a.localeCompare(b, 'de'));
+const record = () => state.item ? br().rows.find(r => r.name === state.item && r.group === state.leaf) : null;
+const attrOf = (rec) => (rec && state.attr) ? rec.kids.find(k => k.name === state.attr) : null;
+
+function scoped(){
+  let rs = br().rows;
+  if (state.leaf) rs = rs.filter(r => r.group === state.leaf);
+  rs = rs.filter(r => Object.entries(state.filters).every(([k, v]) => !v.length || v.includes(String(r[k]))));
+  if (state.q && !state.item) {
+    const t = state.q.toLowerCase();
+    rs = rs.filter(r => (r.name + ' ' + (r.def || '')).toLowerCase().includes(t));
+  }
+  return rs;
+}
+function kidsOf(rec){
+  if (!state.q) return rec.kids;
+  const t = state.q.toLowerCase();
+  return rec.kids.filter(k => (k.name + ' ' + (k.def || '') + ' ' + (k.type || '')).toLowerCase().includes(t));
+}
+function sortRows(rs){
+  if (!state.sort) return rs;
+  const k = state.sort;
+  return rs.slice().sort((a, b) => {
+    const x = a[k], y = b[k];
+    const c = (typeof x === 'number' && typeof y === 'number') ? x - y : String(x).localeCompare(String(y), 'de');
+    return c * state.dir;
+  });
+}
+function grouped(rs){
+  if (!state.group) return [[null, rs]];
+  const m = new Map();
+  for (const r of rs) { const g = r[state.group] || '—'; if (!m.has(g)) m.set(g, []); m.get(g).push(r); }
+  return [...m.entries()].sort((a, b) => b[1].length - a[1].length || String(a[0]).localeCompare(String(b[0]), 'de'));
+}
+
+// ---- Tree -----------------------------------------------------------------
+function renderTree(){
+  const rootRow = '<li><button class="tnode' + (!state.kind ? ' is-active' : '') +
+    '" data-root="1"><span style="width:16px"></span>' + ICONS.branch +
+    '<span>Katalog</span><span class="tcount">' + ROOT.rows.length + '</span></button></li>' +
+    '<li><div class="tsep"></div></li>';
+
+  el('tree').innerHTML = rootRow + BRANCHES.map((b) => {
+    const open = state.kind === b.key;
+    const branchRow = '<button class="tnode' + (open && !state.leaf ? ' is-active' : open ? ' is-path' : '') +
+      '" data-branch="' + b.key + '" aria-expanded="' + open + '">' +
+      '<span class="chev">' + ICONS.chev + '</span>' + ICONS[b.icon] +
+      '<span>' + esc(b.label) + '</span><span class="tcount">' + b.rows.length + '</span></button>';
+    if (!open) return '<li>' + branchRow + '</li>';
+
+    const l2 = l2s(b.key).map((g) => {
+      const here = state.leaf === g;
+      const kids = B[b.key].rows.filter((r) => r.group === g);
+      const groupRow = '<button class="tnode t2' + (here && !state.item ? ' is-active' : here ? ' is-path' : '') +
+        '" data-leaf="' + esc(g) + '" data-branch2="' + b.key + '" aria-expanded="' + here + '">' +
+        '<span class="chev">' + ICONS.chev + '</span><span>' + esc(g) + '</span>' +
+        '<span class="tcount">' + kids.length + '</span></button>';
+      if (!here) return '<li>' + groupRow + '</li>';
+
+      const l3 = kids.map((r) => {
+        // Selecting a record does NOT unfold it (Nutzerentscheid, 2026-08-13).
+        // A Datentabelle can carry 75 fields; dropping them into the tree on
+        // every click buries the tree they were meant to help navigate. The
+        // chevron is therefore its OWN control next to the row: folding and
+        // selecting are two different intentions and get two different targets.
+        const isHere = state.item === r.name;
+        const openKids = isHere && (state.exp || !!state.attr);
+        const rowBtn = '<button class="tnode t3" data-item="' + esc(r.name) +
+          '" data-leaf2="' + esc(g) + '" data-branch3="' + b.key + '">' +
+          '<span>' + esc(r.name) + '</span><span class="tcount">' + r.n + '</span></button>';
+        const chev = '<button class="tchev" data-exp="' + esc(r.name) + '" data-expleaf="' + esc(g) +
+          '" data-expkind="' + b.key + '" aria-expanded="' + openKids +
+          '" aria-label="' + esc(r.name) + ' auf- oder zuklappen" title="Auf- oder zuklappen">' +
+          ICONS.chev + '</button>';
+        const l4 = openKids
+          ? '<ul>' + r.kids.map((k) => '<li><button class="tnode t4' +
+            (state.attr === k.name ? ' is-active' : '') + '" data-attr="' + esc(k.name) + '">' +
+            '<span>' + esc(k.name) + '</span></button></li>').join('') + '</ul>'
+          : '';
+        return '<li><span class="trow trow--l3' + (isHere && !state.attr ? ' is-active' : isHere ? ' is-path' : '') +
+          '">' + chev + rowBtn + '</span>' + l4 + '</li>';
+      }).join('');
+
+      return '<li>' + groupRow + '<ul>' + l3 + '</ul></li>';
+    }).join('');
+
+    return '<li>' + branchRow + '<ul>' + l2 + '</ul></li>';
+  }).join('');
+}
+
+// ---- Chrome ---------------------------------------------------------------
+function renderCrumb(){
+  const parts = ['<button class="lnk" data-root="1">Katalog</button>'];
+  if (state.kind) parts.push('<button class="lnk" data-branch="' + state.kind + '">' + esc(br().label) + '</button>');
+  if (state.leaf) parts.push('<button class="lnk" data-leaf="' + esc(state.leaf) + '" data-branch2="' + state.kind + '">' + esc(state.leaf) + '</button>');
+  if (state.item) parts.push(state.attr
+    ? '<button class="lnk" data-open="' + esc(state.item) + '" data-leaf3="' + esc(state.leaf) + '">' + esc(state.item) + '</button>'
+    : '<span>' + esc(state.item) + '</span>');
+  if (state.attr) parts.push('<span>' + esc(state.attr) + '</span>');
+  el('crumb').innerHTML = parts.join('<span>›</span>');
+  el('crumb').querySelectorAll('.lnk').forEach(b => {
+    b.style.cssText = 'background:none;border:0;padding:0;font:inherit;color:var(--accent);cursor:pointer';
+  });
+}
+
+function renderTabs(){
+  const lvl = level();
+  const av = TABS_AT(lvl);
+  const cur = effTab();
+  // The trailing controls are ALWAYS rendered (Nutzerentscheid, 2026-08-13),
+  // even where they cannot act. They carry the row's height, and letting them
+  // come and go made the table jump on every tab switch. Where they do not
+  // apply they are disabled and say why, rather than disappearing.
+  // Level 0 has no tabs, but it still has something to export — the search
+  // results or the domain list. The bar renders with the action alone and
+  // without the rule underneath, so it reads as a toolbar rather than as an
+  // empty tab strip.
+  if (!av.length) {
+    el('tabs').hidden = false;
+    el('tabs').className = 'tabs tabs--bare';
+    el('tabs').innerHTML = '<div class="tabs-right">' + exportCtl() + '</div>';
+    return;
+  }
+  el('tabs').hidden = false;
+  el('tabs').className = 'tabs';
+  const live = lvl < 3 && cur !== 'uebersicht';
+  el('tabs').innerHTML = TABS.filter(([k]) => av.includes(k)).map(([k, l]) =>
+    '<button class="tab' + (cur === k ? ' is-active' : '') + '" data-tab="' + k +
+    '" role="tab" aria-selected="' + (cur === k) + '">' + l + '</button>').join('') +
+    '<div class="tabs-right">' + filterCtl(live) + groupCtl(live) + exportCtl() + '</div>';
+}
+const activeFilters = () => Object.values(state.filters).reduce((a, v) => a + (v ? v.length : 0), 0);
+// Export sits rightmost and is live on EVERY level — unlike Filter and
+// Gruppieren it always has something to act on, because whatever the pane is
+// showing is what it would write out.
+function exportCtl(){
+  const rows = [['csv', 'CSV'], ['xlsx', 'Excel'], ['pdf', 'PDF drucken']];
+  return '<div class="pop"><button class="ctl" data-pop="export" aria-haspopup="menu" aria-expanded="false">' +
+    ICONS.download + 'Aktionen<span class="chev">' + ICONS.chev + '</span></button>' +
+    '<div class="pop-menu" id="pop-export" role="menu" hidden><div class="pop-head">Export</div>' +
+    rows.map(([k, l]) => '<button class="pop-item" role="menuitem" data-export="' + k + '">' + l + '</button>').join('') +
+    '</div></div>';
+}
+
+const OFF_HINT = 'Filter und Gruppierung ordnen viele Datensätze — auf dieser Stufe bzw. in diesem Reiter gibt es nichts zu ordnen.';
+function filterCtl(live){
+  const n = activeFilters();
+  return '<button class="ctl' + (n && live ? ' is-on' : '') + '" data-fpanel="1"' + (live ? '' : ' disabled title="' + OFF_HINT + '"') +
+    ' aria-expanded="' + (live && state.fopen) + '" aria-controls="fpanel">' + ICONS.filter + 'Filter' +
+    (n && live ? ' (' + n + ')' : '') + '<span class="chev">' + ICONS.chev + '</span></button>';
+}
+
+// The panel is scoped to what the tree has ALREADY selected, so an option that
+// cannot match anything is not offered — and each option carries the count it
+// would yield, which is the whole reason to open a filter in the first place.
+function renderFilterPanel(){
+  const box = el('fpanel');
+  if (!state.fopen || level() >= 3 || effTab() === 'uebersicht') { box.innerHTML = ''; return; }
+  const base = state.leaf ? br().rows.filter(r => r.group === state.leaf) : br().rows;
+  let cols = '';
+  for (const [k, label] of br().group) {
+    const tally = new Map();
+    for (const r of base) { const v = String(r[k]); tally.set(v, (tally.get(v) || 0) + 1); }
+    if (tally.size < 2) continue;
+    cols += '<div class="fcol"><h4>' + esc(label) + '</h4>' +
+      [...tally.entries()].sort((a, b) => a[0].localeCompare(b[0], 'de')).map(([v, c]) =>
+        '<label class="fopt"><input type="checkbox" data-filter="' + esc(k) + '" value="' + esc(v) + '"' +
+        ((state.filters[k] || []).includes(v) ? ' checked' : '') + '>' + esc(v) +
+        '<span class="n">' + c + '</span></label>').join('') + '</div>';
+  }
+  if (!cols) { box.innerHTML = '<div class="fpanel"><div class="fcol"><h4>Filter</h4>' +
+    '<p class="muted" style="margin:0;font-size:13px">In diesem Umfang gibt es keine Achse mit mehr als einem Wert.</p></div></div>'; return; }
+  const n = activeFilters();
+  box.innerHTML = '<div class="fpanel" id="fpanel-box">' + cols + '<div class="fpanel-foot">' +
+    (n ? '<span><b>' + n + '</b> Filter aktiv · <b>' + scoped().length + '</b> von ' + base.length + ' ' + esc(br().unit) + '</span>' +
+         '<button class="linkbtn" data-fclear="1">Alle zurücksetzen</button>'
+       : '<span>Kein Filter gesetzt — ' + base.length + ' ' + esc(br().unit) + ' im Umfang.</span>') +
+    '</div></div>';
+}
+function groupCtl(live){
+  const label = (br().group.find(a => a[0] === state.group) || [])[1] || 'keine';
+  if (!live) return '<button class="ctl" disabled title="' + OFF_HINT + '">Gruppieren: ' + esc(label) + '</button>';
+  const items = br().group.map(([k, l]) =>
+    '<button class="pop-item' + (state.group === k ? ' is-on' : '') + '" data-group="' + k + '">' + esc(l) + '</button>').join('') +
+    '<button class="pop-item' + (state.group === '' ? ' is-on' : '') + '" data-group="">keine</button>';
+  return '<div class="pop"><button class="ctl" data-pop="group" aria-expanded="false">Gruppieren: ' + esc(label) +
+    '</button><div class="pop-menu" id="pop-group" hidden>' + items + '</div></div>';
+}
+
+function renderCount(){
+  const rec = record();
+  if (level() === 0) {
+    const hits = state.q ? ROOT.rows.filter(r => (r.name + ' ' + (r.def || '')).toLowerCase()
+      .includes(state.q.toLowerCase())).length : ROOT.rows.length;
+    el('count').innerHTML = '<b>' + hits + '</b>' + (state.q ? ' Treffer in allen Ästen' : ' Einträge im Katalog');
+    el('q').placeholder = 'Im ganzen Katalog suchen…';
+    el('qclear').hidden = !state.q;
+    return;
+  }
+  if (state.attr && rec) {
+    el('count').innerHTML = esc(br().kidUnit.replace(/e$/, '')) + ' · ' + esc(rec.name);
+    el('q').placeholder = 'Auf dieser Stufe gibt es nichts zu durchsuchen';
+    el('qclear').hidden = !state.q;
+    return;
+  }
+  if (rec) {
+    const k = kidsOf(rec);
+    el('count').innerHTML = '<b>' + k.length + '</b> von ' + rec.kids.length + ' ' + esc(br().kidUnit) +
+      ' · ' + esc(rec.name);
+    el('q').placeholder = br().kidUnit + ' in «' + rec.name + '» suchen…';
+  } else {
+    const rs = scoped();
+    const base = state.leaf ? br().rows.filter(r => r.group === state.leaf).length : br().rows.length;
+    el('count').innerHTML = '<b>' + rs.length + '</b> von ' + base + ' ' + esc(br().unit) +
+      (state.leaf ? ' · ' + esc(state.leaf) : '');
+    el('q').placeholder = 'In ' + (state.leaf || br().label) + ' suchen…';
+  }
+  el('qclear').hidden = !state.q;
+}
+
+// ---- Views ----------------------------------------------------------------
+const badge = (v) => '<span class="badge' + (/^(Gültig|Zertifiziert)$/.test(v) ? ' badge--ok' :
+  /^(Entwurf|Nicht|noch nicht)/.test(v) ? ' badge--warn' : '') + '">' + esc(v) + '</span>';
+const empty = (ico, t, p) => '<div class="empty">' + ico + '<b>' + esc(t) + '</b><p>' + esc(p) + '</p></div>';
+
+function renderView(){
+  const rec = record();
+  if (level() === 0) { el('view').innerHTML = state.q ? vFind() : vHome(); return; }
+  const v = { uebersicht: vOverview, diagramm: vDiagram, tabelle: vTable }[effTab()];
+  el('view').innerHTML = v(level(), rec);
+}
+
+// --- Level 0: the landing page ------------------------------------------
+// Three blocks and nothing else: where to go, what moved, and the domains.
+function vHome(){
+  const kpis = BRANCHES.map(b => {
+    const kids = b.rows.reduce((a, r) => a + r.n, 0);
+    const tally = new Map();
+    for (const r of b.rows) tally.set(r.status, (tally.get(r.status) || 0) + 1);
+    const sub = [...tally.entries()].sort((a, x) => x[1] - a[1]).slice(0, 2)
+      .map(([k, c]) => c + ' ' + k).join(' · ');
+    return '<button class="kpi" data-branch="' + b.key + '">' + ICONS[b.icon] +
+      '<b>' + b.rows.length + '</b><span>' + esc(b.label) + '</span>' +
+      '<small>' + kids + ' ' + esc(b.kidUnit) + (sub ? ' · ' + esc(sub) : '') + '</small></button>';
+  }).join('');
+
+  // «Letzte Änderungen», not «Aktivität»: the records carry an updated date and
+  // nothing else. There is no change log, so the honest heading is the one that
+  // promises only what the data holds.
+  const recent = ROOT.rows.filter(r => r.stand)
+    .sort((a, b) => String(b.stand).localeCompare(String(a.stand))).slice(0, 6);
+  const act = recent.length
+    ? '<div class="hsec"><h3>Letzte Änderungen</h3><table class="tbl"><thead><tr>' +
+      '<th scope="col">Name</th><th scope="col">Typ</th><th scope="col">Gruppe</th>' +
+      '<th scope="col">Status</th><th scope="col">Geändert</th></tr></thead><tbody>' +
+      recent.map(r => '<tr data-open="' + esc(r.name) + '" data-leaf3="' + esc(r.group) +
+        '" data-kind3="' + esc(r.kindKey) + '"><td>' + esc(r.name) + '</td><td>' + esc(r.kindLabel) +
+        '</td><td>' + esc(r.group) + '</td><td>' + esc(r.status) + '</td><td>' + esc(r.stand) +
+        '</td></tr>').join('') + '</tbody></table></div>'
+    : '';
+
+  const doms = l2s('objekt').map(g => {
+    const rs = B.objekt.rows.filter(r => r.group === g);
+    return '<tr data-leaf="' + esc(g) + '" data-branch2="objekt"><td>' + esc(g) + '</td><td>' +
+      rs.length + ' Geschäftsobjekte</td><td>' + rs.reduce((a, r) => a + r.n, 0) + ' Attribute</td></tr>';
+  }).join('');
+
+  return '<div class="kpis">' + kpis + '</div>' + act +
+    '<div class="hsec"><h3>Domänen</h3><table class="tbl"><thead><tr><th scope="col">Domäne</th>' +
+    '<th scope="col">Umfang</th><th scope="col">Bestandteile</th></tr></thead><tbody>' + doms +
+    '</tbody></table></div>';
+}
+
+// Searching from level 0 searches ALL branches — there is no single branch in
+// scope, so the only honest answer is a cross-branch result list.
+function vFind(){
+  const t = state.q.toLowerCase();
+  const hits = ROOT.rows.filter(r => (r.name + ' ' + (r.def || '')).toLowerCase().includes(t));
+  if (!hits.length) return empty(ICONS.search, 'Nichts gefunden',
+    'Kein Eintrag in den drei Ästen trägt «' + state.q + '» im Namen oder in der Beschreibung.');
+  return '<div class="hsec"><h3>' + hits.length + ' Treffer in allen Ästen</h3>' +
+    '<table class="tbl"><thead><tr><th scope="col">Name</th><th scope="col">Typ</th>' +
+    '<th scope="col">Gruppe</th><th scope="col">Beschreibung</th></tr></thead><tbody>' +
+    hits.map(r => '<tr data-open="' + esc(r.name) + '" data-leaf3="' + esc(r.group) +
+      '" data-kind3="' + esc(r.kindKey) + '"><td>' + esc(r.name) + '</td><td>' + esc(r.kindLabel) +
+      '</td><td>' + esc(r.group) + '</td><td><span class="trunc">' + esc(r.def || '—') +
+      '</span></td></tr>').join('') + '</tbody></table></div>';
+}
+
+// --- Übersicht
+// EXACTLY three sections, at every level and for every entity (Nutzerentscheid,
+// 2026-08-13): Definition · Verantwortlich · Metadaten. Nothing else — no cards
+// for the children, no extra «Herkunft» panel. A reader who has seen one
+// Übersicht has seen them all, and the tab means one thing rather than four.
+//
+// The cost is deliberate: the child cards that used to sit on L1/L2 are gone.
+// Navigating downwards is the tree's job, and Diagramm and Tabelle both show
+// the children anyway. Übersicht is about THIS node.
+const kvPanel = (title, rows) => '<div class="panel"><h3>' + esc(title) + '</h3><dl class="kv">' +
+  rows.filter(Boolean).filter(([, v]) => v !== undefined && v !== '' && v !== null)
+    .map(([k, v, raw]) => '<dt>' + esc(k) + '</dt><dd>' + (raw ? v : esc(String(v))) + '</dd>').join('') +
+  '</dl></div>';
+const textPanel = (title, body, raw) =>
+  '<div class="panel"><h3>' + esc(title) + '</h3><p style="margin:0">' + (raw ? body : esc(body)) + '</p></div>';
+const TODO = '<span class="badge badge--warn">noch nicht erfasst</span>';
+// «Verantwortlich» is ONE row with ONE value on every level and for every
+// entity (Nutzerentscheid, 2026-08-13): a name, or later a mailbox. Nothing
+// else. The section previously carried a different shape at each level — the
+// role split into Dateneigner and Datenverwalter, AdminDir references, an
+// inherited-from line, a derived «faktisch» tally — and that variation was the
+// reason it read as four different sections rather than one.
+//
+// The derived tally is gone with it. It was informative, but it invited exactly
+// the confusion it warned against: a counted majority sitting where a recorded
+// decision belongs. If the field is empty, the honest display is that it is
+// empty.
+const RESP = (value) => [['Verantwortung',
+  (!value || value === 'noch nicht erfasst') ? TODO : esc(value), true]];
+
+function vOverview(lvl, rec){
+  const parts = ovParts(lvl, rec);
+  return textPanel('Definition', parts.def, true) +
+    kvPanel('Verantwortlich', parts.resp) +
+    kvPanel('Metadaten', parts.meta);
+}
+
+function ovParts(lvl, rec){
+  // L0 — the catalogue itself. Home is not a page beside the model; it is the
+  // level above the branches, and it takes the same three sections.
+  if (!state.kind) {
+    const kids = ROOT.rows.reduce((a, r) => a + r.n, 0);
+    return {
+      def: esc(ROOT.lead),
+      resp: RESP(''),
+      meta: [['Einträge', ROOT.rows.length + ' in ' + BRANCHES.length + ' Ästen'],
+        ...BRANCHES.map(b => [b.label, b.rows.length + ' ' + b.unit + ' · ' +
+          b.rows.reduce((a, r) => a + r.n, 0) + ' ' + b.kidUnit]),
+        ['Bestandteile gesamt', kids],
+        ['Herkunft', 'smartfacts, die Führungssysteme und reference-data.json']],
+    };
+  }
+  // L1 — a branch.
+  if (lvl === 1) {
+    const groups = l2s(state.kind);
+    return {
+      def: esc(br().lead),
+      resp: RESP(''),
+      meta: [['Inhalt', br().rows.length + ' ' + br().unit + ' in ' + groups.length + ' ' + br().l2Unit],
+        ['Bestandteile', br().rows.reduce((a, r) => a + r.n, 0) + ' ' + br().kidUnit],
+        ['Führender Nachweis', { objekt: 'Architektur-Repository (smartfacts) — der Katalog spiegelt, er besitzt nicht',
+          tabelle: 'die Führungssysteme selbst', referenz: 'reference-data.json im Portal' }[state.kind]]],
+    };
+  }
+  // L2 — Domäne, System, Thema. The level with no entity behind it.
+  if (lvl === 2) {
+    const all = br().rows.filter(r => r.group === state.leaf);
+    return {
+      def: TODO + ' <span class="muted">— eine ' + esc(br().axisLabel) +
+        ' hat eine Beschreibung, das Datenmodell hat bisher kein Feld dafür.</span>',
+      resp: RESP(''),
+      meta: [['Name', state.leaf],
+        ['Inhalt', all.length + ' ' + br().unit],
+        ['Bestandteile', all.reduce((a, r) => a + r.n, 0) + ' ' + br().kidUnit],
+        ['Abgelegt als', { objekt: 'reference-data.json → dataDomains', tabelle: 'Feld systemName auf jeder Datentabelle',
+          referenz: 'in dieser Studie gesetzt, nicht erfasst' }[state.kind]]],
+    };
+  }
+  // L4 — a single attribute, field or code value. Only Übersicht exists here:
+  // there is nothing below it to tabulate.
+  if (lvl === 4) {
+    const k = attrOf(rec);
+    if (!k) return { def: TODO, resp: [], meta: [] };
+    const maps = k.maps.length
+      ? k.maps.map(m => esc([m.a, m.b].filter(Boolean).join(' · ')) + ' · <code>' + esc(m.c) + '</code>' +
+          (m.match ? ' <span class="muted">(' + esc(m.match) + ')</span>' : '')).join('<br>')
+      : '';
+    return {
+      def: k.def ? esc(k.def) : TODO,
+      // Inherited from the parent record — but shown as the same single row, so
+      // the section reads identically wherever the reader is.
+      resp: RESP(rec.steward),
+      meta: [[state.kind === 'referenz' ? 'Schlüssel' : 'Typ', k.type ? '<code>' + esc(k.type) + '</code>' : '—', true],
+        state.kind === 'referenz' ? null : ['Schlüsselrolle', k.key ? '<code>' + esc(k.key) + '</code>' : '—', true],
+        state.kind === 'referenz' ? null : ['Pflichtangabe', k.required ? 'Pflicht' : 'optional'],
+        k.std ? ['Norm-Referenz', k.std] : null,
+        maps ? [state.kind === 'objekt' ? 'Realisiert in' : 'Trägt Attribut', maps, true] : null,
+        ['Übergeordnet', esc(rec.name)],
+        [br().axisLabel, esc(rec.group)]],
+    };
+  }
+  // L3 — a record.
+  return {
+    def: rec.def ? esc(rec.def) : TODO,
+    resp: RESP(rec.steward),
+    meta: [[br().axisLabel, rec.group], ['Schema', rec.schema], ['Technischer Name', rec.technisch],
+      ['Status', badge(String(rec.status)), true],
+      rec.freigabe ? ['Freigabe', badge(String(rec.freigabe)), true] : null,
+      ['Norm-Referenz', rec.norm],
+      ['Zeilen', rec.zeilen ? rec.zeilen.toLocaleString('de-CH') : ''],
+      [br().kidUnit, rec.n], ['Stand', rec.stand],
+      rec.quelle ? ['Herkunft', '<a href="' + esc(rec.quelle) + '" target="_blank" rel="noopener">Quelle öffnen</a>', true]
+        : state.kind === 'referenz' ? ['Herkunft', 'reference-data.json'] : null],
+  };
+}
+
+// --- Diagramm
+function vDiagram(lvl, rec){
+  if (lvl < 3) {
+    const groups = grouped(sortRows(scoped()));
+    if (!groups[0] || !groups[0][1].length)
+      return empty(ICONS.info, 'Nichts im Umfang', 'Die Suche oder die Filter lassen hier nichts übrig.');
+    return '<div class="dia">' + groups.map(([name, rs]) =>
+      '<section class="dbox"><h4>' + esc(name === null ? 'Alle' : name) + '<span>' + rs.length + '</span></h4>' +
+      '<div class="dtiles">' + rs.map(r => '<button class="dtile" data-open="' + esc(r.name) +
+        '" data-leaf3="' + esc(r.group) + '"' + (r.kindKey ? ' data-kind3="' + esc(r.kindKey) + '"' : '') +
+        ' title="' + esc(r.name) + '">' + esc(r.name) + '</button>').join('') +
+      '</div></section>').join('') + '</div>';
+  }
+  // Diagramm is not offered on a record or an attribute (see TABS_AT), so this
+  // is unreachable — it states that rather than rendering nothing, in case the
+  // tab list ever changes again.
+  return empty(ICONS.branch, 'Kein Diagramm auf dieser Stufe',
+    'Das Beziehungsbild eines einzelnen Datensatzes ist entfallen — seine Abbildung steht in der Übersicht des jeweiligen Attributs.');
+}
+
+// --- Tabelle
+function vTable(lvl, rec){
+  if (lvl >= 3) {
+    const cols = br().kidCols;
+    const kids = kidsOf(rec);
+    const head = '<thead><tr>' + cols.map(([, l]) => '<th scope="col">' + esc(l) + '</th>').join('') + '</tr></thead>';
+    if (!kids.length) return '<div class="wrap"><table class="tbl">' + head + '<tbody><tr><td colspan="' +
+      cols.length + '"><p style="margin:0">' + (rec.kids.length
+        ? 'Kein Treffer für «' + esc(state.q) + '».'
+        : 'Nichts erfasst. Die Spalten stehen trotzdem, damit sichtbar bleibt, was hier stünde.') +
+      '</p></td></tr></tbody></table></div>';
+    // A row here opens the attribute AND unfolds this record in the tree — the
+    // one way in that does both, because the reader has named a child.
+    return '<div class="wrap"><table class="tbl">' + head + '<tbody>' +
+      kids.map(k => '<tr data-attr="' + esc(k.name) + '">' +
+        cols.map(([c]) => '<td>' + kidCell(k, c) + '</td>').join('') + '</tr>').join('') +
+      '</tbody></table></div>';
+  }
+  const rs = sortRows(scoped());
+  if (!rs.length) return empty(ICONS.info, 'Nichts im Umfang', 'Die Suche oder die Filter lassen hier nichts übrig.');
+  // On L2 the grouping column drops out — the tree already says it.
+  const cols = br().cols.filter(([k]) => !(state.group && k === state.group) && !(lvl === 2 && k === 'group'));
+  const head = '<tr>' + cols.map(([k, l]) =>
+    '<th scope="col"><button data-sort="' + k + '">' + esc(l) + '<span class="sind' +
+    (state.sort === k ? ' is-on' : '') + '">' + (state.sort === k ? (state.dir === 1 ? '▲' : '▼') : '▲▼') +
+    '</span></button></th>').join('') + '</tr>';
+  const groups = grouped(rs);
+  if (!state.group) return '<div class="wrap"><table class="tbl"><thead>' + head + '</thead><tbody>' +
+    groups[0][1].map(r => row(r, cols)).join('') + '</tbody></table></div>';
+  return '<div class="wrap wrap--flush"><table class="tbl">' + groups.map(([name, rs2]) => {
+    const shut = !!state.shut[name];
+    return '<tbody><tr class="grp' + (shut ? ' is-shut' : '') + '"><th colspan="' + cols.length + '">' +
+      '<button data-shut="' + esc(name) + '" aria-expanded="' + !shut + '"><span class="chev">' + ICONS.chev +
+      '</span>' + esc(name) + ' <span class="muted" style="font-weight:400">(' + rs2.length + ')</span>' +
+      '</button></th></tr>' +
+      (shut ? '' : '<tr class="colhead">' + cols.map(([, l]) => '<td>' + esc(l) + '</td>').join('') + '</tr>' +
+        rs2.map(r => row(r, cols)).join('')) + '</tbody>';
+  }).join('') + '</table></div>';
+}
+
+const row = (r, cols) => '<tr data-open="' + esc(r.name) + '" data-leaf3="' + esc(r.group) + '"' +
+  (r.kindKey ? ' data-kind3="' + esc(r.kindKey) + '"' : '') + '>' +
+  cols.map(([k]) => '<td>' + cell(r, k) + '</td>').join('') + '</tr>';
+
+function cell(r, k){
+  if (k === 'def') return '<span class="trunc">' + esc(r.def || '—') + '</span>';
+  if (k === 'n') return '<span class="num">' + (r.n || '—') + '</span>';
+  return esc(r[k] || '—');
+}
+
+function kidCell(k, c){
+  if (c === 'def') return '<span class="trunc">' + esc(k.def || '—') + '</span>';
+  if (c === 'type') return k.type ? '<code>' + esc(k.type) + '</code>' : '—';
+  // One value per cell: the key role carries «optional» too, instead of
+  // trailing the name in small grey.
+  if (c === 'key') return k.key ? '<code>' + esc(k.key) + '</code>'
+    : (state.kind !== 'referenz' && !k.required ? 'optional' : '—');
+  if (c === 'maps') return k.maps.length
+    ? k.maps.map(m => esc([m.a, m.b].filter(Boolean).join(' · ')) + ' · <code>' + esc(m.c) + '</code>').join('<br>')
+    : '—';
+  return esc(k[c] || '—');
+}
+
+// ---- Render + events ------------------------------------------------------
+function render(){
+  renderTree(); renderCrumb(); renderTabs(); renderFilterPanel(); renderCount(); renderView(); writeUrl();
+}
+const syncQ = () => { el('q').value = state.q; };
+window.addEventListener('hashchange', () => { if (!writing) { readUrl(); syncQ(); render(); } });
+
+
+// Names exactly what an export would contain. Putting it in the tab row rather
+// than the page header is the point: it inherits the pane's scope, so tree
+// selection, search, filters and the active tab all narrow it.
+function exportScope(){
+  const lvl = level();
+  const tab = (TABS.find(t => t[0] === effTab()) || [])[1] || '—';
+  if (lvl === 0) return state.q ? 'Suchtreffer im ganzen Katalog' : 'Startseite';
+  if (lvl === 4) return 'Übersicht zu «' + state.attr + '»';
+  const rec = record();
+  if (lvl === 3) return tab + ' zu «' + rec.name + '» (' + kidsOf(rec).length + ' ' + br().kidUnit + ')';
+  const n = scoped().length;
+  return tab + ' · ' + n + ' ' + br().unit + (state.leaf ? ' aus ' + state.leaf : ' im Ast ' + br().label) +
+    (activeFilters() ? ' · gefiltert' : '') + (state.q ? ' · Suche «' + state.q + '»' : '');
+}
+
+function goBranch(kind){
+  state.kind = kind; state.leaf = ''; state.item = ''; state.attr = ''; state.exp = false;
+  state.q = ''; syncQ();
+  state.filters = {}; state.sort = ''; state.shut = {};
+  state.group = B[kind].group[0][0];
+  log('Ast → ' + B[kind].label, tabWhy());
+  render();
+}
+
+function goLeaf(kind, leaf){
+  state.kind = kind; state.leaf = leaf; state.item = ''; state.attr = ''; state.exp = false;
+  state.q = ''; syncQ();
+  if (state.group === 'group') {
+    state.group = nextAxis(kind, leaf); state.shut = {};
+    log('Gruppieren → ' + ((br().group.find(a => a[0] === state.group) || [])[1] || 'keine'),
+      state.group
+        ? 'der Baum filtert bereits auf ' + br().axisLabel + ' — diese Achse trennt hier noch'
+        : 'der Baum filtert bereits auf ' + br().axisLabel + ', und keine andere Achse trennt diesen Bestand');
+  }
+  log('Stufe 2 → ' + leaf, tabWhy());
+  render();
+}
+
+function tabWhy(){
+  const cur = effTab();
+  const label = (TABS.find(t => t[0] === cur) || [])[1] || cur;
+  if (!TABS_AT(level()).length) return 'keine Reiter auf dieser Stufe';
+  if (state.tabPick && state.tabPick === cur) return 'Reiter bleibt «' + label + '» — von Ihnen gewählt';
+  if (state.tabPick) return 'Reiter «' + label + '» — Ihre Wahl «' +
+    ((TABS.find(t => t[0] === state.tabPick) || [])[1] || state.tabPick) + '» gibt es hier nicht';
+  return 'Reiter «' + label + '» — Voreinstellung dieser Stufe';
+}
+
+function goAttr(name){
+  // The second way in: naming a child in the table unfolds the branch AND
+  // navigates, because the reader has already said which child they mean.
+  state.attr = name; state.exp = true; state.q = ''; syncQ();
+  log('Stufe 4 → ' + name, 'nur Übersicht — unter einem Attribut liegt nichts mehr');
+  render();
+}
+function goItem(kind, leaf, name){
+  state.kind = kind; state.leaf = leaf; state.item = name; state.attr = ''; state.q = ''; syncQ();
+  log('Stufe 3 → ' + name, tabWhy());
+  render();
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.pop')) document.querySelectorAll('.pop-menu').forEach(m => { m.hidden = true; });
+
+  const rootBtn = e.target.closest('[data-root]');
+  if (rootBtn) { state.kind = ''; state.leaf = ''; state.item = ''; state.attr = ''; state.q = ''; syncQ();
+    state.filters = {}; state.sort = ''; state.shut = {}; state.group = ROOT.group[0][0];
+    log('Stufe 0 → Katalog', 'keine Reiter auf dieser Stufe — der Katalog ist eine Startseite, kein Umfang');
+    return render(); }
+
+  const b3 = e.target.closest('[data-branch3]');
+  if (b3) return goItem(b3.dataset.branch3, b3.dataset.leaf2, b3.dataset.item);
+  const b2 = e.target.closest('[data-branch2]');
+  if (b2) return goLeaf(b2.dataset.branch2, b2.dataset.leaf);
+  const b1 = e.target.closest('[data-branch]');
+  if (b1) return goBranch(b1.dataset.branch);
+
+  const fold = e.target.closest('[data-exp]');
+  if (fold) {
+    const same = state.item === fold.dataset.exp && state.leaf === fold.dataset.expleaf &&
+      state.kind === fold.dataset.expkind;
+    // Unfolding a record the pane is not showing would be a third state; the
+    // chevron selects first, then unfolds.
+    if (!same) { state.exp = true; return goItem(fold.dataset.expkind, fold.dataset.expleaf, fold.dataset.exp); }
+    const wasOpen = state.exp || !!state.attr;
+    state.exp = !wasOpen;
+    if (!state.exp) state.attr = '';
+    log((state.exp ? 'Baum aufgeklappt: ' : 'Baum zugeklappt: ') + fold.dataset.exp,
+      state.exp ? 'die ' + br().kidUnit + ' erscheinen erst auf Verlangen'
+                : 'die Auswahl bleibt, nur der Ast schliesst');
+    return render();
+  }
+
+  const at = e.target.closest('[data-attr]');
+  if (at) return goAttr(at.dataset.attr);
+  const open = e.target.closest('[data-open]');
+  if (open) return goItem(open.dataset.kind3 || state.kind, open.dataset.leaf3 || state.leaf, open.dataset.open);
+
+  const tab = e.target.closest('[data-tab]');
+  if (tab) { state.tabPick = tab.dataset.tab;
+    log('Reiter → ' + tab.textContent,
+      'Umfang unverändert (Stufe ' + level() + ') — und ab jetzt gewählt statt voreingestellt');
+    return render(); }
+
+  const fp = e.target.closest('[data-fpanel]');
+  if (fp) { state.fopen = !state.fopen;
+    log('Filterpanel ' + (state.fopen ? 'geöffnet' : 'geschlossen'),
+      state.fopen ? 'alle Achsen nebeneinander, bleibt offen während die Tabelle reagiert' : '');
+    return render(); }
+
+  const pop = e.target.closest('[data-pop]');
+  if (pop) { const menu = el('pop-' + pop.dataset.pop); const wasOpen = !menu.hidden;
+    document.querySelectorAll('.pop-menu').forEach(m => { m.hidden = true; });
+    if (!wasOpen) menu.hidden = false;
+    return; }
+  const ex = e.target.closest('[data-export]');
+  if (ex) {
+    document.querySelectorAll('.pop-menu').forEach(m => { m.hidden = true; });
+    log('Export ' + ex.dataset.export.toUpperCase() + ': ' + exportScope(),
+      'im Prototyp nicht ausgeführt — der Export folgt genau dem, was die Fläche gerade zeigt');
+    return;
+  }
+
+  const g = e.target.closest('[data-group]');
+  if (g) { state.group = g.dataset.group; state.shut = {};
+    log('Gruppieren → ' + g.textContent, 'wirkt in Tabelle und Diagramm'); return render(); }
+  const fc = e.target.closest('[data-fclear]');
+  if (fc) { state.filters = {}; log('Filter zurückgesetzt'); return render(); }
+  const s = e.target.closest('[data-sort]');
+  if (s) { const k = s.dataset.sort; state.dir = state.sort === k ? -state.dir : 1; state.sort = k;
+    log('Sortiert nach ' + k + (state.dir === 1 ? ' ▲' : ' ▼'), 'innerhalb jeder Gruppe'); return render(); }
+  const sh = e.target.closest('[data-shut]');
+  if (sh) { const k = sh.dataset.shut; state.shut[k] = !state.shut[k];
+    log((state.shut[k] ? 'Gruppe zugeklappt: ' : 'Gruppe aufgeklappt: ') + k); return render(); }
+});
+
+document.addEventListener('change', (e) => {
+  const f = e.target.closest('[data-filter]');
+  if (!f) return;
+  const k = f.dataset.filter;
+  const cur = new Set(state.filters[k] || []);
+  f.checked ? cur.add(f.value) : cur.delete(f.value);
+  state.filters[k] = [...cur];
+  log('Filter ' + k + ' → ' + (state.filters[k].join(', ') || 'alle'), 'steht in der URL, ist also teilbar');
+  render();
+});
+
+el('q').addEventListener('input', () => {
+  state.q = el('q').value.trim();
+  renderCount(); renderView(); writeUrl();
+});
+el('qclear').addEventListener('click', () => {
+  state.q = ''; syncQ(); log('Suche geleert'); render();
+});
+
+readUrl(); syncQ();
+log('Start', 'Zustand aus der URL: Ast, Stufe, Reiter, Gruppierung, Filter, Sortierung und Suche');
+render();
+</script>
+</body>
+</html>

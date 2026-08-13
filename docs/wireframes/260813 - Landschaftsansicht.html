@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Landschaftsansicht — vier Varianten</title>
+<!--
+  Standalone prototype for a THIRD view in the metadata catalogue's view switch
+  (#/app/metadata-catalog), beside Liste und Galerie: a landscape map that
+  clusters Geschäftsobjekte or Datentabellen dynamically and colours them by a
+  state dimension. Reference: the SAP LeanIX «Landscape Report».
+
+  No build step, no dependencies, no network. Token values are copied from
+  css/tokens.css so a decision here transfers to the portal without a rewrite.
+
+  THE DATA IS REAL — all 19 Geschäftsobjekte and 10 Datentabellen from
+  data/business-objects.json and data/data-tables.json, with their actual
+  distribution. A wireframe on invented data would flatter every variant.
+
+  Two rules shape all four variants:
+
+  1. The colour axis is NEVER the grouping axis. The box header already names the
+     group; repeating it as fill spends the colour channel on nothing. Every
+     colour axis offered here is therefore a STATE (Realisierung, Status,
+     Zertifizierung, Publikation), never a category.
+
+  2. Colour is never the only channel. Each tile carries its state as text, and
+     every variant has a legend — so the map is readable in greyscale, in print,
+     and by a colourblind reader.
+
+  Variant A follows LeanIX literally (saturated fill). B and C follow the
+  portal's own convention (pale background, dark ink). D is not a map at all and
+  asks whether the map is the right form. The measured contrast table under the
+  controls is what decides between them.
+-->
+<style>
+  /* --- Copied from css/tokens.css --------------------------------------- */
+  :root {
+    --color-primary-600:#d8232a;
+    --color-secondary-50:#f0f4f7; --color-secondary-100:#dfe4e9; --color-secondary-300:#828e9a;
+    --color-text-500:#6b7280; --color-text-600:#4b5563; --color-text-800:#1f2937; --color-text-900:#111827;
+    --color-border:#e5e7eb;
+    --color-bg:#fff;
+    --font-sans:'Noto Sans','Hind',system-ui,sans-serif;
+    --font-mono:Consolas,Menlo,monospace;
+    --fs-xs:.75rem; --fs-sm:.875rem; --fs-base:1rem; --fs-lg:1.125rem; --fs-xl:1.375rem;
+    --sp-1:.25rem; --sp-2:.5rem; --sp-3:.75rem; --sp-4:1rem; --sp-5:1.25rem; --sp-6:1.5rem; --sp-8:2rem;
+    --radius-sm:.125rem; --radius:.1875rem;
+    --stroke-1:1px; --stroke-2:2px;
+    --shadow-sm:0 1px 2px 0 rgba(0,0,0,.05);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:var(--sp-6); background:var(--color-secondary-50);
+    font-family:var(--font-sans); color:var(--color-text-800); font-size:var(--fs-base); line-height:1.5; }
+  h1 { font-size:var(--fs-xl); margin:0 0 var(--sp-2); }
+  h2 { font-size:var(--fs-lg); margin:var(--sp-8) 0 var(--sp-1); }
+  h3 { font-size:var(--fs-sm); margin:0; font-weight:400; }
+  .lead { color:var(--color-text-600); margin:0 0 var(--sp-6); max-width:70ch; }
+  .note { font-size:var(--fs-sm); color:var(--color-text-600); margin:0 0 var(--sp-4); max-width:80ch; }
+  .panel { background:var(--color-bg); border:var(--stroke-1) solid var(--color-border);
+    border-radius:var(--radius); padding:var(--sp-4); margin-bottom:var(--sp-6); }
+  .controls { display:flex; flex-wrap:wrap; gap:var(--sp-4); align-items:flex-end; }
+  .field { display:flex; flex-direction:column; gap:var(--sp-1); }
+  .field label { font-size:var(--fs-xs); color:var(--color-text-600); text-transform:uppercase; letter-spacing:.04em; }
+  select { font:inherit; font-size:var(--fs-sm); padding:var(--sp-2) var(--sp-3);
+    border:var(--stroke-1) solid var(--color-secondary-300); border-radius:var(--radius); background:#fff; }
+
+  /* --- shared landscape scaffold ---------------------------------------- */
+  .map { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:var(--sp-4); align-items:start; }
+  .group { border:var(--stroke-1) solid var(--color-border); border-radius:var(--radius);
+    background:var(--color-bg); overflow:hidden; }
+  .group__head { display:flex; justify-content:space-between; align-items:center; gap:var(--sp-2);
+    padding:var(--sp-2) var(--sp-3); background:var(--color-secondary-100);
+    font-size:var(--fs-sm); font-weight:400; }
+  .group__n { color:var(--color-text-600); font-variant-numeric:tabular-nums; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:var(--sp-2); padding:var(--sp-3); }
+  .tile { display:block; padding:var(--sp-2) var(--sp-3); border-radius:var(--radius-sm);
+    font-size:var(--fs-sm); text-decoration:none; min-height:56px; }
+  .tile__state { display:block; font-size:var(--fs-xs); opacity:.85; margin-top:2px; }
+
+  /* A — Flächenfüllung */
+  .v-a .tile { border:var(--stroke-1) solid transparent; }
+  /* B — Badge */
+  .v-b .tile { background:#fff; border:var(--stroke-1) solid var(--color-border); color:var(--color-text-800); }
+  .v-b .badge { display:inline-block; margin-top:var(--sp-1); padding:1px var(--sp-2);
+    border-radius:var(--radius-sm); font-size:var(--fs-xs); }
+  /* C — Akzentkante */
+  .v-c .tile { background:#fff; border:var(--stroke-1) solid var(--color-border);
+    border-left-width:4px; color:var(--color-text-800); }
+  /* D — Matrix */
+  table.matrix { border-collapse:collapse; width:100%; font-size:var(--fs-sm); }
+  table.matrix th, table.matrix td { border:var(--stroke-1) solid var(--color-border);
+    padding:var(--sp-2) var(--sp-3); text-align:left; }
+  table.matrix thead th { background:var(--color-secondary-100); font-weight:400; }
+  table.matrix td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  table.matrix td.zero { color:var(--color-text-500); }
+
+  .legend { display:flex; flex-wrap:wrap; gap:var(--sp-3); margin:var(--sp-3) 0 0;
+    font-size:var(--fs-sm); color:var(--color-text-600); }
+  .legend span { display:inline-flex; align-items:center; gap:var(--sp-2); }
+  .swatch { width:14px; height:14px; border-radius:2px; border:var(--stroke-1) solid rgba(0,0,0,.12); }
+
+  table.contrast { border-collapse:collapse; font-size:var(--fs-sm); margin-top:var(--sp-3); }
+  table.contrast th, table.contrast td { border:var(--stroke-1) solid var(--color-border); padding:var(--sp-1) var(--sp-3); text-align:left; }
+  .pass { color:#065f46; } .fail { color:#99191e; }
+  .chip { display:inline-block; padding:1px var(--sp-2); border-radius:2px; font-size:var(--fs-xs); }
+</style>
+</head>
+<body>
+
+<h1>Landschaftsansicht — vier Varianten</h1>
+<p class="lead">Eine dritte Ansicht im Metadaten-Katalog neben Liste und Galerie: Geschäftsobjekte
+oder Datentabellen dynamisch gruppiert, eingefärbt nach einem Zustand. Alle Varianten zeigen
+dieselben echten Daten (19 Geschäftsobjekte, 10 Datentabellen) unter derselben Gruppierung.</p>
+
+<div class="panel">
+  <div class="controls">
+    <div class="field"><label for="entity">Was</label>
+      <select id="entity"><option value="objects">Geschäftsobjekte (19)</option><option value="tables">Datentabellen (10)</option></select></div>
+    <div class="field"><label for="group">Gruppieren nach</label><select id="group"></select></div>
+    <div class="field"><label for="colour">Einfärben nach</label><select id="colour"></select></div>
+  </div>
+  <p class="note" style="margin:var(--sp-4) 0 0">Die Farbachse lässt sich nie auf die Gruppierungsachse
+  stellen — die Kopfzeile nennt die Gruppe bereits, eine zweite Kodierung derselben Sache wäre verschenkt.</p>
+
+  <h3 style="margin-top:var(--sp-4)">Gemessener Kontrast (WCAG AA verlangt 4.5:1 für Text)</h3>
+  <table class="contrast">
+    <thead><tr><th>Token</th><th>Variante A — Vollfläche</th><th>B / C — Portal-Paar</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>success</td>
+        <td><span class="chip" style="background:#065f46;color:#ffffff">Text</span>
+            <span class="pass">7.68:1 ✓</span></td>
+        <td><span class="chip" style="background:#d1fae5;color:#065f46">Text</span>
+            <span class="pass">6.78:1 ✓</span></td>
+      </tr>
+      <tr>
+        <td>warning</td>
+        <td><span class="chip" style="background:#9a3412;color:#ffffff">Text</span>
+            <span class="pass">7.31:1 ✓</span></td>
+        <td><span class="chip" style="background:#ffedd5;color:#9a3412">Text</span>
+            <span class="pass">6.38:1 ✓</span></td>
+      </tr>
+      <tr>
+        <td>error</td>
+        <td><span class="chip" style="background:#99191e;color:#ffffff">Text</span>
+            <span class="pass">8.36:1 ✓</span></td>
+        <td><span class="chip" style="background:#fae1e2;color:#99191e">Text</span>
+            <span class="pass">6.74:1 ✓</span></td>
+      </tr>
+      <tr>
+        <td>info</td>
+        <td><span class="chip" style="background:#1e40af;color:#ffffff">Text</span>
+            <span class="pass">8.72:1 ✓</span></td>
+        <td><span class="chip" style="background:#dbeafe;color:#1e40af">Text</span>
+            <span class="pass">7.15:1 ✓</span></td>
+      </tr>
+      <tr>
+        <td>gray</td>
+        <td><span class="chip" style="background:#4b5563;color:#ffffff">Text</span>
+            <span class="pass">7.56:1 ✓</span></td>
+        <td><span class="chip" style="background:#dfe4e9;color:#1f2937">Text</span>
+            <span class="pass">11.47:1 ✓</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note" style="margin-top:var(--sp-2)">Variante A erreicht AA nur mit den <em>dunklen</em>
+  Texttönen als Füllung — die gesättigten Basistöne (#10b981, #f97316, #3b82f6) fallen mit weisser
+  Schrift auf 1.5–2.5:1 durch. Die LeanIX-Optik ist also nicht gratis zu haben.</p>
+</div>
+
+<h2>A — Vollfläche (LeanIX-nah)</h2>
+<p class="note">Die Kachel selbst trägt die Farbe. Stärkstes Muster auf Distanz, teuerste
+Lösung im Kontrast: nur die dunklen Töne bestehen AA, und ein Raster aus 19 dunklen Flächen
+wirkt schwerer als alles andere im Portal.</p>
+<div id="v-a" class="v-a"></div>
+
+<h2>B — Badge (Portal-Konvention)</h2>
+<p class="note">Weisse Kachel, Zustand als Badge — exakt das Muster, das Karten und Tabellen
+im Portal schon verwenden. Ein grünes Badge bedeutet hier dasselbe wie überall sonst.
+Schwächeres Muster auf Distanz, dafür ohne neue Regeln.</p>
+<div id="v-b" class="v-b"></div>
+
+<h2>C — Akzentkante</h2>
+<p class="note">Weisse Kachel mit 4px farbiger Kante plus Klartext. Kompromiss: das Raster
+bleibt ruhig, die Farbe ist beim Scannen trotzdem da. Dieselbe Kante, die
+<code>menu__item--active</code> im Portal bereits benutzt.</p>
+<div id="v-c" class="v-c"></div>
+
+<h2>D — Matrix statt Karte</h2>
+<p class="note">Keine Kacheln: Gruppe × Zustand mit Anzahlen. Beantwortet «wo sind die Lücken»
+in einem Blick und skaliert auf 500 Objekte, verliert aber den einzelnen Datensatz.
+Die Frage, die diese Variante stellt: braucht es überhaupt eine Karte?</p>
+<div id="v-d"></div>
+
+<script>
+const DATA = {
+  objects: [{"id":"areal","name":"Areal","domain":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","status":"Gültig","statusVariant":"success","realisierung":"offen","n":5},{"id":"kampus","name":"Kampus","domain":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","status":"Gültig","statusVariant":"success","realisierung":"offen","n":4},{"id":"grundstueck","name":"Grundstück","domain":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","status":"Gültig","statusVariant":"success","realisierung":"realisiert","n":5},{"id":"gebaeude","name":"Gebäude","domain":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","status":"Gültig","statusVariant":"success","realisierung":"realisiert","n":7},{"id":"nutzungseinheit","name":"Nutzungseinheit","domain":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","status":"Gültig","statusVariant":"success","realisierung":"offen","n":4},{"id":"geschoss","name":"Geschoss","domain":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","status":"Gültig","statusVariant":"success","realisierung":"offen","n":4},{"id":"raum","name":"Raum","domain":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","status":"Gültig","statusVariant":"success","realisierung":"offen","n":4},{"id":"bemessung","name":"Bemessung","domain":"Bauwerk und Liegenschaft","steward":"Immobilienmanagement","status":"Gültig","statusVariant":"success","realisierung":"realisiert","n":4},{"id":"mietobjekt","name":"Mietobjekt","domain":"Mietverhältnisse","steward":"Immobilienmanagement","status":"Gültig","statusVariant":"success","realisierung":"offen","n":4},{"id":"mietvertrag","name":"Mietvertrag","domain":"Mietverhältnisse","steward":"Immobilienmanagement","status":"Entwurf","statusVariant":"gray","realisierung":"realisiert","n":5},{"id":"kondition","name":"Kondition","domain":"Mietverhältnisse","steward":"Immobilienmanagement","status":"Entwurf","statusVariant":"gray","realisierung":"realisiert","n":5},{"id":"heizzentrale","name":"Heizzentrale","domain":"Energie","steward":"EDM","status":"Gültig","statusVariant":"success","realisierung":"offen","n":4},{"id":"stromzaehler","name":"Stromzähler","domain":"Energie","steward":"EDM","status":"Gültig","statusVariant":"success","realisierung":"offen","n":4},{"id":"betriebsmesswert","name":"Betriebsmesswert","domain":"Energie","steward":"EDM","status":"Gültig","statusVariant":"success","realisierung":"offen","n":5},{"id":"person","name":"Person","domain":"Geschäftspartner","steward":"DRES","status":"Gültig","statusVariant":"success","realisierung":"offen","n":5},{"id":"kontakt","name":"Kontakt","domain":"Geschäftspartner","steward":"DRES","status":"Gültig","statusVariant":"success","realisierung":"offen","n":3},{"id":"unternehmen","name":"Unternehmen","domain":"Geschäftspartner","steward":"DRES","status":"Gültig","statusVariant":"success","realisierung":"offen","n":5},{"id":"wirtschaftseinheit","name":"Wirtschaftseinheit","domain":"Finanzen","steward":"PFM","status":"Gültig","statusVariant":"success","realisierung":"realisiert","n":4},{"id":"buchungskreis","name":"Buchungskreis","domain":"Finanzen","steward":"PFM","status":"Gültig","statusVariant":"success","realisierung":"realisiert","n":4}],
+  tables: [{"id":"sap-refx-vibdbe","name":"Wirtschaftseinheit","system":"SAP RE-FX","steward":"Immobilienmanagement","zertifiziert":"zertifiziert","publikation":"publiziert","n":39},{"id":"sap-refx-vibdbu","name":"Gebäude","system":"SAP RE-FX","steward":"Immobilienmanagement","zertifiziert":"zertifiziert","publikation":"publiziert","n":66},{"id":"sap-refx-vibdkd","name":"Konditionen","system":"SAP RE-FX","steward":"Immobilienmanagement","zertifiziert":"nicht zertifiziert","publikation":"nicht publiziert","n":5},{"id":"sap-refx-vibdme","name":"Bemessungen","system":"SAP RE-FX","steward":"Immobilienmanagement","zertifiziert":"zertifiziert","publikation":"nicht publiziert","n":12},{"id":"sap-refx-vibdmv","name":"Mietverträge","system":"SAP RE-FX","steward":"Immobilienmanagement","zertifiziert":"nicht zertifiziert","publikation":"publiziert","n":6},{"id":"gis-immo-building","name":"Gebäude","system":"GIS IMMO","steward":"DRES","zertifiziert":"zertifiziert","publikation":"publiziert","n":75},{"id":"gis-immo-building-envelope","name":"Gebäudehülle","system":"GIS IMMO","steward":"DRES","zertifiziert":"nicht zertifiziert","publikation":"nicht publiziert","n":33},{"id":"gis-immo-construction-project","name":"Bauprojekt","system":"GIS IMMO","steward":"DRES","zertifiziert":"nicht zertifiziert","publikation":"publiziert","n":30},{"id":"gis-immo-land-cover","name":"Bodenbedeckung","system":"GIS IMMO","steward":"DRES","zertifiziert":"zertifiziert","publikation":"publiziert","n":15},{"id":"gis-immo-parcel","name":"Grundstück","system":"GIS IMMO","steward":"DRES","zertifiziert":"zertifiziert","publikation":"publiziert","n":44}],
+};
+const PAIRS = {"success":{"bg":"#d1fae5","text":"#065f46","solid":"#065f46","label":"success"},"warning":{"bg":"#ffedd5","text":"#9a3412","solid":"#9a3412","label":"warning"},"error":{"bg":"#fae1e2","text":"#99191e","solid":"#99191e","label":"error"},"info":{"bg":"#dbeafe","text":"#1e40af","solid":"#1e40af","label":"info"},"gray":{"bg":"#dfe4e9","text":"#1f2937","solid":"#4b5563","label":"gray"}};
+const COLOUR_AXES = {"realisierung":{"label":"Realisierung","values":{"realisiert":"success","offen":"gray"}},"status":{"label":"Status","values":{"Gültig":"success","Entwurf":"gray","Abgelöst":"warning","Archiviert":"gray"}},"zertifiziert":{"label":"Zertifizierung","values":{"zertifiziert":"success","nicht zertifiziert":"warning"}},"publikation":{"label":"Publikation","values":{"publiziert":"info","nicht publiziert":"gray"}}};
+const GROUP_AXES = {"domain":"Domäne","steward":"Verantwortung","status":"Status","realisierung":"Realisierung","system":"System","zertifiziert":"Zertifizierung","publikation":"Publikation"};
+const AXES = {
+  objects: { group: ['domain', 'steward', 'status', 'realisierung'], colour: ['realisierung', 'status'] },
+  tables:  { group: ['system', 'steward', 'zertifiziert', 'publikation'], colour: ['zertifiziert', 'publikation'] },
+};
+
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const el = (id) => document.getElementById(id);
+
+function fill(select, keys, labels) {
+  select.innerHTML = keys.map((k) => '<option value="' + k + '">' + esc(labels[k] || k) + '</option>').join('');
+}
+
+function groupRows(rows, key) {
+  const map = new Map();
+  for (const r of rows) {
+    const g = r[key];
+    if (!map.has(g)) map.set(g, []);
+    map.get(g).push(r);
+  }
+  return [...map.entries()].sort((a, b) => b[1].length - a[1].length || String(a[0]).localeCompare(String(b[0]), 'de'));
+}
+
+const pairFor = (row, colourKey) => PAIRS[(COLOUR_AXES[colourKey].values[row[colourKey]]) || 'gray'];
+
+function legend(colourKey, mode) {
+  const values = Object.keys(COLOUR_AXES[colourKey].values);
+  return '<p class="legend">' + values.map((v) => {
+    const p = PAIRS[COLOUR_AXES[colourKey].values[v]];
+    const bg = mode === 'solid' ? p.solid : p.bg;
+    return '<span><i class="swatch" style="background:' + bg + '"></i>' + esc(v) + '</span>';
+  }).join('') + '</p>';
+}
+
+function render() {
+  const entity = el('entity').value;
+  const rows = DATA[entity];
+  const g = el('group').value, c = el('colour').value;
+  const groups = groupRows(rows, g);
+
+  const box = (inner, name, n) =>
+    '<section class="group"><header class="group__head"><h3>' + esc(name) +
+    '</h3><span class="group__n">' + n + '</span></header><div class="tiles">' + inner + '</div></section>';
+
+  // A — solid fill, ink chosen for contrast
+  el('v-a').innerHTML = '<div class="map">' + groups.map(([name, rs]) => box(rs.map((r) => {
+    const p = pairFor(r, c);
+    return '<a class="tile" href="#" style="background:' + p.solid + ';color:#fff">' + esc(r.name) +
+      '<span class="tile__state">' + esc(r[c]) + '</span></a>';
+  }).join(''), name, rs.length)).join('') + '</div>' + legend(c, 'solid');
+
+  // B — white tile, badge
+  el('v-b').innerHTML = '<div class="map">' + groups.map(([name, rs]) => box(rs.map((r) => {
+    const p = pairFor(r, c);
+    return '<a class="tile" href="#">' + esc(r.name) +
+      '<span class="badge" style="background:' + p.bg + ';color:' + p.text + '">' + esc(r[c]) + '</span></a>';
+  }).join(''), name, rs.length)).join('') + '</div>' + legend(c, 'subtle');
+
+  // C — accent edge
+  el('v-c').innerHTML = '<div class="map">' + groups.map(([name, rs]) => box(rs.map((r) => {
+    const p = pairFor(r, c);
+    return '<a class="tile" href="#" style="border-left-color:' + p.solid + '">' + esc(r.name) +
+      '<span class="tile__state" style="color:' + p.text + '">' + esc(r[c]) + '</span></a>';
+  }).join(''), name, rs.length)).join('') + '</div>' + legend(c, 'solid');
+
+  // D — matrix
+  const states = Object.keys(COLOUR_AXES[c].values);
+  const head = '<tr><th>' + esc(GROUP_AXES[g] || g) + '</th>' +
+    states.map((s) => '<th>' + esc(s) + '</th>').join('') + '<th>Total</th></tr>';
+  const body = groups.map(([name, rs]) => {
+    const cells = states.map((s) => {
+      const n = rs.filter((r) => r[c] === s).length;
+      return '<td class="num' + (n ? '' : ' zero') + '">' + (n || '—') + '</td>';
+    }).join('');
+    return '<tr><th scope="row">' + esc(name) + '</th>' + cells + '<td class="num">' + rs.length + '</td></tr>';
+  }).join('');
+  const totals = '<tr><th scope="row">Total</th>' + states.map((s) =>
+    '<td class="num">' + rows.filter((r) => r[c] === s).length + '</td>').join('') +
+    '<td class="num">' + rows.length + '</td></tr>';
+  el('v-d').innerHTML = '<div class="panel" style="margin:0"><table class="matrix"><thead>' + head +
+    '</thead><tbody>' + body + totals + '</tbody></table></div>';
+}
+
+function syncAxes() {
+  const entity = el('entity').value;
+  fill(el('group'), AXES[entity].group, GROUP_AXES);
+  fill(el('colour'), AXES[entity].colour, Object.fromEntries(Object.entries(COLOUR_AXES).map(([k, v]) => [k, v.label])));
+  render();
+}
+el('entity').addEventListener('change', syncAxes);
+el('group').addEventListener('change', render);
+el('colour').addEventListener('change', render);
+syncAxes();
+</script>
+</body>
+</html>
