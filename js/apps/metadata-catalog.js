@@ -69,6 +69,9 @@ const matchOf = (core, id) => refList(core, 'mappingMatches').find((m) => m.id =
 const hostOf = (url) => { try { return new URL(url).host; } catch { return String(url || ''); } };
 // Store explicit tree expansion choices at module scope because hash changes
 // rebuild the page but not the module. Without a choice, a record stays folded.
+// exportTable needs the data at level 0, where it has no scope to read it from.
+// Set on every render; the module outlives the page but never predates it.
+let core0 = null;
 const OPEN = new Map();
 const isOpen = (key, fallback) => (OPEN.has(key) ? OPEN.get(key) : fallback);
 
@@ -297,6 +300,7 @@ function hrefFor(s, patch) {
 
 export default async function render(ctx) {
   const { mount, C, setTitle, setCrumbs } = ctx;
+  core0 = ctx.core;
   const s = readState(ctx);
 
   // A named record that does not resolve is a broken link, not an empty page.
@@ -374,7 +378,13 @@ export default async function render(ctx) {
   }
 
   const tools = mount.querySelector('#mc-tools');
-  const paintTools = () => { if (tools) tools.innerHTML = toolsHtml(ctx, cur); };
+  // wireMenu binds the trigger it finds now, and paintTools replaces it — so the
+  // menu is re-wired after every repaint rather than once at mount.
+  const wireActions = () => {
+    if (tools) C.wireMenu(tools, (action) => runExport(action, cur, unit));
+  };
+  const paintTools = () => { if (tools) { tools.innerHTML = toolsHtml(ctx, cur); wireActions(); } };
+  wireActions();
 
   // Changing the grouping re-lays BOTH views and every link in the tree, so it
   // navigates rather than redrawing in place. Unlike a tab switch it is a rare,
@@ -456,12 +466,86 @@ function searchBarHtml(ctx, s) {
   </form>`;
 }
 
+// --- Export ------------------------------------------------------------------
+// What leaves is exactly what the reader can see: the current scope AFTER the
+// tree, the search and the grouping. Exporting the whole catalogue from a screen
+// showing nine records would be a different thing than the one they asked for.
+function exportTable(s, unit) {
+  if (s.lvl >= 3) {
+    const isRef = s.rec.kind === 'referenz';
+    return {
+      name: `${s.rec.name} — ${unit.kid}`,
+      head: [isRef ? 'Bezeichnung' : s.rec.kind === 'objekt' ? 'Attribut' : 'Feld',
+        'Beschreibung', isRef ? 'Schlüssel' : 'Typ', 'Schlüsselrolle', 'Pflichtangabe'],
+      rows: scopeKids(s).map((k) => [k.name, k.def, k.type, k.key,
+        isRef ? '' : k.required ? 'Pflicht' : 'optional']),
+    };
+  }
+  if (s.lvl === 0) {
+    const hits = BRANCHES.flatMap((k) => records(core0, k).map((r) => ({ ...r, kind: k })))
+      .filter((r) => matches(s.q, r.name, r.def, r.group, r.steward));
+    return { name: s.q ? `Treffer für ${s.q}` : 'Katalog',
+      head: ['Bereich', 'Name', 'Gruppe', 'Beschreibung', 'Verantwortung', 'Bestandteile', 'Status'],
+      rows: hits.map((r) => [BRANCH_LABEL[r.kind], r.name, r.group, r.def, r.steward, r.n, r.status]) };
+  }
+  return {
+    name: s.leaf || BRANCH_LABEL[s.kind],
+    head: ['Name', unit.axis, 'Verantwortung', 'Beschreibung', unit.kid, 'Status'],
+    rows: scopeRows(s).map((r) => [r.name, r.group, r.steward, r.def, r.n, r.status]),
+  };
+}
+
+// A field is quoted only when it has to be (RFC 4180), and the file opens with a
+// BOM because without one Excel reads UTF-8 as the local code page and every
+// umlaut in the catalogue comes out wrong.
+const csvCell = (v) => {
+  const t = String(v == null ? '' : v);
+  return /[",\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+};
+const toCsv = (t) => '\uFEFF' + [t.head, ...t.rows]
+  .map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
+
+// Excel gets an HTML table rather than a comma file. A .csv forces a guess about
+// the separator — German Excel expects «;», the interchange format says «,» —
+// and whichever is chosen is wrong somewhere. A table has no separator to guess.
+const toXls = (t) => '<html xmlns:x="urn:schemas-microsoft-com:office:excel">'
+  + '<head><meta charset="utf-8"></head><body><table border="1"><thead><tr>'
+  + t.head.map((h) => `<th>${esc(h)}</th>`).join('') + '</tr></thead><tbody>'
+  + t.rows.map((row) => '<tr>' + row.map((c) => `<td>${esc(c)}</td>`).join('') + '</tr>').join('')
+  + '</tbody></table></body></html>';
+
+const slug = (x) => String(x).toLowerCase()
+  .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'katalog';
+
+function download(name, mime, text) {
+  const url = URL.createObjectURL(new Blob([text], { type: mime }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Revoke on the next turn: doing it synchronously can cancel the download in
+  // some browsers before it has read the blob.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function runExport(action, s, unit) {
+  // Printing is the browser's job, and its dialog is also where «Save as PDF»
+  // lives — so there is no separate PDF path to build or to keep working.
+  if (action === 'pdf') { window.print(); return; }
+  const t = exportTable(s, unit);
+  const base = `metadaten-katalog_${slug(t.name)}`;
+  if (action === 'csv') download(`${base}.csv`, 'text/csv;charset=utf-8', toCsv(t));
+  if (action === 'excel') download(`${base}.xls`, 'application/vnd.ms-excel;charset=utf-8', toXls(t));
+}
+
 // Grouping belongs to the table and the landscape, not to the tree — so it sits
 // in the tab row rather than in the sidebar. On level 3 it disappears: ordering
 // many records is what it does, and only one record is in scope there.
 function toolsHtml(ctx, s) {
   const { C } = ctx;
-  if (s.lvl < 1 || s.lvl > 2) return '';
+  if (s.lvl < 1) return '';
   const anyOpen = s.tab === 'diagramm'
     && landscapeBoxes(s).some((b) => isOpen(`box:${b.key}`, true));
   // The label states what pressing it WILL do, not what the state is called.
@@ -469,10 +553,19 @@ function toolsHtml(ctx, s) {
     <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-lscape-all="${anyOpen ? 'shut' : 'open'}">
       ${C.icon(anyOpen ? 'Minus' : 'Plus', 'btn__icon')}
       <span class="btn__text">Alle ${anyOpen ? 'zuklappen' : 'aufklappen'}</span></button>`;
-  return fold + C.select({
+  // Grouping orders many records; on a record there is only one, so it goes.
+  const group = s.lvl > 2 ? '' : C.select({
     id: 'mc-group', label: 'Gruppieren', size: 'sm', bare: true, value: s.group,
     wrapClass: 'mc-bar__group',
     options: GROUP_DIMS(s.kind).map((d) => ({ value: d.value, label: d.label })),
+  });
+  return fold + group + C.menu({
+    menuId: 'mc-actions', label: 'Aktionen', triggerLabel: 'Aktionen', triggerIcon: 'Download',
+    items: [
+      { action: 'csv', label: 'CSV herunterladen', icon: 'Download' },
+      { action: 'excel', label: 'Excel herunterladen', icon: 'Download' },
+      { action: 'pdf', label: 'Als PDF drucken', icon: 'Printer' },
+    ],
   });
 }
 

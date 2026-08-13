@@ -110,3 +110,19 @@
 .mc-search__field > input:disabled { background:var(--color-secondary-50);
   color:var(--color-text-muted); cursor:not-allowed; }
 .mc-search__count { margin:0; font-size:var(--fs-sm); color:var(--color-text-muted); }
+
+/* Printing the catalogue means printing what is IN the pane. The tree chooses
+   the scope and the controls arrange it — neither is part of the answer, and on
+   paper neither can be used. The portal's own print cascade (utilities.css)
+   already removes the surrounding chrome. */
+@media print {
+  .pf-sidebar, .mc-bar__tools, .mc-search, .catbar,
+  .lscape__toggle .lscape__chev, .table__group-chev { display:none !important; }
+  .pf-layout { display:block !important; }
+  /* A landscape on paper has no folding, so every box is laid flat and allowed
+     to break across pages rather than being clipped at the margin. */
+  .lscape { display:block !important; }
+  .lscape__group { width:auto !important; break-inside:avoid; margin-bottom:var(--sp-3); }
+  .lscape__tile { background:transparent !important; color:#000 !important;
+    border-color:#999 !important; }
+}

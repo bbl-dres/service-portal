@@ -43,6 +43,7 @@ const STATE = `JSON.stringify({
   qDead: !!(document.querySelector('#mc-q') || {}).disabled,
   qCount: ((document.querySelector('#mc-q-count') || {}).textContent || '').replace(/\\s+/g,' ').trim(),
   tableSearch: document.querySelectorAll('#mc-panel .catbar__search').length,
+  actions: [...document.querySelectorAll('#mc-tools [data-action]')].map(b => b.dataset.action),
   groupSel: (() => { const g = document.querySelector('#mc-group');
     return g ? g.value + ':' + [...g.options].map(o => o.value).join(',') : '(keins)'; })(),
   roots: [...document.querySelectorAll('.pf-tree > .pf-tree__item')].map(li => {
@@ -221,6 +222,51 @@ try {
   o = await go('#/app/metadata-catalog?kind=referenz&tab=diagramm');
   check(o.boxes.length === 4, 'every branch has a landscape', o.boxes.join(' | '));
   await clean(p, 'Diagramm');
+
+  head('Aktionen — what leaves is what is on screen');
+  // Intercept the download rather than writing files: the assertion is about the
+  // CONTENT, and a test that litters the download folder is its own problem.
+  await p.evaluate(`(() => {
+    const real = URL.createObjectURL;
+    URL.createObjectURL = (b) => { window.__blob = b; return real.call(URL, b); };
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[download]');
+      if (a) { window.__name = a.download; e.preventDefault(); }
+    }, true);
+    return 1;
+  })()`);
+  const exportCsv = async () => {
+    await p.evaluate('(document.querySelector(".action-menu__trigger").click(), 1)');
+    await sleep(200);
+    await p.evaluate('(document.querySelector("[data-action=\'csv\']").click(), 1)');
+    await sleep(350);
+    return JSON.parse(await p.evaluate(`(async () => JSON.stringify({
+      name: window.__name,
+      bom: [...new Uint8Array(await window.__blob.arrayBuffer()).slice(0, 3)].join(' '),
+      lines: (await window.__blob.text()).split('\\r\\n').filter(Boolean).length,
+    }))()`));
+  };
+
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=tabelle');
+  check(o.actions.join(',') === 'csv,excel,pdf', 'three ways out', o.actions.join(','));
+  let f = await exportCsv();
+  check(/\.csv$/.test(f.name), 'the file is named after its scope', f.name);
+  // Without a BOM Excel reads UTF-8 as the local code page and every umlaut in
+  // the catalogue comes out wrong.
+  check(f.bom === '239 187 191', 'and opens with a byte-order mark', f.bom);
+  check(f.lines === 20, 'nineteen records plus a header', String(f.lines));
+
+  // The export must follow the screen, not the catalogue.
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=tabelle&q=miet');
+  f = await exportCsv();
+  check(f.lines === 5, 'a query narrows the file too', String(f.lines) + ' Zeilen');
+
+  o = await go('#/app/metadata-catalog?id=areal');
+  check(o.actions.length === 3, 'a record can be exported as well', String(o.actions.length));
+  check(o.groupSel === '(keins)', 'but grouping goes: only one record is in scope', o.groupSel);
+  f = await exportCsv();
+  check(f.lines === 6, 'and the file holds its five attributes', String(f.lines) + ' Zeilen');
+  await clean(p, 'Aktionen');
 
   head('Suche — narrows the scope, not the tab');
   o = await go('#/app/metadata-catalog?kind=objekt');
