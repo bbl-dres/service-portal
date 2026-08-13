@@ -34,6 +34,11 @@ const STATE = `JSON.stringify({
     b => b.textContent.replace(/\\s+/g,' ').trim()),
   openGroups: document.querySelectorAll('#mc-panel .table__group-toggle[aria-expanded="true"]').length,
   pager: !!document.querySelector('#mc-panel .pagination'),
+  boxes: [...document.querySelectorAll('#mc-panel .lscape__toggle')].map(
+    b => b.textContent.replace(/\\s+/g,' ').trim()),
+  openBoxes: document.querySelectorAll('#mc-panel .lscape__toggle[aria-expanded="true"]').length,
+  tiles: document.querySelectorAll('#mc-panel .lscape__tile').length,
+  allBtn: ((document.querySelector('#mc-panel [data-lscape-all]') || {}).textContent || '').trim(),
   roots: [...document.querySelectorAll('.pf-tree > .pf-tree__item')].map(li => {
     const label = li.querySelector('.pf-tree__label');
     const n = li.querySelector('.pf-tree__n');
@@ -92,7 +97,7 @@ try {
 
   head('Ast — level 1');
   o = await go('#/app/metadata-catalog?kind=objekt');
-  check(o.tabs.join('/') === 'Übersicht/Tabelle', 'tabs Übersicht/Tabelle', o.tabs.join('/'));
+  check(o.tabs.join('/') === 'Übersicht/Diagramm/Tabelle', 'three tabs', o.tabs.join('/'));
   check(o.active === 'Übersicht', 'a branch opens on Übersicht', o.active);
   check(o.sections.join('/') === 'Definition/Verantwortlich/Metadaten',
     'the same three sections as every other level', o.sections.join('/'));
@@ -101,7 +106,8 @@ try {
 
   head('Domäne — level 2');
   o = await go(L2);
-  check(o.active === 'Tabelle', 'a group opens on Tabelle — the question is «what is in it»', o.active);
+  check(o.active === 'Diagramm', 'a domain opens on its landscape — a looking question', o.active);
+  o = await go(L2 + '&tab=tabelle');
   check(o.rows > 0, 'the group lists its records', String(o.rows));
   check(!o.cols.includes('Domäne'),
     'the axis column drops out when only one group is in scope', o.cols.join('/'));
@@ -123,7 +129,7 @@ try {
   /* Level 3 — what used to be two separate detail pages. */
 
   head('Geschäftsobjekt — level 3 via the legacy ?id= link');
-  o = await go(L2);
+  o = await go(L2 + '&tab=tabelle');
   const idHref = await linkIn('id=');
   check(/\?id=/.test(idHref), 'the table links to ?id=, unchanged since js/links.js', idHref);
   o = await go(idHref.slice(1));
@@ -141,7 +147,7 @@ try {
   /* Level 4 — and the one path into it that needs no chevron. */
 
   head('Attribut — level 4');
-  o = await go(idHref.slice(1));
+  o = await go(withTab(idHref, 'tabelle'));
   const attrHref = await linkIn('attr=');
   check(/attr=/.test(attrHref), 'a part links to ?attr=', attrHref);
   o = await go(attrHref.slice(1));
@@ -180,6 +186,32 @@ try {
   // Not every field carries a term, so the row is present-or-absent by design;
   // what must hold is that the label is the reverse of the object side.
   check(!o.keys.includes('Realisiert in'), 'a field never claims to be realised elsewhere', o.keys.join('/'));
+
+  head('Diagramm — the landscape');
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=diagramm');
+  check(o.boxes.length === 5, 'on a branch the boxes are the axis values', o.boxes.join(' | '));
+  check(o.tiles === 19, 'and the tiles are every record in scope', String(o.tiles));
+  check(o.openBoxes === o.boxes.length, 'boxes open expanded', String(o.openBoxes));
+  check(/zuklappen/.test(o.allBtn), 'the control says what pressing it will DO', o.allBtn);
+  await p.evaluate('(document.querySelector("[data-lscape-all]").click(), 1)');
+  await sleep(500);
+  o = JSON.parse(await p.evaluate(STATE));
+  check(o.openBoxes === 0 && o.tiles === 0, 'all boxes shut', o.openBoxes + ' open, ' + o.tiles + ' tiles');
+  check(/aufklappen/.test(o.allBtn), 'and the control now offers the opposite', o.allBtn);
+  await p.evaluate('(document.querySelector("[data-lscape-all]").click(), 1)');
+  await sleep(500);
+  o = JSON.parse(await p.evaluate(STATE));
+  check(o.openBoxes === o.boxes.length, 'and back open again', String(o.openBoxes));
+  // One level deeper the picture keeps its shape: boxes are records, tiles their parts.
+  o = await go(L2 + '&tab=diagramm');
+  check(o.boxes.length === 8, 'inside a domain the boxes are the records', String(o.boxes.length));
+  check(o.tiles > o.boxes.length, 'and the tiles are their parts', String(o.tiles));
+  const tileHref = await p.evaluate(
+    '(() => { const a = document.querySelector("#mc-panel .lscape__tile"); return a ? a.getAttribute("href") : ""; })()');
+  check(/attr=/.test(tileHref), 'a tile links to the attribute it draws', tileHref);
+  o = await go('#/app/metadata-catalog?kind=referenz&tab=diagramm');
+  check(o.boxes.length === 4, 'every branch has a landscape', o.boxes.join(' | '));
+  await clean(p, 'Diagramm');
 
   head('Sections');
   o = await go('#/app/metadata-catalog?kind=objekt&tab=tabelle');
@@ -221,12 +253,15 @@ try {
   o = await go('#/app/metadata-catalog?id=gibt-es-nicht');
   check(/nicht gefunden/i.test(o.h1 || ''), 'an unresolvable record is not-found, not an empty page', o.h1);
   o = await go('#/app/metadata-catalog?kind=objekt&leaf=gibt-es-nicht');
-  check(o.tabs.join('/') === 'Übersicht/Tabelle' && o.rows >= 0,
+  check(o.tabs.join('/') === 'Übersicht/Diagramm/Tabelle',
     'an unknown group falls back to its branch instead of throwing', o.tabs.join('/'));
   o = await go(idHref.slice(1) + '&attr=gibt-es-nicht');
   check(o.tabs.join('/') === 'Übersicht/Tabelle', 'an unknown attribute falls back to its record', o.tabs.join('/'));
-  o = await go('#/app/metadata-catalog?kind=objekt&tab=diagramm');
-  check(o.active === 'Übersicht', 'an unavailable tab falls back to the level default', o.active);
+  // A record has no landscape, so asking for one must land on the level default
+  // rather than on a blank pane.
+  o = await go(withTab(idHref, 'diagramm'));
+  check(o.active === 'Tabelle', 'an unavailable tab falls back to the level default', o.active);
+  check(o.rows > 0, 'and really renders that tab', String(o.rows));
   await clean(p, 'Broken links');
 } finally {
   await browser.close();

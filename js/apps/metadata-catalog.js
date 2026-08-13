@@ -81,13 +81,18 @@ const matchBadge = (core, id) => {
 
 // --- The model ---------------------------------------------------------------
 
-const TAB_LABEL = { uebersicht: 'Übersicht', tabelle: 'Tabelle' };
-// Not every level offers every tab: an attribute has nothing below it to tabulate.
-const TABS_AT = (lvl) => (lvl === 0 ? [] : lvl >= 4 ? ['uebersicht'] : ['uebersicht', 'tabelle']);
+const TAB_LABEL = { uebersicht: 'Übersicht', diagramm: 'Diagramm', tabelle: 'Tabelle' };
+// Not every level offers every tab. A record has no landscape of its own — its
+// parts are a list, not a territory — and an attribute has nothing below it at all.
+const TABS_AT = (lvl) => (lvl === 0 ? [] : lvl >= 4 ? ['uebersicht']
+  : lvl === 3 ? ['uebersicht', 'tabelle'] : ['uebersicht', 'diagramm', 'tabelle']);
 // Each level opens on the tab that answers its own question. A default only
 // holds until the reader picks a tab; from then on their choice travels with
 // them through the whole tree.
-const DEFAULT_TAB = { 1: 'uebersicht', 2: 'tabelle', 3: 'tabelle', 4: 'uebersicht' };
+// A domain opens on its landscape: the question there is «what is in this area
+// and how big is each piece», which is a looking question. A record opens on its
+// parts, which is a reading question.
+const DEFAULT_TAB = { 1: 'uebersicht', 2: 'diagramm', 3: 'tabelle', 4: 'uebersicht' };
 
 const BRANCHES = ['objekt', 'tabelle', 'referenz'];
 const BRANCH_LABEL = { objekt: 'Geschäftsobjekte', tabelle: 'Systeme', referenz: 'Referenzdaten' };
@@ -265,6 +270,38 @@ export default async function render(ctx) {
   mountPane(ctx, s, unit);
   wireTree(mount);
 
+  // The pane is redrawn in place for anything that changes only the pane. `cur`
+  // is what it is currently showing, so a landscape click after a tab switch
+  // acts on the tab the reader is actually looking at.
+  let cur = s;
+  const panel = mount.querySelector('#mc-panel');
+  const redraw = () => {
+    panel.innerHTML = paneHtml(ctx, cur, unit);
+    mountPane(ctx, cur, unit);
+  };
+
+  // Folding a box is a view preference, not a scope change, so it stays out of
+  // the URL — the same reasoning as the tree's chevrons.
+  panel.addEventListener('click', (e) => {
+    const all = e.target.closest('[data-lscape-all]');
+    if (all) {
+      const shut = all.dataset.lscapeAll === 'shut';
+      panel.querySelectorAll('[data-box]').forEach((b) => OPEN.set(`box:${b.dataset.box}`, !shut));
+      redraw();
+      // Keep the reader on the control they pressed; redraw() replaced it.
+      const again = panel.querySelector('[data-lscape-all]');
+      if (again) again.focus();
+      return;
+    }
+    const box = e.target.closest('[data-box]');
+    if (!box) return;
+    const key = `box:${box.dataset.box}`;
+    OPEN.set(key, !isOpen(key, true));
+    redraw();
+    const again = panel.querySelector(`[data-box="${CSS.escape(box.dataset.box)}"]`);
+    if (again) again.focus();
+  });
+
   // Tabs change the presentation only, so the panel is swapped in place rather
   // than the route re-run: the tree keeps its scroll position and its focus.
   if (s.lvl > 0) {
@@ -274,10 +311,8 @@ export default async function render(ctx) {
         if (tab === DEFAULT_TAB[s.lvl]) p.delete('tab'); else p.set('tab', tab);
         const str = p.toString();
         history.replaceState(history.state, '', str ? `${BASE}?${str}` : BASE);
-        const next = { ...s, tab, pick: tab === DEFAULT_TAB[s.lvl] ? '' : tab };
-        const panel = mount.querySelector('#mc-panel');
-        panel.innerHTML = paneHtml(ctx, next, unit);
-        mountPane(ctx, next, unit);
+        cur = { ...s, tab, pick: tab === DEFAULT_TAB[s.lvl] ? '' : tab };
+        redraw();
       },
     });
   }
@@ -380,6 +415,7 @@ function paneHtml(ctx, s, unit) {
   const { core, C } = ctx;
   if (s.lvl === 0) return homeHtml(ctx);
   if (s.tab === 'tabelle') return '<div id="mc-table"></div>';
+  if (s.tab === 'diagramm') return landscapeHtml(ctx, s, unit);
   if (s.lvl === 4) return attrOverview(core, s, unit);
   if (s.lvl === 3) return recordOverview(core, C, s, unit);
   return scopeOverview(s, unit);
@@ -458,6 +494,68 @@ function scopeOverview(s, unit) {
       ['Inhalt', `${rows.length} ${esc(unit.nom)}${s.leaf ? '' : ` in ${groups.size} ${esc(unit.axisPl)}`}`],
       ['Bestandteile', `${rows.reduce((a, r) => a + r.n, 0)} ${esc(unit.kid)}`],
     ]));
+}
+
+// --- Diagramm tab ------------------------------------------------------------
+
+// The same scope the table lists, drawn as territory instead of as a sequence.
+// Always one level below the scope as BOXES and two levels below as TILES — on a
+// branch that is domains holding records, inside a domain it is records holding
+// their parts. The picture therefore means the same thing wherever the reader
+// is standing, which is what lets them compare two of them.
+function landscapeHtml(ctx, s, unit) {
+  const { C } = ctx;
+  const CHEV = C.icon('ChevronRight', 'lscape__chev');
+  const rows = s.rows.filter((r) => !s.leaf || r.group === s.leaf);
+
+  const boxes = s.leaf
+    // Inside a domain: each record is a box, its parts are the tiles.
+    ? rows.map((r) => ({
+      key: `rec:${r.id}`, label: r.name, count: r.n, href: hrefFor(s, { rec: r, attr: '' }),
+      note: r.status,
+      tiles: r.kids.map((k) => ({
+        label: k.name, meta: k.type || '', href: hrefFor(s, { rec: r, attr: k.name }),
+        on: s.rec && s.rec.id === r.id && s.attr === k.name,
+      })),
+    }))
+    // On a branch: each axis value is a box, the records are the tiles.
+    : [...new Set(rows.map((r) => r.group))].sort((a, b) => a.localeCompare(b, 'de')).map((g) => {
+      const mine = rows.filter((r) => r.group === g);
+      return {
+        key: `grp:${g}`, label: g, count: mine.length, href: hrefFor(s, { leaf: g, rec: null, attr: '' }),
+        note: `${mine.reduce((a, r) => a + r.n, 0)} ${unit.kid}`,
+        tiles: mine.map((r) => ({
+          label: r.name, meta: `${r.n} ${unit.kid}`, href: hrefFor(s, { rec: r, attr: '', leaf: g }),
+          on: s.rec && s.rec.id === r.id,
+        })),
+      };
+    });
+
+  // The toolbar offers exactly one thing, and its label states what pressing it
+  // WILL do — «Alle aufklappen» when things are shut, not a mode name.
+  const anyOpen = boxes.some((b) => isOpen(`box:${b.key}`, true));
+  const bar = `<div class="lscape-bar">
+    <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-lscape-all="${anyOpen ? 'shut' : 'open'}">
+      ${C.icon(anyOpen ? 'Minus' : 'Plus', 'btn__icon')}
+      <span class="btn__text">Alle ${anyOpen ? 'zuklappen' : 'aufklappen'}</span></button></div>`;
+
+  if (!boxes.length) return `${bar}<p class="lscape__empty">In diesem Umfang ist nichts erfasst.</p>`;
+
+  return bar + `<div class="lscape">${boxes.map((b) => {
+    const open = isOpen(`box:${b.key}`, true);
+    return `<section class="lscape__group">
+      <h3 class="lscape__head"><button type="button" class="lscape__toggle" data-box="${esc(b.key)}"
+        aria-expanded="${open}">${CHEV}<span>${esc(b.label)}</span>
+        <span class="lscape__n">${b.count}</span>
+        <span class="lscape__note">${esc(b.note)}</span></button></h3>
+      ${!open ? '' : b.tiles.length
+    ? `<ul class="lscape__tiles">${b.tiles.map((t) => `<li><a class="lscape__tile${t.on ? ' is-active' : ''}"
+          href="${esc(t.href)}"${t.on ? ' aria-current="true"' : ''}>
+          <span class="lscape__tile-name">${esc(t.label)}</span>
+          <span class="lscape__tile-meta">${esc(t.meta)}</span></a></li>`).join('')}</ul>`
+    : `<p class="lscape__empty">Für «${esc(b.label)}» ist nichts erfasst.</p>`}
+    </section>`;
+  }).join('')}</div>`;
 }
 
 // The catalogue root has no tabs, because it is not a scope: it is the way in.
