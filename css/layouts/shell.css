@@ -4,14 +4,30 @@
    not on the CD-neutral .container--flex base. */
 .breadcrumb { background:transparent; border-bottom:0; font-size:var(--fs-sm); color:var(--color-text-500);
   align-items:center; gap:var(--sp-4); position:relative; z-index:var(--breadcrumb-z); }
-.breadcrumb ul { list-style:none; display:flex; flex-wrap:wrap; align-items:center; padding-block:var(--sp-2); margin-left:calc(-1 * var(--sp-4)); }
-@media (min-width:1280px){ .breadcrumb ul { padding-block:var(--sp-3); } }
-.breadcrumb li { display:flex; align-items:center; color:var(--color-text-500); }
+/* CD scopes EVERY base rule to direct children — `& > nav > ul`,
+   `& > nav > ul > li`, `& > nav > ul > li > a` (breadcrumb.postcss:15-27) — and
+   the child combinators are load-bearing, not stylistic: the dropdown nests a
+   second `ul > li > a` inside a crumb, and a descendant selector reaches into
+   it. The portal had `.breadcrumb ul` / `li` / `a`, which was equivalent while
+   the list was flat and broke the moment it was not: panel rows inherited
+   `display:flex` and laid themselves out ACROSS the panel instead of down it,
+   and the -16px list margin dragged the panel sideways (2026-08-13). */
+.breadcrumb > nav > ul { list-style:none; display:flex; flex-wrap:wrap; align-items:center; padding-block:var(--sp-2); margin-left:calc(-1 * var(--sp-4)); }
+@media (min-width:1280px){ .breadcrumb > nav > ul { padding-block:var(--sp-3); } }
+/* `relative` is CD's (breadcrumb.postcss:20) and is what the dropdown is
+   positioned against. Without it the panel resolves against `.breadcrumb`
+   itself — also position:relative — and lands at the far left of the bar rather
+   than under its own segment. */
+.breadcrumb > nav > ul > li { display:flex; align-items:center; position:relative; color:var(--color-text-500); }
 /* py-4 (1rem): the breadcrumb renders only at ≥1024px, where CD's md:py-4
    applies (breadcrumb.postcss:23-27); py-2 was the invisible mobile step. */
-.breadcrumb a, .breadcrumb [aria-current] { display:flex; align-items:center; padding:var(--sp-4); text-decoration:none; }
-.breadcrumb a { color:var(--color-text-500); }
-.breadcrumb a:hover { color:var(--color-primary-600); text-decoration:none; }
+/* `leading-tight` is CD's (breadcrumb.postcss:27) and it is what makes the fixed
+   `top-[3rem]` of the dropdown land exactly: py-4 twice plus a 1.25 line box on
+   text-sm is 48px. At the inherited 1.5 the segment measured 52px and the panel
+   overlapped it by 4px — the offset was never the thing to adjust. */
+.breadcrumb > nav > ul > li > :is(a, span) { display:flex; align-items:center; padding:var(--sp-4); line-height:var(--lh-tight); text-decoration:none; }
+.breadcrumb > nav > ul > li > a { color:var(--color-text-500); }
+.breadcrumb > nav > ul > li > a:hover { color:var(--color-primary-600); text-decoration:none; }
 /* Separator chevron at SvgIcon's 1rem base size (BreadcrumbNavigation.vue:108-112
    → icons.postcss:23-25 h-4); margins already match CD's -ml-5 mr-3. */
 .breadcrumb__include-icon { margin-left:calc(-1 * var(--sp-5)); margin-right:var(--sp-3); width:var(--sp-4); height:var(--sp-4); }
@@ -22,9 +38,26 @@
    .breadcrumb__dropdown-icon — so the disclosure already reads as its own
    control there. Here it IS one: a <button>, leaving the crumb link a link.
    The button is bare so the box remains the icon's, exactly as in CD. */
-.breadcrumb__dropdown { display:flex; align-items:center; padding:var(--sp-4) var(--sp-2) var(--sp-4) 0;
-  margin-left:calc(-1 * var(--sp-2)); border:0; background:none; color:inherit; cursor:pointer; }
+/* CD keeps the chevron INSIDE the link — <a class="px-4">{label}<icon ml-2/></a>
+   — so label→icon is exactly ml-2 and the 16px px-4 falls OUTSIDE the icon.
+   Splitting the control into a sibling button put that 16px BETWEEN label and
+   icon, doubling the gap to 24px… measured 16px, because the button also pulled
+   back 8px. Either way it was not CD's 8px. The link therefore gives up its
+   right padding to the button, which reassembles the same three boxes.
+   `font:inherit` is not cosmetic: <button> does not inherit font-size, so the
+   icon's `1.25em` resolved against the UA's 13.33px and drew a 16.7px box
+   instead of 17.5px. */
+.breadcrumb__dropdown { display:flex; align-items:center; position:relative;
+  padding:var(--sp-4) var(--sp-4) var(--sp-4) 0;
+  border:0; background:none; color:inherit; font:inherit; cursor:pointer; }
+.breadcrumb > nav > ul > li:has(> .breadcrumb__dropdown) > a { padding-right:0; }
 .breadcrumb__dropdown:hover { color:var(--color-primary-600); }
+/* CD has no separate control, so it has no target size to meet; this one does.
+   The box is 41.5px wide at CD's spacing, so the hit area is widened with a
+   pseudo-element instead of padding — padding would move the chevron and break
+   the 8px the rule above just restored. */
+.breadcrumb__dropdown::before { content:''; position:absolute; top:0; bottom:0;
+  left:calc(-1 * var(--sp-1-5)); right:calc(-1 * var(--sp-1-5)); }
 /* w-[1.25em] h-[1.25em], ml-2, primary-600 text + 1px border, rounded-sm. */
 .breadcrumb__dropdown-icon { width:1.25em; height:1.25em; margin-left:var(--sp-2);
   color:var(--color-primary-600); border:var(--stroke-1) solid var(--color-primary-600);
@@ -38,27 +71,30 @@
    The segment must sit ABOVE its own panel or the shadow it casts lands under
    the sheet it is supposed to join: CD pairs z-50 on the segment with z-10 on
    the panel, and the two tokens below keep that order (20 > 10). */
-.breadcrumb li:has(> .breadcrumb__dropdown[aria-expanded="true"]) > a {
+.breadcrumb > nav > ul > li:has(> .breadcrumb__dropdown[aria-expanded="true"]) > a {
   position:relative; z-index:var(--z-breadcrumb); background:var(--color-bg);
   box-shadow:var(--shadow-2xl); clip-path:inset(-50px -50px 0 -50px); }
 /* The separator chevron fades out while the segment is open (CD :63-70, 200ms). */
-.breadcrumb li:has(> .breadcrumb__dropdown[aria-expanded="true"]) .breadcrumb__include-icon {
+.breadcrumb > nav > ul > li:has(> .breadcrumb__dropdown[aria-expanded="true"]) .breadcrumb__include-icon {
   opacity:0; transition:opacity var(--duration); }
-/* Panel: w-[300px] p-2 mt-px, absolute top-[3rem] left-0, white, shadow-2xl. */
-.breadcrumb li > ul { position:absolute; top:var(--sp-12); left:0; z-index:var(--z-dropdown);
+/* Panel: w-[300px] p-2 mt-px, absolute top-[3rem] left-0, white, shadow-2xl.
+   CD addresses it as `.breadcrumb ul ul` (breadcrumb.postcss:93); the nested
+   list is the only second-level one, so the same form is used here. */
+.breadcrumb ul ul { position:absolute; top:var(--sp-12); left:0; z-index:var(--z-dropdown);
   width:300px; padding:var(--sp-2); margin-top:var(--stroke-1); list-style:none;
   background:var(--color-bg); box-shadow:var(--shadow-2xl); }
-.breadcrumb li > ul li { display:block; }
+/* Explicit, not inherited: these rows must stack whatever the bar above does. */
+.breadcrumb ul ul li { display:block; }
 /* Rows are CD menu items: menu__item--mini (px-4 py-2) + --border. */
-.breadcrumb li > ul a { display:block; width:100%; padding:var(--sp-2) var(--sp-4);
+.breadcrumb ul ul a { display:block; width:100%; padding:var(--sp-2) var(--sp-4);
   border-bottom:var(--stroke-1) solid var(--color-secondary-100); color:var(--color-text-500);
   text-decoration:none; transition:background-color var(--duration), color var(--duration); }
-.breadcrumb li > ul li:last-child a { border-bottom:0; }
-.breadcrumb li > ul a:hover { background:var(--color-secondary-50); color:var(--color-primary-600); }
+.breadcrumb ul ul li:last-child a { border-bottom:0; }
+.breadcrumb ul ul a:hover { background:var(--color-secondary-50); color:var(--color-primary-600); }
 /* CD marks the open page with a 2px bar at the left edge (breadcrumb.postcss:106-111).
    Note it is 2px/primary-600 here, NOT the 3px/primary-500 of menu__item--active. */
-.breadcrumb li > ul a.active { position:relative; }
-.breadcrumb li > ul a.active::after { content:''; position:absolute; top:0; bottom:0; left:0;
+.breadcrumb ul ul a.active { position:relative; }
+.breadcrumb ul ul a.active::after { content:''; position:absolute; top:0; bottom:0; left:0;
   width:var(--stroke-2); background:var(--color-primary-600); }
 
 /* Footer (footer.postcss:5-104) */
