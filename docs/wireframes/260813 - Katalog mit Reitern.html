@@ -64,6 +64,8 @@
   /* CONTROLS — 32px clears the 24px minimum target with room to spare */
   --ctl-h:32px;
   --tree-step:16px;
+  --tree-gutter:20px;   /* holds the chevron, outside the label flow */
+  --tree-icon:24px;     /* the type icon on level 1, inline before its label */
 
   --f:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --m:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -151,16 +153,36 @@ code{font-family:var(--m);font-size:var(--t-md);background:var(--chip);padding:1
 .tnode[aria-expanded="false"] .chev{transform:rotate(-90deg)}
 .tcount{margin-left:auto;font-size:var(--t-sm);color:var(--ink-2);font-variant-numeric:tabular-nums}
 
-/* Indent: one constant step per level. It used to run 9 → 30 → 40 → 74px, three
-   different steps, which made the depth impossible to read at a glance. */
-.t2{padding-left:calc(var(--s2) + var(--tree-step))}
-.trow{display:flex;align-items:center;border-radius:var(--r-sm);
-  padding-left:calc(var(--s2) + 2 * var(--tree-step) - var(--s6))}
+/* INDENT. Two earlier attempts got this wrong, both by measuring the wrong
+   thing. The first stepped the row's PADDING evenly and still looked random,
+   because each level carries a different set of things before its label — L1 a
+   chevron and a type icon, L2 a chevron, L3 a chevron in its own button, L4
+   nothing. Measured, the labels landed at 17 → 57 → 55 → 65: level 3 began two
+   pixels LEFT of level 2, so the tree un-indented as it got deeper. The second
+   hung the chevron in a gutter but left it in flow, so the flex gap after it
+   appeared on exactly those levels that had one: 61 → 53 → 61 → 77.
+
+   The chevron is now OUT OF FLOW, absolutely placed in the gutter that belongs
+   to its own level. Nothing sits between the row's padding edge and the label,
+   so --ind alone decides the depth and the numbers come out even.
+
+   Level 1 keeps its type icon and shares level 2's depth (Nutzerentscheid,
+   2026-08-13): it reads as the head of its branch through the icon and its
+   weight, and the ladder proper runs from level 2 down. */
+.tnode,.trow{position:relative;--ind:var(--tree-gutter);padding-left:var(--ind)}
+.t2{--ind:calc(var(--tree-gutter) + var(--tree-icon))}
+.trow{--ind:calc(var(--tree-gutter) + var(--tree-icon) + var(--tree-step))}
+.t4{--ind:calc(var(--tree-gutter) + var(--tree-icon) + 2 * var(--tree-step))}
+.tnode > .chev,.trow > .tchev{position:absolute;left:calc(var(--ind) - var(--tree-gutter));
+  top:0;bottom:0;width:var(--tree-gutter);margin:0;padding:0;
+  display:flex;align-items:center;justify-content:center}
+.trow > .tchev{height:auto}
+.trow{display:flex;align-items:center;border-radius:var(--r-sm)}
 .trow:hover{background:var(--hover)}
 .trow.is-active{background:var(--active)}
 .trow.is-path{background:var(--hover)}
 .trow.is-active .tnode{color:var(--ink);font-weight:600}
-.trow .tnode{flex:1;min-width:0;padding-left:var(--sh)}
+.trow .tnode{flex:1;min-width:0;padding-left:0}
 .trow .tnode:hover{background:none}
 /* 24px square: a target that has to be hit precisely cannot be 22px wide. */
 .tchev{display:flex;flex:none;align-items:center;justify-content:center;width:var(--s6);height:var(--s6);
@@ -168,8 +190,8 @@ code{font-family:var(--m);font-size:var(--t-md);background:var(--chip);padding:1
 .tchev:hover{color:var(--ink);background:var(--active)}
 .tchev .ico{transition:transform .12s}
 .tchev[aria-expanded="false"] .ico{transform:rotate(-90deg)}
-.t3{padding-left:0;font-size:var(--t-base)}
-.t4{padding-left:calc(var(--s2) + 3 * var(--tree-step));font-size:var(--t-md)}
+.t3{font-size:var(--t-base)}
+.t4{font-size:var(--t-md)}
 .tsep{height:1px;background:var(--line);margin:var(--sh)}
 
 /* ---- Tab bar: presentation controls ------------------------------------- */
@@ -679,7 +701,7 @@ function renderTree(){
   const key = (was && el('tree').contains(was)) ? was.dataset.key : '';
 
   const rootRow = '<li><button class="tnode' + (!state.kind ? ' is-active' : '') +
-    '" data-root="1" data-key="root"><span style="width:16px"></span>' + ICONS.branch +
+    '" data-root="1" data-key="root"><span class="chev"></span>' + ICONS.branch +
     '<span>Katalog</span><span class="tcount">' + ROOT.rows.length + '</span></button></li>' +
     '<li><div class="tsep"></div></li>';
 
