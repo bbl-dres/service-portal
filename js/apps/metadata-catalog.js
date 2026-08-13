@@ -112,6 +112,28 @@ const BRANCH_UNIT = {
   referenz: { nom: 'Wertelisten', dat: 'Wertelisten', kid: 'Werte', axis: 'Thema', axisPl: 'Themen' },
 };
 
+// Grouping is a property of the PRESENTATION, and both presentations share it:
+// it draws the boxes in the landscape and the sections in the table. One choice,
+// two views, which is what makes the two comparable at a glance.
+//
+// «keine» is a real option, not the absence of one: on a branch it collapses the
+// landscape into a single field of every record, and it hands the table back to
+// paging.
+const GROUP_DIMS = (kind) => {
+  const dims = [{ value: 'achse', label: BRANCH_UNIT[kind].axis, of: (r) => r.group }];
+  // Reference lists carry neither stewardship nor status yet (docs/data-model.md),
+  // so offering to group by them would offer a single «noch nicht erfasst» box.
+  if (kind !== 'referenz') {
+    dims.push({ value: 'verantwortung', label: 'Verantwortung', of: (r) => r.steward || 'noch nicht erfasst' });
+    dims.push({ value: 'status', label: 'Status', of: (r) => r.status || 'noch nicht erfasst' });
+  }
+  dims.push({ value: 'keine', label: 'keine', of: null });
+  return dims;
+};
+// On a branch the axis is the only division there is, so it is the opening one.
+// Inside one axis value it would produce a single box, so there it starts at none.
+const DEFAULT_GROUP = (lvl) => (lvl === 1 ? 'achse' : 'keine');
+
 // The value lists the portal actually keeps, grouped by subject so the third
 // branch has the same three levels as the other two.
 const REF_THEMES = [
@@ -215,13 +237,20 @@ function readState(ctx) {
   const pick = TAB_LABEL[qs.get('tab')] ? qs.get('tab') : '';
   const tab = avail.includes(pick) ? pick
     : (avail.includes(DEFAULT_TAB[lvl]) ? DEFAULT_TAB[lvl] : avail[0] || '');
-  return { kind, rows, leaf, rec, attr, lvl, tab, pick, avail, missing: !!picked && !rec };
+  // Same shape as the tab: an explicit choice wins and travels, a default only
+  // holds until one is made.
+  const dims = kind ? GROUP_DIMS(kind) : [];
+  const groupPick = dims.some((d) => d.value === qs.get('group')) ? qs.get('group') : '';
+  const group = groupPick || DEFAULT_GROUP(lvl);
+  return { kind, rows, leaf, rec, attr, lvl, tab, pick, avail, group, groupPick,
+    missing: !!picked && !rec };
 }
 
 // A link that changes one part of the scope and leaves the rest — in particular
 // the chosen tab — exactly where it was.
 function hrefFor(s, patch) {
-  const n = { kind: s.kind, leaf: s.leaf, rec: s.rec, attr: s.attr, pick: s.pick, ...patch };
+  const n = { kind: s.kind, leaf: s.leaf, rec: s.rec, attr: s.attr, pick: s.pick,
+    groupPick: s.groupPick, ...patch };
   const p = new URLSearchParams();
   if (n.rec) {
     p.set(n.rec.kind === 'objekt' ? 'id' : n.rec.kind === 'tabelle' ? 'table' : 'list', n.rec.id);
@@ -231,6 +260,7 @@ function hrefFor(s, patch) {
     if (n.leaf) p.set('leaf', n.leaf);
   }
   if (n.pick) p.set('tab', n.pick);
+  if (n.groupPick) p.set('group', n.groupPick);
   const s2 = p.toString();
   return s2 ? `${BASE}?${s2}` : BASE;
 }
@@ -266,10 +296,13 @@ export default async function render(ctx) {
         ${treeHtml(ctx, s)}
       </aside>
       <div class="pf-main">
-        ${s.lvl === 0 ? '' : `<div class="tabs">${C.tabBar({
+        ${s.lvl === 0 ? '' : `<div class="mc-bar">
+          <div class="tabs">${C.tabBar({
     items: s.avail.map((k) => ({ id: k, label: TAB_LABEL[k] })),
     active: s.tab, idPrefix: 'mc-tab', ariaLabel: 'Darstellung', panelId: 'mc-panel',
-  })}</div>`}
+  })}</div>
+          <div class="mc-bar__tools" id="mc-tools">${toolsHtml(ctx, s)}</div>
+        </div>`}
         ${/* .tab__container carries the ONE gap between strip and panel that the
               whole portal uses (tabs.css); the root has no strip, so no class. */''}
         <div id="mc-panel"${s.lvl === 0 ? '' : ' class="tab__container" role="tabpanel" tabindex="0"'}
@@ -291,24 +324,41 @@ export default async function render(ctx) {
     mountPane(ctx, cur, unit);
   };
 
+  const tools = mount.querySelector('#mc-tools');
+  const paintTools = () => { if (tools) tools.innerHTML = toolsHtml(ctx, cur); };
+
+  // Changing the grouping re-lays BOTH views and every link in the tree, so it
+  // navigates rather than redrawing in place. Unlike a tab switch it is a rare,
+  // deliberate act, and a full render is what keeps everything consistent.
+  if (tools) {
+    tools.addEventListener('change', (e) => {
+      const sel = e.target.closest('#mc-group');
+      if (!sel) return;
+      location.hash = hrefFor(cur, {
+        groupPick: sel.value === DEFAULT_GROUP(cur.lvl) ? '' : sel.value,
+      }).slice(1);
+    });
+    tools.addEventListener('click', (e) => {
+      const all = e.target.closest('[data-lscape-all]');
+      if (!all) return;
+      const shut = all.dataset.lscapeAll === 'shut';
+      landscapeBoxes(cur).forEach((b) => OPEN.set(`box:${b.key}`, !shut));
+      redraw(); paintTools();
+      const again = tools.querySelector('[data-lscape-all]');
+      if (again) again.focus();
+    });
+  }
+
   // Folding a box is a view preference, not a scope change, so it stays out of
   // the URL — the same reasoning as the tree's chevrons.
   panel.addEventListener('click', (e) => {
-    const all = e.target.closest('[data-lscape-all]');
-    if (all) {
-      const shut = all.dataset.lscapeAll === 'shut';
-      panel.querySelectorAll('[data-box]').forEach((b) => OPEN.set(`box:${b.dataset.box}`, !shut));
-      redraw();
-      // Keep the reader on the control they pressed; redraw() replaced it.
-      const again = panel.querySelector('[data-lscape-all]');
-      if (again) again.focus();
-      return;
-    }
     const box = e.target.closest('[data-box]');
     if (!box) return;
     const key = `box:${box.dataset.box}`;
     OPEN.set(key, !isOpen(key, true));
-    redraw();
+    // Repaint the toolbar too: whether «Alle zuklappen» or «Alle aufklappen» is
+    // the honest label depends on whether anything is still open.
+    redraw(); paintTools();
     const again = panel.querySelector(`[data-box="${CSS.escape(box.dataset.box)}"]`);
     if (again) again.focus();
   });
@@ -323,10 +373,31 @@ export default async function render(ctx) {
         const str = p.toString();
         history.replaceState(history.state, '', str ? `${BASE}?${str}` : BASE);
         cur = { ...s, tab, pick: tab === DEFAULT_TAB[s.lvl] ? '' : tab };
-        redraw();
+        // The fold control belongs to the landscape, so it comes and goes with it.
+        redraw(); paintTools();
       },
     });
   }
+}
+
+// Grouping belongs to the table and the landscape, not to the tree — so it sits
+// in the tab row rather than in the sidebar. On level 3 it disappears: ordering
+// many records is what it does, and only one record is in scope there.
+function toolsHtml(ctx, s) {
+  const { C } = ctx;
+  if (s.lvl < 1 || s.lvl > 2) return '';
+  const anyOpen = s.tab === 'diagramm'
+    && landscapeBoxes(s).some((b) => isOpen(`box:${b.key}`, true));
+  // The label states what pressing it WILL do, not what the state is called.
+  const fold = s.tab !== 'diagramm' ? '' : `
+    <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-lscape-all="${anyOpen ? 'shut' : 'open'}">
+      ${C.icon(anyOpen ? 'Minus' : 'Plus', 'btn__icon')}
+      <span class="btn__text">Alle ${anyOpen ? 'zuklappen' : 'aufklappen'}</span></button>`;
+  return fold + C.select({
+    id: 'mc-group', label: 'Gruppieren', size: 'sm', bare: true, value: s.group,
+    wrapClass: 'mc-bar__group',
+    options: GROUP_DIMS(s.kind).map((d) => ({ value: d.value, label: d.label })),
+  });
 }
 
 // --- Tree --------------------------------------------------------------------
@@ -427,7 +498,7 @@ function paneHtml(ctx, s, unit) {
   const { core, C } = ctx;
   if (s.lvl === 0) return homeHtml(ctx);
   if (s.tab === 'tabelle') return '<div id="mc-table"></div>';
-  if (s.tab === 'diagramm') return landscapeHtml(ctx, s, unit);
+  if (s.tab === 'diagramm') return landscapeHtml(ctx, s);
   if (s.lvl === 4) return attrOverview(core, s, unit);
   if (s.lvl === 3) return recordOverview(core, C, s, unit);
   return scopeOverview(s, unit);
@@ -516,56 +587,42 @@ function scopeOverview(s, unit) {
 // branch that is domains holding records, inside a domain it is records holding
 // their parts. The picture therefore means the same thing wherever the reader
 // is standing, which is what lets them compare two of them.
-function landscapeHtml(ctx, s, unit) {
+// A tile is ALWAYS one record — on every level, under every grouping. That is
+// what lets a reader compare two landscapes: the unit of the picture never
+// changes, only how the field is divided. The boxes come from the grouping, and
+// «keine» is one box holding everything.
+function landscapeBoxes(s) {
+  const rows = s.rows.filter((r) => !s.leaf || r.group === s.leaf);
+  const dim = (GROUP_DIMS(s.kind).find((d) => d.value === s.group) || {}).of;
+  const tile = (r) => ({ label: r.name, href: hrefFor(s, { rec: r, attr: '', leaf: r.group }),
+    on: !!(s.rec && s.rec.id === r.id) });
+  if (!dim) return [{ key: 'alle', label: 'Alle', count: rows.length, tiles: rows.map(tile) }];
+  const by = new Map();
+  rows.forEach((r) => {
+    const k = String(dim(r) == null ? '' : dim(r)) || '—';
+    if (!by.has(k)) by.set(k, []);
+    by.get(k).push(r);
+  });
+  // Biggest field first: the map reads from the largest territory down.
+  return [...by].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'de'))
+    .map(([k, mine]) => ({ key: `grp:${k}`, label: k, count: mine.length, tiles: mine.map(tile) }));
+}
+
+function landscapeHtml(ctx, s) {
   const { C } = ctx;
   const CHEV = C.icon('ChevronRight', 'lscape__chev');
-  const rows = s.rows.filter((r) => !s.leaf || r.group === s.leaf);
+  const boxes = landscapeBoxes(s);
+  if (!boxes.length) return '<p class="lscape__empty">In diesem Umfang ist nichts erfasst.</p>';
 
-  const boxes = s.leaf
-    // Inside a domain: each record is a box, its parts are the tiles.
-    ? rows.map((r) => ({
-      key: `rec:${r.id}`, label: r.name, count: r.n, href: hrefFor(s, { rec: r, attr: '' }),
-      note: r.status,
-      tiles: r.kids.map((k) => ({
-        label: k.name, meta: k.type || '', href: hrefFor(s, { rec: r, attr: k.name }),
-        on: s.rec && s.rec.id === r.id && s.attr === k.name,
-      })),
-    }))
-    // On a branch: each axis value is a box, the records are the tiles.
-    : [...new Set(rows.map((r) => r.group))].sort((a, b) => a.localeCompare(b, 'de')).map((g) => {
-      const mine = rows.filter((r) => r.group === g);
-      return {
-        key: `grp:${g}`, label: g, count: mine.length, href: hrefFor(s, { leaf: g, rec: null, attr: '' }),
-        note: `${mine.reduce((a, r) => a + r.n, 0)} ${unit.kid}`,
-        tiles: mine.map((r) => ({
-          label: r.name, meta: `${r.n} ${unit.kid}`, href: hrefFor(s, { rec: r, attr: '', leaf: g }),
-          on: s.rec && s.rec.id === r.id,
-        })),
-      };
-    });
-
-  // The toolbar offers exactly one thing, and its label states what pressing it
-  // WILL do — «Alle aufklappen» when things are shut, not a mode name.
-  const anyOpen = boxes.some((b) => isOpen(`box:${b.key}`, true));
-  const bar = `<div class="lscape-bar">
-    <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-lscape-all="${anyOpen ? 'shut' : 'open'}">
-      ${C.icon(anyOpen ? 'Minus' : 'Plus', 'btn__icon')}
-      <span class="btn__text">Alle ${anyOpen ? 'zuklappen' : 'aufklappen'}</span></button></div>`;
-
-  if (!boxes.length) return `${bar}<p class="lscape__empty">In diesem Umfang ist nichts erfasst.</p>`;
-
-  return bar + `<div class="lscape">${boxes.map((b) => {
+  return `<div class="lscape">${boxes.map((b) => {
     const open = isOpen(`box:${b.key}`, true);
     return `<section class="lscape__group">
       <h3 class="lscape__head"><button type="button" class="lscape__toggle" data-box="${esc(b.key)}"
         aria-expanded="${open}">${CHEV}<span>${esc(b.label)}</span>
-        <span class="lscape__n">${b.count}</span>
-        <span class="lscape__note">${esc(b.note)}</span></button></h3>
+        <span class="lscape__n">${b.count}</span></button></h3>
       ${!open ? '' : b.tiles.length
     ? `<ul class="lscape__tiles">${b.tiles.map((t) => `<li><a class="lscape__tile${t.on ? ' is-active' : ''}"
-          href="${esc(t.href)}"${t.on ? ' aria-current="true"' : ''}>
-          <span class="lscape__tile-name">${esc(t.label)}</span>
-          <span class="lscape__tile-meta">${esc(t.meta)}</span></a></li>`).join('')}</ul>`
+          href="${esc(t.href)}"${t.on ? ' aria-current="true"' : ''}>${esc(t.label)}</a></li>`).join('')}</ul>`
     : `<p class="lscape__empty">Für «${esc(b.label)}» ist nichts erfasst.</p>`}
     </section>`;
   }).join('')}</div>`;
@@ -692,7 +749,7 @@ function mountPane(ctx, s, unit) {
     // five domains read as nineteen unrelated rows. Sectioning by the axis is
     // the same grouping the tree draws, so the two views agree. Inside ONE group
     // there is nothing left to section by, so level 2 goes back to plain pages.
-    groupBy: s.leaf ? null : { key: 'group' },
+    groupBy: (GROUP_DIMS(s.kind).find((d) => d.value === s.group) || {}).of || null,
     rows, searchKeys: ['name', 'def', 'group', 'steward'],
     emptyMsg: 'In diesem Umfang ist kein Eintrag erfasst.',
     sorts: [
@@ -707,8 +764,10 @@ function mountPane(ctx, s, unit) {
     columns: [
       { key: 'name', label: 'Name', width: '11rem',
         render: (r) => `<a href="${esc(hrefFor(s, { rec: r, attr: '', leaf: r.group }))}">${esc(r.name)}</a>` },
-      // No axis column: at level 1 the section headers already carry it, and at
-      // level 2 every row shares the one value the tree is already showing.
+      // The axis column earns its place only when the sections are not already
+      // carrying it and more than one value is in scope.
+      ...(s.group === 'achse' || s.leaf ? []
+        : [{ key: 'group', label: unit.axis, width: '10rem', render: (r) => esc(r.group) }]),
       { key: 'steward', label: 'Verantwortung', width: '11rem',
         render: (r) => (r.steward ? esc(truncateText(r.steward, 34)) : TODO) },
       { key: 'def', label: 'Beschreibung',

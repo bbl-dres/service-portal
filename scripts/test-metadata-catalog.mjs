@@ -38,7 +38,9 @@ const STATE = `JSON.stringify({
     b => b.textContent.replace(/\\s+/g,' ').trim()),
   openBoxes: document.querySelectorAll('#mc-panel .lscape__toggle[aria-expanded="true"]').length,
   tiles: document.querySelectorAll('#mc-panel .lscape__tile').length,
-  allBtn: ((document.querySelector('#mc-panel [data-lscape-all]') || {}).textContent || '').trim(),
+  allBtn: ((document.querySelector('[data-lscape-all]') || {}).textContent || '').trim(),
+  groupSel: (() => { const g = document.querySelector('#mc-group');
+    return g ? g.value + ':' + [...g.options].map(o => o.value).join(',') : '(keins)'; })(),
   roots: [...document.querySelectorAll('.pf-tree > .pf-tree__item')].map(li => {
     const label = li.querySelector('.pf-tree__label');
     const n = li.querySelector('.pf-tree__n');
@@ -202,21 +204,55 @@ try {
   await sleep(500);
   o = JSON.parse(await p.evaluate(STATE));
   check(o.openBoxes === o.boxes.length, 'and back open again', String(o.openBoxes));
-  // One level deeper the picture keeps its shape: boxes are records, tiles their parts.
+  // A tile is ALWAYS one record. One level deeper the same landscape is simply
+  // re-laid: with no grouping in force it collapses to a single field.
   o = await go(L2 + '&tab=diagramm');
-  check(o.boxes.length === 8, 'inside a domain the boxes are the records', String(o.boxes.length));
-  check(o.tiles > o.boxes.length, 'and the tiles are their parts', String(o.tiles));
+  check(o.boxes.length === 1 && /^Alle/.test(o.boxes[0]),
+    'inside one group the landscape collapses to a single field', o.boxes.join(' | '));
+  check(o.tiles === 8, 'holding the same eight records the table lists', String(o.tiles));
   const tileHref = await p.evaluate(
     '(() => { const a = document.querySelector("#mc-panel .lscape__tile"); return a ? a.getAttribute("href") : ""; })()');
-  check(/attr=/.test(tileHref), 'a tile links to the attribute it draws', tileHref);
+  check(/[?&]id=/.test(tileHref) && !/attr=/.test(tileHref),
+    'a tile links to the record it draws, never to a part', tileHref);
   o = await go('#/app/metadata-catalog?kind=referenz&tab=diagramm');
   check(o.boxes.length === 4, 'every branch has a landscape', o.boxes.join(' | '));
   await clean(p, 'Diagramm');
+
+  head('Gruppieren — one choice, both views');
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=diagramm');
+  check(o.groupSel === 'achse:achse,verantwortung,status,keine',
+    'a branch offers axis, stewardship, status and none', o.groupSel);
+  check(o.boxes.length === 5, 'the axis divides the landscape into five', String(o.boxes.length));
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=diagramm&group=verantwortung');
+  check(o.boxes.length === 4, 'stewardship divides it into four', o.boxes.join(' | '));
+  check(o.tiles === 19, 'and never changes how many tiles there are', String(o.tiles));
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=diagramm&group=keine');
+  check(o.boxes.length === 1 && o.tiles === 19, 'none collapses it to one field',
+    o.boxes.length + ' Kasten, ' + o.tiles + ' Kacheln');
+  // The same parameter, the other tab.
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=tabelle&group=verantwortung');
+  check(o.groups.length === 4, 'the table takes its sections from the same choice',
+    o.groups.join(' | '));
+  check(o.cols.includes('Domäne'),
+    'and the axis returns as a column once the sections no longer carry it', o.cols.join('/'));
+  // «keine» hands the table back to paging. Nineteen records at 25 a page is one
+  // page, so the proof is that the section rows are gone and the plain rows are
+  // all there — not that a pager is drawn.
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=tabelle&group=keine');
+  check(o.groups.length === 0 && o.rows === 19, 'none returns a plain, unsectioned table',
+    o.groups.length + ' Abschnitte, ' + o.rows + ' Zeilen');
+  // Reference lists have neither steward nor status in the data model yet, so
+  // offering to group by them would offer a single «noch nicht erfasst» box.
+  o = await go('#/app/metadata-catalog?kind=referenz&tab=diagramm');
+  check(o.groupSel === 'achse:achse,keine', 'reference data offers only what it has', o.groupSel);
+  await clean(p, 'Gruppieren');
 
   head('Sections');
   o = await go('#/app/metadata-catalog?kind=objekt&tab=tabelle');
   const branchRows = o.rows;
   check(o.groups.length > 1, 'a whole branch is sectioned by its axis', o.groups.join(' | '));
+  check(/^Bauwerk und Liegenschaft/.test(o.groups[0]),
+    'biggest section first — the map reads from the largest territory down', o.groups[0]);
   check(!o.pager, 'sections replace paging — a section must not continue on page 3');
   check(o.openGroups === o.groups.length, 'every section opens expanded', String(o.openGroups));
   await p.evaluate('(document.querySelector(".table__group-toggle").click(), 1)');
