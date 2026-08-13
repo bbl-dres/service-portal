@@ -234,5 +234,56 @@ check(/\bngf:\s*raw\[['"]garea_ngf['"]\]\s*\|\|\s*0/.test(coreSource)
   && /\btotalFloors:\s*raw\[['"]gastw['"]\]\s*\|\|\s*0/.test(coreSource),
   'core normalisation exposes net floor area and total floor count under stable field names');
 
+// --- data tables: one primary key per table ---------------------------------
+// From the domain review (user, 2026-08-12). The flags claimed two to four
+// primary keys per table where the columns were foreign keys into other
+// tables (COMP_CODE, BUSINESS_ENTITY) or plainly not unique (BUILDING, the
+// building's number within its entity). A table has ONE key; where that key
+// genuinely spans columns, it is one composite key and the field list says so.
+const dataTables = json('data/data-tables.json');
+// Only entries here may carry a multi-column key, and each states why.
+const COMPOSITE_KEYS = {
+  // A measurement is identified by its object, its type and the date it applies
+  // from — the same row exists again for the next validity period.
+  'sap-refx-vibdme': ['OBJECT_TYPE', 'OBJECT_ID', 'MEASUREMENT', 'VALID_FROM'],
+};
+const keysOf = (t) => (t.fields || []).filter((f) => f.primaryKey).map((f) => f.name);
+
+const keyless = dataTables.filter((t) => !keysOf(t).length);
+check(keyless.length === 0,
+  `every data table declares a primary key${keyless.length ? `; unresolved: ${keyless.map((t) => t.tableId).join(', ')}` : ''}`);
+
+const unexpectedComposite = dataTables.filter((t) => keysOf(t).length > 1 && !COMPOSITE_KEYS[t.tableId]);
+check(unexpectedComposite.length === 0,
+  `no table claims several independent primary keys${unexpectedComposite.length
+    ? `; unresolved: ${unexpectedComposite.map((t) => `${t.tableId} (${keysOf(t).join(' + ')})`).join(', ')}` : ''}`);
+
+const wrongComposite = Object.entries(COMPOSITE_KEYS).filter(([id, expected]) => {
+  const table = dataTables.find((t) => t.tableId === id);
+  return !table || keysOf(table).join('|') !== expected.join('|');
+});
+check(wrongComposite.length === 0,
+  `each documented composite key still matches the data${wrongComposite.length
+    ? `; unresolved: ${wrongComposite.map(([id]) => id).join(', ')}` : ''}`);
+
+// A key column is by definition present, and a column cannot be the table's own
+// key and a reference into another table at the same time.
+const nullableKeys = dataTables.flatMap((t) => (t.fields || [])
+  .filter((f) => f.primaryKey && f.nullable !== false).map((f) => `${t.tableId}.${f.name}`));
+check(nullableKeys.length === 0,
+  `no primary key is nullable${nullableKeys.length ? `; unresolved: ${nullableKeys.join(', ')}` : ''}`);
+
+const keyAndForeign = dataTables.flatMap((t) => (t.fields || [])
+  .filter((f) => f.primaryKey && f.foreignKey).map((f) => `${t.tableId}.${f.name}`));
+check(keyAndForeign.length === 0,
+  `no column is both primary and foreign key${keyAndForeign.length ? `; unresolved: ${keyAndForeign.join(', ')}` : ''}`);
+
+// `unique` marks a business key that is NOT the table's key (bbl_id on the GIS
+// layers, where the Esri objectid is). Both flags at once says nothing.
+const uniqueAndKey = dataTables.flatMap((t) => (t.fields || [])
+  .filter((f) => f.unique && f.primaryKey).map((f) => `${t.tableId}.${f.name}`));
+check(uniqueAndKey.length === 0,
+  `no column is flagged both unique and primary key${uniqueAndKey.length ? `; unresolved: ${uniqueAndKey.join(', ')}` : ''}`);
+
 console.log(failures ? `\nfailed: ${failures} check(s)` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

@@ -22,15 +22,13 @@
         "dataType": "VARCHAR(4)",
         "description": "Buchungskreis",
         "nullable": false,
-        "primaryKey": true,
         "foreignKey": true
       },
       {
         "name": "BUSINESS_ENTITY",
         "dataType": "VARCHAR(8)",
         "description": "Nummer der Wirtschaftseinheit",
-        "nullable": false,
-        "primaryKey": true
+        "nullable": false
       },
       {
         "name": "IDENT_OBJECT_TYPE",
@@ -43,7 +41,8 @@
         "name": "IDENT_KEY",
         "dataType": "VARCHAR(45)",
         "description": "Ident-Teil Schlüssel, z.B. '1000/123'",
-        "nullable": true
+        "nullable": false,
+        "primaryKey": true
       },
       {
         "name": "CREATION_USER",
@@ -286,7 +285,6 @@
         "dataType": "VARCHAR(4)",
         "description": "Buchungskreis",
         "nullable": false,
-        "primaryKey": true,
         "foreignKey": true
       },
       {
@@ -294,15 +292,13 @@
         "dataType": "VARCHAR(8)",
         "description": "Nummer der Wirtschaftseinheit",
         "nullable": false,
-        "primaryKey": true,
         "foreignKey": true
       },
       {
         "name": "BUILDING",
         "dataType": "VARCHAR(8)",
         "description": "Nummer des Gebäudes",
-        "nullable": false,
-        "primaryKey": true
+        "nullable": false
       },
       {
         "name": "IDENT_OBJECT_TYPE",
@@ -315,7 +311,8 @@
         "name": "IDENT_KEY",
         "dataType": "VARCHAR(45)",
         "description": "Ident-Teil Schlüssel, z.B. '1000/123'",
-        "nullable": true
+        "nullable": false,
+        "primaryKey": true
       },
       {
         "name": "CREATION_USER",
@@ -955,7 +952,7 @@
         "dataType": "VARCHAR(50)",
         "description": "Interne BBL ID (Buchungskreis/WE/Teilobjekt)",
         "nullable": false,
-        "primaryKey": true
+        "unique": true
       },
       {
         "name": "bbl_buch",
@@ -1249,7 +1246,8 @@
         "name": "objectid",
         "dataType": "INTEGER",
         "description": "ESRI ID fur GIS-Updates",
-        "nullable": true
+        "nullable": false,
+        "primaryKey": true
       },
       {
         "name": "bbl_api",
@@ -2038,7 +2036,7 @@
         "dataType": "VARCHAR(50)",
         "description": "Interne BBL ID (Buchungskreis/WE/Teilobjekt)",
         "nullable": false,
-        "primaryKey": true
+        "unique": true
       },
       {
         "name": "bbl_buch",
@@ -2307,7 +2305,8 @@
         "name": "objectid",
         "dataType": "INTEGER",
         "description": "ESRI ID fur GIS-Updates",
-        "nullable": true
+        "nullable": false,
+        "primaryKey": true
       },
       {
         "name": "etl_ts",

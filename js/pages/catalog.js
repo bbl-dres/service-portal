@@ -159,6 +159,8 @@ function detail(ctx, id) {
   setTitle(t(d.title));
   setCrumbs([...crumbs(), { label: t(d.title) }]);
 
+  const tabs = tabsFor(core, d);
+
   const img = preview(C, d);
 
   // Tags lead back to the catalogue with that filter selected.
@@ -255,8 +257,10 @@ function detail(ctx, id) {
       bookmark: bookmarkButton({ kind: 'dataset', id: d.id, name: t(d.title) }),
     })}
 
-    ${C.tabBar({ items: TABS, active: activeTab, idPrefix: 'ds', ariaLabel: 'Ansichten des Datensatzes' })}
-    ${C.tabPanels({ items: TABS, active: activeTab, idPrefix: 'ds', heading: true, render: (id) => id === 'fields'
+    ${/* Labels carry the field count; ids stay TABS' own, so the hash, the
+          panels and wireTabs are untouched by the counting. */''}
+    ${C.tabBar({ items: tabs, active: activeTab, idPrefix: 'ds', ariaLabel: 'Ansichten des Datensatzes' })}
+    ${C.tabPanels({ items: tabs, active: activeTab, idPrefix: 'ds', heading: true, render: (id) => id === 'fields'
       ? fieldsPanel(C, core, d)
       : `${/* Main column plus aside, the anatomy of the service and application
              detail pages. This page used to be a single 60rem column with the
@@ -329,6 +333,13 @@ function wireDistributionJump(mount) {
     // alone would move to a hidden element, so switch tabs first.
     const overview = mount.querySelector(`.tab__control[aria-selected="false"][id$="-${TABS[0].id}"]`);
     if (overview) overview.click();
+    // Land on an OPEN first distribution (user request, 2026-08-12). Arriving at
+    // a column of collapsed headers is one more click between «I want the data»
+    // and the URL that serves it. Clicking the button rather than setting the
+    // attributes reuses wireAccordion's drawer animation and [hidden] handling —
+    // duplicating that here is how the two would drift apart.
+    const first = target.querySelector('.accordion__button');
+    if (first && first.getAttribute('aria-expanded') !== 'true') first.click();
     target.scrollIntoView({ block: 'start', behavior: 'smooth' });
     (target.querySelector('.detail-section__title') || target).focus({ preventScroll: true });
   });
@@ -381,6 +392,18 @@ function tablesForDataset(core, dataset) {
   return core.dataTables().filter((table) => String(table.datasetId) === String(dataset.id));
 }
 
+// «Datenfelder (75)» — the tab states its own size, so nobody opens it to find
+// out whether anything is there (user request, 2026-08-12). Zero is worth
+// showing too: it is the answer for 13 of 20 datasets.
+function fieldCount(core, dataset) {
+  return tablesForDataset(core, dataset).reduce((n, table) => n + (table.fields || []).length, 0);
+}
+
+function tabsFor(core, dataset) {
+  const total = fieldCount(core, dataset);
+  return TABS.map((tab) => (tab.id === 'fields' ? { ...tab, label: `${tab.label} (${total})` } : tab));
+}
+
 // `nullable`, `primaryKey` and `foreignKey` are booleans on the record, so the
 // constraint column states what they mean instead of printing three flags.
 // `values` is optional and carries a value list where the source defines one.
@@ -388,10 +411,21 @@ function tablesForDataset(core, dataset) {
 // Plain text, because this string has two destinations now: the rendered cell
 // and the CSV export. Building the export from the DOM would have taken the
 // visible page only, and «—» would have travelled into the spreadsheet as data.
-function fieldConstraintText(field) {
+//
+// `composite` says the table's key spans SEVERAL columns, so each of them is a
+// part rather than a key of its own. A table has exactly one primary key; the
+// flags used to claim three or four per table, which is what the domain review
+// corrected in the data (user, 2026-08-12). Only VIBDBE Bemessungen genuinely
+// has one — object, measurement type and validity date together identify a row.
+//
+// `unique` is the other half of that correction: a column can be unique without
+// being the key. bbl_id is what analysts join GIS layers on, while the layer's
+// own key is the Esri-managed objectid.
+function fieldConstraintText(field, composite = false) {
   const parts = [];
-  if (field.primaryKey) parts.push('Primärschlüssel');
+  if (field.primaryKey) parts.push(composite ? 'Teil des Primärschlüssels' : 'Primärschlüssel');
   if (field.foreignKey) parts.push('Fremdschlüssel');
+  if (field.unique && !field.primaryKey) parts.push('Eindeutig');
   if (!field.nullable && !field.primaryKey) parts.push('Pflichtfeld');
   if (Array.isArray(field.values) && field.values.length) {
     parts.push(`Werteliste: ${field.values.join(', ')}`);
@@ -399,9 +433,12 @@ function fieldConstraintText(field) {
   return parts.join(' · ');
 }
 
+// True when the table's primary key spans more than one column.
+const hasCompositeKey = (table) => (table.fields || []).filter((f) => f.primaryKey).length > 1;
+
 const EM_DASH = '<span class="muted">—</span>';
-function fieldConstraint(C, field) {
-  return C.escape(fieldConstraintText(field)) || EM_DASH;
+function fieldConstraint(C, field, composite) {
+  return C.escape(fieldConstraintText(field, composite)) || EM_DASH;
 }
 
 const NO_FIELDS_MESSAGE = 'Für diesen Datensatz sind noch keine Felddefinitionen erfasst. '
@@ -444,6 +481,7 @@ function wireFieldsPanel(C, core, dataset, mount) {
     const host = mount.querySelector(`#${fieldsHostId(i)}`);
     if (!host) return null;
     const label = table.displayName || table.name;
+    const composite = hasCompositeKey(table);
     return C.mountDataTable(host, {
       id: fieldsHostId(i),
       caption: `Datenfelder ${label}`,
@@ -454,7 +492,7 @@ function wireFieldsPanel(C, core, dataset, mount) {
       placeholder: 'Feld oder Beschreibung suchen…',
       // Constraint text is derived, not stored, so a plain key list would miss
       // «Pflichtfeld» and the value lists.
-      search: (f, q) => [f.name, f.description, f.dataType, f.comment, fieldConstraintText(f)]
+      search: (f, q) => [f.name, f.description, f.dataType, f.comment, fieldConstraintText(f, composite)]
         .some((v) => String(v || '').toLowerCase().includes(q)),
       sorts: [
         // Same first option, wording and cmp as the field list in the metadata
@@ -477,7 +515,7 @@ function wireFieldsPanel(C, core, dataset, mount) {
         { key: 'name', label: 'Feld', nowrap: true, render: (f) => `<code>${C.escape(f.name)}</code>` },
         { key: 'description', label: 'Beschreibung', render: (f) => C.escape(f.description) || EM_DASH },
         { key: 'dataType', label: 'Format', nowrap: true, render: (f) => C.escape(f.dataType) },
-        { key: 'constraint', label: 'Constraint', render: (f) => fieldConstraint(C, f) },
+        { key: 'constraint', label: 'Constraint', render: (f) => fieldConstraint(C, f, composite) },
         { key: 'comment', label: 'Kommentar', render: (f) => C.escape(f.comment || '') || EM_DASH },
       ],
       // The bar opens the tab panel, so it drops its top margin.
@@ -492,7 +530,7 @@ function wireFieldsPanel(C, core, dataset, mount) {
           { action: 'xls', label: 'Für Excel', icon: 'Download' },
         ],
       }),
-      onAction: (action, { filtered }) => exportFields(action, filtered, dataset, table),
+      onAction: (action, { filtered }) => exportFields(action, filtered, table, composite),
     });
   }).filter(Boolean);
   return () => disposers.forEach((dispose) => dispose());
@@ -500,12 +538,12 @@ function wireFieldsPanel(C, core, dataset, mount) {
 
 // Export the CURRENT result set, built from the data rather than the rendered
 // page. js/export.js already owns delimiter, BOM and formula neutralisation.
-async function exportFields(action, fields, dataset, table) {
+async function exportFields(action, fields, table, composite) {
   if (action !== 'csv' && action !== 'xls') return;
   const { download, fileSlug, rowsToCsv } = await import('../export.js');
   const rows = [
     FIELD_COLUMNS.map((c) => c.label),
-    ...fields.map((f) => [f.name, f.description || '', f.dataType || '', fieldConstraintText(f), f.comment || '']),
+    ...fields.map((f) => [f.name, f.description || '', f.dataType || '', fieldConstraintText(f, composite), f.comment || '']),
   ];
   const name = `${fileSlug(`datenfelder-${table.name}`)}`;
   if (action === 'csv') return download(rowsToCsv(rows), `${name}.csv`, 'text/csv;charset=utf-8');

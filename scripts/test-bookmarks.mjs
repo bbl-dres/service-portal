@@ -1,13 +1,13 @@
-// Personal bookmarks: the star, the store and the favourites band.
+// Personal bookmarks: the heart, the store and the favourites band.
 //
 // Three contracts are checked here rather than in the suites of the pages that
 // happen to carry them, because they are properties of the FEATURE and each is
 // the kind that breaks silently:
-//   · one store — room booking's star and the dataset star write to the same
+//   · one store — room booking's heart and the dataset heart write to the same
 //     place, so a person's favourites cannot split in two;
 //   · seed then deltas — data/users.json fills an empty profile, and a removal
 //     survives the next load instead of being handed back by the seed;
-//   · nothing without a person — the catalogue pages carrying the star stay
+//   · nothing without a person — the catalogue pages carrying the heart stay
 //     public, so the signed-out state is real rather than theoretical.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
@@ -21,15 +21,15 @@ const check = (condition, label, detail = '') => {
 };
 const head = (title) => console.log(`\n■ ${title}`);
 
-// The star lives in the detail head; wait for the page, then read its state.
+// The heart lives in the detail head; wait for the page, then read its state.
 //
-// PLACEMENT is measured, not just queried. The star sits in the top right corner
+// PLACEMENT is measured, not just queried. The heart sits in the top right corner
 // OF THE PICTURE, so the assertion has to be geometric: a rule that moves it out
 // of the frame, or a hero whose image loses its positioning context, still
 // matches `.hero__image > .bookmark-icon` while landing anywhere on the page.
-// `stars` carries the other half of the contract — one control per record, never
+// `hearts` carries the other half of the contract — one control per record, never
 // the overlay AND the title-row fallback on the same screen.
-const STAR = `(async () => {
+const HEART = `(async () => {
   const w = ms => new Promise(r => setTimeout(r, ms));
   for (let i = 0; i < 100 && !document.querySelector('.hero__title'); i++) await w(50);
   await w(250);
@@ -39,7 +39,7 @@ const STAR = `(async () => {
   return {
     heading: document.querySelector('.hero__title')?.textContent.trim() || '',
     present: !!s,
-    stars: document.querySelectorAll('.bookmark-icon').length,
+    hearts: document.querySelectorAll('.bookmark-icon').length,
     hasImage: !!frame,
     overImage: !!document.querySelector('.hero__image > .bookmark-icon'),
     inTitleRow: !!document.querySelector('.hero__titlebar > .bookmark-icon'),
@@ -58,7 +58,7 @@ const STAR = `(async () => {
   };
 })()`;
 
-const CLICK_STAR = `(async () => {
+const CLICK_HEART = `(async () => {
   const w = ms => new Promise(r => setTimeout(r, ms));
   const s = document.querySelector('.bookmark-icon');
   s.focus();
@@ -102,13 +102,13 @@ const BAND = `(async () => {
 
 // Two controls for one record, on the pages that have a «Zugriff» card. The
 // point of the pair is that they never disagree: the card link is the same
-// toggle spelled out, so clicking it has to fill the star in the head — and it
+// toggle spelled out, so clicking it has to fill the heart in the head — and it
 // is a redraw of the OTHER control, the one path a per-button handler would miss.
 const CARD_LINK = `(async () => {
   const w = ms => new Promise(r => setTimeout(r, ms));
   for (let i = 0; i < 100 && !document.querySelector('.bookmark-link'); i++) await w(50);
   const link = document.querySelector('.bookmark-link');
-  const star = document.querySelector('.bookmark-icon');
+  const heart = document.querySelector('.bookmark-icon');
   const label = () => link.querySelector('.btn__text')?.textContent.trim() || '';
   const before = { pressed: link.getAttribute('aria-pressed'), label: label() };
   link.click();
@@ -123,8 +123,8 @@ const CARD_LINK = `(async () => {
     noTooltip: !link.hasAttribute('title'),
     before,
     after: { pressed: link.getAttribute('aria-pressed'), label: label() },
-    starPressed: star?.getAttribute('aria-pressed') || '',
-    starFilled: /HeartFilled/.test(star?.querySelector('.icon')?.getAttribute('style') || ''),
+    heartPressed: heart?.getAttribute('aria-pressed') || '',
+    heartFilled: /HeartFilled/.test(heart?.querySelector('.icon')?.getAttribute('style') || ''),
   };
 })()`;
 
@@ -207,23 +207,23 @@ const setWidth = (page, width) => cdp.send('Emulation.setDeviceMetricsOverride',
   { width, height: 900, deviceScaleFactor: 1, mobile: width < 768 }, page.sessionId);
 let page;
 try {
-  // One star, one place. Services, datasets and applications are the three heads
-  // people arrive at from search, and the star has to mean the same gesture on
+  // One heart, one place. Services, datasets and applications are the three heads
+  // people arrive at from search, and the heart has to mean the same gesture on
   // all of them; checking only the dataset let the other two drift.
-  head('One star in one place across the three detail heads');
+  head('One heart in one place across the three detail heads');
   for (const [label, route] of [
     ['Dienstleistung', '/services/raumbedarf-melden'],
     ['Datensatz', '/data/catalog/2'],
     ['Anwendung', '/applications/liegenschaften-inventar'],
   ]) {
     page = await openPage(cdp, `${APP_BASE}${route}`, { login: true });
-    const star = await page.evaluate(STAR);
-    check(star.present && star.stars === 1,
-      `${label}: exactly one «merken» control in the head`, `${star.stars} found — ${star.heading}`);
-    check(star.hasImage && star.overImage && star.topLeft,
-      `${label}: the star sits in the top left corner of .hero__image`);
-    check(star.iconSize >= 32,
-      `${label}: the star reads at hero scale, not at row scale`, `${star.iconSize}px`);
+    const heart = await page.evaluate(HEART);
+    check(heart.present && heart.hearts === 1,
+      `${label}: exactly one «merken» control in the head`, `${heart.hearts} found — ${heart.heading}`);
+    check(heart.hasImage && heart.overImage && heart.topLeft,
+      `${label}: the heart sits in the top left corner of .hero__image`);
+    check(heart.iconSize >= 32,
+      `${label}: the heart reads at hero scale, not at row scale`, `${heart.iconSize}px`);
     await page.closeTarget();
   }
 
@@ -239,8 +239,8 @@ try {
     check(card.noTooltip, `${label}: no tooltip repeating the visible label`);
     check(card.after.pressed !== card.before.pressed && card.after.label !== card.before.label,
       `${label}: the link toggles state AND wording`, `${card.before.label} → ${card.after.label}`);
-    check(card.starPressed === card.after.pressed && card.starFilled === (card.after.pressed === 'true'),
-      `${label}: the star in the head follows the card link`, `star aria-pressed=${card.starPressed}`);
+    check(card.heartPressed === card.after.pressed && card.heartFilled === (card.after.pressed === 'true'),
+      `${label}: the heart in the head follows the card link`, `heart aria-pressed=${card.heartPressed}`);
     await page.closeTarget();
   }
 
@@ -348,29 +348,29 @@ try {
   await page.closeTarget();
 
   // The fallback is not decoration: dataset 20 is the one record in twenty with
-  // no preview image, and the star has to survive the missing frame rather than
-  // disappear with it.
-  head('A head without a picture keeps its star');
+  // no preview image, and the control has to survive the missing frame rather
+  // than disappear with it.
+  head('A head without a picture keeps its «merken» control');
   page = await openPage(cdp, `${APP_BASE}/data/catalog/20`, { login: true });
-  const bare = await page.evaluate(STAR);
+  const bare = await page.evaluate(HEART);
   check(!bare.hasImage, 'this dataset renders without a hero image', bare.heading);
-  check(bare.present && bare.inTitleRow && bare.stars === 1,
-    'without a picture the star falls back to the title row');
+  check(bare.present && bare.inTitleRow && bare.hearts === 1,
+    'without a picture the control falls back to the title row');
   await page.closeTarget();
 
-  head('Dataset star');
+  head('Dataset heart');
   page = await openPage(cdp, `${APP_BASE}/data/catalog/3`, { login: true });
-  const initial = await page.evaluate(STAR);
+  const initial = await page.evaluate(HEART);
   check(initial.present && initial.overImage,
-    'the star renders over the detail head image', initial.heading);
+    'the heart renders over the detail head image', initial.heading);
   check(initial.pressed === 'false' && !initial.filled,
-    'an unsaved record shows the outline star with aria-pressed=false');
+    'an unsaved record shows the outline heart with aria-pressed=false');
   check(initial.named, 'the accessible name carries the record title, not just «merken»');
 
-  const clicked = await page.evaluate(CLICK_STAR);
+  const clicked = await page.evaluate(CLICK_HEART);
   check(clicked.pressed === 'true' && clicked.filled,
-    'clicking fills the star and flips aria-pressed');
-  check(clicked.keptFocus, 'the star keeps focus through the toggle');
+    'clicking fills the heart and flips aria-pressed');
+  check(clicked.keptFocus, 'the heart keeps focus through the toggle');
   check(/Favoriten/.test(clicked.announced), 'the change is announced', clicked.announced);
   const stored = JSON.parse(clicked.stored || '{}');
   const items = stored[DEMO]?.items || [];
@@ -383,7 +383,7 @@ try {
 
   head('Seed, deltas and the signed-out state');
   // A REMOVAL must survive the next load. Without a persisted «seeded» flag the
-  // seed would hand the entry straight back, and the star would appear to have
+  // seed would hand the entry straight back, and the heart would appear to have
   // no effect at all.
   page = await openPage(cdp, `${APP_BASE}/data/catalog/1`, { login: true });
   await page.evaluate(`(async () => {
@@ -396,15 +396,15 @@ try {
   })()`);
   await page.closeTarget();
   page = await openPage(cdp, `${APP_BASE}/data/catalog/1`, { login: true });
-  const afterReload = await page.evaluate(STAR);
+  const afterReload = await page.evaluate(HEART);
   check(afterReload.pressed === 'false',
     'a removed bookmark stays removed across a reload (the seed does not restore it)');
   await page.closeTarget();
 
   page = await openPage(cdp, `${APP_BASE}/data/catalog/3`, { login: false });
-  const signedOut = await page.evaluate(STAR);
+  const signedOut = await page.evaluate(HEART);
   check(signedOut.heading !== '' && !signedOut.present,
-    'the public dataset page renders, but signed out it carries no star');
+    'the public dataset page renders, but signed out it carries no heart');
   await page.closeTarget();
 
   head('Favourites band');
@@ -449,8 +449,8 @@ try {
   page = null;
 
   head('One store, not two');
-  // Room booking kept its own anonymous favourites map. Its star must now write
-  // where every other star writes, or a person's favourite room and their
+  // Room booking kept its own anonymous favourites map. Its heart must now write
+  // where every other heart writes, or a person's favourite room and their
   // bookmarked room would live in different places.
   page = await openPage(cdp, `${APP_BASE}/app/room-booking`, { login: true });
   const shared = await page.evaluate(`(async () => {
@@ -469,7 +469,7 @@ try {
       legacyGone: localStorage.getItem('bbl_favorites_v1') === null,
     };
   })()`);
-  check(shared.after !== shared.before, 'the room-booking star still toggles', `${shared.before} → ${shared.after}`);
+  check(shared.after !== shared.before, 'the room-booking heart still toggles', `${shared.before} → ${shared.after}`);
   check(shared.items.includes(shared.id),
     'it writes into the shared bookmark store under the same person', shared.items.join(', '));
   check(shared.legacyGone, 'the legacy anonymous favourites key is migrated away');

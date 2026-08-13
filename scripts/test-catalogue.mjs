@@ -240,6 +240,24 @@ const dec = (h) => decodeURIComponent(h);
         count: panel.querySelector('.catbar__count')?.textContent.replace(/\\s+/g, ' ').trim(),
         // The tab owns no heading of its own (user decision, 2026-08-12).
         headings: panel.querySelectorAll('.detail-section__title, p.muted').length,
+        tabLabel: [...document.querySelectorAll('.tab__control')][1]?.textContent.trim(),
+        bblId: [...panel.querySelectorAll('tbody tr')]
+          .find((r) => r.querySelector('code')?.textContent.trim() === 'bbl_id')?.children[3]?.textContent.trim(),
+        // Counting keys needs them on ONE page: in source order the Esri objectid
+        // sits far down a 75-column layer, so sort by key first — the sort a
+        // person uses for this question. German UI term: Schlüsselfelder zuerst
+        primaryKeys: await (async () => {
+          const input = panel.querySelector('input[type=search]');
+          input.value = '';
+          panel.querySelector('form.catbar__search').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+          await w(300);
+          const sel = panel.querySelector('.catbar__sort select');
+          sel.value = 'key';
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+          await w(400);
+          return [...panel.querySelectorAll('tbody tr')]
+            .filter((r) => /^Primärschlüssel/.test(r.children[3]?.textContent.trim() || '')).length;
+        })(),
       };
     })()`);
     check(ft.perPage === 20, `field table pages at 20 rows (${ft.perPage})`);
@@ -249,6 +267,11 @@ const dec = (h) => decodeURIComponent(h);
     check(ft.exports.join(',') === 'csv,xls', `export menu offers CSV and Excel (${ft.exports.join(',')})`);
     check(ft.afterSearch === 2 && /^2 von 75/.test(ft.count), `search narrows the field list (${ft.count})`);
     check(ft.headings === 0, 'no section title or muted subtitle above the table');
+    check(ft.tabLabel === 'Datenfelder (75)', `the tab states its field count (${ft.tabLabel})`);
+    // The domain review's outcome, read where a person actually sees it: one
+    // primary key, and a unique business key that is not that key.
+    check(ft.bblId === 'Eindeutig · Pflichtfeld', `a unique business key is not called a primary key (${ft.bblId})`);
+    check(ft.primaryKeys === 1, `exactly one «Primärschlüssel» in the field list (${ft.primaryKeys})`);
     check((await fields.problems()).length === 0, 'Datenfelder: no console errors');
     await fields.closeTarget();
 
@@ -294,6 +317,11 @@ const dec = (h) => decodeURIComponent(h);
         governanceSection: [...document.querySelectorAll('.detail-section__title')].some((x) => /Verantwortliche/.test(x.textContent)),
         routeHeld: location.hash === hashBefore,
         scrolled: scrollY - yBefore > 100,
+        // Landing on a column of collapsed headers costs one more click between
+        // «I want the data» and the URL that serves it (user request).
+        firstOpen: document.querySelector('#ds-distributions .accordion__button')?.getAttribute('aria-expanded') === 'true',
+        restClosed: [...document.querySelectorAll('#ds-distributions .accordion__button')].slice(1)
+          .every((b) => b.getAttribute('aria-expanded') === 'false'),
       };
     })()`);
     check(aside.grid && aside.card && aside.contact, 'main column plus access and contact cards');
@@ -302,6 +330,8 @@ const dec = (h) => decodeURIComponent(h);
     check(aside.firstMeta === 'ID' && !aside.hasKontaktstelle, `Metadaten leads with ID, without Kontaktstelle (${aside.firstMeta})`);
     check(!aside.governanceSection, 'no «Verantwortliche Personen» section');
     check(aside.routeHeld && aside.scrolled, 'the jump scrolls without changing the route');
+    check(aside.firstOpen && aside.restClosed,
+      'the jump unfolds the first distribution and leaves the rest closed');
     check((await ds.problems()).length === 0, 'dataset detail: no console errors');
     await ds.closeTarget();
   } finally {
