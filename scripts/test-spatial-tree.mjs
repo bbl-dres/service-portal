@@ -27,18 +27,20 @@ const SURFACES = [
   ['Mietendenportal', '/app/tenancies', true],
   ['Workspace Management', '/app/workspace', true],
   ['Plan-Editor', '/app/floorplan-editor', true],
-  ['Metadaten Katalog', '/app/metadata-catalog', false],
+  // Depth is what this probe measures, and the catalogue root is deliberately
+  // collapsed — so aim at a scope that actually has three levels on screen.
+  ['Metadaten Katalog', '/app/metadata-catalog?kind=objekt&leaf=Bauwerk%20und%20Liegenschaft', false],
   ['Prozessdokumentation', '/app/process-docs', false],
 ];
 
 const READ = `(() => {
   const tree = document.querySelector('.pf-tree');
   if (!tree) return { missing: true };
-  const ROW = '.pf-tree__node, .pf-tree__leaf, .pf-tree__sub';
+  const ROW = '.pf-tree__node, .pf-tree__leaf, .pf-tree__sub, .pf-tree__split';
   const rows = [...tree.querySelectorAll(ROW)].filter((row) => row.offsetParent !== null);
   const padAt = (depth) => {
     const chain = Array.from({ length: depth }, () => '.pf-tree__children').join(' ');
-    const row = tree.querySelector(':scope ' + (chain ? chain + ' ' : '') + '> .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub)');
+    const row = tree.querySelector(':scope ' + (chain ? chain + ' ' : '') + '> .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub,.pf-tree__split)');
     return row ? Math.round(parseFloat(getComputedStyle(row).paddingLeft)) : null;
   };
   const counts = [...tree.querySelectorAll('.pf-tree__n')].slice(0, 4).map((n) => n.textContent);

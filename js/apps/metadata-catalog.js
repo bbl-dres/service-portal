@@ -162,6 +162,15 @@ function records(core, kind) {
   }));
 }
 
+// Each branch resolves an id through core's own accessor. A value list has no
+// accessor of its own — its key IS the reference-list key — so membership in the
+// curated themes above is what makes it exist.
+const RESOLVE = {
+  objekt: (core, id) => core.businessObject(id),
+  tabelle: (core, id) => core.dataTable(id),
+  referenz: (core, id) => (REF_LABEL[id] && refList(core, id) ? { key: id } : null),
+};
+
 // Everything the views need, derived once from the query string. Every part of
 // the path is checked against the data: a query naming a record or an attribute
 // that does not exist must never reach the renderer.
@@ -175,7 +184,12 @@ function readState(ctx) {
       : qs.get('list') ? ['referenz', qs.get('list')] : null;
   const kind = picked ? picked[0] : (BRANCHES.includes(kindParam) ? kindParam : '');
   const rows = kind ? records(core, kind) : [];
-  const rec = picked ? rows.find((r) => r.id === picked[1]) || null : null;
+  // Existence goes through core's own id accessors: they are the single
+  // definition of «does this record exist», and routing them through the query
+  // value keeps the once-decoded guarantee (test-router-lifecycle) enforced by a
+  // real call rather than by inspection. records() above is only a view model.
+  const raw = picked ? RESOLVE[kind](core, picked[1]) : null;
+  const rec = raw ? rows.find((r) => r.id === picked[1]) || null : null;
   const leafParam = qs.get('leaf') || '';
   const leaf = rec ? rec.group : (rows.some((r) => r.group === leafParam) ? leafParam : '');
   const attrParam = qs.get('attr') || '';
@@ -240,7 +254,10 @@ export default async function render(ctx) {
     items: s.avail.map((k) => ({ id: k, label: TAB_LABEL[k] })),
     active: s.tab, idPrefix: 'mc-tab', ariaLabel: 'Darstellung', panelId: 'mc-panel',
   })}</div>`}
-        <div id="mc-panel"${s.lvl === 0 ? '' : ' role="tabpanel" tabindex="0"'}>${paneHtml(ctx, s, unit)}</div>
+        ${/* .tab__container carries the ONE gap between strip and panel that the
+              whole portal uses (tabs.css); the root has no strip, so no class. */''}
+        <div id="mc-panel"${s.lvl === 0 ? '' : ' class="tab__container" role="tabpanel" tabindex="0"'}
+          >${paneHtml(ctx, s, unit)}</div>
       </div>
     </div>
   </div>`;

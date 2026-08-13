@@ -55,6 +55,14 @@
    sr-only <h2> first — clipped, so the NEXT element is the visible first. */
 .tab__container > :first-child,
 .tab__container > .sr-only:first-child + * { margin-top:0; }
+/* One level deeper, for the same reason. A panel whose first child is a bare
+   MOUNT HOST — an empty <div> that a component fills in later — carries no
+   padding of its own, so the top margin of whatever mounts inside it collapses
+   THROUGH the host and drags the host down. Zeroing the host alone does nothing,
+   because the host was never the element with the margin. The metadata
+   catalogue's Tabelle tab measured 52px against every other panel's 32px. */
+.tab__container > :first-child > :first-child,
+.tab__container > .sr-only:first-child + * > :first-child { margin-top:0; }
 
 /* Pagination (pagination.postcss:5-31) */
 .pagination-wrap { display:flex; padding-block:var(--sp-6); }
