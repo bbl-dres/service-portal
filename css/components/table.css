@@ -72,6 +72,31 @@
    follows zebra and uses the next step so the difference is visible on tinted rows. */
 .table--zebra tbody tr:nth-child(even),
 .table--zebra tfoot tr:nth-child(even) { background:var(--color-secondary-50); }
+
+/* --- Grouped tables (C.table({ groups })) ---------------------------------
+   Each section is its own <tbody>, so nth-child already restarts per section.
+   But the section HEADER is that tbody's first row, which shifts every stripe by
+   one and opens each section on a tinted line. Counting from the header instead
+   puts the first data row back on white, which is what makes a section read as a
+   fresh start rather than a continuation. */
+.table--zebra tbody > .table__group ~ tr:nth-child(even) { background:transparent; }
+.table--zebra tbody > .table__group ~ tr:nth-child(odd) { background:var(--color-secondary-50); }
+.table__group > th { padding-top:var(--sp-3); padding-bottom:var(--sp-3); background:transparent; }
+/* Air between sections, on the header's padding rather than a margin: a table in
+   border-collapse ignores margins on its rows. The first section takes the
+   table's own top edge instead, or the head would sit off on its own. */
+.table tbody + tbody > .table__group > th { padding-top:var(--sp-6); }
+.table__group-toggle { display:flex; align-items:center; gap:var(--sp-2); width:100%;
+  padding:0; border:0; background:none; font:inherit; font-weight:var(--fw-bold);
+  color:var(--color-text); text-align:left; cursor:pointer; }
+.table__group-toggle:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring);
+  outline-offset:var(--stroke-2); }
+.table__group-chev { flex:none; transition:transform var(--duration-fast); color:var(--color-text-light); }
+.table__group-toggle[aria-expanded="true"] .table__group-chev { transform:rotate(90deg); }
+/* The count is context, not the name of the section. */
+.table__group-n { font-weight:var(--fw-regular); color:var(--color-text-light); }
+.table__group-n::before { content:"("; }
+.table__group-n::after { content:")"; }
 /* … unless the table ITSELF sits on secondary-50. CD has exactly ONE neutral
    surface, used by both the tinted section band (.bg--secondary-50) and the
    table's header and zebra stripes. When nested, stripes and ground are

@@ -30,6 +30,10 @@ const STATE = `JSON.stringify({
   cols: [...document.querySelectorAll('#mc-panel thead th')].map(t => t.textContent.trim()),
   rows: document.querySelectorAll('#mc-panel tbody tr').length,
   cards: document.querySelectorAll('#mc-panel .card').length,
+  groups: [...document.querySelectorAll('#mc-panel .table__group-toggle')].map(
+    b => b.textContent.replace(/\\s+/g,' ').trim()),
+  openGroups: document.querySelectorAll('#mc-panel .table__group-toggle[aria-expanded="true"]').length,
+  pager: !!document.querySelector('#mc-panel .pagination'),
   roots: [...document.querySelectorAll('.pf-tree > .pf-tree__item')].map(li => {
     const label = li.querySelector('.pf-tree__label');
     const n = li.querySelector('.pf-tree__n');
@@ -153,7 +157,8 @@ try {
   o = await go('#/app/metadata-catalog?kind=tabelle');
   check(o.roots[2].startsWith('Systeme'), 'the branch is named Systeme', o.roots[2]);
   o = await go('#/app/metadata-catalog?kind=tabelle&tab=tabelle');
-  check(o.cols.includes('System'), 'the axis column is System, not Domäne', o.cols.join('/'));
+  check(o.groups.length > 1 && !o.cols.includes('System'),
+    'systems are section headers, not a repeated column', o.groups.slice(0, 3).join(' | '));
   const tableHref = await linkIn('table=');
   check(/\?table=/.test(tableHref), 'the table links to ?table=', tableHref);
   o = await go(tableHref.slice(1));
@@ -176,10 +181,26 @@ try {
   // what must hold is that the label is the reverse of the object side.
   check(!o.keys.includes('Realisiert in'), 'a field never claims to be realised elsewhere', o.keys.join('/'));
 
+  head('Sections');
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=tabelle');
+  const branchRows = o.rows;
+  check(o.groups.length > 1, 'a whole branch is sectioned by its axis', o.groups.join(' | '));
+  check(!o.pager, 'sections replace paging — a section must not continue on page 3');
+  check(o.openGroups === o.groups.length, 'every section opens expanded', String(o.openGroups));
+  await p.evaluate('(document.querySelector(".table__group-toggle").click(), 1)');
+  await sleep(500);
+  o = JSON.parse(await p.evaluate(STATE));
+  check(o.openGroups === o.groups.length - 1, 'a section closes', String(o.openGroups));
+  check(o.rows < branchRows, 'and really drops its rows', branchRows + ' → ' + o.rows);
+  check(o.groups.length > 1, 'while keeping its header as the way back', String(o.groups.length));
+  o = await go('#/app/metadata-catalog?kind=objekt&leaf=' + encodeURIComponent(DOMAIN));
+  check(o.groups.length === 0, 'one group in scope needs no sections', String(o.groups.length));
+  await clean(p, 'Sections');
+
   head('Referenzdaten');
   o = await go('#/app/metadata-catalog?kind=referenz&tab=tabelle');
   check(o.rows > 0, 'value lists are listed', String(o.rows));
-  check(o.cols.includes('Thema'), 'the axis column is Thema', o.cols.join('/'));
+  check(o.groups.length === 4, 'the four subject areas are the sections', o.groups.join(' | '));
   const listHref = await linkIn('list=');
   check(/\?list=/.test(listHref), 'a value list links to ?list=', listHref);
   o = await go(listHref.slice(1));

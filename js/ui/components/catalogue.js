@@ -324,12 +324,25 @@ export function mountDataTable(host, opts = {}) {
     id = 'dt', rows: allRows = [], columns = [], unit = 'Einträge', caption,
     searchKeys = [], search, searchLabel, placeholder,
     sorts = [], facets = [], perPage = 10, foot, emptyMsg, note = '', rowsClickable = false,
-    rowClass, extra = '', onAction, flush = false,
+    rowClass, extra = '', onAction, flush = false, groupBy = null,
   } = opts;
-  const state = { q: '', sort: '', page: 1, open: false, sel: {} };
+  // `shut` holds the sections the reader has closed. Keyed by group value, so a
+  // search or a sort that reorders the sections still remembers which ones.
+  const state = { q: '', sort: '', page: 1, open: false, sel: {}, shut: {} };
   facets.forEach((f) => { state.sel[f.dim] = []; });
 
+  // Named rather than inline, so every redraw adds and removes the SAME function
+  // reference instead of stacking a new listener per draw.
+  const onGroupToggle = (e) => {
+    const btn = e.target.closest('.table__group-toggle');
+    if (!btn || !host.contains(btn)) return;
+    const key = btn.dataset.group;
+    if (state.shut[key]) delete state.shut[key]; else state.shut[key] = true;
+    draw();
+  };
+
   const unwire = () => {
+    host.removeEventListener('click', onGroupToggle);
     if (unwireRows) { try { unwireRows(); } catch { /* Already gone. */ } unwireRows = null; }
     if (unwireScroll) { try { unwireScroll(); } catch { /* Already gone. */ } unwireScroll = null; }
     // Also drops a pending debounced search, so a keystroke cannot redraw a host
@@ -357,9 +370,28 @@ export function mountDataTable(host, opts = {}) {
     const filtered = allRows.filter((r) => matchQ(r) && matchFacets(r));
     const sortDef = sorts.find((s) => s.value === state.sort);
     const sorted = sortDef && sortDef.cmp ? filtered.slice().sort(sortDef.cmp) : filtered;
-    const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+    // Pages and sections are two answers to «this list is too long», and running
+    // both means a section that continues on page 3 — so grouping shows every row
+    // and lets the sections do the shortening.
+    const grouped = typeof groupBy === 'function' ? groupBy
+      : groupBy ? (row) => row[groupBy.key] : null;
+    const totalPages = grouped ? 1 : Math.max(1, Math.ceil(sorted.length / perPage));
     if (state.page > totalPages) state.page = totalPages;
-    const visible = sorted.slice((state.page - 1) * perPage, state.page * perPage);
+    const visible = grouped ? sorted : sorted.slice((state.page - 1) * perPage, state.page * perPage);
+    // Sections follow the sort order of their first row, so choosing a sort
+    // reorders the sections too rather than only their contents.
+    const sections = grouped ? (() => {
+      const byKey = new Map();
+      sorted.forEach((row) => {
+        const key = String(grouped(row) == null ? '' : grouped(row));
+        if (!byKey.has(key)) byKey.set(key, []);
+        byKey.get(key).push(row);
+      });
+      return [...byKey].map(([key, rowsIn]) => ({
+        key, label: key || '—', count: rowsIn.length,
+        open: !state.shut[key], rows: rowsIn,
+      }));
+    })() : null;
     const activeFacetCount = facets.reduce((n, f) => n + (state.sel[f.dim] || []).length, 0);
 
     const restore = preserveFocus(host);
@@ -371,7 +403,8 @@ export function mountDataTable(host, opts = {}) {
         placeholder: placeholder || `${u.nom} durchsuchen…`, q: state.q,
         countId: `${id}-count`,
         count: `<strong>${escape(String(sorted.length))}</strong> von ${escape(String(allRows.length))} ${escape(u.dat)}${
-          totalPages > 1 ? ` · Seite ${state.page} von ${totalPages}` : ''}`,
+          sections ? ` · ${sections.length} ${sections.length === 1 ? 'Gruppe' : 'Gruppen'}`
+            : totalPages > 1 ? ` · Seite ${state.page} von ${totalPages}` : ''}`,
         sort: sorts.length ? { id: `${id}-sort`, value: state.sort, options: sorts.map((s) => ({ value: s.value, label: s.label })) } : null,
         filterId: facets.length ? `${id}-filter` : '', filterCount: activeFacetCount,
         panelId: facets.length ? `${id}-panel` : '',
@@ -385,7 +418,7 @@ export function mountDataTable(host, opts = {}) {
             longer see what the table represented, and filtering shifted the
             layout. Text distinguishes «no data at all» from «nothing for this
             selection». */''}
-      ${table({ columns, rows: visible, zebra: true, caption, rowsClickable, rowClass,
+      ${table({ columns, rows: sections ? undefined : visible, groups: sections, zebra: true, caption, rowsClickable, rowClass,
         emptyText: allRows.length
           ? `Keine ${u.nom} für diese Suche oder Filterung.`
           : (emptyMsg || `Keine ${u.nom} erfasst.`),
@@ -419,6 +452,7 @@ export function mountDataTable(host, opts = {}) {
     // closer, so repeating this does not accumulate document listeners.
     if (onAction) wireMenu(host, (action) => onAction(action, { filtered: sorted, visible, rows: allRows }));
     if (rowsClickable) unwireRows = wireTableRows(host);
+    if (sections) host.addEventListener('click', onGroupToggle);
     // wirePagination binds BOTH the input and [data-page] buttons (review A3).
     wirePagination(host, `${id}-page`, state.page, totalPages, (target) => { state.page = target; draw(); });
     unwireScroll = wireScrollRegions(host);

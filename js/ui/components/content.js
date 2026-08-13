@@ -162,7 +162,13 @@ export function card(o) {
 // rows: object[]; caption names the table.
 // `foot` = ready <tr>…</tr> HTML for a <tfoot> row (for example, a total row);
 // the caller escapes its content.
-export function table({ columns, rows, zebra, caption, showCaption, foot, rowsClickable, emptyText, rowClass }) {
+// `groups` replaces `rows` with sections: [{ key, label, count, open, rows }].
+// Each becomes its own <tbody>, which is what makes the zebra restart per
+// section rather than running straight through — a stripe that carries across a
+// section boundary reads as one continuous list. A section opens with a header
+// row spanning the full width; `scope="colgroup"` is what tells a screen reader
+// that the heading governs the rows below rather than a column beside them.
+export function table({ columns, rows, groups, zebra, caption, showCaption, foot, rowsClickable, emptyText, rowClass }) {
   // Per-column `align: 'right'|'center'|'left'` maps to the CD alignment utility on header + cell.
   const al = (c) => {
     const classes = [ALIGNMENTS.has(c.align) ? `text-${c.align}` : '', c.nowrap ? 'text-nowrap' : ''];
@@ -178,12 +184,21 @@ export function table({ columns, rows, zebra, caption, showCaption, foot, rowsCl
     const name = typeof rowClass === 'function' ? String(rowClass(r) || '') : '';
     return name ? ` class="${escape(name)}"` : '';
   };
-  const body = (rows || []).map(r =>
+  const dataRow = (r) =>
     `<tr${rowAttr(r)}>${columns.map((c, i) => {
       const cell = c.render ? c.render(r) : escape(r[c.key]);
       return i === 0 ? `<th scope="row"${al(c)}>${cell}</th>` : `<td${al(c)}>${cell}</td>`;
-    }).join('')}</tr>`
-  ).join('');
+    }).join('')}</tr>`;
+  const body = (rows || []).map(dataRow).join('');
+  // A collapsed section keeps its header — that is the whole point of collapsing,
+  // and it is also what stays as the control to open it again.
+  const sections = (groups || []).map((g) => `<tbody>
+    <tr class="table__group"><th scope="colgroup" colspan="${columns.length}">
+      <button type="button" class="table__group-toggle" data-group="${escape(g.key)}"
+        aria-expanded="${g.open !== false}">${icon('ChevronRight', 'table__group-chev')}
+        <span>${escape(g.label)}</span>${g.count == null ? ''
+    : ` <span class="table__group-n">${escape(String(g.count))}</span>`}</button></th></tr>
+    ${g.open === false ? '' : (g.rows || []).map(dataRow).join('')}</tbody>`).join('');
   // `rowsClickable`: the entire row follows its FIRST link. This is purely a
   // mouse convenience; keyboard and screen-reader interaction still uses that
   // link. A row without such a link does nothing; an `onclick` on `<tr>` without
@@ -207,7 +222,8 @@ export function table({ columns, rows, zebra, caption, showCaption, foot, rowsCl
     ${caption ? `<caption>${escape(caption)}</caption>` : ''}
     ${colgroup}
     <thead><tr>${head}</tr></thead>
-    <tbody>${body || `<tr><td colspan="${columns.length}" class="table__empty muted">${escape(emptyText || 'Keine Einträge.')}</td></tr>`}</tbody>
+    ${groups ? (sections || `<tbody><tr><td colspan="${columns.length}" class="table__empty muted">${escape(emptyText || 'Keine Einträge.')}</td></tr></tbody>`)
+    : `<tbody>${body || `<tr><td colspan="${columns.length}" class="table__empty muted">${escape(emptyText || 'Keine Einträge.')}</td></tr>`}</tbody>`}
     ${foot ? `<tfoot>${foot}</tfoot>` : ''}
   </table>
   ${/* Visible horizontal-overflow hint (Item 5.7). A table continuing to the

@@ -520,6 +520,11 @@ function mountPane(ctx, s, unit) {
   ctx.onUnmount(C.mountDataTable(host, {
     id: 'mc-rows', unit: { nom: unit.nom, dat: unit.dat }, perPage: 25,
     caption: s.leaf ? `${unit.nom} · ${s.leaf}` : `${unit.nom} · alle ${unit.axisPl}`,
+    // A whole branch listed flat is a wall — nineteen business objects across
+    // five domains read as nineteen unrelated rows. Sectioning by the axis is
+    // the same grouping the tree draws, so the two views agree. Inside ONE group
+    // there is nothing left to section by, so level 2 goes back to plain pages.
+    groupBy: s.leaf ? null : { key: 'group' },
     rows, searchKeys: ['name', 'def', 'group'],
     emptyMsg: 'In diesem Umfang ist kein Eintrag erfasst.',
     sorts: [
@@ -534,7 +539,8 @@ function mountPane(ctx, s, unit) {
     columns: [
       { key: 'name', label: 'Name', width: '16rem',
         render: (r) => `<a href="${esc(hrefFor(s, { rec: r, attr: '', leaf: r.group }))}">${esc(r.name)}</a>` },
-      ...(s.leaf ? [] : [{ key: 'group', label: unit.axis, width: '12rem', render: (r) => esc(r.group) }]),
+      // No axis column: at level 1 the section headers already carry it, and at
+      // level 2 every row shares the one value the tree is already showing.
       { key: 'def', label: 'Beschreibung',
         render: (r) => (r.def ? esc(truncateText(r.def)) : '<span class="muted">—</span>') },
       { key: 'n', label: unit.kid, width: '7rem', render: (r) => String(r.n) },
