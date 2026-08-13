@@ -1,26 +1,32 @@
 import { APPLICATIONS, trail } from '../crumbs.js';
-import { formatNumber, formatDate } from '../format.js';
+import { formatDate } from '../format.js';
 // Data-governance catalogue for the real-estate domain.
-// It connects technology-neutral business-object attributes to system-bound
-// table fields, then to published datasets. Mappings live on attributes and
-// core provides the reverse field-to-term index. State remains in the hash so
-// every selection is shareable. List and detail anatomy matches the other portal
-// catalogues and inventory explorer.
+//
+// The tree decides the SCOPE, the tabs decide the PRESENTATION, and the two are
+// orthogonal: a click in the tree never changes the tab, and a tab never
+// changes what is in scope. Both live in the query string, so every view is
+// linkable. Levels are the model, not a layout:
+//
+//   0  Katalog        Startseite — keine Reiter, sie ist kein Umfang
+//   1  Ast            Geschäftsobjekte · Systeme · Referenzdaten
+//   2  Domäne/System  die Gruppe innerhalb des Astes
+//   3  Datensatz      früher eine eigene Seite, jetzt «Übersicht auf Stufe 3»
+//   4  Attribut/Feld  nur Übersicht — darunter liegt nichts mehr
+//
+// ?id= and ?table= keep their meaning as the level-3 selector, so every link
+// already shared from the search index (js/links.js) still resolves.
 import * as links from '../links.js';
-import { preparePage } from '../collections.js';
 // Reuse one module-level escape helper and badge factory across all views.
 import { escape as esc, badge } from '../components.js';
 import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
 
-// contacts supplies stewardship for both layers. Load the large datasets
-// inventory only for a data-table detail that needs its title.
+// contacts supplies stewardship for both layers.
 export const needs = ['businessObjects', 'dataTables', 'contacts'];
 
 const BASE = '#/app/metadata-catalog';
 // The catalogue covers the real-estate domain, not the complete office. Keep
 // its single title source for document title, breadcrumb, heading, and back links.
 const TITLE = 'Metadaten Katalog Bauten';
-const PER_PAGE = 12;
 
 // Type labels describe storage forms, so keep them here rather than in the domain code lists.
 const TABLE_TYPE = {
@@ -35,25 +41,14 @@ const VALUE_TYPE = {
   text: 'Text', integer: 'Ganzzahl', float: 'Dezimalzahl', boolean: 'Ja/Nein',
   date: 'Datum', uri: 'URI', code: 'Codeliste',
 };
-const KEY_ROLE = { PK: 'Primärschlüssel', FK: 'Fremdschlüssel', UK: 'Eindeutig' };
 
-// Truncate sentence-length definitions in table cells; detail views retain the full text.
+// Truncate sentence-length definitions in table cells; the overview keeps the full text.
 const truncateText = (s, n = 110) => {
   const t = String(s || '').trim();
   if (t.length <= n) return t;
   const cut = t.slice(0, n);
   return cut.slice(0, Math.max(cut.lastIndexOf(' '), n - 20)).trimEnd() + '…';
 };
-
-export default async function render(ctx) {
-  // Keep ?id and ?table detail links instead of route segments to preserve
-  // already shared inventory-style URLs.
-  const objectId = ctx.query.get('id');
-  const tableId = ctx.query.get('table');
-  if (objectId) return objectDetail(ctx, objectId);
-  if (tableId) return tableDetail(ctx, tableId);
-  return list(ctx);
-}
 
 // Shared lookups.
 const refList = (core, key) => core.ref()[key] || [];
@@ -69,7 +64,7 @@ const matchOf = (core, id) => refList(core, 'mappingMatches').find((m) => m.id =
 // Return a source URL's hostname, or the original malformed value so bad raw data remains visible.
 const hostOf = (url) => { try { return new URL(url).host; } catch { return String(url || ''); } };
 // Store explicit tree expansion choices at module scope because hash changes
-// rebuild the page but not the module. Without a choice, open the active branch.
+// rebuild the page but not the module. Without a choice, a record stays folded.
 const OPEN = new Map();
 const isOpen = (key, fallback) => (OPEN.has(key) ? OPEN.get(key) : fallback);
 
@@ -79,601 +74,453 @@ const MATCH_HINT = {
   close: 'Nahe — inhaltlich dasselbe, aber mit abweichender Kodierung oder Einheit.',
   partial: 'Teilweise — das Feld deckt nur einen Teil des Begriffs ab.',
 };
-
-// Build the shared match-quality badge once for both detail views.
 const matchBadge = (core, id) => {
   const m = matchOf(core, id);
   return `<span title="${esc(MATCH_HINT[id] || m.label)}">${badge(m.label, m.variant, 'sm')}</span>`;
 };
 
-// Responsible people are individual AdminDir entries. The generic stewardship
-// mailbox remains a separate contact card shared by both detail views.
-const personsSection = (persons) => `
-    <h2 class="detail-section__title">Verantwortliche Personen</h2>
-    <div class="box">${persons && persons.length ? `<dl class="kv kv--ruled">${persons.map((p) => `
-      <dt>${esc(p.role)}</dt>
-      <dd><a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(p.admindirId)}"
-           target="_blank" rel="noopener noreferrer external">AdminDir ${esc(p.admindirId)}</a></dd>`).join('')}
-    </dl>` : '<p class="muted m-0">Für diesen Eintrag ist keine verantwortliche Person hinterlegt.</p>'}</div>`;
+// --- The model ---------------------------------------------------------------
 
-const objectHref = (id) => `${BASE}?id=${encodeURIComponent(id)}`;
-// Shared with the search index, which links straight to a table (js/links.js).
-const tableHref = links.dataTable;
+const TAB_LABEL = { uebersicht: 'Übersicht', tabelle: 'Tabelle' };
+// Not every level offers every tab: an attribute has nothing below it to tabulate.
+const TABS_AT = (lvl) => (lvl === 0 ? [] : lvl >= 4 ? ['uebersicht'] : ['uebersicht', 'tabelle']);
+// Each level opens on the tab that answers its own question. A default only
+// holds until the reader picks a tab; from then on their choice travels with
+// them through the whole tree.
+const DEFAULT_TAB = { 1: 'uebersicht', 2: 'tabelle', 3: 'tabelle', 4: 'uebersicht' };
 
-// Inventory view.
-function list(ctx) {
-  const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  setTitle(TITLE);
-  setCrumbs(trail(APPLICATIONS, { label: TITLE }));
+const BRANCHES = ['objekt', 'tabelle', 'referenz'];
+const BRANCH_LABEL = { objekt: 'Geschäftsobjekte', tabelle: 'Systeme', referenz: 'Referenzdaten' };
+// nom/dat feed the data table's own counting wording; kid names the level below;
+// axis names the grouping level, which is a different thing in each branch.
+const BRANCH_UNIT = {
+  objekt: { nom: 'Geschäftsobjekte', dat: 'Geschäftsobjekten', kid: 'Attribute', axis: 'Domäne', axisPl: 'Domänen' },
+  tabelle: { nom: 'Datentabellen', dat: 'Datentabellen', kid: 'Felder', axis: 'System', axisPl: 'Systemen' },
+  referenz: { nom: 'Wertelisten', dat: 'Wertelisten', kid: 'Werte', axis: 'Thema', axisPl: 'Themen' },
+};
 
-  const objects = core.businessObjects();
-  const tables = core.dataTables();
-  const domains = core.dataDomains();
+// The value lists the portal actually keeps, grouped by subject so the third
+// branch has the same three levels as the other two.
+const REF_THEMES = [
+  ['Katalog und Metadaten', ['objectStatuses', 'classificationTiers', 'mappingMatches', 'dataDomains', 'sourceRoles']],
+  ['Bauwerk und Liegenschaft', ['gebaeudearten', 'buildingStatuses', 'teilportfolios', 'nawClasses']],
+  ['Projekte und Bau', ['siaPhases', 'bkpGroups', 'projectStatuses']],
+  ['Services und Portal', ['domains', 'audiences', 'statusModel']],
+];
+const REF_LABEL = {
+  objectStatuses: 'Objekt-Status', classificationTiers: 'Klassifizierung',
+  mappingMatches: 'Abbildungsgüte', dataDomains: 'Datendomänen', sourceRoles: 'Quellen-Rollen',
+  gebaeudearten: 'Gebäudearten', buildingStatuses: 'Gebäude-Status',
+  teilportfolios: 'Teilportfolios', nawClasses: 'NAW-Klassen',
+  siaPhases: 'SIA-Phasen', bkpGroups: 'BKP-Gruppen', projectStatuses: 'Projekt-Status',
+  domains: 'Service-Domänen', audiences: 'Zielgruppen', statusModel: 'Status-Modell',
+};
 
-  // State from the hash.
-  const kind = query.get('kind') === 'tabellen' ? 'tabellen' : 'objekte';
-  const rawQ = query.get('q') || '';
-  const q = rawQ.toLowerCase();
-  const multi = (param, valid) => (query.get(param) || '').split(',').map((s) => s.trim()).filter((x) => valid.includes(x));
-  const selDomains = multi('domain', domains.map((d) => d.key));
-  const selSystems = multi('system', [...new Set(tables.map((t) => t.system))]);
-  const selSchemas = multi('schema', [...new Set(tables.map((t) => t.schema))]);
-  const selStatus = multi('status', refList(core, 'objectStatuses').map((s) => s.id));
-  const mapped = ['ja', 'nein'].includes(query.get('mapped')) ? query.get('mapped') : '';
-  const view = query.get('view') === 'gallery' ? 'gallery' : 'list';
-  const wantedPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
+// One shape for every record, whatever branch it came from, so the tree, the
+// tables and the overview do not each need three code paths.
+function records(core, kind) {
+  if (kind === 'objekt') {
+    return core.businessObjects().map((o) => ({
+      kind: 'objekt', id: o.objectId, name: o.name, group: domainLabel(core, o.domain),
+      def: o.definition || '', status: statusOf(core, o.status).label,
+      steward: o.steward || '', persons: o.responsiblePersons || [],
+      n: (o.attributes || []).length, raw: o, href: links.businessObject(o.objectId),
+      kids: (o.attributes || []).map((a) => ({
+        name: a.name, def: a.definition || '', type: VALUE_TYPE[a.type] || a.type,
+        key: a.keyRole || '', required: !!a.required, std: a.standardRef || '', raw: a,
+      })),
+    }));
+  }
+  if (kind === 'tabelle') {
+    return core.dataTables().map((t) => ({
+      kind: 'tabelle', id: t.tableId, name: t.displayName || t.name, group: t.systemName || '—',
+      def: t.description || '', status: TABLE_TYPE[t.type] || t.type || '',
+      steward: t.steward || '', persons: t.responsiblePersons || [],
+      n: (t.fields || []).length, raw: t, href: links.dataTable(t.tableId),
+      kids: (t.fields || []).map((f) => ({
+        name: f.name, def: f.description || '', type: f.dataType || f.type || '',
+        key: f.primaryKey ? 'PK' : f.foreignKey ? 'FK' : '', required: !f.nullable, std: '', raw: f,
+      })),
+    }));
+  }
+  return REF_THEMES.flatMap(([theme, keys]) => keys.map((k) => {
+    const vals = refList(core, k);
+    return {
+      kind: 'referenz', id: k, name: REF_LABEL[k] || k, group: theme,
+      def: `Kontrollierte Werteliste; jeder Wert unten ist genau einmal vergeben.`,
+      // Verantwortung, Status und Freigabe gehören hierher. Das Datenmodell führt
+      // sie noch nicht (docs/data-model.md), deshalb bleiben die Felder sichtbar leer
+      // statt weggelassen — die Lücke soll auffallen, nicht verschwinden.
+      status: '', steward: '', persons: [],
+      n: vals.length, raw: { key: k, values: vals }, href: `${BASE}?list=${encodeURIComponent(k)}`,
+      kids: vals.map((v) => ({
+        name: String(v.label || v.name || v.id || v.key || v),
+        def: v.definition || v.description || v.consequence || '',
+        type: String(v.id || v.key || ''), key: '', required: false, std: '', raw: v,
+      })),
+    };
+  }));
+}
 
-  // Per-entry metrics.
-  const mapCount = (o) => core.realisationsOf(o).length;
-  const realCount = (t) => core.realisationsForTable(t.tableId).length;
+// Everything the views need, derived once from the query string. Every part of
+// the path is checked against the data: a query naming a record or an attribute
+// that does not exist must never reach the renderer.
+function readState(ctx) {
+  const { query: qs, core } = ctx;
+  const kindParam = qs.get('kind');
+  // The record selector doubles as the branch: an ?id= link from the search
+  // index carries no kind, and inferring it beats asking every caller to add one.
+  const picked = qs.get('id') ? ['objekt', qs.get('id')]
+    : qs.get('table') ? ['tabelle', qs.get('table')]
+      : qs.get('list') ? ['referenz', qs.get('list')] : null;
+  const kind = picked ? picked[0] : (BRANCHES.includes(kindParam) ? kindParam : '');
+  const rows = kind ? records(core, kind) : [];
+  const rec = picked ? rows.find((r) => r.id === picked[1]) || null : null;
+  const leafParam = qs.get('leaf') || '';
+  const leaf = rec ? rec.group : (rows.some((r) => r.group === leafParam) ? leafParam : '');
+  const attrParam = qs.get('attr') || '';
+  const attr = rec && rec.kids.some((k) => k.name === attrParam) ? attrParam : '';
+  const lvl = attr ? 4 : rec ? 3 : leaf ? 2 : kind ? 1 : 0;
+  const avail = TABS_AT(lvl);
+  const pick = TAB_LABEL[qs.get('tab')] ? qs.get('tab') : '';
+  const tab = avail.includes(pick) ? pick
+    : (avail.includes(DEFAULT_TAB[lvl]) ? DEFAULT_TAB[lvl] : avail[0] || '');
+  return { kind, rows, leaf, rec, attr, lvl, tab, pick, avail, missing: !!picked && !rec };
+}
 
-  const SORTS = kind === 'objekte'
-    ? [
-      { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
-      { value: 'domain', label: 'Domäne', cmp: (a, b) => domainLabel(core, a.domain).localeCompare(domainLabel(core, b.domain), 'de') || a.name.localeCompare(b.name, 'de') },
-      { value: 'attrs', label: 'Attribute (meiste zuerst)', cmp: (a, b) => b.attributes.length - a.attributes.length },
-      { value: 'maps', label: 'Realisierungen (meiste zuerst)', cmp: (a, b) => mapCount(b) - mapCount(a) },
-    ]
-    : [
-      { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.displayName.localeCompare(b.displayName, 'de') },
-      { value: 'system', label: 'System', cmp: (a, b) => a.systemName.localeCompare(b.systemName, 'de') || a.name.localeCompare(b.name, 'de') },
-      { value: 'fields', label: 'Felder (meiste zuerst)', cmp: (a, b) => b.fields.length - a.fields.length },
-      { value: 'real', label: 'Realisierte Geschäftsobjekte (meiste zuerst)', cmp: (a, b) => realCount(b) - realCount(a) },
-    ];
-  const sortKey = SORTS.some((s) => s.value === query.get('sort')) ? query.get('sort') : '';
+// A link that changes one part of the scope and leaves the rest — in particular
+// the chosen tab — exactly where it was.
+function hrefFor(s, patch) {
+  const n = { kind: s.kind, leaf: s.leaf, rec: s.rec, attr: s.attr, pick: s.pick, ...patch };
+  const p = new URLSearchParams();
+  if (n.rec) {
+    p.set(n.rec.kind === 'objekt' ? 'id' : n.rec.kind === 'tabelle' ? 'table' : 'list', n.rec.id);
+    if (n.attr) p.set('attr', n.attr);
+  } else {
+    if (n.kind) p.set('kind', n.kind);
+    if (n.leaf) p.set('leaf', n.leaf);
+  }
+  if (n.pick) p.set('tab', n.pick);
+  const s2 = p.toString();
+  return s2 ? `${BASE}?${s2}` : BASE;
+}
 
-  // Filtering.
-  const objMatches = (o) => {
-    const hay = `${o.name} ${o.definition} ${o.comment} ${o.attributes.map((a) => a.name).join(' ')}`.toLowerCase();
-    return (!q || hay.includes(q))
-      && (!selDomains.length || selDomains.includes(o.domain))
-      && (!selStatus.length || selStatus.includes(o.status))
-      && (!mapped || (mapped === 'ja' ? mapCount(o) > 0 : mapCount(o) === 0));
-  };
-  const tblMatches = (t) => {
-    const hay = `${t.name} ${t.displayName} ${t.description} ${t.schema} ${t.systemName} ${t.fields.map((f) => f.name).join(' ')}`.toLowerCase();
-    return (!q || hay.includes(q))
-      && (!selSystems.length || selSystems.includes(t.system))
-      && (!selSchemas.length || selSchemas.includes(t.schema))
-      && (!mapped || (mapped === 'ja' ? realCount(t) > 0 : realCount(t) === 0));
-  };
+// --- Route -------------------------------------------------------------------
 
-  const all = kind === 'objekte' ? objects : tables;
-  const filtered = all.filter(kind === 'objekte' ? objMatches : tblMatches);
-  const sortDef = SORTS.find((s) => s.value === sortKey);
-  const { sorted, visible, page, totalPages } = preparePage(filtered, {
-    compare: (sortDef || SORTS[0]).cmp,
-    page: wantedPage,
-    perPage: PER_PAGE,
-  });
+export default async function render(ctx) {
+  const { mount, C, setTitle, setCrumbs } = ctx;
+  const s = readState(ctx);
 
-  // Hash construction. Omit kind for the default business-object view.
-  const base = {
-    kind: kind === 'objekte' ? '' : kind, q: rawQ, sort: sortKey, view,
-    domain: selDomains, system: selSystems, schema: selSchemas, status: selStatus, mapped,
-  };
-  const hash = (patch = {}) => C.catalogueHash(BASE, { ...base, ...patch, defaultView: 'list' });
-  // Switching views drops filters owned exclusively by the other view.
-  const kindHref = (k) => C.catalogueHash(BASE, {
-    kind: k === 'objekte' ? '' : k, q: rawQ, view, defaultView: 'list',
-  });
-
-  // Active filter pills.
-  const active = [
-    ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
-    ...selDomains.map((x) => ({ label: domainLabel(core, x), href: hash({ domain: selDomains.filter((y) => y !== x) }) })),
-    ...selSystems.map((x) => ({ label: (tables.find((t) => t.system === x) || {}).systemName || x, href: hash({ system: selSystems.filter((y) => y !== x) }) })),
-    ...selSchemas.map((x) => ({ label: `Schema ${x}`, href: hash({ schema: selSchemas.filter((y) => y !== x) }) })),
-    ...selStatus.map((x) => ({ label: statusOf(core, x).label, href: hash({ status: selStatus.filter((y) => y !== x) }) })),
-    ...(mapped ? [{ label: mapped === 'ja' ? 'Mit Realisierung' : 'Ohne Realisierung', href: hash({ mapped: '' }) }] : []),
-  ];
-
-  // Cards and lists. Without imagery, list view leads; gallery uses the
-  // ordinary image-free CD card instead of the inventory media card.
-  const objCard = (o) => {
-    const n = mapCount(o);
-    return C.card({
-      title: o.name,
-      desc: o.definition,
-      href: objectHref(o.objectId),
-      badges: [
-        C.badge(domainLabel(core, o.domain), 'blue'),
-        C.badge(statusOf(core, o.status).label, statusOf(core, o.status).variant),
-        ...(n ? [] : [C.badge('Ohne Realisierung', 'gray')]),
-      ],
-      footerInfo: `${o.attributes.length} Attribute · ${n} Realisierung${n === 1 ? '' : 'en'}`,
-      footerAction: C.cardAction(),
+  // A named record that does not resolve is a broken link, not an empty page.
+  if (s.missing) {
+    return C.renderNotFound(ctx, {
+      thing: 'Dieser Eintrag', title: 'Eintrag nicht gefunden',
+      backHref: BASE, backLabel: TITLE,
+      crumbs: trail(APPLICATIONS, { label: TITLE, href: BASE }),
     });
-  };
-  const tblCard = (t) => C.card({
-    title: t.displayName,
-    desc: t.description,
-    href: tableHref(t.tableId),
-    badges: [
-      C.badge(t.systemName, 'blue'),
-      C.badge(TABLE_TYPE[t.type] || t.type, 'gray'),
-      ...(t.certified ? [C.badge('Zertifiziert', 'success')] : []),
-    ],
-    footerInfo: `${t.fields.length} Felder${t.rowCount ? ` · ${formatNumber(t.rowCount)} Zeilen` : ''}`,
-    footerAction: C.cardAction(),
-  });
+  }
 
-  // Column widths preserve discoverability and comparison. Domain, system,
-  // and status use badges because they repeat the same finite filter categories.
-  const objList = (rows) => C.table({
-    caption: 'Geschäftsobjekte', zebra: true, rowsClickable: true,
-    columns: [
-      { key: 'name', label: 'Geschäftsobjekt', width: '13rem', render: (o) =>
-        `<a href="${objectHref(o.objectId)}">${esc(o.name)}</a>` },
-      { key: 'domain', label: 'Domäne', width: '12rem', render: (o) => C.badge(domainLabel(core, o.domain), 'blue') },
-      { key: 'definition', label: 'Beschreibung', render: (o) => esc(truncateText(o.definition, 130)) },
-      { key: 'attrs', label: 'Attribute', align: 'right', render: (o) => String(o.attributes.length) },
-      { key: 'status', label: 'Status', width: '9rem', render: (o) => C.badge(statusOf(core, o.status).label, statusOf(core, o.status).variant) },
-    ],
-    rows,
-  });
-  const tblList = (rows) => C.table({
-    caption: 'Datentabellen', zebra: true, rowsClickable: true,
-    columns: [
-      { key: 'name', label: 'Tabelle', width: '13rem', render: (t) =>
-        `<a href="${tableHref(t.tableId)}">${esc(t.displayName)}</a><br><span class="small muted"><code>${esc(t.name)}</code></span>` },
-      { key: 'system', label: 'System', width: '10rem', render: (t) => C.badge(t.systemName, 'blue') },
-      { key: 'description', label: 'Beschreibung', render: (t) => esc(truncateText(t.description, 130)) },
-      { key: 'fields', label: 'Felder', align: 'right', render: (t) => String(t.fields.length) },
-      // System-table status means certification, its only lifecycle value;
-      // type and dataset count remain in detail where they aid comparison less.
-      { key: 'certified', label: 'Status', width: '9rem', render: (t) =>
-        C.badge(t.certified ? 'Zertifiziert' : 'Nicht zertifiziert', t.certified ? 'success' : 'gray') },
-    ],
-    rows,
-  });
-
-  // Filter panel.
-  const panel = kind === 'objekte' ? `
-      ${C.filterGroup({ dim: 'domain', legend: 'Domäne', selected: selDomains, idPrefix: 'mc',
-        options: domains.map((d) => ({ value: d.key, label: d.label })) })}
-      ${C.filterGroup({ dim: 'status', legend: 'Status', selected: selStatus, idPrefix: 'mc',
-        options: refList(core, 'objectStatuses').map((s) => ({ value: s.id, label: s.label })) })}
-      ${C.filterGroup({ dim: 'mapped', legend: 'Realisierung', selected: mapped ? [mapped] : [], idPrefix: 'mc',
-        options: [{ value: 'ja', label: 'In einem System realisiert' }, { value: 'nein', label: 'In keinem System realisiert' }] })}
-      ${C.panelReset({ href: hash({ domain: [], status: [], mapped: '' }) })}`
-    : `
-      ${C.filterGroup({ dim: 'system', legend: 'System', selected: selSystems, idPrefix: 'mc',
-        options: [...new Map(tables.map((t) => [t.system, t.systemName])).entries()].map(([v, l]) => ({ value: v, label: l })) })}
-      ${C.filterGroup({ dim: 'schema', legend: 'Schema', selected: selSchemas, idPrefix: 'mc',
-        options: [...new Map(tables.map((t) => [t.schema, t.schemaLabel])).entries()].map(([v, l]) => ({ value: v, label: l })) })}
-      ${C.filterGroup({ dim: 'mapped', legend: 'Realisierung', selected: mapped ? [mapped] : [], idPrefix: 'mc',
-        options: [{ value: 'ja', label: 'Realisiert Geschäftsobjekte' }, { value: 'nein', label: 'Realisiert keine Geschäftsobjekte' }] })}
-      ${C.panelReset({ href: hash({ system: [], schema: [], mapped: '' }) })}`;
-
-  const filterCount = kind === 'objekte'
-    ? selDomains.length + selStatus.length + (mapped ? 1 : 0)
-    : selSystems.length + selSchemas.length + (mapped ? 1 : 0);
-
-  // Keep nominative and dative German UI count forms separately so result
-  // summaries and empty states use the correct grammar.
-  const unit = kind === 'objekte'
-    ? { nom: 'Geschäftsobjekte', dat: 'Geschäftsobjekten' }
-    : { nom: 'Datentabellen', dat: 'Datentabellen' };
+  const unit = BRANCH_UNIT[s.kind] || BRANCH_UNIT.objekt;
+  const here = s.attr || (s.rec && s.rec.name) || s.leaf || (s.kind && BRANCH_LABEL[s.kind]) || '';
+  setTitle(here ? `${here} — ${TITLE}` : TITLE);
+  // Only the current scope goes into the trail; the tree carries the path.
+  setCrumbs(trail(APPLICATIONS, { label: TITLE, href: BASE }, ...(here ? [{ label: here }] : [])));
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.pageHeader({
-      title: TITLE,
-      lead: 'Fachbegriffe des BBL und ihre Realisierung in den Führungssystemen — welches Geschäftsobjekt welche Attribute hat, und welches Feld welcher Tabelle sie trägt.',
-    })}
-    ${C.catalogueBar({
-      formId: 'mc-search', inputId: 'mc-q',
-      searchLabel: kind === 'objekte' ? 'Geschäftsobjekt oder Attribut suchen' : 'Tabelle oder Feld suchen',
-      placeholder: kind === 'objekte' ? 'Geschäftsobjekt oder Attribut suchen…' : 'Tabelle oder Feld suchen…',
-      q: rawQ, countId: 'mc-count',
-      count: `<strong>${sorted.length}</strong> von ${all.length} ${esc(unit.dat)}${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
-      sort: { id: 'mc-sort', value: sortKey, options: SORTS.map((s) => ({ value: s.value, label: s.label })) },
-      filterId: 'mc-filter', filterLabel: 'Filter', filterCount,
-      panelId: 'mc-filters', panel,
-      view, views: [['list', 'Listenansicht', 'List'], ['gallery', 'Galerieansicht', 'Apps']],
-    })}
-    ${C.activeFilters({ filters: active, resetHref: BASE })}
+    ${C.pageHeader({ title: TITLE,
+    lead: 'Fachbegriffe des BBL, ihre Realisierung in den Führungssystemen, und die Wertelisten, auf die beide verweisen.' })}
     <div class="pf-layout">
-      <aside class="pf-sidebar" aria-label="Domänen und Systeme">
+      <aside class="pf-sidebar" aria-label="Katalog durchsuchen">
         <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Katalog</h2></div>
-        ${treeHTML()}
+        ${treeHtml(ctx, s)}
       </aside>
       <div class="pf-main">
-        ${C.catalogueResults({
-          resetHref: BASE, visible, count: sorted.length,
-          view, page, totalPages,
-          card: kind === 'objekte' ? objCard : tblCard,
-          listView: kind === 'objekte' ? objList : tblList,
-          unit, gridCls: 'grid grid--responsive-cols-2',
-          regionLabel: kind === 'objekte' ? 'Geschäftsobjekte' : 'Datentabellen',
-          paginationInputId: 'mc-page', paginationLabel: `Seitennavigation ${unit.nom}`,
-          paginationHref: (p) => hash({ page: p }),
-          available: core.available(kind === 'objekte' ? 'businessObjects' : 'dataTables'),
-        })}
+        ${s.lvl === 0 ? '' : `<div class="tabs">${C.tabBar({
+    items: s.avail.map((k) => ({ id: k, label: TAB_LABEL[k] })),
+    active: s.tab, idPrefix: 'mc-tab', ariaLabel: 'Darstellung', panelId: 'mc-panel',
+  })}</div>`}
+        <div id="mc-panel"${s.lvl === 0 ? '' : ' role="tabpanel" tabindex="0"'}>${paneHtml(ctx, s, unit)}</div>
       </div>
     </div>
   </div>`;
 
-  C.announceCatalogue({ count: sorted.length, total: all.length, unit, page, totalPages, view });
-  C.wireCatalogue(mount, {
-    formId: 'mc-search', inputId: 'mc-q', pageInputId: 'mc-page', page, totalPages, hash,
-    sortId: 'mc-sort', filterToggleId: 'mc-filter', panelId: 'mc-filters',
-  });
-  ctx.onUnmount(C.wireTableRows(mount));
+  mountPane(ctx, s, unit);
+  wireTree(mount);
 
-  // A tree branch navigates and opens from another branch, or toggles in place.
-  // Its listener dies with the sidebar on the next render.
-  mount.querySelector('.pf-sidebar').addEventListener('click', (e) => {
-    const btn = e.target.closest('.pf-tree__node[data-branch]');
-    if (!btn) return;
-    if (location.hash !== btn.dataset.href) {
-      OPEN.set(btn.dataset.branch, true);
-      location.hash = btn.dataset.href;
-      return;
-    }
-    const open = btn.getAttribute('aria-expanded') === 'true';
-    btn.setAttribute('aria-expanded', String(!open));
-    const list = mount.querySelector(`#${btn.getAttribute('aria-controls')}`);
-    if (list) list.hidden = open;
-    OPEN.set(btn.dataset.branch, !open);
-  });
-
-  // Page tree. Branches are filter links with toggles; leaves are links. Plain
-  // indentation communicates the two levels without icons.
-  function treeHTML() {
-    const row = (label, count) =>
-      `<span class="pf-tree__label">${esc(label)}</span><span class="pf-tree__n">${count}</span>`;
-    // plain-link opts navigation out of the high-specificity content-link underline.
-    const leaf = (label, count, href, on) =>
-      `<li class="pf-tree__item"><a class="pf-tree__leaf plain-link interactive-control${on ? ' is-active' : ''}" href="${href}"${
-        on ? ' aria-current="true"' : ''}>${row(label, count)}</a></li>`;
-    // A branch itself represents all items in that branch. It navigates and opens
-    // from elsewhere, then toggles when already active, avoiding a duplicate all row.
-    const branch = (key, label, count, href, on, open, children) => `
-      <li class="pf-tree__item">
-        <button type="button" class="pf-tree__node interactive-control${on ? ' is-active' : ''}" data-branch="${key}"
-          data-href="${esc(href)}" aria-expanded="${open}" aria-controls="mc-branch-${key}">
-          ${C.icon('ChevronRight', 'pf-tree__chev')}${row(label, count)}</button>
-        <ul class="pf-tree__children" id="mc-branch-${key}"${open ? '' : ' hidden'}>${children}</ul>
-      </li>`;
-
-    const domCount = {};
-    for (const o of objects) domCount[o.domain] = (domCount[o.domain] || 0) + 1;
-
-    const domainItems = domains.map((d) => leaf(
-      d.label, domCount[d.key] || 0,
-      C.catalogueHash(BASE, { domain: [d.key], view, defaultView: 'list' }),
-      kind === 'objekte' && selDomains.length === 1 && selDomains[0] === d.key,
-    )).join('');
-
-    // Keep exactly root and filter-value levels. A third system/schema level
-    // would exceed the tree's one-step leaf indentation; schemas stay in the panel.
-    const bySystem = new Map();
-    for (const t of tables) {
-      if (!bySystem.has(t.system)) bySystem.set(t.system, { name: t.systemName, n: 0 });
-      bySystem.get(t.system).n++;
-    }
-    const systemItems = [...bySystem.entries()].map(([key, s]) => leaf(
-      s.name, s.n,
-      C.catalogueHash(BASE, { kind: 'tabellen', system: [key], view, defaultView: 'list' }),
-      kind === 'tabellen' && selSystems.length === 1 && selSystems[0] === key,
-    )).join('');
-
-    // Always open a branch containing the active filter. Otherwise respect the
-    // explicit choice, defaulting to the active business-object branch.
-    return `<ul class="pf-tree pf-tree--plain">
-      ${branch('objects', 'Geschäftsobjekte', objects.length, kindHref('objekte'),
-        kind === 'objekte' && !selDomains.length,
-        selDomains.length ? true : isOpen('objects', kind === 'objekte'), domainItems)}
-      ${branch('systems', 'Systeme', tables.length, kindHref('tabellen'),
-        kind === 'tabellen' && !selSystems.length,
-        selSystems.length ? true : isOpen('systems', kind === 'tabellen'), systemItems)}
-    </ul>`;
+  // Tabs change the presentation only, so the panel is swapped in place rather
+  // than the route re-run: the tree keeps its scroll position and its focus.
+  if (s.lvl > 0) {
+    C.wireTabs(mount, {
+      onSelect: (tab) => {
+        const p = new URLSearchParams(location.hash.split('?')[1] || '');
+        if (tab === DEFAULT_TAB[s.lvl]) p.delete('tab'); else p.set('tab', tab);
+        const str = p.toString();
+        history.replaceState(history.state, '', str ? `${BASE}?${str}` : BASE);
+        const next = { ...s, tab, pick: tab === DEFAULT_TAB[s.lvl] ? '' : tab };
+        const panel = mount.querySelector('#mc-panel');
+        panel.innerHTML = paneHtml(ctx, next, unit);
+        mountPane(ctx, next, unit);
+      },
+    });
   }
 }
 
-// Business-object detail.
-function objectDetail(ctx, id) {
-  const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  // URLSearchParams decodes query values exactly once.
-  const o = core.businessObject(id);
-  if (!o) {
-    return C.renderNotFound(ctx, {
-      thing: 'Dieses Geschäftsobjekt', title: 'Geschäftsobjekt nicht gefunden',
-      backHref: BASE, backLabel: TITLE,
-      crumbs: trail(APPLICATIONS, { label: TITLE, href: BASE }),
-    });
-  }
-  setTitle(o.name);
-  setCrumbs(trail(APPLICATIONS, { label: TITLE, href: BASE }, { label: o.name }));
+// --- Tree --------------------------------------------------------------------
 
-  const st = statusOf(core, o.status);
-  const maps = core.realisationsOf(o);
-  const contact = core.contacts().find((c) => c.contactId === o.steward);
+// Three branches, four levels. Depth comes from the nesting of .pf-tree__children
+// (css/sections/explorer.css), so no level needs a class of its own.
+//
+// A record row splits into two controls because selecting and unfolding are two
+// different intentions: a data table can carry 75 fields, and dropping them into
+// the sidebar on every click buries the tree. The link picks the record, the
+// chevron opens it. Every other row navigates and unfolds in one move, because
+// there the branch below IS what was asked for.
+function treeHtml(ctx, s) {
+  const { core, C } = ctx;
+  const CHEV = C.icon('ChevronRight', 'pf-tree__chev');
+  const GAP = '<span class="pf-tree__chev--empty" aria-hidden="true"></span>';
+  const label = (text, n) => `<span class="pf-tree__label">${esc(text)}</span>`
+    + (n == null ? '' : `<span class="pf-tree__n">${n}</span>`);
 
-  // Match inventory-detail tabs. Overview locates the concept in systems while
-  // the adjacent attribute tab contains the long searchable table.
-  const tabByLegacyValue = { 'uebersicht': 'overview', 'attribute': 'attributes', 'realisierung': 'realisations' };
-  const legacyValueByTab = Object.fromEntries(Object.entries(tabByLegacyValue).map(([legacy, tab]) => [tab, legacy]));
-  const tabs = [
-    { id: 'overview', label: 'Übersicht' },
-    { id: 'attributes', label: `Attribute (${o.attributes.length})` },
-    { id: 'realisations', label: `Realisierung (${maps.length})` },
-  ];
-  // Persist ?tab in the URL. Unknown values fall back to overview; replaceState
-  // avoids a router redraw or focus reset for an in-place tab change.
-  let active = tabByLegacyValue[query.get('tab')] || tabs[0].id;
-  if (!tabs.some((x) => x.id === active)) active = tabs[0].id;
-  const syncHash = (tab) => {
-    const p = new URLSearchParams({ id: o.objectId });
-    if (tab !== tabs[0].id) p.set('tab', legacyValueByTab[tab]);
-    history.replaceState(history.state, '', `${BASE}?${p}`);
-  };
-  // Overview leads with definition, scope, and common names before long tables.
-  const panelHtml = (id) => {
-    if (id === 'attributes') return '<div id="mc-attrs"></div>';
-    // Mount an empty data table with headers when no mapping exists so users can
-    // see what information would appear and why rows are absent.
-    if (id === 'realisations') return '<div id="mc-maps"></div>';
-    // Follow dataset-detail anatomy: lead definition, responsible people, and
-    // metadata lists, with the generic contact card in the side column. Tab labels
-    // already carry attribute and realisation counts.
-    return `<div class="detail-layout"><div>${personsSection(o.responsiblePersons)}
-      <section class="detail-section">
-        <h2 class="detail-section__title">Metadaten</h2>
-        <dl class="kv kv--ruled">
-          <dt>Datendomäne</dt><dd><a href="${C.catalogueHash(BASE, { domain: [o.domain] })}">${esc(domainLabel(core, o.domain))}</a></dd>
-          ${/* Show the shared object lifecycle consistently with other catalogues. */''}
-          <dt>Status</dt><dd>${C.badge(st.label, st.variant)}${st.definition
-            ? `<br><span class="small muted">${esc(st.definition)} — ${esc(st.consequence)}</span>` : ''}</dd>
-          ${o.standardRef ? `<dt>Norm-Referenz</dt><dd>${esc(o.standardRef)}</dd>` : ''}
-          ${/* Scope, alternate names, and identifier relevance belong in metadata. */''}
-          ${o.comment ? `<dt>Bemerkung</dt><dd>${esc(o.comment)}</dd>` : ''}
-          ${o.updated ? `<dt>Stand</dt><dd>${esc(formatDate(o.updated))}</dd>` : ''}
-          <dt>ID</dt><dd><code>${esc(o.objectId)}</code></dd>
-        </dl>
-      </section></div>
-      <aside class="detail-layout__aside" aria-label="Herkunft und Kontakt">
-        ${sourceBoxFor(core, C, o)}
-        ${C.contactBox(contact, { title: 'Kontakt', heading: 'h2' })}
-      </aside></div>`;
-  };
+  const attrRows = (r, kind, group) => r.kids.map((k) => `
+    <li class="pf-tree__item"><a class="pf-tree__sub" href="${esc(hrefFor(s, { rec: r, attr: k.name, kind, leaf: group }))}"
+      ${s.attr === k.name ? ' aria-current="true"' : ''}>${GAP}${label(k.name, null)}</a></li>`).join('');
 
-  mount.innerHTML = `
-  <div class="container section">
-    ${/* Use the application detail header instead of a landing-page hero. */''}
-    ${C.detailBar({ backHref: BASE, backLabel: TITLE })}
-    <h1 tabindex="-1">${esc(o.name)}</h1>
-    ${/* The concept definition is the lead rather than a separate repeated section. */''}
-    ${o.definition ? `<p class="lead">${esc(o.definition)}</p>` : ''}
+  const recRows = (mine, kind, group) => mine.map((r) => {
+    const on = s.rec && s.rec.id === r.id;
+    // An attribute in scope forces its parent open — the selection has to be visible.
+    const open = on && (!!s.attr || isOpen(`rec:${r.id}`, false));
+    return `<li class="pf-tree__item">
+      <span class="pf-tree__split${on && !s.attr ? ' is-active' : on ? ' is-path' : ''}">
+        <button type="button" class="pf-tree__fold" data-fold="rec:${esc(r.id)}" aria-expanded="${open}"
+          aria-label="${esc(r.name)} ${open ? 'zuklappen' : 'aufklappen'}">${CHEV}</button>
+        <a class="pf-tree__go" href="${esc(hrefFor(s, { rec: r, attr: '', kind, leaf: group }))}"
+          ${on && !s.attr ? ' aria-current="true"' : ''}>${label(r.name, r.n)}</a>
+      </span>
+      <ul class="pf-tree__children"${open ? '' : ' hidden'}>${open ? attrRows(r, kind, group) : ''}</ul>
+    </li>`;
+  }).join('');
 
-    <div class="tabs mt-6">
-      ${C.tabBar({ items: tabs, active, idPrefix: 'mc-tab', ariaLabel: 'Geschäftsobjekt' })}
-      ${C.tabPanels({ items: tabs, active, idPrefix: 'mc-tab', render: panelHtml, heading: true })}
-    </div>
-  </div>`;
+  const branches = BRANCHES.map((kind) => {
+    const rows = records(core, kind);
+    const open = s.kind === kind;
+    const groups = [...new Set(rows.map((r) => r.group))].sort((a, b) => a.localeCompare(b, 'de'));
+    const kids = !open ? '' : groups.map((g) => {
+      const mine = rows.filter((r) => r.group === g);
+      const on = s.leaf === g;
+      return `<li class="pf-tree__item">
+        <a class="pf-tree__leaf${on && !s.rec ? ' is-active' : on ? ' is-path' : ''}" aria-expanded="${on}"
+          href="${esc(hrefFor(s, { kind, leaf: g, rec: null, attr: '' }))}"${on && !s.rec ? ' aria-current="true"' : ''}
+          >${CHEV}${label(g, mine.length)}</a>
+        <ul class="pf-tree__children"${on ? '' : ' hidden'}>${on ? recRows(mine, kind, g) : ''}</ul></li>`;
+    }).join('');
+    return `<li class="pf-tree__item">
+      <a class="pf-tree__node${open && !s.leaf ? ' is-active' : open ? ' is-path' : ''}" aria-expanded="${open}"
+        href="${esc(hrefFor(s, { kind, leaf: '', rec: null, attr: '' }))}"${open && !s.leaf ? ' aria-current="true"' : ''}
+        >${CHEV}${label(BRANCH_LABEL[kind], rows.length)}</a>
+      <ul class="pf-tree__children"${open ? '' : ' hidden'}>${open ? kids : ''}</ul></li>`;
+  }).join('');
 
-  C.wireTabs(mount, { syncHash });
+  return `<ul class="pf-tree">
+    <li class="pf-tree__item"><a class="pf-tree__node${s.lvl === 0 ? ' is-active' : ''}" href="${BASE}"
+      ${s.lvl === 0 ? ' aria-current="true"' : ''}>${GAP}${label('Katalog', null)}</a></li>
+    ${branches}</ul>`;
+}
 
-  // Use the searchable, sortable, paginated data table for potentially long attribute lists.
-  ctx.onUnmount(C.mountDataTable(mount.querySelector('#mc-attrs'), {
-    id: 'mc-at', unit: { nom: 'Attribute', dat: 'Attributen' }, caption: `Attribute von ${o.name}`, perPage: 15,
-    rows: o.attributes,
-    searchKeys: ['name', 'definition'],
-    sorts: [
-      { value: 'ord', label: 'Reihenfolge', cmp: () => 0 },
-      { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
-    ],
-    facets: [
-      { dim: 'keyRole', legend: 'Schlüsselrolle',
-        options: Object.entries(KEY_ROLE).map(([v, l]) => ({ value: v, label: l })),
-        match: (r, vals) => vals.includes(r.keyRole) },
-      { dim: 'required', legend: 'Pflichtangabe',
-        options: [{ value: 'ja', label: 'Pflicht' }, { value: 'nein', label: 'Optional' }],
-        match: (r, vals) => vals.includes(r.required ? 'ja' : 'nein') },
-    ],
-    // Keep one value per column. The separate mapping section owns system,
-    // table, field, and quality details, avoiding compressed duplication here.
-    columns: [
-      { key: 'name', label: 'Attribut', width: '14rem', render: (a) =>
-        `<strong>${esc(a.name)}</strong>${a.required ? '' : ' <span class="small muted">optional</span>'}` },
-      { key: 'definition', label: 'Beschreibung', render: (a) =>
-        a.definition ? esc(a.definition) : '<span class="muted">—</span>' },
-      { key: 'type', label: 'Werttyp', width: '8rem', render: (a) => esc(VALUE_TYPE[a.type] || a.type) },
-      { key: 'keyRole', label: 'Schlüssel', width: '6rem', render: (a) =>
-        a.keyRole ? C.badge(a.keyRole, a.keyRole === 'PK' ? 'info' : 'gray', 'sm') : '<span class="muted">—</span>' },
-    ],
-  }));
+// One delegated listener for the whole sidebar; it dies with the sidebar.
+function wireTree(mount) {
+  const side = mount.querySelector('.pf-sidebar');
+  if (!side) return;
+  side.addEventListener('click', (e) => {
+    const fold = e.target.closest('.pf-tree__fold');
+    if (!fold) return;
+    e.preventDefault();
+    const list = fold.closest('.pf-tree__item').querySelector('.pf-tree__children');
+    const open = fold.getAttribute('aria-expanded') !== 'true';
+    fold.setAttribute('aria-expanded', String(open));
+    if (list) list.hidden = !open;
+    OPEN.set(fold.dataset.fold, open);
+  });
+}
 
-  ctx.onUnmount(C.mountDataTable(mount.querySelector('#mc-maps'), {
-    id: 'mc-mp', unit: 'Realisierungen', caption: `Realisierungen von ${o.name}`, perPage: 15,
-    emptyMsg: 'Für dieses Geschäftsobjekt ist keine Realisierung erfasst — entweder führt es kein angeschlossenes System, oder die Abbildung ist noch nicht dokumentiert.',
-    rows: maps.map((m) => {
+// --- Panes -------------------------------------------------------------------
+
+// Übersicht is the same three sections at every level — Definition,
+// Verantwortlich, Metadaten — so a reader who has understood one has understood
+// all of them. Nothing else joins that list (Produktentscheid).
+const TODO = badge('noch nicht erfasst', 'warning', 'sm');
+const section = (title, body) =>
+  `<section class="detail-section"><h2 class="detail-section__title">${esc(title)}</h2>${body}</section>`;
+const kv = (rows) => `<dl class="kv kv--ruled">${rows.filter(Boolean)
+  .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
+// Responsible people are individual AdminDir entries; the steward is a mailbox.
+const personRows = (persons) => (persons || []).map((p) => [esc(p.role),
+  `<a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(p.admindirId)}"
+     target="_blank" rel="noopener noreferrer external">AdminDir ${esc(p.admindirId)}</a>`]);
+
+function paneHtml(ctx, s, unit) {
+  const { core, C } = ctx;
+  if (s.lvl === 0) return homeHtml(ctx);
+  if (s.tab === 'tabelle') return '<div id="mc-table"></div>';
+  if (s.lvl === 4) return attrOverview(core, s, unit);
+  if (s.lvl === 3) return recordOverview(core, C, s, unit);
+  return scopeOverview(s, unit);
+}
+
+function attrOverview(core, s, unit) {
+  const r = s.rec;
+  const k = r.kids.find((x) => x.name === s.attr);
+  const isRef = r.kind === 'referenz';
+  // Both directions of the same edge: an attribute names where it is realised,
+  // a field names the term it carries.
+  const edges = r.kind === 'objekt'
+    ? (k.raw.mappings || []).map((m) => {
       const t = core.dataTable(m.tableId) || {};
-      return { ...m, systemName: t.systemName || '', tableName: t.displayName || m.tableId, technical: t.name || '' };
-    }),
-    searchKeys: ['attribute', 'field', 'tableName', 'systemName'],
-    sorts: [
-      { value: 'attr', label: 'Attribut (A–Z)', cmp: (a, b) => a.attribute.localeCompare(b.attribute, 'de') },
-      { value: 'sys', label: 'System', cmp: (a, b) => a.systemName.localeCompare(b.systemName, 'de') },
-    ],
-    columns: [
-      { key: 'attribute', label: 'Attribut', render: (m) => esc(m.attribute) },
-      { key: 'systemName', label: 'System', render: (m) => esc(m.systemName) },
-      { key: 'tableName', label: 'Tabelle', render: (m) =>
-        `<a href="${tableHref(m.tableId)}">${esc(m.tableName)}</a><br><span class="small muted"><code>${esc(m.technical)}</code></span>` },
-      { key: 'field', label: 'Feld', render: (m) => `<code>${esc(m.field)}</code>` },
-      { key: 'match', label: 'Güte', render: (m) => matchBadge(core, m.match) },
-    ],
-  }));
+      return `${esc(t.systemName || '')} · <a href="${esc(links.dataTable(m.tableId))}">${esc(t.displayName || m.tableId)}</a>`
+        + ` · <code>${esc(m.field)}</code> ${matchBadge(core, m.match)}`;
+    })
+    : r.kind === 'tabelle'
+      ? core.realisationsForTable(r.id).filter((x) => x.field === k.name)
+        .map((x) => `${esc(x.objectName || x.objectId || '')} · <code>${esc(x.attribute)}</code> ${matchBadge(core, x.match)}`)
+      : [];
+  return section('Definition', `<p class="m-0">${k.def ? esc(k.def) : TODO}</p>`)
+    + section('Verantwortlich', kv([
+      ['Verantwortung', r.steward ? esc(r.steward) : TODO],
+      ...personRows(r.persons),
+      ['Geerbt von', `<a href="${esc(hrefFor(s, { attr: '' }))}">${esc(r.name)}</a>`],
+    ]))
+    + section('Metadaten', kv([
+      [isRef ? 'Schlüssel' : 'Typ', k.type ? `<code>${esc(k.type)}</code>` : '—'],
+      isRef ? null : ['Schlüsselrolle', k.key ? badge(k.key, k.key === 'PK' ? 'info' : 'gray', 'sm') : '—'],
+      isRef ? null : ['Pflichtangabe', k.required ? 'Pflicht' : 'optional'],
+      k.std ? ['Norm-Referenz', esc(k.std)] : null,
+      edges.length ? [r.kind === 'objekt' ? 'Realisiert in' : 'Trägt Attribut', edges.join('<br>')] : null,
+      [unit.axis, esc(r.group)],
+    ]));
 }
 
-// Data-table detail.
-async function tableDetail(ctx, id) {
-  const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  // URLSearchParams decodes query values exactly once.
-  const t = core.dataTable(id);
-  if (!t) {
-    return C.renderNotFound(ctx, {
-      thing: 'Diese Tabelle', title: 'Tabelle nicht gefunden',
-      backHref: BASE, backLabel: TITLE,
-      crumbs: trail(APPLICATIONS, { label: TITLE, href: BASE }),
-    });
+function recordOverview(core, C, s, unit) {
+  const r = s.rec;
+  const t = r.raw;
+  const dataset = r.kind === 'tabelle' && t.datasetId ? core.dataset(t.datasetId) : null;
+  const sourceHref = r.kind === 'tabelle' ? safeLinkUrl(t.sourceUrl) : '';
+  return section('Definition', `<p class="m-0">${r.def ? esc(r.def) : TODO}</p>`)
+    + section('Verantwortlich', kv([
+      ['Verantwortung', r.steward ? esc(r.steward) : TODO],
+      ...personRows(r.persons),
+    ]))
+    + section('Metadaten', kv([
+      [unit.axis, esc(r.group)],
+      r.kind === 'tabelle' && t.schemaLabel ? ['Schema',
+        `${esc(t.schemaLabel)}<br><span class="small muted"><code>${esc(t.schema)}</code> · ${esc(SCHEMA_TYPE[t.schemaType] || t.schemaType)}</span>`] : null,
+      r.kind === 'tabelle' ? ['Technischer Name', `<code>${esc(t.name)}</code>`] : null,
+      ['Status', r.status ? esc(r.status) : TODO],
+      r.kind === 'objekt' && t.standardRef ? ['Norm-Referenz', esc(t.standardRef)] : null,
+      [unit.kid, String(r.n)],
+      dataset ? ['Publiziert als', `<a href="${esc(links.dataset(dataset.id))}">${esc(core.t(dataset.title))}</a>`] : null,
+      sourceHref ? ['Quellsystem',
+        `<a href="${esc(sourceHref)}"${newWindowAttrs(sourceHref, { external: classifyUrl(sourceHref) === 'external' })}>${esc(hostOf(sourceHref))}</a>`] : null,
+      t.updated ? ['Stand', esc(formatDate(t.updated))] : null,
+      ['ID', `<code>${esc(r.id)}</code>`],
+    ]))
+    + (t.source ? `<div class="detail-section">${sourceBoxFor(core, C, t)}</div>` : '');
+}
+
+// Levels 1 and 2 describe a scope rather than a record, so «Definition» states
+// what the scope contains and «Metadaten» counts it.
+function scopeOverview(s, unit) {
+  const rows = s.rows.filter((r) => !s.leaf || r.group === s.leaf);
+  const groups = new Set(rows.map((r) => r.group));
+  return section('Definition', `<p class="m-0">${esc(s.leaf
+    ? `Alle ${unit.nom}, die dem ${unit.axis} «${s.leaf}» zugeordnet sind.`
+    : `Alle ${unit.nom} des Katalogs, gegliedert nach ${unit.axisPl}.`)}</p>`)
+    + section('Verantwortlich', kv([['Verantwortung', TODO]]))
+    + section('Metadaten', kv([
+      s.leaf ? [unit.axis, esc(s.leaf)] : null,
+      ['Inhalt', `${rows.length} ${esc(unit.nom)}${s.leaf ? '' : ` in ${groups.size} ${esc(unit.axisPl)}`}`],
+      ['Bestandteile', `${rows.reduce((a, r) => a + r.n, 0)} ${esc(unit.kid)}`],
+    ]));
+}
+
+// The catalogue root has no tabs, because it is not a scope: it is the way in.
+function homeHtml(ctx) {
+  const { core } = ctx;
+  return `<div class="grid grid--responsive-cols-3">${BRANCHES.map((kind) => {
+    const rows = records(core, kind);
+    const u = BRANCH_UNIT[kind];
+    const groups = new Set(rows.map((r) => r.group)).size;
+    return `<a class="card card--clickable" href="${BASE}?kind=${kind}">
+      <div class="card__body">
+        <h2 class="card__title">${esc(BRANCH_LABEL[kind])}</h2>
+        <p class="card__text">${rows.length} ${esc(u.nom)} in ${groups} ${esc(u.axisPl)}<br>
+        ${rows.reduce((a, r) => a + r.n, 0)} ${esc(u.kid)}</p>
+      </div></a>`;
+  }).join('')}</div>`;
+}
+
+// --- Tabelle tab -------------------------------------------------------------
+
+// mountDataTable brings the portal's own search, sorting, facets and pagination,
+// so none of that is rebuilt here. Levels 1 and 2 list records; level 3 lists the
+// record's own parts, where paging matters most — a table can carry 75 fields.
+function mountPane(ctx, s, unit) {
+  const { mount, core, C } = ctx;
+  const host = mount.querySelector('#mc-table');
+  if (!host) return;
+
+  if (s.lvl >= 3) {
+    const r = s.rec;
+    const isRef = r.kind === 'referenz';
+    ctx.onUnmount(C.mountDataTable(host, {
+      id: 'mc-kids', unit: { nom: unit.kid, dat: unit.kid }, perPage: 25,
+      caption: `${unit.kid} von ${r.name}`, rows: r.kids,
+      searchKeys: ['name', 'def', 'type'],
+      emptyMsg: `Für «${r.name}» ist noch nichts erfasst.`,
+      sorts: [
+        { value: 'ord', label: 'Reihenfolge', cmp: () => 0 },
+        { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
+      ],
+      columns: [
+        { key: 'name', label: isRef ? 'Bezeichnung' : r.kind === 'objekt' ? 'Attribut' : 'Feld', width: '14rem',
+          // Clicking a part selects it, and because ?attr forces its parent open
+          // (see treeHtml), the tree follows — which is how a reader reaches
+          // level 4 without having to find the chevron first.
+          render: (k) => `<a href="${esc(hrefFor(s, { attr: k.name }))}">${esc(k.name)}</a>` },
+        { key: 'def', label: 'Beschreibung',
+          render: (k) => (k.def ? esc(truncateText(k.def)) : '<span class="muted">—</span>') },
+        { key: 'type', label: isRef ? 'Schlüssel' : r.kind === 'objekt' ? 'Werttyp' : 'Datentyp', width: '9rem',
+          render: (k) => (k.type ? `<code>${esc(k.type)}</code>` : '<span class="muted">—</span>') },
+        ...(isRef ? [] : [{ key: 'key', label: 'Schlüssel', width: '7rem',
+          render: (k) => (k.key ? badge(k.key, k.key === 'PK' ? 'info' : 'gray', 'sm')
+            : k.required ? '<span class="muted">—</span>' : '<span class="small muted">optional</span>') }]),
+      ],
+    }));
+    return;
   }
-  // Fetch the large published-dataset inventory only here. Check ctx.stale after
-  // awaiting so intervening navigation is never overwritten.
-  if (t.datasetId) {
-    await core.ensure('datasets');
-    if (ctx.stale()) return;
-  }
-  setTitle(t.displayName);
-  setCrumbs(trail(APPLICATIONS, { label: TITLE, href: BASE }, { label: t.displayName }));
 
-  const real = core.realisationsForTable(t.tableId);
-  const contact = core.contacts().find((c) => c.contactId === t.steward);
-  const dataset = t.datasetId ? core.dataset(t.datasetId) : null;
-  // Mirror business-object detail with overview, people, metadata, and two data tabs.
-  const tabByLegacyValue = { 'uebersicht': 'overview', 'felder': 'fields', 'realisierung': 'realisations' };
-  const legacyValueByTab = Object.fromEntries(Object.entries(tabByLegacyValue).map(([legacy, tab]) => [tab, legacy]));
-  const tabs = [
-    { id: 'overview', label: 'Übersicht' },
-    { id: 'fields', label: `Felder (${t.fields.length})` },
-    { id: 'realisations', label: `Realisierung (${real.length})` },
-  ];
-  // Persist ?tab as above; replaceState reflects an in-place tab change.
-  let active = tabByLegacyValue[query.get('tab')] || tabs[0].id;
-  if (!tabs.some((x) => x.id === active)) active = tabs[0].id;
-  const syncHash = (tab) => {
-    const p = new URLSearchParams({ table: t.tableId });
-    if (tab !== tabs[0].id) p.set('tab', legacyValueByTab[tab]);
-    history.replaceState(history.state, '', `${BASE}?${p}`);
-  };
-  const sourceHref = safeLinkUrl(t.sourceUrl);
-  const panelHtml = (id) => {
-    if (id === 'fields') return '<div id="mc-fields"></div>';
-    // As above, retain table headers when there are no rows.
-    if (id === 'realisations') return '<div id="mc-real"></div>';
-    // Mirror the business-object overview and avoid duplicating counts from tab labels.
-    return `<div class="detail-layout"><div>${personsSection(t.responsiblePersons)}
-      <section class="detail-section">
-        <h2 class="detail-section__title">Metadaten</h2>
-        <dl class="kv kv--ruled">
-          <dt>System</dt><dd>${esc(t.systemName)}</dd>
-          <dt>Schema</dt><dd>${esc(t.schemaLabel)}<br><span class="small muted"><code>${esc(t.schema)}</code> · ${esc(SCHEMA_TYPE[t.schemaType] || t.schemaType)}</span></dd>
-          <dt>Technischer Name</dt><dd><code>${esc(t.name)}</code></dd>
-          <dt>Art</dt><dd>${esc(TABLE_TYPE[t.type] || t.type)}</dd>
-          ${/* Certification and row count stay in metadata by explicit product decision. */''}
-          ${/* Keep the DCAT bridge in metadata rather than a separate access box. */''}
-          ${dataset ? `<dt>Publiziert als</dt><dd><a href="${esc(links.dataset(dataset.id))}">${esc(core.t(dataset.title))}</a></dd>` : ''}
-          ${/* External source links carry target and rel and display their hostname. */''}
-          ${sourceHref ? `<dt>Quellsystem</dt><dd><a href="${esc(sourceHref)}"${newWindowAttrs(sourceHref, { external: classifyUrl(sourceHref) === 'external' })}>${esc(hostOf(sourceHref))}</a></dd>` : ''}
-          ${t.updated ? `<dt>Stand</dt><dd>${esc(formatDate(t.updated))}</dd>` : ''}
-          <dt>ID</dt><dd><code>${esc(t.tableId)}</code></dd>
-        </dl>
-      </section></div>
-      <aside class="detail-layout__aside" aria-label="Zugriff und Kontakt">
-        ${/* Put access first in this table-only side column. */''}
-        ${dataset ? `<div class="box">
-          <h2>Zugriff</h2>
-          <p class="small muted">Bezug und Bereitstellungsformen stehen beim publizierten Datensatz im Datenbezug und API Verzeichnis.</p>
-          <a class="btn btn--outline btn--sm btn--icon-left" href="${esc(links.dataset(dataset.id))}">
-            ${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Datensatz ansehen</span></a>
-        </div>` : ''}
-        ${/* A table's leading version is its SOURCE SYSTEM, not the architecture
-              repository — the layer table on #/data/architecture says so, and this
-              is where that claim has to hold per record. */''}
-        ${sourceBoxFor(core, C, t)}
-        ${C.contactBox(contact, { title: 'Kontakt', heading: 'h2' })}
-      </aside></div>`;
-  };
-
-  mount.innerHTML = `
-  <div class="container section">
-    ${/* Use the application detail header instead of a landing-page hero. */''}
-    ${C.detailBar({
-      backHref: C.catalogueHash(BASE, { kind: 'tabellen', system: [t.system] }),
-      backLabel: t.systemName,
-    })}
-    <h1 tabindex="-1">${esc(t.displayName)}</h1>
-    ${t.description ? `<p class="lead">${esc(t.description)}</p>` : ''}
-
-    <div class="tabs mt-6">
-      ${C.tabBar({ items: tabs, active, idPrefix: 'mc-ttab', ariaLabel: 'Datentabelle' })}
-      ${C.tabPanels({ items: tabs, active, idPrefix: 'mc-ttab', render: panelHtml, heading: true })}
-    </div>
-  </div>`;
-
-  C.wireTabs(mount, { syncHash });
-
-  ctx.onUnmount(C.mountDataTable(mount.querySelector('#mc-fields'), {
-    id: 'mc-fl', unit: { nom: 'Felder', dat: 'Feldern' }, caption: `Felder von ${t.name}`, perPage: 15,
-    rows: t.fields.map((f) => ({ ...f, real: core.realisedBy(t.tableId, f.name) })),
-    searchKeys: ['name', 'description', 'dataType'],
+  const rows = s.rows.filter((r) => !s.leaf || r.group === s.leaf);
+  ctx.onUnmount(C.mountDataTable(host, {
+    id: 'mc-rows', unit: { nom: unit.nom, dat: unit.dat }, perPage: 25,
+    caption: s.leaf ? `${unit.nom} · ${s.leaf}` : `${unit.nom} · alle ${unit.axisPl}`,
+    rows, searchKeys: ['name', 'def', 'group'],
+    emptyMsg: 'In diesem Umfang ist kein Eintrag erfasst.',
     sorts: [
-      { value: 'ord', label: 'Reihenfolge im System', cmp: () => 0 },
-      { value: 'name', label: 'Feldname (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
-      { value: 'real', label: 'Realisierte Geschäftsobjekte zuerst', cmp: (a, b) => b.real.length - a.real.length },
+      { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
+      { value: 'n', label: `${unit.kid} (meiste zuerst)`, cmp: (a, b) => b.n - a.n },
     ],
-    facets: [
-      { dim: 'key', legend: 'Schlüssel',
-        options: [{ value: 'pk', label: 'Primärschlüssel' }, { value: 'fk', label: 'Fremdschlüssel' }],
-        match: (r, vals) => (vals.includes('pk') && r.primaryKey) || (vals.includes('fk') && r.foreignKey) },
-      { dim: 'katalog', legend: 'Katalog',
-        options: [{ value: 'ja', label: 'Trägt einen Begriff' }, { value: 'nein', label: 'Ohne Begriff' }],
-        match: (r, vals) => vals.includes(r.real.length ? 'ja' : 'nein') },
-    ],
+    // The axis facet only earns its place while more than one group is in view.
+    facets: s.leaf ? [] : [{ dim: 'group', legend: unit.axis,
+      options: [...new Set(rows.map((r) => r.group))].sort((a, b) => a.localeCompare(b, 'de'))
+        .map((g) => ({ value: g, label: g })),
+      match: (r, vals) => vals.includes(r.group) }],
     columns: [
-      // Keep one value per column, with description in its own column.
-      { key: 'name', label: 'Feld', width: '13rem', render: (f) => `<code>${esc(f.name)}</code>` },
-      { key: 'description', label: 'Beschreibung', render: (f) =>
-        f.description ? esc(truncateText(f.description, 120)) : '<span class="muted">—</span>' },
-      { key: 'dataType', label: 'Datentyp', width: '9rem', render: (f) => `<code class="small">${esc(f.dataType)}</code>` },
-      { key: 'key', label: 'Schlüssel', width: '7rem', render: (f) =>
-        [f.primaryKey ? C.badge('PK', 'info', 'sm') : '', f.foreignKey ? C.badge('FK', 'gray', 'sm') : ''].filter(Boolean).join(' ')
-        || (f.nullable ? '<span class="muted">optional</span>' : '<span class="muted">—</span>') },
-      // Show only the business object in this constrained column. The realised
-      // attribute remains available in the mapping section and page title.
-      { key: 'real', label: 'Realisiert', render: (f) => f.real.length
-        ? f.real.map((r) => `<a class="badge badge--info" href="${objectHref(r.objectId)}" title="${esc(`${r.objectName} · ${r.attribute}`)}">${esc(r.objectName)}</a>`).join(' ')
-        : '<span class="muted">—</span>' },
-    ],
-  }));
-
-  ctx.onUnmount(C.mountDataTable(mount.querySelector('#mc-real'), {
-    id: 'mc-rl', unit: { nom: 'Begriffe', dat: 'Begriffen' }, caption: `Von ${t.name} realisierte Geschäftsobjekte`, perPage: 15,
-    emptyMsg: 'Diese Tabelle realisiert kein katalogisiertes Geschäftsobjekt — die Abbildung wird am Attribut des Geschäftsobjekts gepflegt und ist hier noch nicht erfasst.',
-    rows: real,
-    searchKeys: ['objectName', 'attribute', 'field'],
-    sorts: [
-      { value: 'obj', label: 'Geschäftsobjekt (A–Z)', cmp: (a, b) => a.objectName.localeCompare(b.objectName, 'de') },
-      { value: 'field', label: 'Feld (A–Z)', cmp: (a, b) => a.field.localeCompare(b.field, 'de') },
-    ],
-    columns: [
-      { key: 'objectName', label: 'Geschäftsobjekt', render: (r) => `<a href="${objectHref(r.objectId)}">${esc(r.objectName)}</a>` },
-      { key: 'attribute', label: 'Attribut', render: (r) => esc(r.attribute) },
-      { key: 'field', label: 'Feld', render: (r) => `<code>${esc(r.field)}</code>` },
-      { key: 'match', label: 'Güte', render: (r) => matchBadge(core, r.match) },
+      { key: 'name', label: 'Name', width: '16rem',
+        render: (r) => `<a href="${esc(hrefFor(s, { rec: r, attr: '', leaf: r.group }))}">${esc(r.name)}</a>` },
+      ...(s.leaf ? [] : [{ key: 'group', label: unit.axis, width: '12rem', render: (r) => esc(r.group) }]),
+      { key: 'def', label: 'Beschreibung',
+        render: (r) => (r.def ? esc(truncateText(r.def)) : '<span class="muted">—</span>') },
+      { key: 'n', label: unit.kid, width: '7rem', render: (r) => String(r.n) },
     ],
   }));
 }
