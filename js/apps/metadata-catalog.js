@@ -448,8 +448,12 @@ function searchCount(s) {
     : BRANCH_UNIT[s.kind];
   const all = s.lvl === 3 ? s.rec.kids : s.rows.filter((r) => !s.leaf || r.group === s.leaf);
   const hit = s.lvl === 3 ? scopeKids(s) : scopeRows(s);
-  if (!s.q) return `${all.length} ${esc(u.nom)}`;
-  return `<strong>${hit.length}</strong> von ${all.length} ${esc(u.dat)}`;
+  const n = s.lvl === 3 ? 0 : landscapeBoxes(s).length;
+  // The number of sections was the one thing the table's own count added, so it
+  // moves here rather than being lost.
+  const groups = n > 1 ? ` · ${n} ${n === 1 ? 'Gruppe' : 'Gruppen'}` : '';
+  if (!s.q) return `${all.length} ${esc(u.nom)}${groups}`;
+  return `<strong>${hit.length}</strong> von ${all.length} ${esc(u.dat)}${groups}`;
 }
 
 function searchBarHtml(ctx, s) {
@@ -887,7 +891,8 @@ function mountPane(ctx, s, unit) {
     const hits = BRANCHES.flatMap((k) => records(core, k).map((r) => ({ ...r, kind: k })))
       .filter((r) => matches(s.q, r.name, r.def, r.group, r.steward));
     ctx.onUnmount(C.mountDataTable(host, {
-      id: 'mc-all', unit: { nom: 'Einträge', dat: 'Einträgen' }, perPage: 25, showSearch: false,
+      id: 'mc-all', unit: { nom: 'Einträge', dat: 'Einträgen' }, perPage: 25,
+      showSearch: false, showCount: false,
       caption: `Treffer für «${s.q}» im ganzen Katalog`, rows: hits,
       emptyMsg: `Kein Treffer für «${s.q}».`,
       // Grouped by branch: a hit list spanning three kinds of thing is unreadable
@@ -911,8 +916,9 @@ function mountPane(ctx, s, unit) {
     ctx.onUnmount(C.mountDataTable(host, {
       id: 'mc-kids', unit: { nom: unit.kid, dat: unit.kid }, perPage: 25,
       caption: `${unit.kid} von ${r.name}`, rows: scopeKids(s),
-      // One search field per page. This one already narrowed the rows above.
-      showSearch: false,
+      // One search field and one count per page: the scope bar above carries
+      // both, and it carries them on every tab rather than only on this one.
+      showSearch: false, showCount: false,
       emptyMsg: s.q ? `Kein Treffer für «${s.q}».` : `Für «${r.name}» ist noch nichts erfasst.`,
       sorts: [
         { value: 'ord', label: 'Reihenfolge', cmp: () => 0 },
@@ -938,7 +944,8 @@ function mountPane(ctx, s, unit) {
 
   const rows = scopeRows(s);
   ctx.onUnmount(C.mountDataTable(host, {
-    id: 'mc-rows', unit: { nom: unit.nom, dat: unit.dat }, perPage: 25, showSearch: false,
+    id: 'mc-rows', unit: { nom: unit.nom, dat: unit.dat }, perPage: 25,
+    showSearch: false, showCount: false,
     caption: s.leaf ? `${unit.nom} · ${s.leaf}` : `${unit.nom} · alle ${unit.axisPl}`,
     // A whole branch listed flat is a wall — nineteen business objects across
     // five domains read as nineteen unrelated rows. Sectioning by the axis is

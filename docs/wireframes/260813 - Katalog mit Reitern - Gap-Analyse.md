@@ -1,5 +1,9 @@
 # Gap-Analyse — Wireframe `_CD-kompakt` gegen die Anwendung
 
+> **Stand: alle neun Punkte geschlossen** (Commits `1bf9783` bis `16d5542`).
+> Der Befund unten bleibt als Beleg stehen; die Reihenfolge am Ende trägt
+> den Stand. Was bewusst NICHT angeglichen wurde, steht dort ebenfalls.
+
 Verglichen wurde `docs/wireframes/260813 - Katalog mit Reitern_CD-kompakt.html`
 mit `#/app/metadata-catalog` (Stand `14ca589`), auf **denselben Daten** — beide
 zeigen 19 Geschäftsobjekte, 10 Systeme, 15 Wertelisten und dieselben fünf
@@ -174,17 +178,48 @@ Die Symbole waren ein ausdrücklicher Entscheid («Symbole nur auf Baumstufe 1»
 
 Nach Verhältnis von Wirkung zu Aufwand:
 
-| | Was | Aufwand |
+| | Was | Stand |
 |---|---|---|
-| 1 | **A1** Karten sichtbar machen (`card--default`) — ein Wort, behebt den schlechtesten Eindruck der Anwendung | trivial |
-| 2 | **E1** Spalten «Verantwortung» und «Status» zurück | klein |
-| 3 | **F** Baumsymbole und Katalog-Zähler | klein |
-| 4 | **A2/A3** Startseite: Kennzahl gross, «Letzte Änderungen», «Domänen» | mittel |
-| 5 | **D** Diagramm als Karte statt als Liste: Kästen inhaltsbreit im umbrechenden Raster, Kacheln gefüllt und kompakt | mittel |
-| 6 | **C** Kacheln immer Datensätze; Kästen aus der Gruppierung | mittel |
-| 7 | **B2** «Gruppieren» als geteiltes Bedienelement für Diagramm und Tabelle (setzt 6 voraus) | mittel |
-| 8 | **B3** Suchfeld über die Reiter, umfangsbezogen, auf jedem Reiter | mittel |
-| 9 | **B1** Aktionen-Menü mit CSV, Excel, PDF | mittel bis gross |
+| 1 | **A1** Karten sichtbar machen (`card--default`) | ✅ `1bf9783` |
+| 2 | **E1** Spalten «Verantwortung» und «Status» zurück | ✅ `1bf9783` |
+| 3 | **F** Baumsymbole und Katalog-Zähler | ✅ `1bf9783` |
+| 4 | **A2/A3** Startseite: Kennzahl gross, «Letzte Änderungen», «Domänen» | ✅ `d58a9ac` |
+| 5 | **D** Diagramm als Karte statt als Liste | ✅ `d1f8db1` |
+| 6 | **C** Kacheln immer Datensätze; Kästen aus der Gruppierung | ✅ `d1f8db1` |
+| 7 | **B2** «Gruppieren» als geteiltes Bedienelement | ✅ `d1f8db1` |
+| 8 | **B3** Suchfeld über den Reitern, umfangsbezogen | ✅ `681ae63` |
+| 9 | **B1** Aktionen-Menü mit CSV, Excel, Drucken | ✅ `16d5542` |
 
-1 bis 3 sind Fehlerbehebungen und sollten unabhängig von allem anderen passieren.
-6 und 7 gehören zusammen und sollten nicht einzeln gemacht werden.
+---
+
+## Was dabei zusätzlich herauskam
+
+- **Der Status einer Datentabelle trug ihre Speicherform.** «GIS-Layer» in einer
+  Status-Spalte liest sich als Zustand und ist eine Gestalt. Status ist jetzt die
+  Zertifizierung; die Art hat wieder eine eigene Zeile. Erst dadurch decken sich
+  die Kennzahlen Zeichen für Zeichen mit dem Wireframe.
+- **Die Wertelisten trugen alle denselben erfundenen Beschreibungssatz.** Eine
+  Suche nach «geb» traf deshalb alle fünfzehn — auf «vergeben». Das Datenmodell
+  hat für Wertelisten keine Beschreibung; die Lücke steht jetzt sichtbar leer.
+- **Zwei Zähler sagten dasselbe.** Der der Tabelle ist entfallen (Nutzerentscheid
+  von früher: «der Zähler in der catbar ist nur Unruhe»); er bleibt für
+  Screenreader als `sr-only` erhalten, und die Zahl der Gruppen ist in den
+  Zähler der Suchleiste gewandert, der auf jedem Reiter da ist.
+- Additiv am gemeinsamen Bestand: `C.table({ groups })`, `mountDataTable`
+  `groupBy` / `showSearch` / `showCount`, `.pf-tree__split` und eine Regel in
+  `tabs.css` für den durchschlagenden Aussenabstand. Alles voreingestellt aus,
+  die sechs anderen Reiterflächen im Portal messen unverändert 32px.
+
+## Bewusst nicht angeglichen
+
+- **Die Zeilenhöhe.** Der Wireframe hält eine Zeile je Datensatz, aber auf seiner
+  kompakten 13px-Skala; das Portal folgt dem CD und steht oberhalb 1280px auf
+  18px. Zwei Zeilen sind hier dasselbe Ergebnis in der gewählten Schrift.
+- **Die Kachelfarbe.** Der Wireframe füllt schiefergrau (`#46596b`), die
+  Anwendung blau. Beide nehmen `--color-secondary-500`, den Grund gefüllter
+  Bedienelemente — der Intranet-Skin des Portals setzt ihn anders. Der Token
+  gilt, nicht der Hexwert; weiss darauf misst in beiden Fällen 7,2:1.
+- **Der wiederholte Spaltenkopf je Abschnitt.** Der Portalstandard ist ein Kopf
+  für die ganze Tabelle.
+- **Die Aufsätze im Wireframe** («Das Raster», «Interaktionsprotokoll», …). Sie
+  sind Studienapparat.

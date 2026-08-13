@@ -233,7 +233,7 @@ export function catalogueBar({
   formId, inputId, searchLabel, placeholder = 'Suchen…', q = '', countId = 'cat-count', count = '',
   sort = null, filterId = '', filterLabel = 'Filter', filterCount = 0,
   panelId = '', panel = '', panelHidden = true,
-  view = 'gallery', views, showSearch = true, extra = '', flush = false,
+  view = 'gallery', views, showSearch = true, showCount = true, extra = '', flush = false,
 }) {
   // Once opened, a panel stays open until the user closes it.
   if (panelId && PANEL_OPEN.has(panelId)) panelHidden = false;
@@ -277,7 +277,9 @@ export function catalogueBar({
   // adds a gap under the tab strip, so the caller turns it off.
   return `
     <div class="catbar${showSearch ? '' : ' catbar--no-search'}${flush ? ' catbar--flush' : ''}">${searchHtml}
-      <div class="catbar__count" id="${escape(countId)}">${count}</div>
+      ${/* A bar whose count is stated elsewhere on the page would say it twice.
+            The element stays so announce() and wiring keep their target. */''}
+      <div class="catbar__count${showCount ? '' : ' sr-only'}" id="${escape(countId)}">${count}</div>
       ${/* `extra`: RAW HTML at the end of the control group for a bar-level
             secondary action that is neither sorting, filtering, nor view
             switching. Room booking inserts «Grundriss ansehen» here. Without
@@ -324,7 +326,8 @@ export function mountDataTable(host, opts = {}) {
     id = 'dt', rows: allRows = [], columns = [], unit = 'Einträge', caption,
     searchKeys = [], search, searchLabel, placeholder,
     sorts = [], facets = [], perPage = 10, foot, emptyMsg, note = '', rowsClickable = false,
-    rowClass, extra = '', onAction, flush = false, groupBy = null, showSearch = true,
+    rowClass, extra = '', onAction, flush = false, groupBy = null,
+    showSearch = true, showCount = true,
   } = opts;
   // `shut` holds the sections the reader has closed. Keyed by group value, so a
   // search or a sort that reorders the sections still remembers which ones.
@@ -410,7 +413,7 @@ export function mountDataTable(host, opts = {}) {
         panelId: facets.length ? `${id}-panel` : '',
         panel: facets.map((f) => filterGroup({ dim: f.dim, legend: f.legend, options: f.options, selected: state.sel[f.dim], idPrefix: id })).join(''),
         panelHidden: !state.open,
-        extra, flush, showSearch,
+        extra, flush, showSearch, showCount,
       })}
       ${note ? `<p class="muted small mt-4">${escape(note)}</p>` : ''}
       ${/* Keep the table even with NO hits, with a row explaining why. Replacing
