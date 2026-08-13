@@ -1097,14 +1097,19 @@ const tilesShown = () => state.tiles ? state.tiles === 'on' : scoped().length <=
 
 function tilesCtl(live){
   const on = tilesShown();
-  // «Vereinfachen» rather than «Kacheln»: the label names what the button DOES,
-  // not what it happens to hide. aria-pressed is true while the view is
-  // simplified, which is the state the label describes.
-  return '<button class="ctl' + (on ? '' : ' is-on') + '" data-tiles="1"' +
-    (live ? '' : ' disabled title="' + OFF_HINT + '"') + ' aria-pressed="' + !on +
-    '" title="' + (on ? 'Ansicht vereinfachen — nur die Gruppen zeigen'
-                      : 'Kacheln wieder einblenden') + '">' +
-    ICONS.tiles + 'Vereinfachen</button>';
+  // The label names the NEXT action, in the same words the chevrons and the
+  // log already use in this file: auf- und zuklappen. «Alle», because unlike the
+  // chevron on a single box this one acts on every box at once.
+  //
+  // No aria-pressed: a toggle button either keeps a stable label and carries its
+  // state in aria-pressed, or changes its label and does not. Doing both makes a
+  // screen reader announce «Alle aufklappen, gedrückt», which reads as the
+  // opposite of what will happen.
+  return '<button class="ctl" data-tiles="1"' +
+    (live ? '' : ' disabled title="' + OFF_HINT + '"') +
+    (live ? ' title="' + (on ? 'Alle Gruppen zuklappen — nur die Köpfe zeigen'
+                             : 'Alle Gruppen wieder aufklappen') + '"' : '') + '>' +
+    ICONS.tiles + (on ? 'Alle zuklappen' : 'Alle aufklappen') + '</button>';
 }
 
 function pager(pg, unit){
@@ -1254,7 +1259,7 @@ document.addEventListener('click', (e) => {
   if (tg && !tg.disabled) {
     state.tiles = tilesShown() ? 'off' : 'on';
     state.dbox = {};   // a global decision clears the per-box exceptions
-    log(state.tiles === 'on' ? 'Kacheln wieder eingeblendet' : 'Ansicht vereinfacht',
+    log(state.tiles === 'on' ? 'Alle Gruppen aufgeklappt' : 'Alle Gruppen zugeklappt',
       state.tiles === 'on' ? '' : 'nur die Gruppen — bei vielen Systemen oder Domänen die lesbarere Übersicht');
     return render();
   }
