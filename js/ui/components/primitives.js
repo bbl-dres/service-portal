@@ -4,7 +4,11 @@ import { safeAssetUrl } from '../../security/urls.js';
 // Class names follow the CD Bund design system; see docs/cd-gap-analysis.md.
 
 const ICON_BASE = 'assets/icons/';
-const ICON_NAME = /^[A-Za-z][A-Za-z0-9-]*$/;
+// Ein Satz je Ordner. `assets/icons/` fuehrt die Symbole des Bundes-CD, ein
+// Unterordner einen eigenen Satz — heute `tree/` mit Lucide fuer den Seitenbaum.
+// Erlaubt ist GENAU eine Ordnerstufe aus Kleinbuchstaben: keine Punkte, keine
+// zweite Stufe, also kein Weg aus assets/icons/ heraus.
+const ICON_NAME = /^(?:[a-z][a-z0-9-]*\/)?[A-Za-z][A-Za-z0-9-]*$/;
 const CLASS_TOKEN = /^-?[_A-Za-z][_A-Za-z0-9-]*$/;
 const SAFE_COLOR = /^(?:#[0-9a-f]{3,4}|#[0-9a-f]{6}|#[0-9a-f]{8}|var\(--[a-z0-9-]+\))$/i;
 const BADGE_VARIANTS = new Set(['gray', 'blue', 'purple', 'teal', 'green', 'yellow', 'orange', 'red', 'info', 'success', 'warning', 'error']);

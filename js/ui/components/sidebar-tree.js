@@ -94,7 +94,7 @@ export function sidebarTree(host, cfg = {}) {
     return x;
   };
 
-  const CHEV = iconHTML('ChevronRight', 'pf-tree__chev');
+  const CHEV = iconHTML('tree/chevron-right', 'pf-tree__chev');
   // Rule 3: the column is reserved by the LEVEL, filled by the node.
   const glyph = (node, depth) => ((levels[depth] || {}).icons
     ? (node.icon ? iconHTML(node.icon, 'pf-tree__ico') : '<span class="pf-tree__ico" aria-hidden="true"></span>')

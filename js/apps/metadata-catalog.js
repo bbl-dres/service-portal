@@ -661,7 +661,13 @@ function toolsHtml(ctx, s) {
 // was der Katalog über seine eigenen Daten weiss: welche Knoten es gibt, welcher
 // gewählt ist, und wohin jeder zeigt. Leiter, Chevron, Abschnitte und Tastatur
 // gehören dem Bauteil — und damit allen acht Oberflächen gleichermassen.
-const BRANCH_ICON_OF = { objekt: 'Apps', tabelle: 'Database', referenz: 'List' };
+// Lucide statt CD (assets/icons/tree/): im Baum stehen bis zu vierzig Zeilen
+// untereinander, und die gefuellten CD-Symbole tragen dort mehr Gewicht als die
+// Beschriftung daneben. Strichsymbole ordnen sich unter. Alles Uebrige im Portal
+// bleibt beim CD.
+const BRANCH_ICON_OF = {
+  objekt: 'tree/boxes', tabelle: 'tree/database', referenz: 'tree/list',
+};
 
 function treeConfig(ctx, s) {
   const { core } = ctx;
@@ -748,7 +754,7 @@ function treeConfig(ctx, s) {
         label: 'Katalog',
         count: BRANCHES.reduce((a, k) => a + records(core, k).length, 0),
         countUnit: 'Einträge',
-        icon: 'FileDatabase',
+        icon: 'tree/library',
         href: BASE,
         state: s.lvl === 0 ? 'active' : '',
       }],
