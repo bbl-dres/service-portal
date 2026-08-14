@@ -75,6 +75,19 @@
    these controls join it as `extra`; on a tab with no table the same bar stands
    on its own. Two bars stacked was the alternative, and it read as two unrelated
    sets of controls for one pane. */
+/* --- Die Reiterzeile: EINE Zeile ---------------------------------------------
+   Reiter links, Bedienelemente rechts. Zwei Zeilen uebereinander — Reiter oben,
+   Steuerung darunter — lasen sich als zwei Saetze fuer eine Flaeche. Die Reiter
+   koennen nicht hinunter in die Leiste der Tabelle: ein Reiter darf nicht in
+   seiner eigenen Reiterflaeche stehen. Also kommen die Bedienelemente herauf und
+   die Tabelle zeichnet keine Leiste mehr (mountDataTable `bar: false`).
+   Auf schmalem Schirm rutschen sie unter die Reiter, statt sie zu quetschen. */
+.mc-bar { display:flex; flex-wrap:wrap; align-items:flex-end;
+  justify-content:space-between; gap:var(--sp-2) var(--sp-4); }
+.mc-bar > .tabs { flex:1 1 16rem; min-width:0; }
+.mc-bar__tools { flex:0 0 auto; display:flex; flex-wrap:wrap; align-items:center;
+  gap:var(--sp-2); padding-bottom:var(--sp-2); }
+
 /* The catalogue's own controls, as ONE group inside the bar.
    Inside the group there is no divider: these are all bordered buttons, and a
    line between things that already have edges is a third mark among three boxes.
@@ -84,9 +97,7 @@
    of sorting). Where the group leads the bar there is nothing to divide from. */
 .mc-tools { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2); }
 .mc-tools > .action-menu { border-left:0; padding-left:0; margin-left:0; }
-.catbar__controls > .mc-tools:not(:first-child) { min-height:var(--target-min);
-  border-left:var(--stroke-1) solid var(--color-secondary-300);
-  padding-left:var(--sp-4); margin-left:var(--sp-3); }
+.mc-tools { min-height:var(--target-min); }
 
 
 /* --- The scope search -------------------------------------------------------

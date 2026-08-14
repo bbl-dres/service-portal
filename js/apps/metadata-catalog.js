@@ -151,6 +151,27 @@ function searchScope(s) {
 // «keine» is a real option, not the absence of one: on a branch it collapses the
 // landscape into a single field of every record, and it hands the table back to
 // paging.
+// Sortierung als Menue statt als Auswahlliste in der Tabellenleiste — dieselbe
+// Form wie «Gruppieren» und «Aktionen» daneben, und damit eine Zeile statt zwei.
+// Sie steht in der URL, weil sie zur Darstellung gehoert und mitreisen soll.
+const SORTS = (lvl, unit) => (lvl >= 3
+  ? [
+    { value: 'ord', label: 'Reihenfolge', cmp: () => 0 },
+    { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
+  ]
+  : [
+    { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
+    { value: 'n', label: `${unit.kid} (meiste zuerst)`, cmp: (a, b) => b.n - a.n },
+  ]);
+const DEFAULT_SORT = (lvl) => (lvl >= 3 ? 'ord' : 'name');
+// Fertig sortiert an die Tabelle: sie fuehrt keine Leiste mehr, in der die Wahl
+// stuende, also faellt die Wahl hier und das Ergebnis geht hinueber.
+const sortRows = (rows, s) => {
+  const def = SORTS(s.lvl, BRANCH_UNIT[s.kind] || BRANCH_UNIT.objekt)
+    .find((x) => x.value === s.sort);
+  return def && def.cmp ? rows.slice().sort(def.cmp) : rows;
+};
+
 const GROUP_DIMS = (kind) => {
   const dims = [{ value: 'achse', label: BRANCH_UNIT[kind].axis, of: (r) => r.group }];
   // Reference lists carry neither stewardship nor status yet (docs/data-model.md),
@@ -273,10 +294,15 @@ function readState(ctx) {
   // Same shape as the tab: an explicit choice wins and travels, a default only
   // holds until one is made.
   const q = (qs.get('q') || '').trim();
+  const sortPick = qs.get('sort') || '';
   const dims = kind ? GROUP_DIMS(kind) : [];
   const groupPick = dims.some((d) => d.value === qs.get('group')) ? qs.get('group') : '';
   const group = groupPick || DEFAULT_GROUP(lvl);
+  const unitOf = BRANCH_UNIT[kind] || BRANCH_UNIT.objekt;
+  const sorts = SORTS(lvl, unitOf);
+  const sort = sorts.some((x) => x.value === sortPick) ? sortPick : DEFAULT_SORT(lvl);
   return { kind, rows, leaf, rec, attr, lvl, tab, pick, avail, group, groupPick, q,
+    sort, sortPick: sort === DEFAULT_SORT(lvl) ? '' : sort,
     missing: !!picked && !rec };
 }
 
@@ -284,7 +310,7 @@ function readState(ctx) {
 // the chosen tab — exactly where it was.
 function hrefFor(s, patch) {
   const n = { kind: s.kind, leaf: s.leaf, rec: s.rec, attr: s.attr, pick: s.pick,
-    groupPick: s.groupPick, ...patch };
+    groupPick: s.groupPick, sortPick: s.sortPick, ...patch };
   const p = new URLSearchParams();
   if (n.rec) {
     p.set(n.rec.kind === 'objekt' ? 'id' : n.rec.kind === 'tabelle' ? 'table' : 'list', n.rec.id);
@@ -295,6 +321,7 @@ function hrefFor(s, patch) {
   }
   if (n.pick) p.set('tab', n.pick);
   if (n.groupPick) p.set('group', n.groupPick);
+  if (n.sortPick) p.set('sort', n.sortPick);
   const s2 = p.toString();
   return s2 ? `${BASE}?${s2}` : BASE;
 }
@@ -329,10 +356,18 @@ export default async function render(ctx) {
     <div class="pf-layout">
       <aside class="pf-sidebar" id="mc-tree" aria-label="Katalog durchsuchen"></aside>
       <div class="pf-main">
-        ${s.lvl === 0 ? '' : `<div class="tabs">${C.tabBar({
+        ${/* Eine Zeile: Reiter links, Bedienelemente rechts. Die Reiter koennen
+              nicht in die Leiste der Tabelle hinunter — ein Reiter darf nicht in
+              seiner eigenen Reiterflaeche stehen, sonst zeigt aria-controls auf
+              den Vorfahren des Reiters. Also kommen die Bedienelemente herauf,
+              und die Tabelle zeichnet gar keine Leiste mehr. */''}
+        ${s.lvl === 0 ? '' : `<div class="mc-bar">
+          <div class="tabs">${C.tabBar({
     items: s.avail.map((k) => ({ id: k, label: TAB_LABEL[k] })),
     active: s.tab, idPrefix: 'mc-tab', ariaLabel: 'Darstellung', panelId: 'mc-panel',
-  })}</div>`}
+  })}</div>
+          <div class="mc-bar__tools" id="mc-tools">${toolsHtml(ctx, s)}</div>
+        </div>`}
         ${/* .tab__container carries the ONE gap between strip and panel that the
               whole portal uses (tabs.css); the root has no strip, so no class. */''}
         ${/* .mc-pane carries the catalogue's density (css/sections/landscape.css);
@@ -352,10 +387,20 @@ export default async function render(ctx) {
   // acts on the tab the reader is actually looking at.
   let cur = s;
   const panel = mount.querySelector('#mc-panel');
+  const tools = mount.querySelector('#mc-tools');
+  // Die Bedienelemente stehen in der Reiterzeile, also AUSSERHALB der Flaeche.
+  // Sie werden mit ihr neu gezeichnet, weil «Alle zuklappen» seinen Zustand
+  // nennt und «Sortieren»/«Gruppieren» die gewaehlte Achse — alle drei aendern
+  // sich mit dem, was die Flaeche zeigt.
+  const paintTools = () => {
+    if (!tools) return;
+    tools.innerHTML = toolsHtml(ctx, cur);
+    C.wireMenu(tools, (a) => onMenuAction(a, cur, unit));
+  };
   const redraw = () => {
     panel.innerHTML = paneHtml(ctx, cur, unit);
     mountPane(ctx, cur, unit);
-    wireActions();
+    paintTools();
   };
 
   // Typing rewrites the URL in place rather than pushing history: a query is a
@@ -378,29 +423,25 @@ export default async function render(ctx) {
     ctx.onUnmount(() => clearTimeout(timer));
   }
 
-  // On a tab WITHOUT a data table nothing re-wires the menus, so they are wired
-  // here after every redraw. On the Tabelle tab the table owns them through
-  // onAction; wiring them twice there would fire every choice twice.
-  const wireActions = () => {
-    if (!panel.querySelector('#mc-table')) C.wireMenu(panel, (a) => onMenuAction(a, cur, unit));
-  };
-  wireActions();
+  if (tools) C.wireMenu(tools, (a) => onMenuAction(a, cur, unit));
 
-  // Every control now lives inside the pane, so one delegated listener covers
-  // them all — through the data table's own redraws as well.
-  //
-  // Folding stays out of the URL — a view preference, not a scope change, the
-  // same reasoning as the tree's chevrons.
-  panel.addEventListener('click', (e) => {
-    const all = e.target.closest('[data-lscape-all]');
-    if (all) {
+  // «Alle zuklappen» steht in der Reiterzeile, die Kaesten in der Flaeche — also
+  // zwei Zuhoerer, je einer dort, wo sein Bedienelement sitzt.
+  if (tools) {
+    tools.addEventListener('click', (e) => {
+      const all = e.target.closest('[data-lscape-all]');
+      if (!all) return;
       const shut = all.dataset.lscapeAll === 'shut';
       landscapeBoxes(cur).forEach((b) => OPEN.set(`box:${b.key}`, !shut));
       redraw();
-      const again = panel.querySelector('[data-lscape-all]');
+      const again = tools.querySelector('[data-lscape-all]');
       if (again) again.focus();
-      return;
-    }
+    });
+  }
+
+  // Folding stays out of the URL — a view preference, not a scope change, the
+  // same reasoning as the tree's chevrons.
+  panel.addEventListener('click', (e) => {
     const box = e.target.closest('[data-box]');
     if (!box) return;
     const key = `box:${box.dataset.box}`;
@@ -525,11 +566,21 @@ function download(name, mime, text) {
 // NAVIGATES rather than redrawing in place: it re-lays both views and every link
 // in the tree, and unlike a tab switch it is a rare, deliberate act.
 function onMenuAction(action, s, unit) {
-  if (!action.startsWith('group:')) { runExport(action, s, unit); return; }
-  const value = action.slice('group:'.length);
-  location.hash = hrefFor(s, {
-    groupPick: value === DEFAULT_GROUP(s.lvl) ? '' : value,
-  }).slice(1);
+  if (action.startsWith('group:')) {
+    const value = action.slice('group:'.length);
+    location.hash = hrefFor(s, {
+      groupPick: value === DEFAULT_GROUP(s.lvl) ? '' : value,
+    }).slice(1);
+    return;
+  }
+  if (action.startsWith('sort:')) {
+    const value = action.slice('sort:'.length);
+    location.hash = hrefFor(s, {
+      sortPick: value === DEFAULT_SORT(s.lvl) ? '' : value,
+    }).slice(1);
+    return;
+  }
+  runExport(action, s, unit);
 }
 
 function runExport(action, s, unit) {
@@ -545,18 +596,6 @@ function runExport(action, s, unit) {
 // Grouping belongs to the table and the landscape, not to the tree — so it sits
 // in the tab row rather than in the sidebar. On level 3 it disappears: ordering
 // many records is what it does, and only one record is in scope there.
-// ONE control row per pane, never two. The data table brings its own bar
-// (Sortieren, Filter), so on that tab these controls are handed to it as `extra`
-// and join the same row. Every other tab has no table, so it gets the same bar
-// standing on its own — same class, same place, same order, whichever tab the
-// reader is on.
-function toolbarHtml(ctx, s) {
-  const tools = toolsHtml(ctx, s);
-  return tools
-    ? `<div class="catbar catbar--no-search catbar--flush"><div class="catbar__controls">${tools}</div></div>`
-    : '';
-}
-
 function toolsHtml(ctx, s) {
   const { C } = ctx;
   if (s.lvl < 1) return '';
@@ -575,6 +614,16 @@ function toolsHtml(ctx, s) {
   // chosen value drifted away from its own chevron, and it needed a separate
   // word in front of it to say what it was for. The trigger states both at once,
   // which is also how the wireframe reads it.
+  const sorts = SORTS(s.lvl, BRANCH_UNIT[s.kind] || BRANCH_UNIT.objekt);
+  const chosenSort = sorts.find((x) => x.value === s.sort) || sorts[0];
+  // Nicht im Diagramm: die Landschaft ordnet ihre Kaesten nach Groesse und ihre
+  // Kacheln nach der Reihenfolge der Daten. Eine Sortierwahl, die man druecken
+  // kann und an der sich nichts aendert, ist schlimmer als keine.
+  const sortMenu = s.tab === 'diagramm' ? '' : C.menu({
+    menuId: 'mc-sort', label: 'Sortieren', triggerLabel: `Sortieren: ${chosenSort.label}`,
+    items: sorts.map((x) => ({ action: `sort:${x.value}`, label: x.label })),
+  });
+
   const dims = GROUP_DIMS(s.kind);
   const chosen = dims.find((d) => d.value === s.group) || dims[0];
   const group = s.lvl > 2 ? '' : C.menu({
@@ -602,7 +651,7 @@ function toolsHtml(ctx, s) {
   // were a third mark among three boxes. The wrapper keeps the SEPARATION that
   // rule exists for (catbar.css: an export dropdown four pixels from the sort
   // select reads as part of sorting) and drops only the stroke.
-  return `<span class="mc-tools">${fold}${group}${actions}</span>`;
+  return `<span class="mc-tools">${fold}${sortMenu}${group}${actions}</span>`;
 }
 
 // --- Tree --------------------------------------------------------------------
@@ -728,11 +777,10 @@ function paneHtml(ctx, s, unit) {
   // The table's own bar carries the controls on that tab (see mountPane), so the
   // pane must not put a second one above it.
   if (s.tab === 'tabelle') return '<div id="mc-table"></div>';
-  const bar = toolbarHtml(ctx, s);
-  if (s.tab === 'diagramm') return bar + landscapeHtml(ctx, s);
-  if (s.lvl === 4) return bar + attrOverview(core, s, unit);
-  if (s.lvl === 3) return bar + recordOverview(core, C, s, unit);
-  return bar + scopeOverview(s, unit);
+  if (s.tab === 'diagramm') return landscapeHtml(ctx, s);
+  if (s.lvl === 4) return attrOverview(core, s, unit);
+  if (s.lvl === 3) return recordOverview(core, C, s, unit);
+  return scopeOverview(s, unit);
 }
 
 function attrOverview(core, s, unit) {
@@ -973,14 +1021,12 @@ function mountPane(ctx, s, unit) {
     const isRef = r.kind === 'referenz';
     ctx.onUnmount(C.mountDataTable(host, {
       id: 'mc-kids', unit: { nom: unit.kid, dat: unit.kid }, perPage: 25, compact: true, flush: true,
-      caption: `${unit.kid} von ${r.name}`, rows: scopeKids(s),
-      // The controls join the table's own bar rather than opening a second one.
-      // onAction is the table's, so the menu is re-wired after every redraw of
-      // its bar — sorting or paging would otherwise leave a dead trigger.
-      extra: toolsHtml(ctx, s), onAction: (action) => onMenuAction(action, s, unit),
-      // One search field and one count per page: the scope bar above carries
-      // both, and it carries them on every tab rather than only on this one.
-      showSearch: false, showCount: false,
+      caption: `${unit.kid} von ${r.name}`,
+      // Fertig sortiert übergeben: die Sortierung ist ein Menü in der Reiterzeile
+      // geworden, damit dort EINE Zeile steht statt zweier. Die Tabelle zeichnet
+      // deshalb gar keine Leiste mehr.
+      rows: sortRows(scopeKids(s), s),
+      bar: false,
       emptyMsg: s.q ? `Kein Treffer für «${s.q}».` : `Für «${r.name}» ist noch nichts erfasst.`,
       sorts: [
         { value: 'ord', label: 'Reihenfolge', cmp: () => 0 },
@@ -1006,26 +1052,18 @@ function mountPane(ctx, s, unit) {
 
   const rows = scopeRows(s);
   ctx.onUnmount(C.mountDataTable(host, {
-    id: 'mc-rows', unit: { nom: unit.nom, dat: unit.dat }, perPage: 25, compact: true, flush: true,
-    showSearch: false, showCount: false,
+    id: 'mc-rows', unit: { nom: unit.nom, dat: unit.dat }, perPage: 25, compact: true,
+    bar: false,
     caption: s.leaf ? `${unit.nom} · ${s.leaf}` : `${unit.nom} · alle ${unit.axisPl}`,
-    extra: toolsHtml(ctx, s), onAction: (action) => onMenuAction(action, s, unit),
     // A whole branch listed flat is a wall — nineteen business objects across
     // five domains read as nineteen unrelated rows. Sectioning by the axis is
     // the same grouping the tree draws, so the two views agree. Inside ONE group
     // there is nothing left to section by, so level 2 goes back to plain pages.
     groupBy: (GROUP_DIMS(s.kind).find((d) => d.value === s.group) || {}).of || null,
-    rows,
+    rows: sortRows(rows, s),
     emptyMsg: s.q ? `Kein Treffer für «${s.q}».` : 'In diesem Umfang ist kein Eintrag erfasst.',
-    sorts: [
-      { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
-      { value: 'n', label: `${unit.kid} (meiste zuerst)`, cmp: (a, b) => b.n - a.n },
-    ],
-    // The axis facet only earns its place while more than one group is in view.
-    facets: s.leaf ? [] : [{ dim: 'group', legend: unit.axis,
-      options: [...new Set(rows.map((r) => r.group))].sort((a, b) => a.localeCompare(b, 'de'))
-        .map((g) => ({ value: g, label: g })),
-      match: (r, vals) => vals.includes(r.group) }],
+    // Kein Achsen-Filter mehr: er wählte genau das aus, was der Baum links schon
+    // wählt und «Gruppieren» schon gliedert — dieselbe Frage, drei Antworten.
     columns: [
       { key: 'name', label: 'Name', width: '11rem',
         render: (r) => `<a href="${esc(hrefFor(s, { rec: r, attr: '', leaf: r.group }))}">${esc(r.name)}</a>` },

@@ -30,13 +30,22 @@
 .pf-tree__row:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring);
   outline-offset:calc(-1 * var(--stroke-2)); }
 
-/* Two-tone marking. The chosen row also carries an edge bar, so the mark never
-   rests on colour alone — the tint alone measures 1.16:1 and cannot carry it. */
+/* Zweistufige Markierung: der Weg hell, das Ziel dunkler und fett. Der Balken
+   an der Kante bleibt — eine Markierung darf nicht auf Farbe allein beruhen, und
+   die Tönung misst 1.16:1 —, aber er ist GRAU wie die Linien daneben. In Rot war
+   er der lauteste Strich der ganzen Leiste und zog das Auge auf eine Zeile, die
+   der Leser gerade selbst gewählt hat: die weiss er schon. Kein Schatten mehr;
+   der Balken ist ein Rand, kein Objekt über der Fläche. */
 .pf-tree__row.is-path, .pf-tree__split.is-path { background:var(--color-gray-100); }
 .pf-tree__row.is-active, .pf-tree__split.is-active {
   background:var(--color-secondary-100); font-weight:var(--fw-bold);
-  box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
-.pf-tree__split.is-active .pf-tree__row { font-weight:var(--fw-bold); background:none; }
+  border-left:var(--stroke-3) solid var(--color-text-light);
+  padding-left:calc(var(--pf-ind, var(--sp-5)) - var(--stroke-3)); }
+/* Die geteilte Zeile trägt den Balken selbst; ihre Zeile darf ihn nicht doppeln
+   und muss ihre Polsterung behalten. */
+.pf-tree__split.is-active { padding-left:0; }
+.pf-tree__split.is-active > .pf-tree__row { border-left:0; font-weight:var(--fw-bold);
+  background:none; padding-left:var(--pf-ind, var(--sp-5)); }
 
 /* --- The chevron, outside the flow --------------------------------------- */
 /* It sits in the gutter immediately left of the label, so a row WITH one begins
@@ -79,12 +88,15 @@
 .pf-tree__row.is-active .pf-tree__ico { color:var(--color-text-800); }
 .pf-tree__label { flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis;
   white-space:nowrap; }
-/* The parentheses are drawn here so the DOM keeps a bare number for scripts and
-   assertions to read. */
+/* Keine Klammern: der Wireframe zeigt blosse Zahlen, und eine rechtsbuendige
+   Spalte tabellarischer Ziffern liest sich ohne sie als Zaehler. Im DOM stand
+   die blosse Zahl ohnehin immer — die Klammern waren nur gezeichnet, und zwar
+   von der gemeinsamen explorer.css, die den sieben noch nicht umgezogenen
+   Oberflaechen erhalten bleibt. Hier ausdruecklich abbestellt. */
+.pf-tree__section .pf-tree__n::before,
+.pf-tree__section .pf-tree__n::after { content:none; }
 .pf-tree__n { flex:none; margin-left:auto; padding-left:var(--sp-2);
   font-size:var(--fs-xs); color:var(--color-text-muted); font-variant-numeric:tabular-nums; }
-.pf-tree__n::before { content:"("; }
-.pf-tree__n::after { content:")"; }
 .pf-tree__row.is-active .pf-tree__n { color:var(--color-text-700); }
 
 /* A finger needs a bigger target than a mouse (WCAG 2.5.8). The gutter grows
@@ -94,3 +106,26 @@
   .pf-tree__fold, .pf-tree__chev-slot { width:var(--target-min);
     left:calc(var(--pf-ind, var(--sp-5)) - var(--target-min)); }
 }
+
+/* --- Der Zweigstrich ---------------------------------------------------------
+   Die gemeinsame explorer.css zeichnet ihn noch fuer die sieben Oberflaechen,
+   die noch nicht umgezogen sind — dort aber aus --tree-indent, das die neue
+   Leiter nicht kennt, und fuer die innerste Liste in Primaerfarbe. Beides passt
+   hier nicht: der Strich sass neben der Spur statt darauf, und in Blau war er
+   der lauteste Strich der Leiste — fuer eine Zeile, die der Leser gerade selbst
+   gewaehlt hat und ohnehin kennt.
+   Also hier abbestellen und selbst ziehen: auf der Achse des Chevrons des
+   ELTERNTEILS (dessen --pf-ind die Liste erbt), in einem Grau, eine Staerke,
+   ohne Ausnahme fuer die innerste. */
+.pf-tree__section .pf-tree__children { position:relative; }
+.pf-tree__section .pf-tree__children::before { content:none; }
+.pf-tree__section .pf-tree__children:has(.is-active, .is-path)::after {
+  content:""; position:absolute; z-index:0;
+  top:0; height:calc(100% - var(--control-size-sm) / 2);
+  left:calc(var(--pf-ind, var(--sp-5)) - 10px);
+  width:var(--stroke-1); background:var(--color-secondary-200); }
+/* Die Zeile liegt ueber dem Strich: dort kommt die Spur an, sie kreuzt ihn nicht. */
+.pf-tree__section .pf-tree__row, .pf-tree__section .pf-tree__split { position:relative; z-index:1; }
+/* …und das Chevron ueber die Zeile: es liegt absolut in ihr, und eine Zeile, die
+   ueber ihm liegt, schluckt den Klick. */
+.pf-tree__section .pf-tree__fold { z-index:2; }

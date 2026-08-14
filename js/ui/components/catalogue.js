@@ -327,7 +327,7 @@ export function mountDataTable(host, opts = {}) {
     searchKeys = [], search, searchLabel, placeholder,
     sorts = [], facets = [], perPage = 10, foot, emptyMsg, note = '', rowsClickable = false,
     rowClass, extra = '', onAction, flush = false, groupBy = null,
-    showSearch = true, showCount = true, compact = false,
+    showSearch = true, showCount = true, compact = false, bar = true,
   } = opts;
   // `shut` holds the sections the reader has closed. Keyed by group value, so a
   // search or a sort that reorders the sections still remembers which ones.
@@ -399,8 +399,11 @@ export function mountDataTable(host, opts = {}) {
 
     const restore = preserveFocus(host);
     const u = unitCase(unit);
+    // `bar: false` — die Tabelle zeichnet gar keine Leiste. Fuer einen Aufrufer,
+    // der seine Bedienelemente anderswo fuehrt: zwei Leisten uebereinander lesen
+    // sich als zwei Saetze Bedienelemente fuer eine Flaeche.
     host.innerHTML = `
-      ${catalogueBar({
+      ${!bar ? '' : catalogueBar({
         formId: `${id}-form`, inputId: `${id}-q`,
         searchLabel: searchLabel || `${u.nom} durchsuchen`,
         placeholder: placeholder || `${u.nom} durchsuchen…`, q: state.q,

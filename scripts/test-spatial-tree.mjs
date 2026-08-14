@@ -164,9 +164,15 @@ try {
     }
     // The parentheses are CSS, so the element's text stays the bare number that
     // scripts/check-tree.mjs and the app suites parse.
-    check(tree.countsNumeric && /\(/.test(tree.parens) && /\)/.test(tree.parens),
-      'shows counts as (n) while keeping the text a bare number',
-      `${tree.counts.join(',')} · ${tree.parens}`);
+    // Der Zaehler ist im DOM immer eine blosse Zahl — das ist der Vertrag, den
+    // Skripte und Tests lesen. Ob Klammern darum GEZEICHNET werden, ist eine
+    // Frage der Darstellung, und das Bauteil zeichnet keine: eine rechtsbuendige
+    // Spalte tabellarischer Ziffern liest sich ohne sie als Zaehler.
+    check(tree.countsNumeric, 'Zaehler bleibt im DOM eine blosse Zahl', tree.counts.join(','));
+    if (!component) {
+      check(/\(/.test(tree.parens) && /\)/.test(tree.parens),
+        'shows counts as (n)', tree.parens);
+    }
 
     if (!shared) {
       // A hand-rolled navigation list of links is NOT a tree widget: links should
