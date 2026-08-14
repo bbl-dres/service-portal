@@ -327,7 +327,7 @@ export function mountDataTable(host, opts = {}) {
     searchKeys = [], search, searchLabel, placeholder,
     sorts = [], facets = [], perPage = 10, foot, emptyMsg, note = '', rowsClickable = false,
     rowClass, extra = '', onAction, flush = false, groupBy = null,
-    showSearch = true, showCount = true,
+    showSearch = true, showCount = true, compact = false,
   } = opts;
   // `shut` holds the sections the reader has closed. Keyed by group value, so a
   // search or a sort that reorders the sections still remembers which ones.
@@ -421,7 +421,7 @@ export function mountDataTable(host, opts = {}) {
             longer see what the table represented, and filtering shifted the
             layout. Text distinguishes «no data at all» from «nothing for this
             selection». */''}
-      ${table({ columns, rows: sections ? undefined : visible, groups: sections, zebra: true, caption, rowsClickable, rowClass,
+      ${table({ columns, rows: sections ? undefined : visible, groups: sections, zebra: true, compact, caption, rowsClickable, rowClass,
         emptyText: allRows.length
           ? `Keine ${u.nom} für diese Suche oder Filterung.`
           : (emptyMsg || `Keine ${u.nom} erfasst.`),

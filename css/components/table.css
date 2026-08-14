@@ -73,6 +73,23 @@
 .table--zebra tbody tr:nth-child(even),
 .table--zebra tfoot tr:nth-child(even) { background:var(--color-secondary-50); }
 
+/* --- Compact density (C.table({ compact: true })) --------------------------
+   A second density for tables read by SCANNING rather than by reading: a
+   catalogue of seventy-five fields, where the default 16px/24px cell at the CD's
+   18px type turns every row into a paragraph and puts eight rows on a screen.
+   The numbers are the wireframe's own — 8px/12px cells at 14px — which is what
+   fits a whole domain on one screen without a scrollbar.
+   It is a MODIFIER, not a replacement: the default density stays the portal's,
+   and a table only gets this when its caller says the content earns it. */
+.table--compact { font-size:var(--fs-sm); }
+.table--compact thead th,
+.table--compact td,
+.table--compact tbody th,
+.table--compact tfoot th { padding:var(--sp-2) var(--sp-3); }
+/* The section head keeps its own rhythm, scaled by the same step. */
+.table--compact .table__group > th { padding-top:var(--sp-2); padding-bottom:var(--sp-2); }
+.table--compact tbody + tbody > .table__group > th { padding-top:var(--sp-4); }
+
 /* --- Grouped tables (C.table({ groups })) ---------------------------------
    Each section is its own <tbody>, so nth-child already restarts per section.
    But the section HEADER is that tbody's first row, which shifts every stripe by

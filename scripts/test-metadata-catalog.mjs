@@ -105,7 +105,10 @@ try {
   head('Ast — level 1');
   o = await go('#/app/metadata-catalog?kind=objekt');
   check(o.tabs.join('/') === 'Übersicht/Diagramm/Tabelle', 'three tabs', o.tabs.join('/'));
-  check(o.active === 'Übersicht', 'a branch opens on Übersicht', o.active);
+  // Arriving from the menu is a looking moment, so a branch opens on its picture.
+  check(o.active === 'Diagramm', 'a branch opens on its landscape', o.active);
+  check(o.boxes.length > 1, 'and the landscape is there', String(o.boxes.length));
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=uebersicht');
   check(o.sections.join('/') === 'Definition/Verantwortlich/Metadaten',
     'the same three sections as every other level', o.sections.join('/'));
   check(o.branchKids > 0, 'the branch in scope is unfolded', String(o.branchKids));
@@ -222,6 +225,23 @@ try {
   o = await go('#/app/metadata-catalog?kind=referenz&tab=diagramm');
   check(o.boxes.length === 4, 'every branch has a landscape', o.boxes.join(' | '));
   await clean(p, 'Diagramm');
+
+  head('Dichte');
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=tabelle');
+  const dense = JSON.parse(await p.evaluate(`(() => {
+    const td = document.querySelector('#mc-panel .table td');
+    const t = document.querySelector('#mc-panel .table');
+    const c = getComputedStyle(td);
+    return JSON.stringify({
+      compact: t.classList.contains('table--compact'),
+      pad: c.paddingTop + ' ' + c.paddingLeft,
+      size: getComputedStyle(t).fontSize,
+    });
+  })()`));
+  check(dense.compact, 'die Katalogtabelle trägt die kompakte Dichte');
+  check(dense.pad === '8px 12px', 'Zellen 8px/12px wie im Wireframe', dense.pad);
+  check(dense.size === '14px', 'Schrift 14px statt 18px', dense.size);
+  await clean(p, 'Dichte');
 
   head('Aktionen — what leaves is what is on screen');
   // Intercept the download rather than writing files: the assertion is about the

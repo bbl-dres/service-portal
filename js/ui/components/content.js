@@ -168,7 +168,7 @@ export function card(o) {
 // section boundary reads as one continuous list. A section opens with a header
 // row spanning the full width; `scope="colgroup"` is what tells a screen reader
 // that the heading governs the rows below rather than a column beside them.
-export function table({ columns, rows, groups, zebra, caption, showCaption, foot, rowsClickable, emptyText, rowClass }) {
+export function table({ columns, rows, groups, zebra, caption, showCaption, foot, rowsClickable, emptyText, rowClass, compact }) {
   // Per-column `align: 'right'|'center'|'left'` maps to the CD alignment utility on header + cell.
   const al = (c) => {
     const classes = [ALIGNMENTS.has(c.align) ? `text-${c.align}` : '', c.nowrap ? 'text-nowrap' : ''];
@@ -204,6 +204,7 @@ export function table({ columns, rows, groups, zebra, caption, showCaption, foot
   // link. A row without such a link does nothing; an `onclick` on `<tr>` without
   // a link target would be unreachable to both.
   const cls = ['table', zebra ? 'table--zebra' : '', showCaption ? 'table--caption' : '',
+    compact ? 'table--compact' : '',
     rowsClickable ? 'table--rows-clickable' : ''].filter(Boolean).join(' ');
   // Only a named table becomes a named region. `aria-label="Tabelle"` named 11 of
   // 15 tables, producing eleven indistinguishable «Tabelle» regions in the

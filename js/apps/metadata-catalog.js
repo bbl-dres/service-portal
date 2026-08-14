@@ -96,10 +96,13 @@ const TABS_AT = (lvl) => (lvl === 0 ? [] : lvl >= 4 ? ['uebersicht']
 // Each level opens on the tab that answers its own question. A default only
 // holds until the reader picks a tab; from then on their choice travels with
 // them through the whole tree.
-// A domain opens on its landscape: the question there is «what is in this area
-// and how big is each piece», which is a looking question. A record opens on its
-// parts, which is a reading question.
-const DEFAULT_TAB = { 1: 'uebersicht', 2: 'diagramm', 3: 'tabelle', 4: 'uebersicht' };
+// A branch and a domain both open on their landscape: the question at both is
+// «what is in here and how big is each piece», which is a looking question —
+// and arriving from the menu is exactly that moment (Nutzerentscheid,
+// 2026-08-14: «most people want to see the diagram when being forwarded from the
+// nav dropdown»). A record opens on its parts, which is a reading question, and
+// an attribute has only the one tab.
+const DEFAULT_TAB = { 1: 'diagramm', 2: 'diagramm', 3: 'tabelle', 4: 'uebersicht' };
 
 const BRANCHES = ['objekt', 'tabelle', 'referenz'];
 const BRANCH_LABEL = { objekt: 'Geschäftsobjekte', tabelle: 'Systeme', referenz: 'Referenzdaten' };
@@ -850,7 +853,7 @@ function homeHtml(ctx, s) {
 
     <section class="detail-section">
       <h2 class="detail-section__title">Letzte Änderungen</h2>
-      ${C.table({ zebra: true, caption: 'Letzte Änderungen im Katalog', rows: recent,
+      ${C.table({ zebra: true, compact: true, caption: 'Letzte Änderungen im Katalog', rows: recent,
     emptyText: 'Für keinen Eintrag ist ein Änderungsdatum erfasst.',
     columns: [
       { key: 'name', label: 'Name', width: '14rem',
@@ -865,7 +868,7 @@ function homeHtml(ctx, s) {
 
     <section class="detail-section">
       <h2 class="detail-section__title">Domänen</h2>
-      ${C.table({ zebra: true, caption: 'Domänen der Geschäftsobjekte', rows: domains,
+      ${C.table({ zebra: true, compact: true, caption: 'Domänen der Geschäftsobjekte', rows: domains,
     columns: [
       { key: 'name', label: 'Domäne',
         render: (d) => `<a href="${esc(d.href)}">${esc(d.name)}</a>` },
@@ -891,7 +894,7 @@ function mountPane(ctx, s, unit) {
     const hits = BRANCHES.flatMap((k) => records(core, k).map((r) => ({ ...r, kind: k })))
       .filter((r) => matches(s.q, r.name, r.def, r.group, r.steward));
     ctx.onUnmount(C.mountDataTable(host, {
-      id: 'mc-all', unit: { nom: 'Einträge', dat: 'Einträgen' }, perPage: 25,
+      id: 'mc-all', unit: { nom: 'Einträge', dat: 'Einträgen' }, perPage: 25, compact: true, flush: true,
       showSearch: false, showCount: false,
       caption: `Treffer für «${s.q}» im ganzen Katalog`, rows: hits,
       emptyMsg: `Kein Treffer für «${s.q}».`,
@@ -914,7 +917,7 @@ function mountPane(ctx, s, unit) {
     const r = s.rec;
     const isRef = r.kind === 'referenz';
     ctx.onUnmount(C.mountDataTable(host, {
-      id: 'mc-kids', unit: { nom: unit.kid, dat: unit.kid }, perPage: 25,
+      id: 'mc-kids', unit: { nom: unit.kid, dat: unit.kid }, perPage: 25, compact: true, flush: true,
       caption: `${unit.kid} von ${r.name}`, rows: scopeKids(s),
       // One search field and one count per page: the scope bar above carries
       // both, and it carries them on every tab rather than only on this one.
@@ -944,7 +947,7 @@ function mountPane(ctx, s, unit) {
 
   const rows = scopeRows(s);
   ctx.onUnmount(C.mountDataTable(host, {
-    id: 'mc-rows', unit: { nom: unit.nom, dat: unit.dat }, perPage: 25,
+    id: 'mc-rows', unit: { nom: unit.nom, dat: unit.dat }, perPage: 25, compact: true, flush: true,
     showSearch: false, showCount: false,
     caption: s.leaf ? `${unit.nom} · ${s.leaf}` : `${unit.nom} · alle ${unit.axisPl}`,
     // A whole branch listed flat is a wall — nineteen business objects across
@@ -973,7 +976,7 @@ function mountPane(ctx, s, unit) {
       { key: 'steward', label: 'Verantwortung', width: '11rem',
         render: (r) => (r.steward ? esc(truncateText(r.steward, 34)) : TODO) },
       { key: 'def', label: 'Beschreibung',
-        render: (r) => (r.def ? esc(truncateText(r.def, 58)) : '<span class="muted">—</span>') },
+        render: (r) => (r.def ? esc(truncateText(r.def, 95)) : '<span class="muted">—</span>') },
       { key: 'n', label: unit.kid, width: '6rem', render: (r) => String(r.n) },
       { key: 'status', label: 'Status', width: '8rem',
         render: (r) => (r.status ? esc(r.status) : TODO) },
