@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seitenbaum — ein Bauteil, fünf Datenformen</title>
+<style>
+/*FONTS*/
+/*TOKENS*/
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;padding:var(--s7) var(--s6) var(--s7);background:var(--surface);
+  font-family:var(--f);font-size:var(--t-base);line-height:1.5;color:var(--ink)}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font-size:var(--t-kpi);line-height:1.2;margin:0 0 var(--s3)}
+h2{font-size:var(--t-h);line-height:1.25;margin:var(--s7) 0 var(--s3)}
+h3{font-size:var(--t-lg);margin:var(--s5) 0 var(--s2)}
+p{margin:0 0 var(--s3);max-width:64ch}
+.lead{color:var(--ink-2)}
+code{font-family:var(--m);font-size:.92em;background:var(--chip);padding:1px 4px;border-radius:var(--r-sm)}
+.note{color:var(--ink-2);font-size:var(--t-md)}
+
+/* ── Die Bühne ───────────────────────────────────────────────────────────── */
+.stage{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);
+  padding:var(--s5);margin:0 0 var(--s5)}
+.cases{display:flex;flex-wrap:wrap;gap:var(--s2);margin:0 0 var(--s5)}
+.case{padding:var(--s2) var(--s3);border:1px solid var(--accent);border-radius:var(--r-sm);
+  background:none;font:inherit;font-size:var(--t-md);color:var(--accent);cursor:pointer}
+.case:hover{border-color:var(--accent-2);color:var(--accent-2)}
+.case.is-on{background:var(--accent);border-color:var(--accent);color:#fff}
+.case:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.split{display:grid;grid-template-columns:19rem minmax(0,1fr);gap:var(--s6);align-items:start}
+@media (max-width:52rem){.split{grid-template-columns:minmax(0,1fr)}}
+
+/* ── DAS BAUTEIL ──────────────────────────────────────────────────────────
+   Alles unterhalb dieser Zeile ist der Vorschlag. Die Leiter steckt in vier
+   Zahlen und einer Regel: das Chevron steht AUSSERHALB des Flusses, in einer
+   festen Rinne links der Beschriftung. Deshalb beginnt eine Zeile mit Chevron
+   dort, wo eine ohne beginnt — und ein Kind kann nicht links von seinem
+   Elternteil landen. */
+.pf{border:1px solid var(--line);border-radius:var(--r);background:var(--bg);padding:var(--s2)}
+.pf__title{margin:0;padding:var(--sh) var(--s2) var(--s2);font-size:var(--t-sm);
+  letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2)}
+.pf ul{list-style:none;margin:0;padding:0}
+
+/* Ein Abschnitt ist die EINZIGE Stelle, an der eine Linie steht. Nicht je Zeile:
+   sechzehn Kategorien im Shop wären fünfzehn Striche für eine Gliederung, die
+   die Einrückung schon zeigt. */
+.pf__section + .pf__section{margin-top:var(--s2);padding-top:var(--s2);
+  border-top:1px solid var(--line)}
+
+.pf__row{position:relative;display:flex;align-items:center;gap:var(--s2);width:100%;
+  min-height:var(--ctl-h);padding:var(--s1) var(--s2) var(--s1) var(--ind);
+  border:0;border-radius:var(--r-sm);background:none;font:inherit;font-size:var(--t-base);
+  color:var(--ink);text-align:left;text-decoration:none;cursor:pointer}
+.pf__row:hover{background:var(--hover);color:var(--ink)}
+.pf__row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.pf__row.is-path{background:var(--hover)}
+.pf__row.is-active{background:var(--active);font-weight:600;
+  box-shadow:inset 3px 0 0 var(--accent)}
+
+/* ── Die Leiter ───────────────────────────────────────────────────────────
+   --ind ist die einzige Grösse, die je Stufe wächst. Sie zählt zusammen:
+     Rinne              immer (das Chevron sitzt darin)
+   + Symbolspalte       nur, wenn die Stufe DARÜBER Symbole führt
+   + Schritt je Stufe   ab der zweiten
+   Die Symbolspalte der ersten Stufe IST damit die Einrückung der zweiten —
+   L1 und L2 stehen bündig, und ab L2 läuft ein gleichmässiger Schritt. */
+.pf{--gutter:20px;--icocol:24px;--step:16px;--ind:var(--gutter)}
+/* Die Leiter sitzt auf dem LISTENEINTRAG, nicht auf der Zeile: eine geteilte
+   Zeile hängt in einer Hülle und wäre als Regel auf der Zeile nicht erreichbar.
+   Ihr Wert wird gerechnet (siehe ladder() im Skript), weil jede Stufe entweder
+   eine Symbolspalte oder einen Schritt beiträgt — je nachdem, ob SIE Symbole
+   führt. Als CSS-Regelsatz je Stufe liesse sich das nicht ausdrücken. */
+
+/* Das Chevron: ausserhalb des Flusses, in der Rinne. */
+.pf__chev{position:absolute;left:calc(var(--ind) - var(--gutter));top:0;bottom:0;
+  width:var(--gutter);display:flex;align-items:center;justify-content:center;
+  margin:0;padding:0;border:0;background:none;color:var(--glyph);cursor:pointer}
+.pf__chev--mute{pointer-events:none}
+.pf__chev:not(.pf__chev--mute):hover{color:var(--ink);background:var(--active);border-radius:var(--r-sm)}
+.pf__chev:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.pf__chev svg{transition:transform .12s}
+/* Das Grundzeichen zeigt nach RECHTS — das ist der zugeklappte Zustand. Gedreht
+   wird deshalb der AUFGEKLAPPTE. Andersherum zeigte zu nach oben und auf nach
+   rechts, was beides das Gegenteil dessen ist, was es heisst. */
+.pf__chev[aria-expanded="true"] svg,
+.pf__row[aria-expanded="true"] > .pf__chev svg{transform:rotate(90deg)}
+/* Eine geteilte Zeile: der Link wählt, das Chevron klappt auf. Nötig, wo ein
+   Datensatz fünfundsiebzig Kinder hat und ihn zu wählen nicht heissen darf,
+   sie alle in die Leiste zu kippen. */
+.pf__split{position:relative;display:flex;align-items:center;border-radius:var(--r-sm)}
+.pf__split:hover{background:var(--hover)}
+.pf__split.is-active{background:var(--active);box-shadow:inset 3px 0 0 var(--accent)}
+.pf__split.is-active .pf__row{font-weight:600}
+.pf__split > .pf__row{flex:1;min-width:0;background:none}
+.pf__split > .pf__row:hover{background:none}
+
+.pf__ico{flex:none;width:16px;height:16px;color:var(--glyph)}
+.pf__label{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pf__n{flex:none;margin-left:auto;padding-left:var(--s2);font-size:var(--t-sm);
+  color:var(--ink-2);font-variant-numeric:tabular-nums}
+.pf__row.is-active .pf__n{color:var(--ink)}
+
+/* ── Messleiste ──────────────────────────────────────────────────────────── */
+.ruler{position:relative;margin:var(--s3) 0 0;font-size:var(--t-sm);color:var(--ink-2)}
+.ruler table{border-collapse:collapse;width:100%}
+.ruler th,.ruler td{text-align:left;padding:var(--s1) var(--s3) var(--s1) 0;
+  border-bottom:1px solid var(--line);font-weight:400}
+.ruler th{font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2)}
+.ruler td:first-child{font-family:var(--m);font-size:var(--t-sm)}
+.ok{color:var(--ok-ink)}
+.bad{color:var(--accent)}
+
+/* ── Nebeneinander-Vergleiche ────────────────────────────────────────────── */
+.trio{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:var(--s4);align-items:start}
+.trio h4{margin:0 0 var(--s2);font-size:var(--t-md)}
+.trio .verdict{margin:var(--s2) 0 0;font-size:var(--t-md)}
+.badly .pf__row{padding-left:calc(var(--gutter) + var(--step) * var(--lvl,0))}
+.badly .pf__chev{position:static;width:auto}
+.holes .pf__ico--empty{display:block}
+
+table.spec{border-collapse:collapse;width:100%;margin:var(--s3) 0 0;font-size:var(--t-md)}
+table.spec th,table.spec td{text-align:left;padding:var(--s2) var(--s3);
+  border-bottom:1px solid var(--line-2);vertical-align:top}
+table.spec th{background:var(--surface);font-size:var(--t-sm);text-transform:uppercase;
+  letter-spacing:.04em;color:var(--ink-2)}
+pre{margin:var(--s3) 0;padding:var(--s3);background:var(--ink);color:#e5e7eb;
+  border-radius:var(--r);overflow-x:auto;font-family:var(--m);font-size:var(--t-md);line-height:1.55}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Seitenbaum — ein Bauteil, fünf Datenformen</h1>
+<p class="lead">Acht Oberflächen des Portals führen einen Seitenbaum, gebaut von
+vier verschiedenen Bauern. Stufe&nbsp;1 beginnt an drei verschiedenen Stellen, in
+der Prozessdokumentation steht das Kind links von seinem Elternteil, und jede
+Zeile überall trägt eine Trennlinie. Diese Seite probiert <em>ein</em> Bauteil an
+den fünf Datenformen aus, die es tragen muss.</p>
+<p class="note">Masse, Farben und Schrift stammen aus
+<code>260813 - Katalog mit Reitern_CD-kompakt.html</code>.</p>
+
+<h2>Die fünf Fälle</h2>
+<p>Jeder Fall ist eine andere Datenform, nicht eine andere Anwendung. Bauprojekte,
+Mietverhältnisse und Workspace sind weitere Ausprägungen von Fall&nbsp;1 und
+lehren nichts Neues.</p>
+
+<div class="stage">
+  <div class="cases" id="cases"></div>
+  <div class="split">
+    <div id="mount"></div>
+    <div>
+      <h3 id="case-title"></h3>
+      <p id="case-why" class="note"></p>
+      <div class="ruler" id="ruler"></div>
+    </div>
+  </div>
+</div>
+
+<h2>Das Raster</h2>
+<p>Die Einrückung steckt in einer einzigen Grösse, <code>--ind</code>. Sie zählt
+zusammen: die <strong>Rinne</strong> (in der das Chevron sitzt, immer),
+die <strong>Symbolspalte</strong> (nur wenn die Stufe darüber Symbole führt) und
+je Stufe einen <strong>Schritt</strong>.</p>
+<pre>Rinne   20px   das Chevron sitzt darin, ausserhalb des Flusses
+Symbol  24px   nur wenn die Stufe DARÜBER Symbole führt
+Schritt 16px   je Stufe ab der zweiten
+
+L1  --ind: 20                    Symbol im Fluss
+L2  --ind: 20 + 24               kein Symbol, aber dessen Breite als Einrückung
+L3  --ind: 20 + 24 + 16
+L4  --ind: 20 + 24 + 16 + 16     Blätter ohne Chevron: −8 (halber Schritt)</pre>
+<p>Zwei Dinge folgen daraus, und beide sind der Punkt der Übung:</p>
+<table class="spec">
+  <tr><th style="width:14rem">Regel</th><th>Was sie verhindert</th></tr>
+  <tr><td>Das Chevron steht <strong>ausserhalb</strong> des Flusses, in der Rinne.</td>
+      <td>Dass eine Zeile mit Chevron anders beginnt als eine ohne. In der
+          Prozessdokumentation liegt L2 heute bei 40px, L1 bei 48px — das Kind
+          steht links vom Elternteil, weil das Chevron mitzählt.</td></tr>
+  <tr><td>Die Symbolspalte der ersten Stufe <strong>ist</strong> die Einrückung
+          der zweiten.</td>
+      <td>Dass eine symbollose Stufe ein 24px-Loch trägt. L1 und L2 stehen
+          bündig; die erste Stufe unterscheidet sich durch ihr Symbol, nicht
+          durch ihren Rand.</td></tr>
+</table>
+
+<h2>Die Entscheidung: Symbole je Stufe</h2>
+<p>«Nicht jeder Elternteil hat ein Symbol» und «die linken Ränder müssen
+einheitlich sein» ziehen gegeneinander. Drei Auflösungen, nebeneinander an
+denselben Daten:</p>
+
+<div class="stage">
+  <div class="trio">
+    <div>
+      <h4>(a) Symbol im Fluss</h4>
+      <div id="demo-a"></div>
+      <p class="verdict bad">Zwei <em>Geschwister</em> stehen um 24px versetzt,
+        sobald eines ein Symbol hat und das andere nicht. Unbrauchbar.</p>
+    </div>
+    <div>
+      <h4>(b) Spalte je Stufe <span class="note">— Vorschlag</span></h4>
+      <div id="demo-b"></div>
+      <p class="verdict ok">Geschwister immer bündig, keine leeren Spalten.
+        Preis: innerhalb einer Stufe kein gemischter Betrieb — was heute
+        nirgends vorkommt.</p>
+    </div>
+    <div>
+      <h4>(c) Spalte immer</h4>
+      <div id="demo-c"></div>
+      <p class="verdict bad">Bündig, aber jede symbollose Zeile trägt ein Loch.
+        Bei Shop und Prozessdoku wäre das der ganze Baum.</p>
+    </div>
+  </div>
+</div>
+
+<h2>Trennlinien</h2>
+<p>Der Wireframe zieht <strong>keine</strong> Zeilentrenner —
+<code>.tnode{border:0}</code>, nur die Leiste selbst hat einen Rand. Hierarchie
+trägt die Einrückung, Zugehörigkeit die Fläche der gewählten Zeile. Eine Linie
+steht nur dort, wo ein <em>Abschnitt</em> endet: «Katalog» ist etwas anderes als
+die drei Äste darunter.</p>
+<div class="stage">
+  <div class="trio">
+    <div><h4>Heute: jede Zeile</h4><div id="demo-lines"></div></div>
+    <div><h4>Vorschlag: nur Abschnitte</h4><div id="demo-sections"></div></div>
+  </div>
+</div>
+
+<h2>Die Schnittstelle</h2>
+<p>Das Bauteil kennt keine Datenform. Es nimmt Knoten; das Übersetzen bleibt
+Sache der Anwendung, die ihre Daten kennt.</p>
+<pre id="api"></pre>
+<table class="spec">
+  <tr><th style="width:11rem">Feld</th><th>Bedeutung</th></tr>
+  <tr><td><code>mode</code></td><td><code>nav</code> = Links, die Adresse wechselt ·
+    <code>select</code> = ARIA-<code>tree</code>, ein Tabstopp, Pfeiltasten, Adresse bleibt.
+    Beides existiert heute und ist wirklich zweierlei.</td></tr>
+  <tr><td><code>levels</code></td><td>Je Stufe <code>{ icons: true|false }</code>.
+    Das ist Punkt&nbsp;(b) oben — die einzige Angabe, die das Raster braucht.</td></tr>
+  <tr><td><code>sections</code></td><td>Gruppen von Knoten. Zwischen zwei Gruppen
+    steht eine Linie, sonst nirgends.</td></tr>
+  <tr><td><code>children</code></td><td>Liste <em>oder Funktion</em>. Der Katalog
+    baut fünfundsiebzig Felder erst beim Aufklappen; das muss das Bauteil können.</td></tr>
+  <tr><td><code>href</code> + <code>children</code></td><td>Ergibt von selbst die
+    geteilte Zeile: der Link wählt, das Chevron klappt auf. Ohne <code>href</code>
+    schaltet die ganze Zeile.</td></tr>
+</table>
+
+<h2>Was der Umbau nicht verlieren darf</h2>
+<table class="spec">
+  <tr><th style="width:16rem">Heute in Betrieb</th><th>Warum es bleiben muss</th></tr>
+  <tr><td><code>syncTreeCounts</code></td><td>Zähler folgen der Filterung; und
+    <code>is-first-row</code>, weil Filtern die erste Zeile verstecken kann und
+    dann eine Linie unter dem Kopf hinge.</td></tr>
+  <tr><td><code>markTree</code>, <code>restoreTreeSelection</code></td>
+      <td>Auswahl und Pfad über einen Seitenwechsel hinweg.</td></tr>
+  <tr><td><code>wireTree</code></td><td>Pfeiltasten, Home/End, ein Tabstopp —
+    im <code>select</code>-Modus Pflicht.</td></tr>
+  <tr><td>Zähler als blosse Zahl</td><td>Die Klammern zeichnet CSS, damit Tests
+    und Skripte eine Zahl lesen; die Einheit steht <code>sr-only</code> daneben.</td></tr>
+  <tr><td>24px Trefferfläche unter <code>pointer:coarse</code></td><td>WCAG 2.5.8.</td></tr>
+</table>
+
+</div>
+
+<script>
+/* ── Das Bauteil ─────────────────────────────────────────────────────────── */
+const CHEV = '<svg class="pf__ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">'
+  + '<path d="M5.5 3.5 L10 8 L5.5 12.5" fill="none" stroke="currentColor" stroke-width="1.6"'
+  + ' stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICONS = {
+  globe: 'M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM1.5 8h13M8 1.5c1.8 1.8 2.7 4 2.7 6.5S9.8 12.7 8 14.5c-1.8-1.8-2.7-4-2.7-6.5S6.2 3.3 8 1.5z',
+  pin: 'M8 1.8c-2.2 0-4 1.8-4 4 0 3 4 8.4 4 8.4s4-5.4 4-8.4c0-2.2-1.8-4-4-4zm0 5.6a1.6 1.6 0 1 1 0-3.2 1.6 1.6 0 0 1 0 3.2z',
+  house: 'M2.5 7.5 8 2.5l5.5 5M4 7v6.5h8V7',
+  stack: 'M2.5 5.5 8 2.5l5.5 3L8 8.5zM2.5 8.5 8 11.5l5.5-3M2.5 11 8 14l5.5-3',
+  grid: 'M2.5 2.5h4v4h-4zM9.5 2.5h4v4h-4zM2.5 9.5h4v4h-4zM9.5 9.5h4v4h-4z',
+  db: 'M8 2c3 0 5 .9 5 2s-2 2-5 2-5-.9-5-2 2-2 5-2zM3 4v8c0 1.1 2 2 5 2s5-.9 5-2V4',
+  list: 'M5 4h9M5 8h9M5 12h9M2 4h.01M2 8h.01M2 12h.01',
+  layer: 'M2.5 8 8 5l5.5 3L8 11z',
+};
+const ico = (name) => name && ICONS[name]
+  ? '<svg class="pf__ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">'
+    + '<path d="' + ICONS[name] + '" fill="none" stroke="currentColor" stroke-width="1.4"'
+    + ' stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  : '';
+const esc = (s) => String(s == null ? '' : s)
+  .replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// Offen/zu lebt ausserhalb des Renderns, damit ein Neuzeichnen es nicht vergisst.
+const OPEN = new Set();
+
+function sidebarTree(host, cfg) {
+  const { title = '', levels = [], sections = [], mode = 'nav', variant = '' } = cfg;
+  // Wieviel Einrückung die Symbolspalte beisteuert: die Breite EINER Spalte,
+  // sobald irgendeine Stufe darüber Symbole führt. Das ist Punkt (b).
+  // Die Leiter. Jede Stufe steuert bei, was sie selbst belegt: eine Symbolspalte,
+  // wenn sie Symbole führt, sonst einen Schritt. Daraus folgt beides, was das
+  // Raster leisten soll — eine symbollose Stufe unter einer symbolführenden steht
+  // bündig mit ihr (die Symbolspalte IST ihre Einrückung), und ein Baum mit
+  // Symbolen auf jeder Stufe bekommt die Symbolbreite als gleichmässigen Schritt,
+  // statt sie doppelt zu zählen.
+  const GUTTER = 20, ICOCOL = 24, STEP = 16;
+  const ladder = [];
+  for (let i = 0, x = GUTTER; i < Math.max(levels.length, 8); i++) {
+    ladder.push(x);
+    x += (levels[i] || {}).icons ? ICOCOL : STEP;
+  }
+
+  const kidsOf = (node) => (typeof node.children === 'function'
+    ? node.children(node) : node.children) || [];
+
+  const rowInner = (node, depth) => {
+    const hasIco = (levels[depth] || {}).icons;
+    const glyph = hasIco ? ico(node.icon) : '';
+    // Variante (c) reserviert die Spalte auch ohne Zeichen — sichtbar als Loch.
+    const hole = variant === 'holes' && hasIco && !node.icon
+      ? '<span class="pf__ico" aria-hidden="true"></span>' : '';
+    return glyph + hole + '<span class="pf__label">' + esc(node.label) + '</span>'
+      + (node.count == null ? '' : '<span class="pf__n">' + esc(node.count) + '</span>');
+  };
+
+  const render = (nodes, depth) => nodes.map((node) => {
+    const kids = kidsOf(node);
+    const canOpen = kids.length > 0 || typeof node.children === 'function';
+    const open = OPEN.has(node.id);
+    const lvl = depth + 1;
+    const cls = 'l' + lvl + (node.state ? ' has-' + node.state : '');
+    const state = node.state === 'active' ? ' is-active' : node.state === 'path' ? ' is-path' : '';
+    // Ein Blatt ohne Chevron rückt nur einen halben Schritt ein.
+    const leafish = !canOpen && depth > 1 ? ' is-leaflevel' : '';
+    const styleLvl = '';
+    // Ein Chevron darf NIE in einer bedienbaren Zeile stecken: ein <button> im
+    // <button> (oder in einem <a>) ist ungültig, der Parser schliesst das äussere
+    // vorzeitig, und die Beschriftung fällt als Geschwister heraus. Gemessen:
+    // die oberen vier Zeilen waren leer, ihre Beschriftung stand daneben.
+    // Daher drei Formen, und keine davon schachtelt:
+    //   1  Zeile schaltet selbst   → Chevron ist ein stummes Zeichen darin
+    //   2  Zeile ist ein Link, der beim Navigieren aufklappt → ebenso stumm
+    //   3  geteilt: Link UND eigenes Chevron → Chevron ist ein Knopf DANEBEN
+    const chevBtn = '<button type="button" class="pf__chev" data-fold="' + esc(node.id) + '"'
+      + ' aria-expanded="' + open + '" aria-label="' + esc(node.label) + ' auf- oder zuklappen">'
+      + CHEV + '</button>';
+    const chevMute = '<span class="pf__chev pf__chev--mute" aria-hidden="true">' + CHEV + '</span>';
+    const split = node.href && canOpen && node.split;
+
+    let body;
+    if (split) {
+      body = '<span class="pf__split' + state + '">' + chevBtn
+        + '<a class="pf__row" href="' + esc(node.href) + '">'
+        + rowInner(node, depth) + '</a></span>';
+    } else if (node.href) {
+      body = '<a class="pf__row' + state + '" href="' + esc(node.href) + '"'
+        + (canOpen ? ' data-fold="' + esc(node.id) + '" aria-expanded="' + open + '"' : '') + '>'
+        + (canOpen ? chevMute : '') + rowInner(node, depth) + '</a>';
+    } else {
+      body = '<button type="button" class="pf__row' + state + '"'
+        + (canOpen ? ' data-fold="' + esc(node.id) + '" aria-expanded="' + open + '"' : '') + '>'
+        + (canOpen ? chevMute : '') + rowInner(node, depth) + '</button>';
+    }
+
+    const sub = canOpen
+      ? '<ul class="pf__kids"' + (open ? '' : ' hidden') + '>'
+        + (open ? render(kids, depth + 1) : '') + '</ul>'
+      : '';
+    // Ein Blatt ohne Chevron rückt einen halben Schritt weniger ein: ein ganzer
+    // liesse eine leere Aufklappspalte unter seinen Geschwistern stehen.
+    const ind = ladder[depth] - (leafish ? STEP / 2 : 0);
+    return '<li class="' + cls + leafish + '" style="--ind:' + ind + 'px">'
+      + body + sub + '</li>';
+  }).join('');
+
+  host.innerHTML = '<div class="pf ' + variant + '">'
+    + (title ? '<h4 class="pf__title">' + esc(title) + '</h4>' : '')
+    + sections.map((nodes) => '<ul class="pf__section">' + render(nodes, 0) + '</ul>').join('')
+    + '</div>';
+
+  host.onclick = (e) => {
+    const fold = e.target.closest('[data-fold]');
+    if (!fold) return;
+    e.preventDefault();
+    const id = fold.dataset.fold;
+    if (OPEN.has(id)) OPEN.delete(id); else OPEN.add(id);
+    sidebarTree(host, cfg);
+    const again = host.querySelector('[data-fold="' + id.replace(/"/g, '\\"') + '"]');
+    if (again) again.focus();
+  };
+}
+
+/* ── Die fünf Datenformen ────────────────────────────────────────────────── */
+const n = (id, label, count, extra) => Object.assign({ id, label, count }, extra || {});
+
+const CASES = {
+  portfolio: {
+    name: 'Liegenschaften',
+    why: 'Flache Objektliste, nach vier Achsen gruppiert: Land, Region, Ort, '
+       + 'Wirtschaftseinheit — dann das Objekt. Jede Stufe führt ein Symbol. '
+       + 'Bauprojekte, Mietverhältnisse und Workspace haben dieselbe Form. '
+       + 'Bedienmodell: auswählen, die Adresse bleibt.',
+    cfg: {
+      title: 'Struktur', mode: 'select',
+      levels: [{ icons: true }, { icons: true }, { icons: true }, { icons: true }, { icons: true }],
+      sections: [[
+        n('ch', 'Schweiz', 7, { icon: 'globe', children: [
+          n('be', 'Bern', 4, { icon: 'pin', children: [
+            n('be-be', 'Bern', 3, { icon: 'house', children: [
+              n('zoll', 'Bundeskampus Zollikofen', 2, { icon: 'stack', state: 'path', children: [
+                n('o1', '1080/4840/AF Verwaltungsgebäude', null, { icon: 'house', state: 'active' }),
+                n('o2', '1080/4841/AF Werkhof', null, { icon: 'house' }),
+              ] }),
+              n('mur', 'Murtenstrasse 87', 1, { icon: 'stack' }),
+            ] }),
+            n('thun', 'Thun', 1, { icon: 'house' }),
+          ] }),
+          n('zh', 'Zürich', 2, { icon: 'pin' }),
+          n('vd', 'Waadt', 1, { icon: 'pin' }),
+        ] }),
+      ]],
+    },
+  },
+
+  shop: {
+    name: 'Shop',
+    why: 'Rekursive Kategorien beliebiger Tiefe — die Form kennt keine feste '
+       + 'Stufenzahl. Keine Symbole, keine Zähler auf den unteren Stufen. '
+       + 'Bedienmodell: navigieren.',
+    cfg: {
+      title: 'Sortiment', mode: 'nav',
+      levels: [{ icons: false }, { icons: false }, { icons: false }, { icons: false }],
+      sections: [[
+        n('alle', 'Alle Artikel', 312, { href: '#', state: 'path', children: [
+          n('buero', 'Büromaterial', 128, { href: '#', state: 'path', children: [
+            n('schreib', 'Schreibwaren', 54, { href: '#', children: [
+              n('kuli', 'Kugelschreiber', 12, { href: '#', state: 'active' }),
+              n('blei', 'Bleistifte', 8, { href: '#' }),
+              n('marker', 'Marker und Textmarker', 14, { href: '#' }),
+            ] }),
+            n('papier', 'Papier und Blöcke', 41, { href: '#' }),
+            n('ordnen', 'Ordnen und Ablegen', 33, { href: '#' }),
+          ] }),
+          n('mobil', 'Mobiliar', 94, { href: '#' }),
+          n('it', 'IT-Zubehör', 90, { href: '#' }),
+        ] }),
+      ]],
+    },
+  },
+
+  katalog: {
+    name: 'Metadaten-Katalog',
+    why: 'Echte Hierarchie, je Ast andere Stufen. Symbole nur auf Stufe 1. '
+       + 'Die Wurzel ist ein eigener Abschnitt — deshalb die einzige Linie. '
+       + 'Auf Stufe 3 die geteilte Zeile: eine Datentabelle trägt bis zu '
+       + 'fünfundsiebzig Felder, und sie zu wählen darf nicht heissen, sie alle '
+       + 'in die Leiste zu kippen. Die Kinder entstehen erst beim Aufklappen.',
+    cfg: {
+      title: 'Katalog', mode: 'nav',
+      levels: [{ icons: true }, { icons: false }, { icons: false }, { icons: false }],
+      sections: [
+        [n('root', 'Katalog', 44, { href: '#', icon: 'grid' })],
+        [
+          n('objekt', 'Geschäftsobjekte', 19, { href: '#', icon: 'grid', children: [
+            n('bau', 'Bauwerk und Liegenschaft', 8, { href: '#' }),
+            n('energie', 'Energie', 3, { href: '#' }),
+          ] }),
+          n('sys', 'Systeme', 10, { href: '#', icon: 'db', state: 'path', children: [
+            n('gis', 'GIS IMMO', 5, { href: '#', state: 'path', children: [
+              n('geb', 'Gebäude', 75, { href: '#', split: true, state: 'active',
+                children: () => ['bbl_id', 'av_stat', 'av_egid', 'av_egrid', 'adr_land',
+                  'adr_reg', 'adr_plz', 'adr_ort'].map((f) => n('f-' + f, f, null, { href: '#' })) }),
+              n('huelle', 'Gebäudehülle', 33, { href: '#', split: true,
+                children: () => ['bbl_id', 'flaeche_m2'].map((f) => n('h-' + f, f, null, { href: '#' })) }),
+            ] }),
+            n('sap', 'SAP RE-FX', 5, { href: '#' }),
+          ] }),
+          n('ref', 'Referenzdaten', 15, { href: '#', icon: 'list' }),
+        ],
+      ],
+    },
+  },
+
+  planeditor: {
+    name: 'Plan-Editor',
+    why: 'Wie Fall 1, aber mit einer Stufe UNTERHALB des Blattes: die Geschosse '
+       + 'stecken im Gebäude, nicht daneben. Das Blatt ist deshalb wählbar UND '
+       + 'aufklappbar — dieselbe geteilte Zeile wie im Katalog, von der anderen '
+       + 'Seite her erreicht.',
+    cfg: {
+      title: 'Struktur', mode: 'select',
+      levels: [{ icons: true }, { icons: true }, { icons: true }, { icons: true }],
+      sections: [[
+        n('ch2', 'Schweiz', 3, { icon: 'globe', children: [
+          n('be2', 'Bern', 2, { icon: 'pin', state: 'path', children: [
+            n('geb-a', 'Verwaltungsgebäude A', 4, { icon: 'house', split: true, href: '#',
+              state: 'active', children: [
+                n('eg', 'Erdgeschoss', null, { icon: 'layer', href: '#' }),
+                n('og1', '1. Obergeschoss', null, { icon: 'layer', href: '#' }),
+                n('og2', '2. Obergeschoss', null, { icon: 'layer', href: '#' }),
+                n('ug', 'Untergeschoss', null, { icon: 'layer', href: '#' }),
+              ] }),
+            n('geb-b', 'Werkhof B', 2, { icon: 'house', split: true, href: '#', children: [
+              n('b-eg', 'Erdgeschoss', null, { icon: 'layer', href: '#' }),
+              n('b-og', 'Obergeschoss', null, { icon: 'layer', href: '#' }),
+            ] }),
+          ] }),
+          n('zh2', 'Zürich', 1, { icon: 'pin' }),
+        ] }),
+      ]],
+    },
+  },
+
+  prozess: {
+    name: 'Prozessdokumentation',
+    why: 'Der kleinste Fall: zwei Stufen, gar keine Symbole. Er ist der Beweis, '
+       + 'dass «Symbol optional» wirklich trägt — und heute derjenige, in dem '
+       + 'das Kind links von seinem Elternteil steht.',
+    cfg: {
+      title: 'Prozesse', mode: 'nav',
+      levels: [{ icons: false }, { icons: false }],
+      sections: [[
+        n('bau-p', 'Bauprozesse', 12, { href: '#', state: 'path', children: [
+          n('p1', 'Projektinitialisierung', null, { href: '#', state: 'active' }),
+          n('p2', 'Vorstudie und Wettbewerb', null, { href: '#' }),
+          n('p3', 'Projektierung', null, { href: '#' }),
+          n('p4', 'Ausführung', null, { href: '#' }),
+        ] }),
+        n('betrieb-p', 'Betriebsprozesse', 8, { href: '#' }),
+        n('quer', 'Querschnittsprozesse', 5, { href: '#' }),
+      ]],
+    },
+  },
+};
+
+/* ── Bühne ───────────────────────────────────────────────────────────────── */
+let current = 'katalog';
+const mount = document.getElementById('mount');
+
+function measure() {
+  const pf = mount.querySelector('.pf');
+  if (!pf) return '';
+  const box = pf.getBoundingClientRect();
+  const seen = new Map();
+  pf.querySelectorAll('li').forEach((li) => {
+    const lvl = (li.className.match(/\bl(\d)\b/) || [])[1];
+    if (!lvl || seen.has(lvl)) return;
+    const label = li.querySelector('.pf__label');
+    const row = li.querySelector('.pf__row');
+    if (!label || !row) return;
+    seen.set(lvl, {
+      x: Math.round(label.getBoundingClientRect().left - box.left),
+      ico: !!li.querySelector(':scope > * > .pf__ico, :scope > .pf__row > .pf__ico'),
+      chev: !!li.querySelector(':scope > .pf__chev, :scope > * > .pf__chev, :scope > .pf__row > .pf__chev'),
+      text: label.textContent.trim().slice(0, 22),
+    });
+  });
+  const rows = [...seen].sort((a, b) => a[0] - b[0]);
+  let prev = null; let monotone = true;
+  rows.forEach(([lvl, v]) => { if (prev !== null && lvl !== '1' && v.x < prev) monotone = false; prev = v.x; });
+  return '<table><tr><th>Stufe</th><th>Beschriftung</th><th>Chevron</th><th>Zeile</th></tr>'
+    + rows.map(([lvl, v]) => '<tr><td>L' + lvl + '</td><td>' + v.x + 'px</td><td>'
+      + (v.chev ? 'ja' : '—') + '</td><td>' + esc(v.text) + '</td></tr>').join('')
+    + '</table><p class="' + (monotone ? 'ok' : 'bad') + '" style="margin-top:8px">'
+    + (monotone ? 'Jede Stufe beginnt rechts von der vorigen. L1 und L2 stehen bündig — '
+        + 'die Symbolspalte der ersten Stufe ist die Einrückung der zweiten.'
+      : 'Eine Stufe beginnt links von ihrer vorigen.') + '</p>';
+}
+
+function show(key) {
+  current = key;
+  OPEN.clear();
+  // Den Pfad zur markierten Zeile aufklappen, damit jeder Fall etwas zeigt.
+  // Öffnet jeden Knoten, unter dem irgendwo eine markierte Zeile liegt —
+  // sonst zeigt ein Fall ohne markierten Wurzelknoten eine einzige Zeile.
+  const openPath = (nodes) => nodes.reduce((any, node) => {
+    const kids = typeof node.children === 'function' ? node.children(node) : node.children;
+    const marked = node.state === 'path' || node.state === 'active';
+    const below = kids ? openPath(kids) : false;
+    if (kids && (marked || below)) OPEN.add(node.id);
+    return any || marked || below;
+  }, false);
+  CASES[key].cfg.sections.forEach(openPath);
+  sidebarTree(mount, CASES[key].cfg);
+  document.getElementById('case-title').textContent = CASES[key].name;
+  document.getElementById('case-why').textContent = CASES[key].why;
+  document.getElementById('ruler').innerHTML = measure();
+  document.querySelectorAll('#cases .case').forEach((b) => {
+    b.classList.toggle('is-on', b.dataset.case === key);
+  });
+}
+
+document.getElementById('cases').innerHTML = Object.keys(CASES)
+  .map((k) => '<button type="button" class="case" data-case="' + k + '">'
+    + esc(CASES[k].name) + '</button>').join('');
+document.getElementById('cases').onclick = (e) => {
+  const b = e.target.closest('[data-case]');
+  if (b) show(b.dataset.case);
+};
+
+/* ── Die drei Symbolvarianten an denselben Daten ─────────────────────────── */
+const MIXED = {
+  title: 'Gemischt', mode: 'nav',
+  levels: [{ icons: true }, { icons: false }],
+  sections: [[
+    n('m1', 'Mit Symbol', 4, { href: '#', icon: 'db', children: [
+      n('m1a', 'Kind', null, { href: '#' }), n('m1b', 'Kind', null, { href: '#' })] }),
+    n('m2', 'Ohne Symbol', 2, { href: '#' }),
+    n('m3', 'Mit Symbol', 3, { href: '#', icon: 'list' }),
+  ]],
+};
+sidebarTree(document.getElementById('demo-a'), { ...MIXED, variant: 'badly' });
+sidebarTree(document.getElementById('demo-b'), { ...MIXED });
+sidebarTree(document.getElementById('demo-c'), { ...MIXED, variant: 'holes' });
+
+/* ── Linien: heute gegen Vorschlag ───────────────────────────────────────── */
+const LINES = {
+  title: 'Katalog', mode: 'nav',
+  levels: [{ icons: true }, { icons: false }],
+  sections: [
+    [n('L0', 'Katalog', 44, { href: '#', icon: 'grid' })],
+    [n('L1', 'Geschäftsobjekte', 19, { href: '#', icon: 'grid' }),
+     n('L2', 'Systeme', 10, { href: '#', icon: 'db' }),
+     n('L3', 'Referenzdaten', 15, { href: '#', icon: 'list' })],
+  ],
+};
+sidebarTree(document.getElementById('demo-lines'), { ...LINES, variant: 'everyline' });
+sidebarTree(document.getElementById('demo-sections'), { ...LINES });
+
+document.getElementById('api').textContent = [
+  'C.sidebarTree(host, {',
+  "  title: 'Katalog',",
+  "  mode: 'nav',                 // oder 'select' (ARIA-tree)",
+  '  levels: [                    // Punkt (b): Symbole je STUFE',
+  '    { icons: true }, { icons: false }, { icons: false },',
+  '  ],',
+  '  sections: [                  // zwischen Gruppen eine Linie, sonst keine',
+  "    [ { id: 'root', label: 'Katalog', count: 44, icon: 'grid', href: BASE } ],",
+  '    [',
+  "      { id: 'objekt', label: 'Geschäftsobjekte', count: 19, icon: 'grid',",
+  "        href: '…', state: 'path', children: [ … ] },",
+  "      { id: 'sys', label: 'Systeme', count: 10, icon: 'db', href: '…',",
+  '        children: [',
+  "          { id: 'geb', label: 'Gebäude', count: 75, href: '…',",
+  '            split: true,        // Link wählt, Chevron klappt auf',
+  '            children: () => felder(…) },   // erst beim Aufklappen',
+  '        ] },',
+  '    ],',
+  '  ],',
+  '});',
+].join('\n');
+
+show('katalog');
+</script>
+<style>
+/* Nur für den Vergleich «heute»: eine Linie unter jeder Zeile. */
+.everyline .pf__row{border-top:1px solid var(--line);border-radius:0}
+.everyline li:first-child > .pf__row{border-top-color:transparent}
+.everyline .pf__section + .pf__section{border-top:0;padding-top:0;margin-top:0}
+/* Nur für Variante (c): die reservierte, leere Symbolspalte sichtbar machen. */
+.holes .pf__ico{outline:1px dashed var(--line-2);outline-offset:1px}
+</style>
+</body>
+</html>
