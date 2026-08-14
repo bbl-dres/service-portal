@@ -41,6 +41,24 @@ export const NAV = [
       // many; it stopped holding once the incoming request asked where the
       // business architecture is documented. The branch names the CONTENT
       // rather than the two apps, which is how people ask for it.
+      // One branch instead of three sibling rows (2026-08-13). The three
+      // «Fachanwendungen …» entries differed only by filter, and the `central`
+      // area — the two portal applications — had NO menu path at all because no
+      // row carried its filter. The first row is the unfiltered catalogue and
+      // gives them one.
+      //
+      // Shared federal-administration applications (eGate, InfoPers, SAP ERP,
+      // Admin Directory, I14Y, TERMDAT, Geoportal, geocat.ch, simap.ch) are not
+      // owned by the BBL but used here daily; without a row, only people who
+      // proactively filter the catalogue would find them.
+      { label: 'Fachanwendungen', branchKey: 'applications', branches: [
+        { href: '#/applications', label: 'Übersicht' },
+        { href: '#/applications?area=buildings', label: 'Bauten' },
+        { href: '#/applications?area=logistics', label: 'Logistik' },
+        { href: '#/applications?area=federal', label: 'Bundesverwaltung' },
+      ] },
+      { href: '#/app/dataportal', label: 'Datenportal' },
+      { href: '#/data/catalog', label: 'Datenbezug und API Verzeichnis' },
       // German UI term: «Geschäftsarchitektur» (2026-08-14). The former name
       // «Prozesse und Geschäftsobjekte» listed two of the four layers the
       // signpost covers and missed the reference data entirely; every time the
@@ -57,24 +75,6 @@ export const NAV = [
         { href: '#/app/metadata-catalog?kind=objekt', label: 'Geschäftsobjekte' },
         { href: '#/app/metadata-catalog?kind=tabelle', label: 'Systeme' },
         { href: '#/app/metadata-catalog?kind=referenz', label: 'Referenzdaten' },
-      ] },
-      { href: '#/app/dataportal', label: 'Datenportal' },
-      { href: '#/data/catalog', label: 'Datenbezug und API Verzeichnis' },
-      // One branch instead of three sibling rows (2026-08-13). The three
-      // «Fachanwendungen …» entries differed only by filter, and the `central`
-      // area — the two portal applications — had NO menu path at all because no
-      // row carried its filter. The first row is the unfiltered catalogue and
-      // gives them one.
-      //
-      // Shared federal-administration applications (eGate, InfoPers, SAP ERP,
-      // Admin Directory, I14Y, TERMDAT, Geoportal, geocat.ch, simap.ch) are not
-      // owned by the BBL but used here daily; without a row, only people who
-      // proactively filter the catalogue would find them.
-      { label: 'Fachanwendungen', branchKey: 'applications', branches: [
-        { href: '#/applications', label: 'Übersicht' },
-        { href: '#/applications?area=buildings', label: 'Bauten' },
-        { href: '#/applications?area=logistics', label: 'Logistik' },
-        { href: '#/applications?area=federal', label: 'Bundesverwaltung' },
       ] },
     ],
   },
