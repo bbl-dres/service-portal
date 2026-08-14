@@ -4,7 +4,7 @@ import { openGallery, restoreGalleryFromQuery } from '../ui/gallery.js';
 import { heroMosaic, galleryItemsFrom, wireHeroMosaic } from '../ui/hero-mosaic.js';
 import { initEstateMap } from '../map/buildings-map.js';
 import { createMapSlot } from '../map/map-slot.js';
-import { treeHTML, wireTree, restoreTreeSelection, markTree, syncTreeCounts } from '../ui/spatial-tree.js';
+import { objectsToNodes } from '../ui/spatial-tree.js';
 import { formatNumber, formatArea, formatCurrency, formatDate, formatFileSize } from '../format.js';
 import { countryName, businessEntityIdFromBblId } from '../domain.js';
 import { APPLICATIONS } from '../crumbs.js';
@@ -97,7 +97,7 @@ export default async function render(ctx) {
 
   const objId = (o) => String(o.id).split('/')[2] || o.id;
 
-  const treeMarkup = treeHTML(C, objects, {
+  const TREE = {
     levels: [
       { key: 'country', icon: 'Globe', label: (v) => countryName(v) },
       { key: 'region', icon: 'Map' },
@@ -118,7 +118,7 @@ export default async function render(ctx) {
       idText: objId, label: (o) => o.name, objId: (o) => o.id,
       sort: (a, b) => a.kind.localeCompare(b.kind) || nameCmp(a, b),
     },
-  });
+  };
 
   function pfCard(o) {
     const vis = o.kind === 'building'
@@ -161,9 +161,10 @@ export default async function render(ctx) {
     await pfMap.mount(el, (node) => initEstateMap(node, points, parcels, focus));
   }
 
-  const syncTree = () => syncTreeCounts(mount.querySelector(".pf-tree"),
-    objects.filter((o) => inSearch(o) && inFilters(o)),
-    (o) => [o.country, o.region, o.city, o.businessEntity], (o) => o.id);
+  // Was der Baum zeigt: alles, was Suche und Filter uebrig lassen — aber OHNE
+  // die Auswahl selbst. Sonst schrumpfte der Baum auf das, was man gerade
+  // angeklickt hat, und man kaeme nie wieder heraus.
+  const inTree = () => objects.filter((o) => inSearch(o) && inFilters(o));
 
   const syncHash = () => {
     const p = new URLSearchParams();
@@ -186,7 +187,7 @@ export default async function render(ctx) {
   };
 
   function renderMain() {
-    syncTree();
+    paintTree();
     const filteredRows = filtered();
     const pageSize = state.perPage[state.view] || Math.max(1, filteredRows.length);
     const { sorted: list, visible, page, totalPages } = preparePage(filteredRows, {
@@ -280,23 +281,48 @@ export default async function render(ctx) {
              where every other filter is cleared. A second control for the same
              job, in a different place, only split the mental model. -->
         <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Standorte</h2></div>
-        ${treeMarkup}
+        <div id="pf-tree"></div>
       </aside>
       <div class="pf-main" id="pf-main"></div>
     </div>
   </div>`;
 
-  const sidebar = mount.querySelector('.pf-sidebar');
+  // Der Baum wird aus den SICHTBAREN Objekten gebaut, nicht aus allen. Damit
+  // erledigen sich drei Funktionen auf einmal: syncTreeCounts (die Zahlen sind
+  // die Gruppengroessen), das Verstecken leerer Aeste (ein Ast ohne Objekte
+  // entsteht gar nicht erst) und restoreTreeSelection (die Markierung faellt aus
+  // `state.sel` ab). Auswaehlen, Filtern und Wiederherstellen sind jetzt
+  // dieselbe Sache: mit dem aktuellen Zustand zeichnen.
+  const treeHost = mount.querySelector('#pf-tree');
+  let dropTree = null;
+  const paintTree = () => {
+    if (dropTree) dropTree();
+    dropTree = C.sidebarTree(treeHost, {
+      id: 'pf-tree',
+      mode: 'select',
+      ariaLabel: 'Standorte',
+      // Nur die oberste Stufe fuehrt Symbole; ab da traegt der Schritt die
+      // Tiefe. Vorher stand auf jeder der 94 Zeilen eines — Globus, Karte,
+      // Nadel, Ordner —, und wo ein Symbol auf jeder Zeile steht, unterscheidet
+      // es nichts mehr.
+      levels: [{ icons: true }, { icons: false }, { icons: false }, { icons: false }],
+      // Diese App nennt das gewaehlte Objekt `id`, der Adapter nennt es `obj`
+      // (so hiess es im data-Attribut). Uebersetzt wird an der Grenze, damit
+      // weder der Zustand dieser App noch der Adapter der anderen nachgeben muss.
+      sections: [objectsToNodes(inTree(), TREE, { ...state.sel, obj: state.sel.id })],
+      onSelect: (node) => {
+        const { obj, ...rest } = node.sel || {};
+        setSelection(obj ? { ...rest, id: obj } : rest, obj || null);
+      },
+    });
+  };
 
   const setSelection = (sel, focus) => {
     state.sel = sel; state.focus = focus || null;
     state.page = 1; renderMain();
   };
 
-  const clearSelection = () => {
-    markTree(sidebar, null);
-    setSelection({}, null);
-  };
+  const clearSelection = () => setSelection({}, null);
 
   function fullReset() {
     state.q = '';
@@ -316,11 +342,7 @@ export default async function render(ctx) {
   });
   ctx.onUnmount(cat.destroy);
 
-  wireTree(sidebar, { onSelect: (sel) => setSelection(sel, sel.id || null) });
-
   ctx.onUnmount(C.wireTableRows(mount.querySelector('#pf-main')));
-
-  restoreTreeSelection(sidebar, state.sel);
 
   renderMain();
 }

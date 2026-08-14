@@ -21,17 +21,20 @@ const check = (condition, label, detail = '') => {
 };
 
 // route, tree selector, whether it is built by the shared module
+// Waehrend des Umzugs laufen zwei Vertraege nebeneinander, und jede Oberflaeche
+// wird gegen den geprueft, den sie tatsaechlich benutzt — sonst misst man die
+// alte Gestaltung an der neuen und bekommt Fehler, die keine sind.
+// `component: true` — laeuft auf C.sidebarTree (js/ui/components/sidebar-tree.js)
 const SURFACES = [
-  ['Liegenschaften Inventar', '/app/portfolio', true],
+  ['Liegenschaften Inventar', '/app/portfolio', true, true],
   ['Bauprojekte', '/app/projects', true],
   ['Mietendenportal', '/app/tenancies', true],
   ['Workspace Management', '/app/workspace', true],
   ['Plan-Editor', '/app/floorplan-editor', true],
   // Depth is what this probe measures, and the catalogue root is deliberately
   // collapsed — so aim at a scope that actually has three levels on screen.
-  // `component: true` — laeuft auf C.sidebarTree (js/ui/components/sidebar-tree.js)
   ['Geschäftsarchitektur', '/app/metadata-catalog?kind=objekt&leaf=Bauwerk%20und%20Liegenschaft', false, true],
-  ['Prozessdokumentation', '/app/process-docs', false],
+  ['Prozessdokumentation', '/app/process-docs', false, true],
 ];
 
 const READ = `(() => {
@@ -124,6 +127,24 @@ try {
     await cdp.send('Emulation.setDeviceMetricsOverride',
       { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false }, page.sessionId);
     await sleep(1800);
+    // Spaet gebaute Kinder: ein zugeklappter Ast hat im DOM GAR KEINE Kinder —
+    // das ist der Sinn der Sache (eine Datentabelle fuehrt bis zu 75 Felder).
+    // Also erst zwei Stufen aufklappen, sonst misst die Tiefenprobe einen Baum
+    // mit einer einzigen Stufe und meldet Fehler, die keine sind.
+    if (component) {
+      await page.evaluate(`(async () => {
+        const w = (ms) => new Promise((r) => setTimeout(r, ms));
+        for (let d = 0; d < 2; d++) {
+          const shut = document.querySelector('.pf-tree__fold[aria-expanded="false"]')
+            || document.querySelector('.pf-tree__row[aria-expanded="false"]');
+          if (!shut) break;
+          shut.click();
+          await w(450);
+        }
+        return 1;
+      })()`);
+      await sleep(400);
+    }
     const tree = await page.evaluate(READ);
     if (tree.missing) {
       check(false, 'renders a structure tree');
@@ -220,7 +241,10 @@ try {
       await new Promise((r) => setTimeout(r, 90));
       const last = label();
       return { first, closed, opened, descended, returned, last,
-        stops: [...tree.querySelectorAll('.pf-tree__node, .pf-tree__leaf, .pf-tree__sub')]
+        // LIVE abfragen: eine Oberflaeche darf den Baum als Antwort auf die
+        // Auswahl neu setzen, dann ist das eingangs gemerkte Element abgehaengt
+        // und zaehlt null sichtbare Zeilen — ein Messfehler, kein Befund.
+        stops: [...document.querySelectorAll('.pf-tree__node, .pf-tree__leaf, .pf-tree__sub, .pf-tree__row')]
           .filter((row) => row.offsetParent !== null && row.tabIndex === 0).length };
     })()`);
     check(keys.opened === 'true' && keys.descended !== keys.closed && keys.returned === keys.closed,
@@ -231,30 +255,66 @@ try {
 
     // The guide appears only along the selected branch, and the selected row sits
     // ABOVE it: the row is where the trace arrives, not something it crosses.
+    // Die Fuehrungslinie: sie laeuft NUR entlang des Astes, der die Auswahl
+    // haelt. Alte und neue Gestaltung zeichnen sie an verschiedenen Stellen —
+    // frueher ::before auf der Kinderliste, im Bauteil ::after und nur per
+    // :has(.is-active,.is-path) —, deshalb zwei Messungen fuer eine Aussage.
     const guide = await page.evaluate(`(async () => {
-      const leaf = document.querySelector('.pf-tree__leaf');
-      leaf?.click();
-      await new Promise((r) => setTimeout(r, 400));
-      const active = document.querySelector('.pf-tree :is(.pf-tree__leaf, .pf-tree__node).is-active');
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const COMPONENT = ${component ? 'true' : 'false'};
+      if (COMPONENT) {
+        // Kinder entstehen erst beim Aufklappen — also erst oeffnen, dann ein
+        // Kind waehlen. Ein zugeklappter Ast hat im DOM gar keine Kinder.
+        // Sicher OEFFNEN statt blind klicken: der Tastaturblock davor kann den
+        // Ast schon aufgeklappt haben, und ein zweiter Klick klappte ihn wieder
+        // zu — dann gibt es keine Kinder, und die Messung faende nichts.
+        for (let n = 0; n < 3; n++) {
+          const shut = document.querySelector('.pf-tree__section > li > [aria-expanded="false"]');
+          if (!shut) break;
+          shut.click();
+          await wait(450);
+        }
+        const kid = document.querySelector('.pf-tree__children .pf-tree__row');
+        kid?.click();
+        await wait(500);
+      } else {
+        document.querySelector('.pf-tree__leaf')?.click();
+        await wait(400);
+      }
+      const active = document.querySelector(COMPONENT
+        ? '.pf-tree__row.is-active, .pf-tree__split.is-active'
+        : '.pf-tree :is(.pf-tree__leaf, .pf-tree__node).is-active');
       const holder = active?.closest('.pf-tree__item')?.parentElement;
       const plain = [...document.querySelectorAll('.pf-tree__children')]
         .find((list) => !list.querySelector('.is-active, .is-path'));
-      const before = (element) => (element ? getComputedStyle(element, '::before') : null);
+      const pseudo = (el) => (el ? getComputedStyle(el, COMPONENT ? '::after' : '::before') : null);
+      const row = active && active.classList.contains('pf-tree__split')
+        ? active.querySelector('.pf-tree__row') : active;
       return {
-        selected: active?.getAttribute('aria-selected') || '',
-        path: document.querySelectorAll('.pf-tree .is-path').length,
-        accentWidth: before(holder)?.width || '',
-        accentColour: before(holder)?.backgroundColor || '',
-        quietContent: plain ? before(plain).content : 'none',
-        activeZ: active ? getComputedStyle(active).zIndex : '',
+        selected: (row || active)?.getAttribute('aria-selected') || '',
+        path: document.querySelectorAll('.is-path').length,
+        accentWidth: pseudo(holder)?.width || '',
+        quietContent: plain ? pseudo(plain).content : 'none',
+        activeZ: row ? getComputedStyle(row).zIndex : '',
       };
     })()`);
     check(guide.selected === 'true' && guide.path > 0,
       'marks the selection and its ancestor path', `${guide.path} path rows`);
-    check(guide.accentWidth === '2px' && guide.quietContent === 'none',
-      'draws the guide only on the branch that holds the selection',
-      `${guide.accentWidth} accent · unselected branch ${guide.quietContent}`);
-    check(guide.activeZ === '2', 'lifts the selected row above the guide', `z-index ${guide.activeZ}`);
+    if (component) {
+      // Das Bauteil zieht die Linie ueber :has() — auf einem Ast ohne Auswahl
+      // entsteht sie gar nicht erst, dort ist die Breite deshalb leer/auto.
+      check(guide.accentWidth && guide.accentWidth !== 'auto' && guide.quietContent === 'none',
+        'draws the guide only on the branch that holds the selection',
+        `${guide.accentWidth} Leitlinie · Ast ohne Auswahl ${guide.quietContent}`);
+      // Im Bauteil liegt die Zeile auf 1 und das Chevron auf 2 darueber: der
+      // Fokusgriff muss oben liegen, sonst faengt die Zeile seinen Klick ab.
+      check(guide.activeZ === '1', 'keeps the selected row above the guide', `z-index ${guide.activeZ}`);
+    } else {
+      check(guide.accentWidth === '2px' && guide.quietContent === 'none',
+        'draws the guide only on the branch that holds the selection',
+        `${guide.accentWidth} accent · unselected branch ${guide.quietContent}`);
+      check(guide.activeZ === '2', 'lifts the selected row above the guide', `z-index ${guide.activeZ}`);
+    }
 
     const problems = await page.problems();
     check(problems.length === 0, 'no runtime problems', problems[0] || '');

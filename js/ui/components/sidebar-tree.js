@@ -110,6 +110,13 @@ export function sidebarTree(host, cfg = {}) {
     : '');
 
   const inner = (node, depth) => glyph(node, depth)
+    // Ein Ordnungsbegriff VOR dem Namen — die BBL-Nummer eines Gebaeudes, die
+    // Nummer einer Wirtschaftseinheit. Er steht in eigener Spalte, weil er
+    // gelesen und verglichen wird, nicht gelesen und verstanden.
+    + (node.idText ? `<span class="pf-tree__id">${escape(node.idText)}</span>` : '')
+    // Vorlesesoftware hoert sonst «1080» und weiss nicht, wovon — die Stufe
+    // sagt es, sichtbar durch ihre Lage, hoerbar nur so.
+    + (node.srPrefix ? `<span class="sr-only">${escape(node.srPrefix)}: </span>` : '')
     + `<span class="pf-tree__label">${escape(node.label)}</span>`
     // The count is a BARE NUMBER in the DOM — the parentheses are drawn by CSS,
     // so scripts and assertions keep reading a number — with a named unit for
@@ -118,6 +125,7 @@ export function sidebarTree(host, cfg = {}) {
       + (node.countUnit ? `<span class="sr-only"> ${escape(node.countUnit)}</span>` : ''));
 
   const rows = (nodes, depth) => nodes.map((node) => {
+    INDEX.set(node.id, node);
     const expandable = canOpen(node);
     // Drei Wege, offen zu sein, und der dritte ist der wichtige:
     //   · der Leser hat das Chevron gedrückt (open)
@@ -180,6 +188,9 @@ export function sidebarTree(host, cfg = {}) {
   }).join('');
 
   const draw = () => {
+    // Vor dem Zeichnen leeren, sonst ueberleben Knoten eines zugeklappten Astes
+    // im Verzeichnis und beantworten Klicks, die es nicht mehr gibt.
+    INDEX = new Map();
     host.innerHTML = (title
       ? `<div class="pf-sidebar__head"><h2 class="pf-sidebar__title">${escape(title)}</h2></div>`
       : '')
@@ -218,8 +229,14 @@ export function sidebarTree(host, cfg = {}) {
       const row = e.target.closest('.pf-tree__row');
       if (fold.classList.contains('pf-tree__fold') || row === fold) {
         e.preventDefault();
-        if (select && row === fold && onSelect) onSelect(nodeById(fold.dataset.fold), e);
+        // Erst klappen, DANN melden — und den Knoten vorher festhalten. Die
+        // Reihenfolge ist kein Geschmack: `onSelect` darf die Anwendung dazu
+        // bringen, den Baum neu zu setzen (Zahlen, Markierung). Meldeten wir
+        // zuerst, liefe danach noch das draw() dieses — inzwischen
+        // weggeworfenen — Exemplars und uebermalte das neue mit dem alten Stand.
+        const picked = nodeById(fold.dataset.fold);
         toggle(fold.dataset.fold, true);
+        if (select && row === fold && onSelect) onSelect(picked, e);
         return;
       }
     }
@@ -228,16 +245,15 @@ export function sidebarTree(host, cfg = {}) {
     if (row && onSelect) onSelect(nodeById(row.dataset.node), e);
   };
 
-  const flat = () => {
-    const out = [];
-    const walk = (nodes) => nodes.forEach((n) => {
-      out.push(n);
-      if (Array.isArray(n.children)) walk(n.children);
-    });
-    sections.forEach(walk);
-    return out;
-  };
-  const nodeById = (nid) => flat().find((n) => n.id === nid) || { id: nid };
+  // Nachschlagewerk der GEZEICHNETEN Knoten, gefuellt beim Zeichnen. Vorher lief
+  // hier ein Spaziergang ueber `children`, der nur Arrays kannte — spaet gebaute
+  // Kinder (children als Funktion) waren fuer ihn unsichtbar, und ein Klick auf
+  // eine solche Zeile lieferte statt des Knotens eine leere Huelle `{id}`. Die
+  // Anwendung las darin «nichts gewaehlt» und loeschte die Auswahl, die der
+  // Leser gerade getroffen hatte. Wer gezeichnet ist, steht hier drin — und nur
+  // Gezeichnetes kann angeklickt werden.
+  let INDEX = new Map();
+  const nodeById = (nid) => INDEX.get(nid) || { id: nid };
 
   // Arrow keys, Home/End — required by the tree pattern, and the reason the
   // select surfaces cannot simply become a list of links.
@@ -256,9 +272,28 @@ export function sidebarTree(host, cfg = {}) {
     else if (key === 'ArrowRight' || key === 'ArrowLeft') {
       const nid = document.activeElement.dataset.node;
       const wasOpen = document.activeElement.getAttribute('aria-expanded') === 'true';
+      // focusBack MUSS hier true sein: toggle() zeichnet den Baum neu, womit das
+      // fokussierte Element verschwindet — der Fokus faellt auf <body> und jede
+      // weitere Taste geht ins Leere. Bei der Maus faellt das nicht auf, bei der
+      // Tastatur ist es das Ende der Bedienbarkeit.
       if (key === 'ArrowRight' && !wasOpen && document.activeElement.getAttribute('aria-expanded')) {
-        e.preventDefault(); toggle(nid, false);
-      } else if (key === 'ArrowLeft' && wasOpen) { e.preventDefault(); toggle(nid, false); }
+        e.preventDefault(); toggle(nid, true);
+      } else if (key === 'ArrowLeft') {
+        // Links heisst zweierlei, je nach Lage — so will es das Baummuster:
+        // steht die Zeile offen, klappt sie zu; ist sie schon zu (oder hat sie
+        // gar keine Kinder), springt der Fokus zum ELTER. Ohne den zweiten Fall
+        // kommt man aus einem Ast nie wieder heraus, ausser mit Pfeil-hoch
+        // durch jede einzelne Zeile darueber.
+        if (wasOpen) { e.preventDefault(); toggle(nid, true); return; }
+        const list = document.activeElement.closest('.pf-tree__item')?.parentElement;
+        if (!list || !list.classList.contains('pf-tree__children')) return;
+        const up = list.parentElement.querySelector(
+          ':scope > [role="treeitem"], :scope > .pf-tree__split > [role="treeitem"]');
+        if (!up) return;
+        e.preventDefault();
+        items.forEach((r) => { r.tabIndex = -1; });
+        up.tabIndex = 0; up.focus();
+      }
     }
   };
 

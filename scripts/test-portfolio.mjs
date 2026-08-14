@@ -32,7 +32,9 @@ console.log(`   (from data/: ${BUILDINGS.length} buildings + ${PARCELS.length} p
       console.error = (...a) => { try { window.__mapErrs.push(a.map(x => typeof x === 'string' ? x : ((x && x.message) || '')).join(' ')); } catch (e) {} oe.apply(console, a); };
       let n = 0; while (!document.querySelector('.pf-tree') && n++ < 150) await s(100);
       const count = () => (document.querySelector('#pf-count') || {}).textContent || '';
-      const countries = document.querySelectorAll('.pf-tree > .pf-tree__item > .pf-tree__node').length;
+      // Seit dem Umzug auf das Seitenbaum-Bauteil (2026-08-14): ein Abschnitt, die
+      // Laender sind seine direkten Eintraege.
+      const countries = document.querySelectorAll('.pf-tree__section > li').length;
       let m = 0; while (!document.querySelector('.pf-map canvas') && m++ < 100) await s(100);
       const r = { h1: (document.querySelector('h1') || {}).textContent, countries, count0: count(), mapCanvas: !!document.querySelector('.pf-map canvas') };
 
@@ -76,7 +78,7 @@ console.log(`   (from data/: ${BUILDINGS.length} buildings + ${PARCELS.length} p
       // Return to the map and select the CH country node.
       document.querySelector('[data-view="map"]').click();
       let mc = 0; while (!document.querySelector('.pf-map canvas') && mc++ < 100) await s(100);
-      const ch = [...document.querySelectorAll('.pf-tree__node[data-country="CH"]')].find(n => !n.dataset.region);
+      const ch = document.querySelector('.pf-tree__row[data-node="country:CH"]');
       r.chTreeCount = ch.querySelector('.pf-tree__n').textContent;
       ch.click();
       let mc2 = 0; while (!document.querySelector('.pf-map canvas') && mc2++ < 100) await s(100);
