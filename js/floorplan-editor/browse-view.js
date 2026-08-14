@@ -279,19 +279,19 @@ export function browseSurfaceHTML(C, entries, mode) {
 // Zaehler, und beide bewegen sich.
 export const BROWSE_TREE = {
   levels: [
-    { key: 'country', icon: 'Globe', label: (value) => countryName(value) },
-    { key: 'region', icon: 'Map', label: (value) => value || 'Ohne Kanton' },
-    { key: 'city', icon: 'MapMarker', label: (value) => value || 'Ohne Ort' },
+    { key: 'country', icon: 'tree/globe', label: (value) => countryName(value) },
+    { key: 'region', icon: 'tree/map', label: (value) => value || 'Ohne Kanton' },
+    { key: 'city', icon: 'tree/map-pin', label: (value) => value || 'Ohne Ort' },
   ],
   leaf: {
-    icon: () => 'Building',
+    icon: () => 'tree/building',
     label: (entry) => entry.name,
     objId: (entry) => entry.id,
     sort: (left, right) => left.name.localeCompare(right.name, 'de'),
     // The new level: the floors of a building, which is what the visitor is
     // actually looking for once the right object is on screen.
     children: (entry) => entry.floors.map((floor) => ({
-      id: floor.floorId, label: floor.label, icon: 'Stack',
+      id: floor.floorId, label: floor.label, icon: 'tree/layers',
     })),
   },
 };

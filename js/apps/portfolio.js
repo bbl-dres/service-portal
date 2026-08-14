@@ -99,22 +99,22 @@ export default async function render(ctx) {
 
   const TREE = {
     levels: [
-      { key: 'country', icon: 'Globe', label: (v) => countryName(v) },
-      { key: 'region', icon: 'Map' },
-      { key: 'city', icon: 'MapMarker' },
+      { key: 'country', icon: 'tree/globe', label: (v) => countryName(v) },
+      { key: 'region', icon: 'tree/map' },
+      { key: 'city', icon: 'tree/map-pin' },
 
       // The number alone: the Folder icon and the level's position already
       // identify the business entity, so the «WE» prefix only cost key-column
       // width. `word` keeps the level named for assistive technology, which
       // would otherwise hear a bare number.
-      { key: 'businessEntity', attr: 'business-entity', icon: 'Folder',
+      { key: 'businessEntity', attr: 'business-entity', icon: 'tree/folder',
         idText: (v) => String(v), word: 'Wirtschaftseinheit',
         label: (v, es) => ((es.find((x) => x.kind === 'building') || es[0] || {}).name || ''),
         sort: (a, b) => (a < b ? -1 : a > b ? 1 : 0) },
     ],
 
     leaf: {
-      icon: (o) => (o.kind === 'building' ? 'Building' : 'Crop'),
+      icon: (o) => (o.kind === 'building' ? 'tree/building' : 'tree/land-plot'),
       idText: objId, label: (o) => o.name, objId: (o) => o.id,
       sort: (a, b) => a.kind.localeCompare(b.kind) || nameCmp(a, b),
     },

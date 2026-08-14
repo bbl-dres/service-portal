@@ -180,12 +180,12 @@ function catalogue(ctx, objects) {
 
   const TREE = {
     levels: [
-      { key: 'country', icon: 'Globe', label: (value) => countryName(value) },
-      { key: 'region', icon: 'Map' },
-      { key: 'city', icon: 'MapMarker' },
+      { key: 'country', icon: 'tree/globe', label: (value) => countryName(value) },
+      { key: 'region', icon: 'tree/map' },
+      { key: 'city', icon: 'tree/map-pin' },
     ],
     leaf: {
-      icon: () => 'Building',
+      icon: () => 'tree/building',
       idText: (item) => item.id.split('/')[2] || item.id,
       label: (item) => item.name,
       objId: (item) => item.id,

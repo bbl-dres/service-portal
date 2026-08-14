@@ -115,11 +115,11 @@ function overview(ctx) {
 
   const TREE = {
     levels: [
-      { key: 'country', icon: 'Globe', label: (k) => countryName(k) },
-      { key: 'canton', attr: 'region', icon: 'Map' },
-      { key: 'city', icon: 'MapMarker' },
+      { key: 'country', icon: 'tree/globe', label: (k) => countryName(k) },
+      { key: 'canton', attr: 'region', icon: 'tree/map' },
+      { key: 'city', icon: 'tree/map-pin' },
     ],
-    leaf: { icon: () => 'Home', idText: (t) => t.administrativeUnit, label: (t) => t.buildingName,
+    leaf: { icon: () => 'tree/house', idText: (t) => t.administrativeUnit, label: (t) => t.buildingName,
       objId: (t) => t.tenancyId, sort: (a, b) => a.buildingName.localeCompare(b.buildingName, 'de') },
   };
 

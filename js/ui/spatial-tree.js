@@ -59,7 +59,7 @@ export function objectsToNodes(objects, { levels, leaf }, sel = {}) {
             label: c.label,
             idText: c.idText || '',
             srPrefix: leaf.subWord || '',
-            icon: c.icon || 'Stack',
+            icon: c.icon || 'tree/layers',
             state: stateOf([...own, ['sub', c.id]]),
             sel: Object.fromEntries([...own, ['sub', c.id]]),
           })),

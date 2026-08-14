@@ -1,4 +1,4 @@
-// Holt genau die Lucide-Symbole, die der Baum benutzt — nicht den Satz.
+// Holt genau die Lucide-Symbole, die die Seitenbaeume benutzen — nicht den Satz.
 // Sie werden mitgeliefert (nicht von einem CDN geladen): das Portal muss ohne
 // Netz laufen, und ein Symbol, das nachgeladen wird, fehlt genau dann, wenn es
 // gebraucht wird.
@@ -8,21 +8,37 @@ const OUT = 'c:/Users/david/Documents/GitHub/service-portal/assets/icons/tree/';
 const VERSION = '1.31.0';
 const BASE = `https://cdn.jsdelivr.net/npm/lucide-static@${VERSION}/icons/`;
 
-// Was der Katalog heute fuehrt. Weitere Oberflaechen bringen ihre eigenen mit,
-// wenn sie umziehen — deshalb steht hier eine Liste und kein Paket.
+// Ein Satz fuer ALLE acht Baeume. Vorher trugen der Katalog Lucide-Zeichen und
+// die fuenf raeumlichen Baeume die des Bundes-CD — zwei Herkuenfte, zwei
+// Strichstaerken, in derselben Spalte am selben Bildschirm.
 const WANTED = {
   'chevron-right': 'Aufklapp-Zeichen jeder Zeile mit Kindern',
+
+  // Katalog
   library: 'Katalog — die Wurzel',
   boxes: 'Geschaeftsobjekte',
   database: 'Systeme',
   list: 'Referenzdaten',
+
+  // Die raeumlichen Baeume: Liegenschaften, Bauprojekte, Mietendenportal,
+  // Workspace, Plan-Editor. Land ▸ Kanton ▸ Ort ist ihre gemeinsame Achse.
+  globe: 'Land',
+  map: 'Kanton/Region',
+  'map-pin': 'Ort',
+  folder: 'Wirtschaftseinheit',
+  building: 'Gebaeude',
+  'land-plot': 'Grundstueck',
+  briefcase: 'Bauprojekt',
+  house: 'Mietobjekt',
+  layers: 'Geschoss',
 };
 
 mkdirSync(OUT, { recursive: true });
 
+let missing = 0;
 for (const [name, why] of Object.entries(WANTED)) {
   const res = await fetch(BASE + name + '.svg');
-  if (!res.ok) { console.log('FEHLT ' + name + ': ' + res.status); continue; }
+  if (!res.ok) { console.log('FEHLT ' + name + ': ' + res.status); missing++; continue; }
   let svg = await res.text();
   // Aufraeumen: der Lizenzkommentar steht gesammelt in der README daneben, und
   // die Klassennamen von Lucide braucht eine Maske nicht.
@@ -40,11 +56,12 @@ writeFileSync(OUT + 'README.md',
   + 'Lucide ' + VERSION + ', ISC-Lizenz — https://lucide.dev\n\n'
   + 'Mitgeliefert, nicht nachgeladen: das Portal muss ohne Netz laufen. Und nur\n'
   + 'die tatsaechlich benutzten Dateien, nicht der ganze Satz.\n\n'
-  + 'Hier stehen die Symbole des Seitenbauteils. Alles Uebrige im Portal benutzt\n'
-  + 'weiterhin die Symbole des Bundes-CD in `assets/icons/`; die beiden Saetze\n'
-  + 'sind verschiedener Herkunft und verschiedener Strichstaerke und sollen sich\n'
-  + 'nicht vermischen.\n\n'
+  + 'Hier stehen die Symbole ALLER Seitenbaeume — Katalog, Liegenschaften,\n'
+  + 'Bauprojekte, Mietendenportal, Workspace und Plan-Editor. Sie kommen aus\n'
+  + 'einer Quelle und haben eine Strichstaerke; das Bundes-CD in `assets/icons/`\n'
+  + 'traegt den Rest des Portals. Die beiden Saetze sollen sich nicht mischen,\n'
+  + 'am wenigsten in derselben Spalte.\n\n'
   + '| Datei | wofuer |\n|---|---|\n'
   + Object.entries(WANTED).map(([n, w]) => '| `' + n + '.svg` | ' + w + ' |').join('\n')
   + '\n\nNachziehen: scripts/fetch-tree-icons.mjs\n', 'utf8');
-console.log('\nREADME + ' + Object.keys(WANTED).length + ' Symbole in assets/icons/tree/');
+console.log('\nREADME + ' + (Object.keys(WANTED).length - missing) + ' Symbole in assets/icons/tree/');
