@@ -301,11 +301,15 @@ function sidebarTree(host, cfg) {
   // Symbolen auf jeder Stufe bekommt die Symbolbreite als gleichmässigen Schritt,
   // statt sie doppelt zu zählen.
   const GUTTER = 20, ICOCOL = 24, STEP = 16;
-  const ladder = [];
-  for (let i = 0, x = GUTTER; i < Math.max(levels.length, 8); i++) {
-    ladder.push(x);
-    x += (levels[i] || {}).icons ? ICOCOL : STEP;
-  }
+  // Ohne Decke: eine rekursive Kategorie kennt ihre Tiefe nicht im Voraus, und
+  // eine Leiter mit Ende liefert dort NaN — padding-left wird ungültig, die
+  // Zeile fällt auf 0 und steht LINKS von Stufe 1. Jenseits der erklärten
+  // Stufen gilt der Schritt.
+  const rung = (depth) => {
+    let x = GUTTER;
+    for (let i = 0; i < depth; i++) x += (levels[i] || {}).icons ? ICOCOL : STEP;
+    return x;
+  };
 
   const kidsOf = (node) => (typeof node.children === 'function'
     ? node.children(node) : node.children) || [];
@@ -328,7 +332,11 @@ function sidebarTree(host, cfg) {
     const cls = 'l' + lvl + (node.state ? ' has-' + node.state : '');
     const state = node.state === 'active' ? ' is-active' : node.state === 'path' ? ' is-path' : '';
     // Ein Blatt ohne Chevron rückt nur einen halben Schritt ein.
-    const leafish = !canOpen && depth > 1 ? ' is-leaflevel' : '';
+    // Kein halber Schritt je Knoten mehr: er galt für die Zeile statt für die
+    // Stufe und stellte damit Geschwister gegeneinander — ein kinderloses
+    // «Thun» stand 8px links von seinem Geschwister «Bern». Eine Stufe hat eine
+    // Einrückung, ganz gleich, welches ihrer Kinder Kinder hat.
+    const leafish = '';
     const styleLvl = '';
     // Ein Chevron darf NIE in einer bedienbaren Zeile stecken: ein <button> im
     // <button> (oder in einem <a>) ist ungültig, der Parser schliesst das äussere
@@ -363,9 +371,7 @@ function sidebarTree(host, cfg) {
       ? '<ul class="pf__kids"' + (open ? '' : ' hidden') + '>'
         + (open ? render(kids, depth + 1) : '') + '</ul>'
       : '';
-    // Ein Blatt ohne Chevron rückt einen halben Schritt weniger ein: ein ganzer
-    // liesse eine leere Aufklappspalte unter seinen Geschwistern stehen.
-    const ind = ladder[depth] - (leafish ? STEP / 2 : 0);
+    const ind = rung(depth);
     return '<li class="' + cls + leafish + '" style="--ind:' + ind + 'px">'
       + body + sub + '</li>';
   }).join('');
@@ -408,12 +414,31 @@ const CASES = {
                 n('o1', '1080/4840/AF Verwaltungsgebäude', null, { icon: 'house', state: 'active' }),
                 n('o2', '1080/4841/AF Werkhof', null, { icon: 'house' }),
               ] }),
-              n('mur', 'Murtenstrasse 87', 1, { icon: 'stack' }),
+              n('mur', 'Murtenstrasse 87', 1, { icon: 'stack', children: [
+                n('o3', '1080/4902/AF Bürogebäude', null, { icon: 'house' }),
+              ] }),
             ] }),
-            n('thun', 'Thun', 1, { icon: 'house' }),
+            n('thun', 'Thun', 1, { icon: 'house', children: [
+              n('thun-a', 'Allmendstrasse 8', 1, { icon: 'stack', children: [
+                n('o4', '0561/1120/AF Lagerhalle', null, { icon: 'house' }),
+              ] }),
+            ] }),
           ] }),
-          n('zh', 'Zürich', 2, { icon: 'pin' }),
-          n('vd', 'Waadt', 1, { icon: 'pin' }),
+          n('zh', 'Zürich', 2, { icon: 'pin', children: [
+            n('zh-zh', 'Zürich', 2, { icon: 'house', children: [
+              n('zh-a', 'Stampfenbachstrasse 85', 2, { icon: 'stack', children: [
+                n('o5', '0261/3310/AF Verwaltungsgebäude', null, { icon: 'house' }),
+                n('o6', '0261/3311/AF Nebengebäude', null, { icon: 'house' }),
+              ] }),
+            ] }),
+          ] }),
+          n('vd', 'Waadt', 1, { icon: 'pin', children: [
+            n('vd-la', 'Lausanne', 1, { icon: 'house', children: [
+              n('vd-a', 'Avenue de Rhodanie 60', 1, { icon: 'stack', children: [
+                n('o7', '5586/2140/AF Bürogebäude', null, { icon: 'house' }),
+              ] }),
+            ] }),
+          ] }),
         ] }),
       ]],
     },
@@ -430,16 +455,34 @@ const CASES = {
       sections: [[
         n('alle', 'Alle Artikel', 312, { href: '#', state: 'path', children: [
           n('buero', 'Büromaterial', 128, { href: '#', state: 'path', children: [
-            n('schreib', 'Schreibwaren', 54, { href: '#', children: [
-              n('kuli', 'Kugelschreiber', 12, { href: '#', state: 'active' }),
-              n('blei', 'Bleistifte', 8, { href: '#' }),
-              n('marker', 'Marker und Textmarker', 14, { href: '#' }),
+            n('schreib', 'Schreibwaren', 54, { href: '#', state: 'path', children: [
+              n('kuli', 'Kugelschreiber', null, { href: '#', state: 'active' }),
+              n('blei', 'Bleistifte', null, { href: '#' }),
+              n('marker', 'Marker und Textmarker', null, { href: '#' }),
+              n('fein', 'Feinschreiber', null, { href: '#' }),
             ] }),
-            n('papier', 'Papier und Blöcke', 41, { href: '#' }),
-            n('ordnen', 'Ordnen und Ablegen', 33, { href: '#' }),
+            n('papier', 'Papier und Blöcke', 41, { href: '#', children: [
+              n('kopier', 'Kopierpapier', null, { href: '#' }),
+              n('notiz', 'Notizblöcke', null, { href: '#' }),
+            ] }),
+            n('ordnen', 'Ordnen und Ablegen', 33, { href: '#', children: [
+              n('ordner', 'Ordner und Register', null, { href: '#' }),
+              n('mappen', 'Mappen und Hüllen', null, { href: '#' }),
+            ] }),
           ] }),
-          n('mobil', 'Mobiliar', 94, { href: '#' }),
-          n('it', 'IT-Zubehör', 90, { href: '#' }),
+          n('mobil', 'Mobiliar', 94, { href: '#', children: [
+            n('tische', 'Tische', 31, { href: '#', children: [
+              n('steh', 'Stehpulte', null, { href: '#' }),
+              n('sitz', 'Sitzarbeitsplätze', null, { href: '#' }),
+            ] }),
+            n('stuehle', 'Stühle', 38, { href: '#' }),
+            n('schrank', 'Schränke und Regale', 25, { href: '#' }),
+          ] }),
+          n('it', 'IT-Zubehör', 90, { href: '#', children: [
+            n('eingabe', 'Eingabegeräte', 22, { href: '#' }),
+            n('kabel', 'Kabel und Adapter', 44, { href: '#' }),
+            n('speicher', 'Speichermedien', 24, { href: '#' }),
+          ] }),
         ] }),
       ]],
     },
@@ -459,8 +502,15 @@ const CASES = {
         [n('root', 'Katalog', 44, { href: '#', icon: 'grid' })],
         [
           n('objekt', 'Geschäftsobjekte', 19, { href: '#', icon: 'grid', children: [
-            n('bau', 'Bauwerk und Liegenschaft', 8, { href: '#' }),
-            n('energie', 'Energie', 3, { href: '#' }),
+            n('bau', 'Bauwerk und Liegenschaft', 8, { href: '#', children: () =>
+              ['Areal', 'Kampus', 'Grundstück', 'Gebäude'].map((x, i) =>
+                n('bo' + i, x, 5, { href: '#', split: true, children: () =>
+                  ['bbl_id', 'name', 'flaeche_m2'].map((f, j) =>
+                    n('bo' + i + '-' + j, f, null, { href: '#' })) })) }),
+            n('energie', 'Energie', 3, { href: '#', children: () =>
+              ['Heizzentrale', 'Stromzähler'].map((x, i) =>
+                n('en' + i, x, 4, { href: '#', split: true, children: () =>
+                  ['bbl_id', 'typ'].map((f, j) => n('en' + i + '-' + j, f, null, { href: '#' })) })) }),
           ] }),
           n('sys', 'Systeme', 10, { href: '#', icon: 'db', state: 'path', children: [
             n('gis', 'GIS IMMO', 5, { href: '#', state: 'path', children: [
@@ -470,9 +520,19 @@ const CASES = {
               n('huelle', 'Gebäudehülle', 33, { href: '#', split: true,
                 children: () => ['bbl_id', 'flaeche_m2'].map((f) => n('h-' + f, f, null, { href: '#' })) }),
             ] }),
-            n('sap', 'SAP RE-FX', 5, { href: '#' }),
+            n('sap', 'SAP RE-FX', 5, { href: '#', children: () =>
+              ['Wirtschaftseinheit', 'Gebäude', 'Konditionen'].map((x, i) =>
+                n('sap' + i, x, 39, { href: '#', split: true, children: () =>
+                  ['COMP_CODE', 'BUSINESS_ENTITY', 'BUILDING'].map((f, j) =>
+                    n('sap' + i + '-' + j, f, null, { href: '#' })) })) }),
           ] }),
-          n('ref', 'Referenzdaten', 15, { href: '#', icon: 'list' }),
+          n('ref', 'Referenzdaten', 15, { href: '#', icon: 'list', children: () =>
+            ['Katalog und Metadaten', 'Bauwerk und Liegenschaft'].map((x, i) =>
+              n('rf' + i, x, 5, { href: '#', children: () =>
+                ['Objekt-Status', 'Klassifizierung'].map((f, j) =>
+                  n('rf' + i + '-' + j, f, 4, { href: '#', split: true, children: () =>
+                    ['gueltig', 'entwurf'].map((v, k) =>
+                      n('rf' + i + '-' + j + '-' + k, v, null, { href: '#' })) })) })) }),
         ],
       ],
     },
@@ -502,7 +562,14 @@ const CASES = {
               n('b-og', 'Obergeschoss', null, { icon: 'layer', href: '#' }),
             ] }),
           ] }),
-          n('zh2', 'Zürich', 1, { icon: 'pin' }),
+          n('zh2', 'Zürich', 1, { icon: 'pin', children: [
+            n('geb-c', 'Stampfenbachstrasse 85', 3, { icon: 'house', split: true, href: '#',
+              children: [
+                n('c-eg', 'Erdgeschoss', null, { icon: 'layer', href: '#' }),
+                n('c-og', 'Obergeschoss', null, { icon: 'layer', href: '#' }),
+                n('c-dg', 'Dachgeschoss', null, { icon: 'layer', href: '#' }),
+              ] }),
+          ] }),
         ] }),
       ]],
     },
@@ -523,8 +590,15 @@ const CASES = {
           n('p3', 'Projektierung', null, { href: '#' }),
           n('p4', 'Ausführung', null, { href: '#' }),
         ] }),
-        n('betrieb-p', 'Betriebsprozesse', 8, { href: '#' }),
-        n('quer', 'Querschnittsprozesse', 5, { href: '#' }),
+        n('betrieb-p', 'Betriebsprozesse', 8, { href: '#', children: [
+          n('b1', 'Bewirtschaftung', null, { href: '#' }),
+          n('b2', 'Instandhaltung', null, { href: '#' }),
+          n('b3', 'Energiemanagement', null, { href: '#' }),
+        ] }),
+        n('quer', 'Querschnittsprozesse', 5, { href: '#', children: [
+          n('q1', 'Beschaffung', null, { href: '#' }),
+          n('q2', 'Datenmanagement', null, { href: '#' }),
+        ] }),
       ]],
     },
   },
@@ -606,8 +680,17 @@ const MIXED = {
     n('m3', 'Mit Symbol', 3, { href: '#', icon: 'list' }),
   ]],
 };
+// (a) und (c) zeigen GEMISCHTE Symbole — dort liegt der Unterschied.
+// (b) verspricht Bündigkeit nur bei EINHEITLICHEN Symbolen je Stufe, also wird
+// sie daran gezeigt; an gemischten Daten fällt (b) auf (a) zurück, und das ist
+// keine Empfehlung, sondern ihre Bedingung.
+const UNIFORM = JSON.parse(JSON.stringify({ ...MIXED, sections: [[
+  { id: 'u1', label: 'Mit Symbol', count: 4, href: '#', icon: 'db' },
+  { id: 'u2', label: 'Auch mit Symbol', count: 2, href: '#', icon: 'list' },
+  { id: 'u3', label: 'Ebenfalls', count: 3, href: '#', icon: 'grid' },
+]] }));
 sidebarTree(document.getElementById('demo-a'), { ...MIXED, variant: 'badly' });
-sidebarTree(document.getElementById('demo-b'), { ...MIXED });
+sidebarTree(document.getElementById('demo-b'), UNIFORM);
 sidebarTree(document.getElementById('demo-c'), { ...MIXED, variant: 'holes' });
 
 /* ── Linien: heute gegen Vorschlag ───────────────────────────────────────── */
