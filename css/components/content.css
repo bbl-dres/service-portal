@@ -143,8 +143,14 @@
 .body--mobile-menu-is-open .back-to-top-rail,
 body.body--overlay-open .back-to-top-rail { display:none; }
 
+/* Die Trennlinie gehoert zum Ansichtswechsel (border-left), und die Luft dahinter
+   auch (padding-left). Davor lag aber nur der Abstand der Leiste selbst — vier
+   Pixel gegen siebzehn, gemessen: die Linie klebte am letzten Knopf links und
+   hatte rechts Platz. Der eigene Abstand der Zeile traegt die fehlenden vier,
+   darum sp-3 und nicht sp-4: zusammen stehen links wie rechts sechzehn. */
 .view-switch { display:flex; align-items:center; gap:var(--sp-1);
-  border-left:var(--stroke-1) solid var(--color-secondary-300); padding-left:var(--sp-4); }
+  border-left:var(--stroke-1) solid var(--color-secondary-300);
+  margin-left:var(--sp-3); padding-left:var(--sp-4); }
 .view-switch__btn { display:inline-flex; align-items:center; justify-content:center;
   min-width:var(--target-min); min-height:var(--target-min); padding:0; background:none; border:0; border-radius:var(--radius-none);
   color:var(--color-secondary-500); cursor:pointer; transition:color var(--duration), background var(--duration); }
