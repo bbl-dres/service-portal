@@ -2,7 +2,7 @@
 
 import { initEstateMap } from '../map/buildings-map.js';
 import { createMapSlot } from '../map/map-slot.js';
-import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../ui/spatial-tree.js';
+import { objectsToNodes } from '../ui/spatial-tree.js';
 import { openGallery, restoreGalleryFromQuery } from '../ui/gallery.js';
 import { heroMosaic, galleryItemsFrom, wireHeroMosaic } from '../ui/hero-mosaic.js';
 import { formatCurrency, formatNumber, formatArea } from '../format.js';
@@ -84,7 +84,7 @@ function overview(ctx) {
   const filtered = () => objects.filter((o) => inSel(o) && inFilters(o) && inSearch(o));
 
   const esc = C.escape;
-  const tree = treeHTML(C, objects, {
+  const TREE = {
     levels: [
       { key: 'country', icon: 'Globe', label: (k) => countryName(k) },
       { key: 'region', icon: 'Map' },
@@ -101,7 +101,7 @@ function overview(ctx) {
       label: (o) => o.name, objId: (o) => o.id,
       sort: (a, b) => String(a.name).localeCompare(String(b.name), 'de'),
     },
-  });
+  };
 
   function pjCard(o) {
     return C.card({
@@ -131,12 +131,12 @@ function overview(ctx) {
     await pjMap.mount(el, (node) => initEstateMap(node, points, { type: 'FeatureCollection', features: [] }, focus));
   }
 
-  const syncTree = () => syncTreeCounts(mount.querySelector(".pf-tree"),
-    objects.filter((o) => inSearch(o) && inFilters(o)),
-    (o) => [o.country, o.region, o.city, o.businessEntity], (o) => o.id);
+  // Was der Baum zeigt: was Suche und Filter uebrig lassen — aber OHNE die
+  // Auswahl selbst, sonst schrumpfte er auf das gerade Angeklickte zusammen.
+  const inTree = () => objects.filter((o) => inSearch(o) && inFilters(o));
 
   function renderMain() {
-    syncTree();
+    paintTree();
     const list = filtered().sort(SORTS[state.sort] || SORTS.name);
     const cnt = mount.querySelector('#pj-count');
     const main = mount.querySelector('#pj-main');
@@ -225,17 +225,36 @@ function overview(ctx) {
              row above, not through a second control in the head (as in
              portfolio.js). -->
         <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Projekte</h2></div>
-        ${tree}
+        <div id="pj-tree"></div>
       </aside>
       <div class="pf-main" id="pj-main"></div>
     </div>
   </div>`;
 
-  const sidebar = mount.querySelector('.pf-sidebar');
   const onTreeSelect = (sel) => { state.sel = sel; state.focus = sel.id || null; state.page = 1; renderMain(); };
-  wireTree(sidebar, { onSelect: onTreeSelect });
 
-  const resetSelection = () => { markTree(sidebar, null); onTreeSelect({}); };
+  const treeHost = mount.querySelector('#pj-tree');
+  let dropTree = null;
+  const paintTree = () => {
+    if (dropTree) dropTree();
+    dropTree = C.sidebarTree(treeHost, {
+      id: 'pj-tree',
+      mode: 'select',
+      ariaLabel: 'Projektstruktur',
+      // Symbole nur auf der obersten Stufe: die Symbolspalte IST die
+      // Einrueckung der zweiten, ab da traegt der Schritt die Tiefe.
+      levels: [{ icons: true }, { icons: false }, { icons: false }, { icons: false }],
+      // Diese App nennt das gewaehlte Objekt `id`, der Adapter `obj`.
+      sections: [objectsToNodes(inTree(), TREE, { ...state.sel, obj: state.sel.id })],
+      onSelect: (node) => {
+        const { obj, ...rest } = node.sel || {};
+        onTreeSelect(obj ? { ...rest, id: obj } : rest);
+      },
+    });
+  };
+  ctx.onUnmount(() => { if (dropTree) dropTree(); });
+
+  const resetSelection = () => onTreeSelect({});
 
   const qEl = mount.querySelector('#pj-q');
   const cat = C.wireCatalogueState(mount, {
@@ -256,10 +275,6 @@ function overview(ctx) {
   });
 
   C.wireTableRows(mount.querySelector('#pj-main'));
-
-  if (Object.keys(state.sel).length && !restoreTreeSelection(sidebar, state.sel)) {
-    state.sel = {}; state.focus = null;
-  }
 
   renderMain();
 }

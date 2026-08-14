@@ -15,7 +15,7 @@
 
 import { createMapSlot } from '../map/map-slot.js';
 import { initEstateMap } from '../map/buildings-map.js';
-import { markTree, restoreTreeSelection, syncTreeCounts, wireTree } from '../ui/spatial-tree.js';
+import { objectsToNodes } from '../ui/spatial-tree.js';
 import { floorplanEditor } from '../links.js';
 import { listVisits, listWorkingCopies, removeWorkingCopy } from './repository.js';
 import {
@@ -23,8 +23,8 @@ import {
 } from './tasks.js';
 import { planEditorCases, renderWorkView, workColumns } from './work-view.js';
 import {
-  OBJECT_STATE, browseEntries, browseMode, browsePopupHTML, browseSort, browseStatsHTML,
-  browseSurfaceHTML, renderBrowseView, sortBrowseEntries,
+  BROWSE_TREE, OBJECT_STATE, browseEntries, browseMode, browsePopupHTML, browseSort,
+  browseStatsHTML, browseSurfaceHTML, renderBrowseView, sortBrowseEntries,
 } from './browse-view.js';
 import {
   REGISTER_BARS, objectPanelHTML, objectRoute, objectTab, placeSteps, planView, renderObjectView,
@@ -387,13 +387,12 @@ const severityRank = (task) => ({ error: 0, warning: 1, info: 2 }[task.severity]
 
 function wireBrowse(ctx, { allEntries, state }) {
   const { mount, C, replaceRoute, navigate } = ctx;
-  const tree = mount.querySelector('.fpe-browse__tree');
+  const tree = mount.querySelector('#fpe-browse-tree-host');
   const crumbs = mount.querySelector('#fpe-landing-crumbs');
   const stats = mount.querySelector('#fpe-browse-stats');
   const surface = mount.querySelector('#fpe-browse-surface');
   const countNode = mount.querySelector('#fpe-browse-count');
   const pillBox = mount.querySelector('#fpe-browse-activefilters');
-  const levelsOf = (entry) => [entry.country, entry.region, entry.city];
   let renderedView = state.view;
 
   let mapSignature = '';
@@ -442,14 +441,7 @@ function wireBrowse(ctx, { allEntries, state }) {
     else if (surface) surface.innerHTML = browseSurfaceHTML(C, shown, state.view);
     // Counts ignore the tree selection itself, or one click would leave a single
     // branch showing «1» and turn navigation into a dead end.
-    if (tree) {
-      const term = clean(state.q);
-      const states = state.filters.state || [];
-      syncTreeCounts(tree, allEntries.filter((entry) => (
-        (!term || entry.search.includes(term))
-          && (!states.length || states.includes(entry.planState))
-      )), levelsOf, (entry) => entry.id);
-    }
+    if (tree) paintTree();
     // The view switch lives in the bar, which a surface swap does not rebuild, so
     // its pressed state has to be synchronised here. Without this the buttons
     // kept whatever the first render set and the switch looked stuck on «Karte»
@@ -469,9 +461,55 @@ function wireBrowse(ctx, { allEntries, state }) {
     });
   };
 
+  // Zaehler ignorieren die Baumauswahl selbst — ein Klick liesse sonst einen
+  // einzelnen Ast mit «1» stehen und machte aus der Navigation eine Sackgasse.
+  const inTree = () => {
+    const term = clean(state.q);
+    const states = state.filters.state || [];
+    return allEntries.filter((entry) => (
+      (!term || entry.search.includes(term))
+        && (!states.length || states.includes(entry.planState))
+    ));
+  };
+
+  let dropTree = null;
+  const paintTree = () => {
+    if (!tree) return;
+    if (dropTree) dropTree();
+    dropTree = C.sidebarTree(tree, {
+      id: 'fpe-browse-tree',
+      mode: 'select',
+      ariaLabel: 'Standorte',
+      // Symbole nur auf der obersten Stufe; darunter traegt der Schritt die
+      // Tiefe — auch fuer die Geschosse, die eine Stufe UNTER dem Objekt liegen.
+      levels: [{ icons: true }, { icons: false }, { icons: false }, { icons: false }, { icons: false }],
+      // Alle sieben Objekte liegen in der Schweiz, der Baum kaeme also als ein
+      // einziger zugeklappter Knoten daher und verbaerge das ganze Portfolio.
+      // Nur die AEUSSERSTE Stufe steht darum offen — und zwar als Voreinstellung,
+      // die dem ersten Klick weicht.
+      sections: [objectsToNodes(inTree(), BROWSE_TREE, { ...state.sel, obj: state.sel.id })
+        .map((node) => ({ ...node, defaultOpen: true }))],
+      onSelect: (node) => {
+        const sel = node.sel || {};
+        // Ein im Baum gewaehltes Geschoss oeffnet das Geschossverzeichnis
+        // seines Gebaeudes mit dieser Zeile markiert. Einen Plan zu FINDEN und
+        // ihn zu OEFFNEN sind zwei Entscheidungen; direkt in die Werkbank zu
+        // fallen naehme die zweite ungefragt vorweg.
+        if (sel.sub && sel.obj) {
+          navigate(objectRoute(sel.obj, { tab: 'plans', mark: sel.sub }));
+          return;
+        }
+        const { obj, sub, ...rest } = sel;
+        state.sel = obj ? { id: obj } : place(rest);
+        replaceRoute(routeFor(state));
+        render();
+      },
+    });
+  };
+  ctx.onUnmount(() => { if (dropTree) dropTree(); });
+
   const clearSelection = () => {
     state.sel = {};
-    markTree(tree, null);
     replaceRoute(routeFor(state));
     render();
   };
@@ -490,39 +528,6 @@ function wireBrowse(ctx, { allEntries, state }) {
   });
   ctx.onUnmount(cat.destroy);
 
-  if (tree) {
-    wireTree(tree, {
-      attrs: TREE_ATTRS,
-      onSelect: (selection) => {
-        // A floor picked in the tree opens its building's floor register with
-        // that row marked. Locating a plan and opening it are two decisions, and
-        // dropping straight into the workbench took the second one uninvited.
-        if (selection.sub && selection.id) {
-          navigate(objectRoute(selection.id, { tab: 'plans', mark: selection.sub }));
-          return;
-        }
-        state.sel = selection.id ? { id: selection.id } : place(selection);
-        replaceRoute(routeFor(state));
-        render();
-      },
-    });
-    // A place restores as well as an object: arriving through a breadcrumb of
-    // the building detail, the tree has to show which branch is being looked at,
-    // or the pill above claims a scope nothing on screen confirms.
-    const restored = Object.keys(state.sel).length
-      ? restoreTreeSelection(tree, state.sel, { attrs: TREE_ATTRS })
-      : null;
-    if (restored) markTree(tree, restored);
-    else {
-      // Without a restored path the tree arrives as a single closed «Schweiz»
-      // node, which hides the whole portfolio. Only the outermost level opens.
-      tree.querySelectorAll(':scope > .pf-tree > .pf-tree__item > .pf-tree__node').forEach((node) => {
-        node.setAttribute('aria-expanded', 'true');
-        const children = node.nextElementSibling;
-        if (children) children.hidden = false;
-      });
-    }
-  }
 
   // Cards and rows are plain links into the object's detail view. They used to
   // also select the object on the way out, so one click rewrote the URL and

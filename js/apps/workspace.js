@@ -4,7 +4,7 @@
 
 import { initEstateMap } from '../map/buildings-map.js';
 import { createMapSlot } from '../map/map-slot.js';
-import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../ui/spatial-tree.js';
+import { objectsToNodes } from '../ui/spatial-tree.js';
 import { floorplanSvg, floorplanLegend, wireFloorplan, COLOR_MODES } from '../ui/floorplan.js';
 import { heroMosaic, galleryItemsFrom, wireHeroMosaic } from '../ui/hero-mosaic.js';
 import { openGallery, restoreGalleryFromQuery } from '../ui/gallery.js';
@@ -178,7 +178,7 @@ function catalogue(ctx, objects) {
   const inFilters = (item) => !state.filters.plan.length || state.filters.plan.includes(item.planAvailability);
   const filtered = () => objects.filter((item) => inSelection(item) && inSearch(item) && inFilters(item));
 
-  const treeMarkup = treeHTML(C, objects, {
+  const TREE = {
     levels: [
       { key: 'country', icon: 'Globe', label: (value) => countryName(value) },
       { key: 'region', icon: 'Map' },
@@ -191,7 +191,7 @@ function catalogue(ctx, objects) {
       objId: (item) => item.id,
       sort: (a, b) => a.name.localeCompare(b.name, 'de'),
     },
-  });
+  };
 
   const card = (item) => {
     const meta = availabilityMeta(item.planAvailability);
@@ -241,12 +241,12 @@ function catalogue(ctx, objects) {
       { type: 'FeatureCollection', features: [] }, state.sel.id || null));
   }
 
-  const syncTree = () => syncTreeCounts(mount.querySelector('.pf-tree'),
-    objects.filter((item) => inSearch(item) && inFilters(item)),
-    (item) => [item.country, item.region, item.city], (item) => item.id);
+  // Was der Baum zeigt: was Suche und Filter uebrig lassen — aber OHNE die
+  // Auswahl selbst, sonst schrumpfte er auf das gerade Angeklickte zusammen.
+  const inTree = () => objects.filter((item) => inSearch(item) && inFilters(item));
 
   function renderMain() {
-    syncTree();
+    paintTree();
     history.replaceState(history.state, '', C.catalogueHash(BASE, {
       q: state.q,
       page: state.page,
@@ -341,16 +341,38 @@ function catalogue(ctx, objects) {
              row above, not through a second control in the head (as in
              portfolio.js). -->
         <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Standorte</h2></div>
-        ${treeMarkup}
+        <div id="workspace-tree"></div>
       </aside>
       <div class="pf-main" id="workspace-main"></div>
     </div>
   </div>`;
 
-  const sidebar = mount.querySelector('.workspace-sidebar');
   const searchInput = mount.querySelector('#workspace-q');
+
+  const treeHost = mount.querySelector('#workspace-tree');
+  let dropTree = null;
+  const paintTree = () => {
+    if (dropTree) dropTree();
+    dropTree = C.sidebarTree(treeHost, {
+      id: 'workspace-tree',
+      mode: 'select',
+      ariaLabel: 'Standorte',
+      // Symbole nur auf der obersten Stufe: die Symbolspalte IST die
+      // Einrueckung der zweiten, ab da traegt der Schritt die Tiefe.
+      levels: [{ icons: true }, { icons: false }, { icons: false }],
+      // Diese App nennt das gewaehlte Objekt `id`, der Adapter `obj`.
+      sections: [objectsToNodes(inTree(), TREE, { ...state.sel, obj: state.sel.id })],
+      onSelect: (node) => {
+        const { obj, ...rest } = node.sel || {};
+        state.sel = obj ? { ...rest, id: obj } : rest;
+        state.page = 1;
+        renderMain();
+      },
+    });
+  };
+  onUnmount(() => { if (dropTree) dropTree(); });
+
   const clearSelection = () => {
-    markTree(sidebar, null);
     state.sel = {};
     state.page = 1;
     renderMain();
@@ -365,11 +387,6 @@ function catalogue(ctx, objects) {
   });
   onUnmount(catalogueWire.destroy);
 
-  wireTree(sidebar, {
-    attrs: ['country', 'region', 'city'],
-    onSelect: (selection) => { state.sel = selection; state.page = 1; renderMain(); },
-  });
-  restoreTreeSelection(sidebar, state.sel, { attrs: ['country', 'region', 'city'] });
   onUnmount(C.wireTableRows(mount.querySelector('#workspace-main')));
   mount.querySelector('#workspace-main').addEventListener('click', (event) => {
     if (!event.target.closest('#workspace-empty-reset')) return;

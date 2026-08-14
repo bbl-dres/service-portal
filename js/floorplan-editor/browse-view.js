@@ -15,7 +15,7 @@
 // exactly as the Liegenschaften inventory uses them. That replaces the bespoke
 // search field, hit count and view switch this view used to carry.
 
-import { treeHTML } from '../ui/spatial-tree.js';
+
 import { floorplanEditor } from '../links.js';
 import { countryName } from '../domain.js';
 import { address, area, clean, number } from './shared.js';
@@ -273,28 +273,32 @@ export function browseSurfaceHTML(C, entries, mode) {
   </div>`;
 }
 
+// Die Beschreibung der Baumstufen. Sie steht hier, weil sie zu dieser Ansicht
+// gehoert, wird aber in wireBrowse gebraucht: gezeichnet wird der Baum ueber
+// C.sidebarTree, und zwar bei jeder Aenderung neu — er zeigt Auswahl und
+// Zaehler, und beide bewegen sich.
+export const BROWSE_TREE = {
+  levels: [
+    { key: 'country', icon: 'Globe', label: (value) => countryName(value) },
+    { key: 'region', icon: 'Map', label: (value) => value || 'Ohne Kanton' },
+    { key: 'city', icon: 'MapMarker', label: (value) => value || 'Ohne Ort' },
+  ],
+  leaf: {
+    icon: () => 'Building',
+    label: (entry) => entry.name,
+    objId: (entry) => entry.id,
+    sort: (left, right) => left.name.localeCompare(right.name, 'de'),
+    // The new level: the floors of a building, which is what the visitor is
+    // actually looking for once the right object is on screen.
+    children: (entry) => entry.floors.map((floor) => ({
+      id: floor.floorId, label: floor.label, icon: 'Stack',
+    })),
+  },
+};
+
 export function renderBrowseView(C, {
   entries, allEntries, mode, sort, query, filters, scopeLabel,
 }) {
-  const tree = treeHTML(C, allEntries, {
-    levels: [
-      { key: 'country', icon: 'Globe', label: (value) => countryName(value) },
-      { key: 'region', icon: 'Map', label: (value) => value || 'Ohne Kanton' },
-      { key: 'city', icon: 'MapMarker', label: (value) => value || 'Ohne Ort' },
-    ],
-    leaf: {
-      icon: () => 'Building',
-      label: (entry) => entry.name,
-      objId: (entry) => entry.id,
-      sort: (left, right) => left.name.localeCompare(right.name, 'de'),
-      // The new level: the floors of a building, which is what the visitor is
-      // actually looking for once the right object is on screen.
-      children: (entry) => entry.floors.map((floor) => ({
-        id: floor.floorId, label: floor.label, icon: 'Stack',
-      })),
-    },
-  });
-
   const stateOptions = ['not_synced', 'planned', 'accepted']
     .map((value) => ({ value, label: OBJECT_STATE[value].label }));
 
@@ -326,7 +330,10 @@ export function renderBrowseView(C, {
               removes the selection, and a second affordance does not fit a 15 rem
               column without wrapping into three lines. */''}
         <p class="fpe-overline" id="fpe-browse-tree-head">Standorte</p>
-        ${tree}
+        ${/* Eigener Behaelter: das Seitenbaum-Bauteil besitzt den Inhalt seines
+              Wirts und schreibt ihn bei jedem Zeichnen neu — die Ueberschrift
+              darueber wuerde es sonst mitnehmen. */''}
+        <div id="fpe-browse-tree-host"></div>
       </aside>
       <div class="fpe-browse__surface" id="fpe-browse-surface" data-scroll-region>${browseSurfaceHTML(C, entries, mode)}</div>
       <aside class="fpe-browse__stats" id="fpe-browse-stats" aria-label="Kennzahlen der Auswahl" aria-live="polite">

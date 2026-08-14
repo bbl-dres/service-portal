@@ -27,10 +27,10 @@ const check = (condition, label, detail = '') => {
 // `component: true` — laeuft auf C.sidebarTree (js/ui/components/sidebar-tree.js)
 const SURFACES = [
   ['Liegenschaften Inventar', '/app/portfolio', true, true],
-  ['Bauprojekte', '/app/projects', true],
-  ['Mietendenportal', '/app/tenancies', true],
-  ['Workspace Management', '/app/workspace', true],
-  ['Plan-Editor', '/app/floorplan-editor', true],
+  ['Bauprojekte', '/app/projects', true, true],
+  ['Mietendenportal', '/app/tenancies', true, true],
+  ['Workspace Management', '/app/workspace', true, true],
+  ['Plan-Editor', '/app/floorplan-editor', true, true],
   // Depth is what this probe measures, and the catalogue root is deliberately
   // collapsed — so aim at a scope that actually has three levels on screen.
   ['Geschäftsarchitektur', '/app/metadata-catalog?kind=objekt&leaf=Bauwerk%20und%20Liegenschaft', false, true],

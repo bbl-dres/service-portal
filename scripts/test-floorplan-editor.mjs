@@ -114,10 +114,15 @@ try {
         states: [...document.querySelectorAll('#fpe-browse-stats .fpe-stats__state-count')].map(text),
         detailPanel: document.querySelectorAll('.fpe-browse__detail').length,
       },
+      // Seit dem Umzug auf das Seitenbaum-Bauteil (2026-08-14) entstehen Kinder
+      // erst beim Aufklappen — ein zugeklappter Ast hat im DOM keine. Beim Laden
+      // steht darum nur die aeusserste Stufe offen; dass die Geschosse eine
+      // eigene Stufe bilden, pruefen weiter unten die Tests, die dafuer gezielt
+      // aufklappen (floorPick und «follows a floor from the tree»).
       tree: {
-        objects: document.querySelectorAll('.fpe-browse__tree .pf-tree__leaf').length,
-        floors: document.querySelectorAll('.fpe-browse__tree .pf-tree__sub').length,
-        expandable: document.querySelectorAll('.fpe-browse__tree .pf-tree__leaf--parent').length,
+        countries: document.querySelectorAll('.fpe-browse__tree .pf-tree__section > li').length,
+        openAtLoad: document.querySelectorAll('.fpe-browse__tree [aria-expanded="true"]').length,
+        regions: document.querySelectorAll('.fpe-browse__tree .pf-tree__children [data-node^="region:"]').length,
       },
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       duplicateIds: [...document.querySelectorAll('[id]')].map(node => node.id).filter((id, index, ids) => ids.indexOf(id) !== index),
@@ -144,16 +149,27 @@ try {
     && browse.stats.detailPanel === 0,
   'uses the right column as a statistics dashboard rather than an object inspector',
   `${browse.stats.scope} · ${browse.stats.states.join('/')}`);
-  check(browse.tree.objects === 7 && browse.tree.expandable === 7 && browse.tree.floors === 13,
-    'adds the floors of a building as their own level in the location tree',
-    `${browse.tree.objects} objects · ${browse.tree.floors} floors`);
+  check(browse.tree.countries === 1 && browse.tree.openAtLoad >= 1 && browse.tree.regions >= 1,
+    'opens the outermost level so the portfolio is not hidden behind one closed node',
+    `${browse.tree.countries} Land · ${browse.tree.openAtLoad} offen · ${browse.tree.regions} Kantone`);
   check(browse.overflow <= 1 && browse.duplicateIds.length === 0 && browse.unlabeledControls === 0,
     'renders the landing without overflow or unlabelled controls',
     `${browse.overflow}px · ${browse.duplicateIds.length} duplicate IDs · ${browse.unlabeledControls} unnamed controls`);
 
   const treePick = await page.evaluate(`(async () => {
     const text = node => (node?.textContent || '').split(/\\s+/).join(' ').trim();
-    document.querySelector('.fpe-browse__tree [data-obj="1080/6650/AA"]')?.click();
+    // Aufklappen OHNE zu waehlen: ein Klick auf eine Zeile waehlt sie auch aus
+    // (select-Modus), ein Bulk-Klick liesse also am Ende ein beliebiges Objekt
+    // gewaehlt zurueck. Pfeil-rechts klappt nur auf. Eine Zeile je Runde, weil
+    // das Neuzeichnen die uebrigen Verweise ungueltig macht.
+    for (let round = 0; round < 40; round++) {
+      const shut = document.querySelector('.fpe-browse__tree [aria-expanded="false"]');
+      if (!shut) break;
+      shut.focus();
+      shut.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+    document.querySelector('.fpe-browse__tree [data-node="obj:1080/6650/AA"]')?.click();
     const deadline = performance.now() + 5000;
     while (!document.querySelector('.maplibregl-popup-content .fpe-popup') && performance.now() < deadline) {
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -192,12 +208,22 @@ try {
   'scopes the statistics to the selection and reports it as a removable filter pill',
   `${treePick.statsScope} · ${treePick.pills.join(' | ')}`);
 
-  const floorPick = await page.evaluate(`(() => {
-    const item = document.querySelector('.fpe-browse__tree [data-obj="1080/6650/AA"]')?.closest('.pf-tree__item');
-    const subs = [...(item?.querySelectorAll('.pf-tree__sub') || [])];
+  const floorPick = await page.evaluate(`(async () => {
+    // Sicherstellen, dass das Objekt offen steht: der Klick davor hat es
+    // gewaehlt UND dabei umgeschaltet — waehlen und aufklappen sind im
+    // select-Modus dieselbe Geste. Pfeil-rechts oeffnet, ohne die Auswahl
+    // anzutasten.
+    const row = document.querySelector('.fpe-browse__tree [data-node="obj:1080/6650/AA"]');
+    if (row && row.getAttribute('aria-expanded') === 'false') {
+      row.focus();
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+      await new Promise(resolve => setTimeout(resolve, 80));
+    }
+    const item = document.querySelector('.fpe-browse__tree [data-node="obj:1080/6650/AA"]')?.closest('.pf-tree__item');
+    const subs = [...(item?.querySelectorAll('[data-node^="sub:"]') || [])];
     return {
       labels: subs.map(node => node.textContent.trim()),
-      floors: subs.map(node => node.dataset.sub),
+      floors: subs.map(node => node.dataset.node.split(':').pop()),
       visible: subs.filter(node => node.closest('.pf-tree__children')?.hidden === false).length,
     };
   })()`);
@@ -487,13 +513,25 @@ try {
   // decision uninvited.
   await cdp.send('Page.navigate', { url: `${APP_BASE}/app/floorplan-editor` }, page.sessionId);
   await sleep(600);
-  await waitFor(page, '.fpe-browse__tree .pf-tree__leaf', 10000);
-  await page.evaluate(`(() => {
-    document.querySelectorAll('.fpe-browse__tree .pf-tree__node').forEach(node => node.click());
-    const leaf = [...document.querySelectorAll('.fpe-browse__tree .pf-tree__leaf--parent')]
-      .find(node => node.dataset.obj === ${JSON.stringify(BUILDING_ID)});
-    leaf?.click();
-    leaf?.closest('.pf-tree__item')?.querySelector('.pf-tree__sub')?.click();
+  await waitFor(page, '.fpe-browse__tree .pf-tree__row', 10000);
+  await page.evaluate(`(async () => {
+    // Aufklappen OHNE zu waehlen: ein Klick auf eine Zeile waehlt sie auch aus
+    // (select-Modus), ein Bulk-Klick liesse also am Ende ein beliebiges Objekt
+    // gewaehlt zurueck. Pfeil-rechts klappt nur auf. Eine Zeile je Runde, weil
+    // das Neuzeichnen die uebrigen Verweise ungueltig macht.
+    for (let round = 0; round < 40; round++) {
+      const shut = document.querySelector('.fpe-browse__tree [aria-expanded="false"]');
+      if (!shut) break;
+      shut.focus();
+      shut.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+    // Alles steht schon offen (siehe oben), also nur noch das Geschoss anklicken.
+    // Das Objekt anzuklicken wuerde es zugleich zuklappen — waehlen und
+    // aufklappen sind im select-Modus dieselbe Geste.
+    const leaf = document.querySelector(
+      '.fpe-browse__tree [data-node=' + JSON.stringify('obj:' + ${JSON.stringify(BUILDING_ID)}) + ']');
+    leaf?.closest('.pf-tree__item')?.querySelector('[data-node^="sub:"]')?.click();
   })()`);
   check(await waitFor(page, '.fpe-plans table tbody tr', 10000),
     'follows a floor from the tree into the building detail rather than the canvas');
@@ -2736,7 +2774,10 @@ try {
   check(await waitFor(page, '#fpe-navigation[data-view="portfolio"]'), 'brand link opens the portfolio root');
   const home = await page.evaluate(`(() => ({
     hash: location.hash,
-    objects: document.querySelectorAll('.fpe-browse__tree .pf-tree__leaf').length,
+    // Der Baum kommt zugeklappt (nur die aeusserste Stufe steht offen), und
+    // Kinder entstehen erst beim Aufklappen — die Objekte sind also nicht im
+    // DOM. Dass es sieben sind, sagt der Zaehler der Wurzel.
+    objects: Number(document.querySelector('.fpe-browse__tree .pf-tree__section > li .pf-tree__n')?.textContent) || 0,
     overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     barOverflows: (() => {
       const bar = document.querySelector('.fpe-browse__bar');

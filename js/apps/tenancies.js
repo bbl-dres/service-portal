@@ -3,7 +3,7 @@
 import { floorplanSvg, floorplanLegend, wireFloorplan, COLOR_MODES } from '../ui/floorplan.js';
 import { initEstateMap } from '../map/buildings-map.js';
 import { createMapSlot } from '../map/map-slot.js';
-import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../ui/spatial-tree.js';
+import { objectsToNodes } from '../ui/spatial-tree.js';
 import { heroMosaic, galleryItemsFrom, wireHeroMosaic } from '../ui/hero-mosaic.js';
 import { openGallery, restoreGalleryFromQuery } from '../ui/gallery.js';
 import { formatNumber, formatCurrency, formatArea, formatDate } from '../format.js';
@@ -113,7 +113,7 @@ function overview(ctx) {
   };
   const filtered = () => all.filter((t) => inSel(t) && inFilters(t) && inSearch(t));
 
-  const treeMarkup = treeHTML(C, all, {
+  const TREE = {
     levels: [
       { key: 'country', icon: 'Globe', label: (k) => countryName(k) },
       { key: 'canton', attr: 'region', icon: 'Map' },
@@ -121,7 +121,7 @@ function overview(ctx) {
     ],
     leaf: { icon: () => 'Home', idText: (t) => t.administrativeUnit, label: (t) => t.buildingName,
       objId: (t) => t.tenancyId, sort: (a, b) => a.buildingName.localeCompare(b.buildingName, 'de') },
-  });
+  };
 
   const card = (t) => C.card({
     title: t.buildingName,
@@ -157,12 +157,12 @@ function overview(ctx) {
     await mtMap.mount(el, (node) => initEstateMap(node, points, { type: 'FeatureCollection', features: [] }, state.sel.id || null));
   }
 
-  const syncTree = () => syncTreeCounts(mount.querySelector(".pf-tree"),
-    all.filter((t) => inSearch(t) && inFilters(t)),
-    (t) => [t.country, t.canton, t.city], (t) => t.tenancyId);
+  // Was der Baum zeigt: was Suche und Filter uebrig lassen — aber OHNE die
+  // Auswahl selbst, sonst schrumpfte er auf das gerade Angeklickte zusammen.
+  const inTree = () => all.filter((t) => inSearch(t) && inFilters(t));
 
   function renderMain() {
-    syncTree();
+    paintTree();
 
     history.replaceState(history.state, '', C.catalogueHash('#/app/tenancies', {
       q: state.q, page: state.page, view: state.view,
@@ -260,17 +260,38 @@ function overview(ctx) {
         <div class="pf-sidebar__head">
           <h2 class="pf-sidebar__title">Standorte</h2>
         </div>
-        ${treeMarkup}
+        <div id="mt-tree"></div>
       </aside>
       <div class="pf-main" id="mt-main"></div>
     </div>
   </div>`;
 
-  const sidebar = mount.querySelector('.pf-sidebar');
   const qEl = mount.querySelector('#mt-q');
 
+  const treeHost = mount.querySelector('#mt-tree');
+  let dropTree = null;
+  const paintTree = () => {
+    if (dropTree) dropTree();
+    dropTree = C.sidebarTree(treeHost, {
+      id: 'mt-tree',
+      mode: 'select',
+      ariaLabel: 'Struktur der Mietverhaeltnisse',
+      // Symbole nur auf der obersten Stufe: die Symbolspalte IST die
+      // Einrueckung der zweiten, ab da traegt der Schritt die Tiefe.
+      levels: [{ icons: true }, { icons: false }, { icons: false }],
+      // Diese App nennt das gewaehlte Mietverhaeltnis `id`, der Adapter `obj`.
+      sections: [objectsToNodes(inTree(), TREE, { ...state.sel, obj: state.sel.id })],
+      onSelect: (node) => {
+        const { obj, ...rest } = node.sel || {};
+        state.sel = obj ? { ...rest, id: obj } : rest;
+        state.page = 1;
+        renderMain();
+      },
+    });
+  };
+  onUnmount(() => { if (dropTree) dropTree(); });
+
   const clearSelection = () => {
-    markTree(sidebar, null);
     state.sel = {};
     state.page = 1;
     renderMain();
@@ -285,13 +306,6 @@ function overview(ctx) {
     onReset: clearSelection,
   });
   onUnmount(cat.destroy);
-
-  wireTree(sidebar, {
-    attrs: ['country', 'region', 'city'],
-    onSelect: (sel) => { state.sel = sel; state.page = 1; renderMain(); },
-  });
-
-  restoreTreeSelection(sidebar, state.sel, { attrs: ['country', 'region', 'city'] });
 
   C.wireTableRows(mount.querySelector('#mt-main'));
 
