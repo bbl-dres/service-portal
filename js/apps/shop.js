@@ -165,7 +165,18 @@ function catalogue(ctx) {
   // As a row it was a third way to do what the active-filter pill and the panel
   // reset already do, and the only one that looked like a category while being
   // the absence of one.
-  const categoryNavigation = categoryTree(C, categories.filter((c) => c.id !== 'alle'), categoryOptions);
+  const treeConfig = () => ({
+    id: 'shop-tree',
+    title: 'Kategorien',
+    mode: 'nav',
+    // Vier Stufen tief, keine mit Symbol: die Kategorien unterscheiden sich
+    // durch ihre Namen, und ein Symbol je Zweig waere hier erfunden.
+    levels: [{ icons: false }, { icons: false }, { icons: false }, { icons: false }],
+    // EIN Abschnitt, also keine Trennlinie. Vorher trug jede Zeile eine — bei
+    // sechzehn Kategorien fuenfzehn Striche, die alle dasselbe sagten: «hier
+    // hoert eine Zeile auf». Das sieht man auch ohne Strich.
+    sections: [categoryNodes(C, categories.filter((c) => c.id !== 'alle'), categoryOptions)],
+  });
 
   const card = (p) => productCard(C, p);
   const listView = (rows) => C.table({
@@ -211,12 +222,7 @@ function catalogue(ctx) {
     ${C.activeFilters({ filters: active, resetHref: '#/app/shop' })}
 
     <div class="pf-layout shop-layout">
-      <aside class="pf-sidebar" aria-label="Produktkategorien">
-        <div class="pf-sidebar__head">
-          <h2 class="pf-sidebar__title">Kategorien</h2>
-        </div>
-        ${categoryNavigation}
-      </aside>
+      <aside class="pf-sidebar" id="shop-tree" aria-label="Produktkategorien"></aside>
       <main class="pf-main">
         ${C.catalogueResults({
           resetHref: '#/app/shop',
@@ -241,6 +247,7 @@ function catalogue(ctx) {
   // router reuses for the whole session, so a discarded disposer would outlive
   // the shop entirely (wireTableRows now also refuses to stack, see catalogue.js).
   if (view === 'list') ctx.onUnmount(C.wireTableRows(mount));
+  ctx.onUnmount(C.sidebarTree(mount.querySelector('#shop-tree'), treeConfig()));
   wireAddButtons(ctx);
 }
 
@@ -279,42 +286,31 @@ function productCard(C, p) {
 // it — and the state is shareable and survives reload like every other filter in
 // this app. The chevron is therefore an indicator, not a control, and is hidden
 // from assistive technology; `aria-expanded` on the link carries the state.
-function categoryTree(C, categories, opts, depth = 0) {
-  const rows = (categories || []).map((cat) => {
-    const hasChildren = Array.isArray(cat.children) && cat.children.length;
+// Die Ausrichtung der Zeilen ist nicht mehr unsere Sorge: das Bauteil legt das
+// Chevron neben die Spalte statt hinein, also faengt jede Beschriftung ihrer
+// Stufe am selben x an — ob die Zeile Kinder hat oder nicht. Der leere
+// Chevron-Platzhalter, den diese Datei dafuer hielt, ist damit weg.
+function categoryNodes(C, categories, opts) {
+  return (categories || []).map((cat) => {
+    const kids = Array.isArray(cat.children) ? cat.children : [];
     const active = opts.active === cat.id;
-    const path = hasChildren && flattenCategories(cat.children || []).some((child) => child.id === opts.active);
-    const open = hasChildren && (active || path);
-    // A childless row keeps an EMPTY chevron slot so every label in the column
-    // starts at the same x; without it the leaves sat a glyph-width to the left
-    // of their siblings.
-    const chevron = hasChildren
-      ? C.icon('ChevronRight', 'pf-tree__chev')
-      : '<span class="pf-tree__chev pf-tree__chev--empty" aria-hidden="true"></span>';
-    const body = `${chevron}<span class="pf-tree__label">${C.escape(cat.label)}</span><span class="pf-tree__n">${opts.count(cat.id)}</span>`;
-    const row = `<li class="pf-tree__item">
-      <a class="pf-tree__leaf plain-link interactive-control${active ? ' is-active' : ''}${path ? ' is-path' : ''}" href="${opts.href(cat.id)}"${active ? ' aria-current="true"' : ''}${hasChildren ? ` aria-expanded="${open}"` : ''}>
-        ${body}
-      </a>
-      ${open ? categoryTree(C, cat.children, opts, depth + 1) : ''}
-    </li>`;
-    return row;
-  }).join('');
-  // Only the ROOT list is a `.pf-tree`. A nested list is `.pf-tree__children`
-  // and nothing else, because `.pf-tree > .pf-tree__item:first-child` clears the
-  // divider above the first row — a rule meant to fire ONCE, at the top of the
-  // column, so the head is not underlined twice (explorer.css:62-69). Marking
-  // every sub-list as a tree fired it per group instead, and the line above the
-  // first child of each category went missing (user finding, 2026-08-12).
-  // `--plain` also stays on the root alone: its rules are descendant selectors.
-  // NOT `pf-tree--plain`: that variant exists to close the gap a missing icon
-  // column leaves (explorer.css), and this tree now has a column — the chevron,
-  // real or an empty slot, on every row. Keeping both indented the rows twice.
-  // Without it the categories align exactly with the structure trees in the
-  // property inventory, which is the same component doing the same job.
-  return depth
-    ? `<ul class="pf-tree__children">${rows}</ul>`
-    : `<ul class="pf-tree">${rows}</ul>`;
+    const path = kids.length > 0 && flattenCategories(kids).some((child) => child.id === opts.active);
+    return {
+      id: `cat:${cat.id}`,
+      label: cat.label,
+      count: opts.count(cat.id),
+      countUnit: 'Produkte',
+      href: opts.href(cat.id),
+      state: active ? 'active' : path ? 'path' : '',
+      // Eine Kategorie zu waehlen IST, sie aufzuklappen — der Shop hat dafuer
+      // bewusst keinen zweiten Knopf, und der Zustand steht in der Adresse
+      // statt im Gedaechtnis des Bauteils. Deshalb `open` (besteht darauf) und
+      // keine geteilte Zeile: das Chevron zeigt an, es bedient nicht.
+      open: active || path,
+      hasChildren: kids.length > 0,
+      children: () => categoryNodes(C, kids, opts),
+    };
+  });
 }
 
 function detail(ctx, id) {

@@ -116,7 +116,9 @@ try {
         && sidebar.getBoundingClientRect().bottom <= main.getBoundingClientRect().top + 1),
       // …and it exists exactly once: two copies meant two aria-current rows.
       trees: document.querySelectorAll('.shop-layout .pf-tree, #shop-filters .pf-tree').length,
-      categoryLinks: sidebar?.querySelectorAll('.pf-tree__leaf').length || 0,
+      // Seit dem Umzug auf das Seitenbaum-Bauteil (2026-08-14) heisst die Zeile
+      // .pf-tree__row; ein Kategorieverweis ist eine mit href.
+      categoryLinks: sidebar?.querySelectorAll('.pf-tree__row[href]').length || 0,
       initiallyHidden,
       expanded: toggle?.getAttribute('aria-expanded'),
       panelVisible: panel ? !panel.hidden : false,
