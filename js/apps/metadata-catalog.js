@@ -51,6 +51,34 @@ const truncateText = (s, n = 110) => {
   return cut.slice(0, Math.max(cut.lastIndexOf(' '), n - 20)).trimEnd() + '…';
 };
 
+// Bei einer Anfrage zeigt die Zelle den AUSSCHNITT um den Treffer statt des
+// Anfangs — sonst steht eine Zeile ohne sichtbaren Grund in der Liste.
+// Gemessen an «Gebäude»: von neun Treffern trug genau EINER das Wort im Namen,
+// sieben in der Beschreibung, und bei «Wirtschaftseinheit» lag die Stelle
+// hinter dem Schnitt bei 58 Zeichen — die Zelle kuerzte genau das weg, was den
+// Treffer begruendete.
+//
+// Gibt HTML zurueck (wegen <mark>), maskiert die Textteile also selbst.
+const snippet = (text, q, n) => {
+  const t = String(text || '').trim();
+  const i = q ? t.toLowerCase().indexOf(q.toLowerCase()) : -1;
+  // Kein Treffer IN diesem Feld: der Grund steht anderswo (Name, Gruppe,
+  // Verantwortung), und dort ist er sichtbar. Dann der gewohnte Anfang.
+  if (i < 0) return esc(truncateText(t, n));
+  // Fenster um den Treffer, vorne an einer Wortgrenze abgesetzt.
+  const want = Math.max(0, i - Math.floor((n - q.length) / 2));
+  const space = want === 0 ? -1 : t.indexOf(' ', want);
+  const start = want === 0 ? 0 : (space >= 0 && space < i ? space + 1 : want);
+  const cut = t.slice(start, start + n);
+  const j = cut.toLowerCase().indexOf(q.toLowerCase());
+  if (j < 0) return esc(truncateText(t, n));
+  return (start > 0 ? '…' : '')
+    + esc(cut.slice(0, j))
+    + `<mark>${esc(cut.slice(j, j + q.length))}</mark>`
+    + esc(cut.slice(j + q.length))
+    + (start + n < t.length ? '…' : '');
+};
+
 // Shared lookups.
 const refList = (core, key) => core.ref()[key] || [];
 const domainOf = (core, key) => core.dataDomains().find((d) => d.key === key) || {};
@@ -403,7 +431,11 @@ export default async function render(ctx) {
           Zeile fuer sich. Als Ansichtswechsel faellt der Zwang weg, und es ist
           ohnehin die ehrlichere Beschreibung: drei Sichten auf denselben
           Umfang, was der Ansichtswechsel im ganzen Portal bedeutet. */''}
-    ${s.lvl === 0 ? '' : C.catalogueBar({
+    ${/* Auch auf der Einstiegsseite: die Suche gilt dort fuer den ganzen Katalog
+          — genau der Ort, an dem man sie am ehesten braucht —, und eine Leiste,
+          die auf einer Seite fehlt und auf der naechsten erscheint, laesst die
+          Seite springen. */''}
+    ${C.catalogueBar({
     formId: 'mc-search', inputId: 'mc-q',
     searchLabel: searchScope(s).label,
     placeholder: `${searchScope(s).label}${searchScope(s).dead ? '' : '…'}`,
@@ -414,7 +446,9 @@ export default async function render(ctx) {
     showCount: false,
     extra: `<span id="mc-tools">${toolsHtml(ctx, s)}</span>`,
     view: s.tab,
-    views: s.avail.map((k) => [k, TAB_LABEL[k], VIEW_ICON[k]]),
+    // Auf der Wurzel gibt es nichts zu wechseln: sie ist der Weg hinein, kein
+    // Umfang. `views` entfaellt dort, die Suche bleibt.
+    views: s.avail.length ? s.avail.map((k) => [k, TAB_LABEL[k], VIEW_ICON[k]]) : null,
   })}
     <div id="mc-activefilters">${s.lvl === 0 ? '' : activeFiltersHtml(ctx, s)}</div>
     <div class="pf-layout">
@@ -832,7 +866,9 @@ function treeConfig(ctx, s) {
     sections: [
       [{
         id: 'root',
-        label: 'Katalog',
+        // Nicht noch einmal «Katalog»: so heisst die Spalte schon
+        // (.pf-sidebar__title). Die Zeile ist der Weg zur Einstiegsseite.
+        label: 'Übersicht',
         count: BRANCHES.reduce((a, k) => a + rowsOf(k).length, 0),
         countUnit: 'Einträge',
         icon: 'tree/library',
@@ -1097,7 +1133,7 @@ function mountPane(ctx, s, unit) {
           render: (r) => `<a href="${esc(r.href)}">${esc(r.name)}</a>` },
         { key: 'group', label: 'Gruppe', width: '12rem', render: (r) => esc(r.group) },
         { key: 'def', label: 'Beschreibung',
-          render: (r) => (r.def ? esc(truncateText(r.def, 58)) : '<span class="muted">—</span>') },
+          render: (r) => (r.def ? snippet(r.def, s.q, 58) : '<span class="muted">—</span>') },
         { key: 'n', label: 'Bestandteile', width: '9rem', render: (r) => String(r.n) },
       ],
     }));
@@ -1162,7 +1198,7 @@ function mountPane(ctx, s, unit) {
       { key: 'steward', label: 'Verantwortung', width: '11rem',
         render: (r) => (r.steward ? esc(truncateText(r.steward, 34)) : TODO) },
       { key: 'def', label: 'Beschreibung',
-        render: (r) => (r.def ? esc(truncateText(r.def, 95)) : '<span class="muted">—</span>') },
+        render: (r) => (r.def ? snippet(r.def, s.q, 95) : '<span class="muted">—</span>') },
       { key: 'n', label: unit.kid, width: '6rem', render: (r) => String(r.n) },
       { key: 'status', label: 'Status', width: '8rem',
         render: (r) => (r.status ? esc(r.status) : TODO) },

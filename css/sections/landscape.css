@@ -101,6 +101,16 @@
     border-color:#999 !important; }
 }
 
+/* Die Fundstelle in der Beschreibung. Das Standardgelb der Browser gehoert
+   keiner Palette an und schlaegt in einer Tabelle voller ruhiger Zeilen ein Loch;
+   ein leicht getoenter Grund in der Sekundaerfarbe reicht, um die Stelle zu
+   finden, ohne die Zeile zu uebertoenen. Fettung traegt die Unterscheidung
+   mit, damit sie nicht allein auf Farbe beruht. */
+.mc-pane mark {
+  background:var(--color-secondary-100); color:inherit;
+  font-weight:var(--fw-bold); border-radius:var(--radius-xs); padding:0 .1em;
+}
+
 /* --- The catalogue's own density --------------------------------------------
    A reference tool is read by scanning, and its tables already say so
    (.table--compact). The panes around them were still at page scale, which read
