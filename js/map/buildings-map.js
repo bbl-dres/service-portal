@@ -183,6 +183,21 @@ export async function initEstateMap(container, points, parcels, focus, options =
       'CooperativeGesturesHandler.MobileHelpText': 'Mit zwei Fingern verschieben',
     },
     ...camera });
+  // Abgebrochene Anfragen sind kein Fehler. Wird die Karte waehrend des Ladens
+  // abgebaut — jeder Routenwechsel tut das —, brechen ihre laufenden Kachel- und
+  // Stilanfragen ab, maplibre feuert ein `error`-Ereignis mit «Failed to fetch»,
+  // und weil niemand zuhoert, schreibt es maplibre selbst in die Konsole. Das
+  // sah in den Pruefungen wie ein Fehler aus, kam und ging aber mit dem Zufall
+  // des Zeitpunkts (nachgestellt: Kartenansicht oeffnen, sofort wegnavigieren).
+  //
+  // Nur DIESEN Fall schlucken. Alles andere geht weiter an die Konsole — eine
+  // Karte, die ihren Stil nicht laden kann, muss das weiterhin sagen duerfen.
+  const ABGEBROCHEN = /failed to fetch|aborted|abgebrochen|networkerror|load failed/i;
+  map.on('error', (e) => {
+    const err = e && e.error;
+    if (err && ABGEBROCHEN.test(String(err.message || ''))) return;
+    console.error('[Karte]', err || e);
+  });
   map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: false }), 'top-right');
   map.addControl(new maplibregl.FullscreenControl({ container }), 'top-right');
   showMapSpinner(container, map);
