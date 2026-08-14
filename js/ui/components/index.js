@@ -18,6 +18,8 @@ import {
   accordion, backLink, menu, pagination, pipeline, tabBar, tabPanels,
   wireAccordion, wireMenu, wirePagination, wireTabs,
 } from './navigation.js';
+// The portal's ONE sidebar tree (docs/seitenbaum-analyse.md).
+import { sidebarTree } from './sidebar-tree.js';
 import {
   accessCard, contextLine, errorSummary, field, focusProcessDone,
   focusWizardStep, loginGate, readForm, select, selectBox, val, wireErrorSummary,
@@ -39,7 +41,7 @@ export {
   loginGate, markLang, menu, mountBanner, mountDataTable, notification, openModal,
   openShareModal, pageHeader, pageSection, pagination, panelReset, photo,
   photoUrl, pipeline, preserveFocus, processDone, readForm, registerOverlay,
-  renderNotFound, safeDecode, select, selectBox, statusBadge, tabBar, table,
+  renderNotFound, safeDecode, select, selectBox, sidebarTree, statusBadge, tabBar, table,
   tabPanels, toast, trapFocus, val, wireAccordion, wireCatalogue,
   wireCatalogueState, wireErrorSummary, wireFieldErrors, wireLogin, wireMenu,
   wirePagination, wireScrollRegions, wireShare, wireTableRows, wireTabs,
@@ -53,6 +55,7 @@ const C = {
   renderNotFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueBar, catalogueView, filterGroup, wireCatalogue, pipeline,
   catalogueState, wireCatalogueState, panelReset, wireFieldErrors, focusProcessDone, wizardHead, focusWizardStep, contextLine,
+  sidebarTree,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
   notification, notificationHtml, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, field, val, readForm, downloadItem, contactBox, downloadLink,
   actionCard, contactCard,

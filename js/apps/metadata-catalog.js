@@ -67,8 +67,8 @@ const stewardName = (core, id) =>
 const matchOf = (core, id) => refList(core, 'mappingMatches').find((m) => m.id === id) || { label: id, variant: 'gray' };
 // Return a source URL's hostname, or the original malformed value so bad raw data remains visible.
 const hostOf = (url) => { try { return new URL(url).host; } catch { return String(url || ''); } };
-// Store explicit tree expansion choices at module scope because hash changes
-// rebuild the page but not the module. Without a choice, a record stays folded.
+// Hält die zugeklappten Kästen der Landschaft. Der Baum bringt sein eigenes Auf
+// und Zu mit (C.sidebarTree), seit er das gemeinsame Bauteil ist.
 // exportTable needs the data at level 0, where it has no scope to read it from.
 // Set on every render; the module outlives the page but never predates it.
 let core0 = null;
@@ -327,10 +327,7 @@ export default async function render(ctx) {
     lead: 'Fachbegriffe des BBL, ihre Realisierung in den Führungssystemen, und die Wertelisten, auf die beide verweisen.' })}
     ${searchBarHtml(ctx, s)}
     <div class="pf-layout">
-      <aside class="pf-sidebar" aria-label="Katalog durchsuchen">
-        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Katalog</h2></div>
-        ${treeHtml(ctx, s)}
-      </aside>
+      <aside class="pf-sidebar" id="mc-tree" aria-label="Katalog durchsuchen"></aside>
       <div class="pf-main">
         ${s.lvl === 0 ? '' : `<div class="tabs">${C.tabBar({
     items: s.avail.map((k) => ({ id: k, label: TAB_LABEL[k] })),
@@ -348,7 +345,7 @@ export default async function render(ctx) {
   </div>`;
 
   mountPane(ctx, s, unit);
-  wireTree(mount, ctx, s);
+  ctx.onUnmount(C.sidebarTree(mount.querySelector('#mc-tree'), treeConfig(ctx, s)));
 
   // The pane is redrawn in place for anything that changes only the pane. `cur`
   // is what it is currently showing, so a landscape click after a tab switch
@@ -610,111 +607,104 @@ function toolsHtml(ctx, s) {
 
 // --- Tree --------------------------------------------------------------------
 
-// Three branches, four levels. Depth comes from the nesting of .pf-tree__children
-// (css/sections/explorer.css), so no level needs a class of its own.
-//
-// A record row splits into two controls because selecting and unfolding are two
-// different intentions: a data table can carry 75 fields, and dropping them into
-// the sidebar on every click buries the tree. The link picks the record, the
-// chevron opens it. Every other row navigates and unfolds in one move, because
-// there the branch below IS what was asked for.
-// The rows under a record. Module level, because the chevron builds them too:
-// a table can carry seventy-five fields and five of them sit in one system, so
-// rendering every list up front would put hundreds of hidden nodes in the
-// sidebar for a reader who opens none of them. They are built when asked.
-function attrRowsHtml(s, r, kind, group) {
-  const GAP = '<span class="pf-tree__chev--empty" aria-hidden="true"></span>';
-  return r.kids.map((k) => `
-    <li class="pf-tree__item"><a class="pf-tree__sub" href="${esc(hrefFor(s, { rec: r, attr: k.name, kind, leaf: group }))}"
-      ${s.attr === k.name ? ' aria-current="true"' : ''}>${GAP}<span class="pf-tree__label">${
-  esc(k.name)}</span></a></li>`).join('');
-}
+// Der Baum ist jetzt das gemeinsame Bauteil (C.sidebarTree). Hier bleibt nur,
+// was der Katalog über seine eigenen Daten weiss: welche Knoten es gibt, welcher
+// gewählt ist, und wohin jeder zeigt. Leiter, Chevron, Abschnitte und Tastatur
+// gehören dem Bauteil — und damit allen acht Oberflächen gleichermassen.
+const BRANCH_ICON_OF = { objekt: 'Apps', tabelle: 'Database', referenz: 'List' };
 
-function treeHtml(ctx, s) {
-  const { core, C } = ctx;
-  const CHEV = C.icon('ChevronRight', 'pf-tree__chev');
-  const GAP = '<span class="pf-tree__chev--empty" aria-hidden="true"></span>';
-  const label = (text, n) => `<span class="pf-tree__label">${esc(text)}</span>`
-    + (n == null ? '' : `<span class="pf-tree__n">${n}</span>`);
+function treeConfig(ctx, s) {
+  const { core } = ctx;
 
-  const attrRows = (r, kind, group) => attrRowsHtml(s, r, kind, group);
+  // Stufe 1 führt Symbole, die übrigen nicht. Damit steht Stufe 2 bündig unter
+  // Stufe 1 — die Symbolspalte IST ihre Einrückung —, und ab da läuft ein
+  // gleichmässiger Schritt.
+  const levels = [{ icons: true }, { icons: false }, { icons: false }, { icons: false }];
 
-  const recRows = (mine, kind, group) => mine.map((r) => {
+  const attrNodes = (r, kind, group) => r.kids.map((k) => ({
+    id: `attr:${r.id}:${k.name}`,
+    label: k.name,
+    href: hrefFor(s, { rec: r, attr: k.name, kind, leaf: group }),
+    state: s.rec && s.rec.id === r.id && s.attr === k.name ? 'active' : '',
+  }));
+
+  const recNode = (r, kind, group) => {
     const on = s.rec && s.rec.id === r.id;
-    // Folding is the chevron's business and NOTHING else's. It used to require
-    // the record to be selected as well, so the chevron of any other record
-    // opened an empty list: the toggle flips `hidden` on a list the renderer had
-    // filled only for the record in scope. A reader comparing two tables needs
-    // both open at once, and neither of them has to be the one selected.
-    //
-    // The one thing that still forces it open is an attribute in scope — the
-    // selection has to be visible.
-    const open = (on && !!s.attr) || isOpen(`rec:${r.id}`, false);
-    return `<li class="pf-tree__item">
-      <span class="pf-tree__split${on && !s.attr ? ' is-active' : on ? ' is-path' : ''}">
-        <button type="button" class="pf-tree__fold" data-fold="rec:${esc(r.id)}"
-          data-kind="${esc(kind)}" data-leaf="${esc(group)}" aria-expanded="${open}"
-          aria-label="${esc(r.name)} ${open ? 'zuklappen' : 'aufklappen'}">${CHEV}</button>
-        <a class="pf-tree__go" href="${esc(hrefFor(s, { rec: r, attr: '', kind, leaf: group }))}"
-          ${on && !s.attr ? ' aria-current="true"' : ''}>${label(r.name, r.n)}</a>
-      </span>
-      <ul class="pf-tree__children"${open ? '' : ' hidden'}>${open ? attrRows(r, kind, group) : ''}</ul>
-    </li>`;
-  }).join('');
+    return {
+      id: `rec:${r.id}`,
+      label: r.name,
+      count: r.n,
+      countUnit: BRANCH_UNIT[kind].kid,
+      href: hrefFor(s, { rec: r, attr: '', kind, leaf: group }),
+      state: on && !s.attr ? 'active' : on ? 'path' : '',
+      // Wählen und Aufklappen sind zwei Absichten, also zwei Bedienelemente: eine
+      // Datentabelle trägt bis zu fünfundsiebzig Felder, und sie zu wählen darf
+      // nicht heissen, sie alle in die Leiste zu kippen.
+      split: true,
+      // Ein Attribut im Umfang zwingt seinen Datensatz auf: die Auswahl muss
+      // sichtbar sein. Ihn selbst zu wählen tut das nicht.
+      open: !!(on && s.attr),
+      hasChildren: r.kids.length > 0,
+      // Erst beim Aufklappen gebaut. Hunderte verborgener Zeilen im Voraus
+      // anzulegen kostet jeden Leser etwas, den die meisten nie ansehen.
+      children: () => attrNodes(r, kind, group),
+    };
+  };
 
-  const branches = BRANCHES.map((kind) => {
+  const branchNode = (kind) => {
     const rows = records(core, kind);
     const open = s.kind === kind;
     const groups = [...new Set(rows.map((r) => r.group))].sort((a, b) => a.localeCompare(b, 'de'));
-    const kids = !open ? '' : groups.map((g) => {
-      const mine = rows.filter((r) => r.group === g);
-      const on = s.leaf === g;
-      return `<li class="pf-tree__item">
-        <a class="pf-tree__leaf${on && !s.rec ? ' is-active' : on ? ' is-path' : ''}" aria-expanded="${on}"
-          href="${esc(hrefFor(s, { kind, leaf: g, rec: null, attr: '' }))}"${on && !s.rec ? ' aria-current="true"' : ''}
-          >${CHEV}${label(g, mine.length)}</a>
-        <ul class="pf-tree__children"${on ? '' : ' hidden'}>${on ? recRows(mine, kind, g) : ''}</ul></li>`;
-    }).join('');
-    return `<li class="pf-tree__item">
-      <a class="pf-tree__node${open && !s.leaf ? ' is-active' : open ? ' is-path' : ''}" aria-expanded="${open}"
-        href="${esc(hrefFor(s, { kind, leaf: '', rec: null, attr: '' }))}"${open && !s.leaf ? ' aria-current="true"' : ''}
-        >${CHEV}${C.icon(BRANCH_ICON[kind], 'pf-tree__ico')}${label(BRANCH_LABEL[kind], rows.length)}</a>
-      <ul class="pf-tree__children"${open ? '' : ' hidden'}>${open ? kids : ''}</ul></li>`;
-  }).join('');
+    return {
+      id: `kind:${kind}`,
+      label: BRANCH_LABEL[kind],
+      count: rows.length,
+      countUnit: BRANCH_UNIT[kind].nom,
+      icon: BRANCH_ICON_OF[kind],
+      href: hrefFor(s, { kind, leaf: '', rec: null, attr: '' }),
+      state: open && !s.leaf ? 'active' : open ? 'path' : '',
+      // Einen Ast zu wählen heisst, seine Gruppen zu zeigen — anders als bei
+      // einem Datensatz, dessen Bestandteile das Chevron verlangen.
+      open,
+      hasChildren: groups.length > 0,
+      children: () => groups.map((g) => {
+        const mine = rows.filter((r) => r.group === g);
+        const here = s.leaf === g;
+        return {
+          id: `leaf:${kind}:${g}`,
+          label: g,
+          count: mine.length,
+          countUnit: BRANCH_UNIT[kind].nom,
+          href: hrefFor(s, { kind, leaf: g, rec: null, attr: '' }),
+          state: here && !s.rec ? 'active' : here ? 'path' : '',
+          open: here,
+          hasChildren: mine.length > 0,
+          children: () => mine.map((r) => recNode(r, kind, g)),
+        };
+      }),
+    };
+  };
 
-  return `<ul class="pf-tree">
-    <li class="pf-tree__item"><a class="pf-tree__node${s.lvl === 0 ? ' is-active' : ''}" href="${BASE}"
-      ${s.lvl === 0 ? ' aria-current="true"' : ''}>${GAP}${
-  label('Katalog', BRANCHES.reduce((a, k) => a + records(core, k).length, 0))}</a></li>
-    ${branches}</ul>`;
-}
-
-// One delegated listener for the whole sidebar; it dies with the sidebar.
-function wireTree(mount, ctx, s) {
-  const side = mount.querySelector('.pf-sidebar');
-  if (!side) return;
-  side.addEventListener('click', (e) => {
-    const fold = e.target.closest('.pf-tree__fold');
-    if (!fold) return;
-    e.preventDefault();
-    const list = fold.closest('.pf-tree__item').querySelector('.pf-tree__children');
-    const open = fold.getAttribute('aria-expanded') !== 'true';
-    fold.setAttribute('aria-expanded', String(open));
-    fold.setAttribute('aria-label',
-      fold.getAttribute('aria-label').replace(open ? 'aufklappen' : 'zuklappen',
-        open ? 'zuklappen' : 'aufklappen'));
-    // Build the rows the first time this record is opened. The renderer only
-    // fills a list it already knows to be open, so without this the chevron of
-    // any other record revealed an empty one.
-    if (open && list && !list.children.length) {
-      const { kind, leaf } = fold.dataset;
-      const id = fold.dataset.fold.slice('rec:'.length);
-      const rec = records(ctx.core, kind).find((r) => r.id === id);
-      if (rec) list.innerHTML = attrRowsHtml(s, rec, kind, leaf);
-    }
-    if (list) list.hidden = !open;
-    OPEN.set(fold.dataset.fold, open);
-  });
+  return {
+    id: 'mc-tree',
+    title: 'Katalog',
+    mode: 'nav',
+    levels,
+    // Zwei Abschnitte, also genau eine Linie: die Wurzel ist etwas anderes als
+    // die drei Äste darunter. Sonst zieht der Baum keine.
+    sections: [
+      [{
+        id: 'root',
+        label: 'Katalog',
+        count: BRANCHES.reduce((a, k) => a + records(core, k).length, 0),
+        countUnit: 'Einträge',
+        icon: 'FileDatabase',
+        href: BASE,
+        state: s.lvl === 0 ? 'active' : '',
+      }],
+      BRANCHES.map(branchNode),
+    ],
+  };
 }
 
 // --- Panes -------------------------------------------------------------------

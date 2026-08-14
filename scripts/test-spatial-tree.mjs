@@ -29,24 +29,56 @@ const SURFACES = [
   ['Plan-Editor', '/app/floorplan-editor', true],
   // Depth is what this probe measures, and the catalogue root is deliberately
   // collapsed — so aim at a scope that actually has three levels on screen.
-  ['Metadaten Katalog', '/app/metadata-catalog?kind=objekt&leaf=Bauwerk%20und%20Liegenschaft', false],
+  // `component: true` — laeuft auf C.sidebarTree (js/ui/components/sidebar-tree.js)
+  ['Metadaten Katalog', '/app/metadata-catalog?kind=objekt&leaf=Bauwerk%20und%20Liegenschaft', false, true],
   ['Prozessdokumentation', '/app/process-docs', false],
 ];
 
 const READ = `(() => {
-  const tree = document.querySelector('.pf-tree');
-  if (!tree) return { missing: true };
-  const ROW = '.pf-tree__node, .pf-tree__leaf, .pf-tree__sub, .pf-tree__split';
+  const treeEl = document.querySelector('.pf-tree');
+  if (!treeEl) return { missing: true };
+  const tree = document.querySelector('.pf-sidebar') || treeEl;
+  const ROW = '.pf-tree__node, .pf-tree__leaf, .pf-tree__sub, .pf-tree__row';
   const rows = [...tree.querySelectorAll(ROW)].filter((row) => row.offsetParent !== null);
   const padAt = (depth) => {
     const chain = Array.from({ length: depth }, () => '.pf-tree__children').join(' ');
-    const row = tree.querySelector(':scope ' + (chain ? chain + ' ' : '') + '> .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub,.pf-tree__split)');
+    const row = treeEl.querySelector(':scope ' + (chain ? chain + ' ' : '') + '> .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub,.pf-tree__split)');
     return row ? Math.round(parseFloat(getComputedStyle(row).paddingLeft)) : null;
   };
+  // Fuer das Bauteil: wo die Beschriftung je Stufe beginnt, und ob Geschwister
+  // — alle Kinder EINER Liste — ihren linken Rand teilen.
+  const box = tree.getBoundingClientRect();
+  const labelX = (row) => {
+    const l = row && row.querySelector('.pf-tree__label');
+    return l ? Math.round(l.getBoundingClientRect().left - box.left) : null;
+  };
+  const ladder = [];
+  const seenDepth = new Set();
+  tree.querySelectorAll('li').forEach((li) => {
+    let d = 0;
+    for (let n = li.parentElement; n && n !== tree; n = n.parentElement) {
+      if (n.classList && n.classList.contains('pf-tree__children')) d++;
+    }
+    if (seenDepth.has(d)) return;
+    const x = labelX(li.querySelector('.pf-tree__row'));
+    if (x == null) return;
+    seenDepth.add(d); ladder[d] = x;
+  });
+  let siblingGroups = 0;
+  const siblingsOff = [];
+  tree.querySelectorAll('ul').forEach((ul) => {
+    const kids = [...ul.children].filter((li) => li.tagName === 'LI');
+    if (kids.length < 2) return;
+    siblingGroups++;
+    const xs = kids.map((li) => labelX(li.querySelector('.pf-tree__row'))).filter((x) => x != null);
+    if (xs.length > 1 && Math.max(...xs) !== Math.min(...xs)) {
+      siblingsOff.push((kids[0].textContent || '').trim().slice(0, 18) + ': ' + xs.join('/'));
+    }
+  });
   const counts = [...tree.querySelectorAll('.pf-tree__n')].slice(0, 4).map((n) => n.textContent);
   const first = rows[0];
   return {
-    role: tree.getAttribute('role') || '',
+    role: treeEl.getAttribute('role') || '',
     treeitems: tree.querySelectorAll('[role="treeitem"]').length,
     groups: tree.querySelectorAll('[role="group"]').length,
     levels: [...new Set([...tree.querySelectorAll('[aria-level]')].map((r) => Number(r.getAttribute('aria-level'))))].sort((a, b) => a - b),
@@ -71,6 +103,9 @@ const READ = `(() => {
         leadingPainted: head ? head.borderTopColor !== 'rgba(0, 0, 0, 0)' : false,
       };
     })(),
+    ladder: ladder.filter((x) => x != null),
+    siblingGroups,
+    siblingsOff,
     counts,
     countsNumeric: counts.every((value) => value !== '' && Number.isFinite(Number(value))),
     parens: (() => {
@@ -83,7 +118,7 @@ const READ = `(() => {
 
 const cdp = await launch();
 try {
-  for (const [name, route, shared] of SURFACES) {
+  for (const [name, route, shared, component] of SURFACES) {
     console.log(`\n■ ${name}`);
     const page = await openPage(cdp, `${APP_BASE}${route}`, { login: true });
     await cdp.send('Emulation.setDeviceMetricsOverride',
@@ -99,18 +134,34 @@ try {
     // now that the fake icon-margin indentation is gone, and it has to work for
     // the hand-rolled surfaces too, which is why the CSS keys off nesting rather
     // than aria-level.
-    const steps = tree.padding.filter((value) => value != null);
-    const grows = steps.every((value, index) => index === 0 || value > steps[index - 1]);
-    check(steps.length >= 2 && grows, 'indents each level further than its parent',
-      steps.join(' → ') + 'px');
-    check(tree.divider.between === '1px' && tree.divider.betweenPainted,
-      'separates every row with a divider',
-      `${tree.divider.between}, painted: ${tree.divider.betweenPainted}`);
-    // The divider is a divider, not an underline: nothing hangs below the last
-    // row, and nothing sits above the first one under the sidebar head.
-    check(tree.divider.trailing === '0px' && !tree.divider.leadingPainted,
-      'draws no rule below the last row or above the first',
-      `trailing ${tree.divider.trailing}, leading painted: ${tree.divider.leadingPainted}`);
+    if (component) {
+      // Der neue Vertrag. Die Leiter ist eine Summe je Stufe und steht in
+      // --pf-ind auf dem Listeneintrag; gemessen wird, wo die BESCHRIFTUNG
+      // beginnt, denn das ist, was ein Leser als Einrueckung sieht. Geschwister
+      // teilen ihren linken Rand — die Regel, an der die Vorgaenger scheiterten.
+      check(tree.ladder.length >= 2 && tree.ladder.every((x, i) => i === 0 || x >= tree.ladder[i - 1]),
+        'Leiter faellt nie zurueck', tree.ladder.join(' → ') + 'px');
+      check(!tree.siblingsOff.length, 'Geschwister teilen ihren linken Rand',
+        tree.siblingsOff.slice(0, 2).join(' · ') || tree.siblingGroups + ' Gruppen geprueft');
+      // Und KEINE Zeilentrenner: eine Linie markiert einen Abschnitt, sonst
+      // nichts. Sechzehn Kategorien trugen fuenfzehn Striche fuer eine
+      // Gliederung, die die Einrueckung schon zeigt.
+      check(tree.divider.between === '0px', 'zieht keine Linie zwischen Zeilen',
+        'Breite ' + tree.divider.between);
+    } else {
+      const steps = tree.padding.filter((value) => value != null);
+      const grows = steps.every((value, index) => index === 0 || value > steps[index - 1]);
+      check(steps.length >= 2 && grows, 'indents each level further than its parent',
+        steps.join(' → ') + 'px');
+      check(tree.divider.between === '1px' && tree.divider.betweenPainted,
+        'separates every row with a divider',
+        `${tree.divider.between}, painted: ${tree.divider.betweenPainted}`);
+      // The divider is a divider, not an underline: nothing hangs below the last
+      // row, and nothing sits above the first one under the sidebar head.
+      check(tree.divider.trailing === '0px' && !tree.divider.leadingPainted,
+        'draws no rule below the last row or above the first',
+        `trailing ${tree.divider.trailing}, leading painted: ${tree.divider.leadingPainted}`);
+    }
     // The parentheses are CSS, so the element's text stays the bare number that
     // scripts/check-tree.mjs and the app suites parse.
     check(tree.countsNumeric && /\(/.test(tree.parens) && /\)/.test(tree.parens),

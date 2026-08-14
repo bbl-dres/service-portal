@@ -20,7 +20,7 @@
 const CRUMBS = [
   { label: 'Startseite', href: '#/' },
   { label: 'Daten und Digitalisierung', href: '#/data' },
-  { label: 'Geschäftsarchitektur' },
+  { label: 'Dokumentation der Geschäftsarchitektur' },
 ];
 
 // NOTE: the repository's own URL is not linked from this page. Each record
@@ -80,7 +80,7 @@ export function layers(core) {
 
 export default function render(ctx) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
-  setTitle('Geschäftsarchitektur');
+  setTitle('Dokumentation der Geschäftsarchitektur');
   setCrumbs(CRUMBS);
 
   const rows = layers(core);
@@ -114,7 +114,7 @@ export default function render(ctx) {
   mount.innerHTML = `
     ${C.pageSection({
       body: C.pageHeader({
-        title: 'Geschäftsarchitektur',
+        title: 'Dokumentation der Geschäftsarchitektur',
         lead: 'Dokumentation der Geschäftsarchitektur des BBL — was es gibt, wer dafür verantwortlich '
           + 'ist und wo das Original steht.',
       }),

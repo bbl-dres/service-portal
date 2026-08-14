@@ -19,7 +19,7 @@ const PICK = {
 };
 const DS = 'C:/Users/david/Documents/GitHub/designsystem/';
 const SRC = SP + 'docs/wireframes/260813 - Katalog mit Reitern_CD-kompakt.html';
-const TPL = SP + 'docs/wireframes/260814 - Seitenbaum als Bauteil.src.html';
+const TPL = SP + 'scripts/seitenbaum-wireframe.src.html';
 const OUT = SP + 'docs/wireframes/260814 - Seitenbaum als Bauteil.html';
 
 const json = (f) => JSON.parse(readFileSync(SP + 'data/' + f, 'utf8'));

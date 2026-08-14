@@ -1,0 +1,96 @@
+/* The portal's ONE sidebar tree (js/ui/components/sidebar-tree.js).
+   ---------------------------------------------------------------------------
+   Study: docs/seitenbaum-analyse.md, docs/wireframes/260814 - Seitenbaum als Bauteil.html
+
+   The indent lives in --pf-ind, set per list item by the component, because the
+   ladder is a SUM — each level contributes an icon column or a step — and a sum
+   cannot be written as one rule per level. On the item, not on the row: a split
+   row hangs inside a wrapper and is no longer a direct child, so a rule aimed at
+   the row would miss it there and the level would fall back to the first.
+
+   Nothing here draws a line between rows. Hierarchy is the ladder, belonging is
+   the fill of the chosen row, importance is weight. A divider marks a SECTION,
+   which is a different kind of thing standing next to another. */
+
+.pf-tree, .pf-tree__children { list-style:none; margin:0; padding:0; }
+/* One divider, between sections. Sixteen shop categories used to carry fifteen
+   lines for a grouping the indent already shows. */
+.pf-tree__section + .pf-tree__section { margin-top:var(--sp-2); padding-top:var(--sp-2);
+  border-top:var(--stroke-1) solid var(--color-border); }
+
+/* --- The row ------------------------------------------------------------- */
+.pf-tree__row { position:relative; display:flex; align-items:center; gap:var(--sp-2);
+  width:100%; min-height:var(--control-size-sm);
+  padding:var(--sp-1) var(--sp-2) var(--sp-1) var(--pf-ind, var(--sp-5));
+  border:0; border-radius:var(--radius-sm); background:none;
+  font:inherit; font-size:var(--fs-sm); line-height:var(--lh-tight);
+  color:var(--color-text); text-align:left; text-decoration:none; cursor:pointer; }
+.pf-tree__row:hover { background:var(--color-secondary-50); color:var(--color-text);
+  text-decoration:none; }
+.pf-tree__row:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring);
+  outline-offset:calc(-1 * var(--stroke-2)); }
+
+/* Two-tone marking. The chosen row also carries an edge bar, so the mark never
+   rests on colour alone — the tint alone measures 1.16:1 and cannot carry it. */
+.pf-tree__row.is-path, .pf-tree__split.is-path { background:var(--color-gray-100); }
+.pf-tree__row.is-active, .pf-tree__split.is-active {
+  background:var(--color-secondary-100); font-weight:var(--fw-bold);
+  box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+.pf-tree__split.is-active .pf-tree__row { font-weight:var(--fw-bold); background:none; }
+
+/* --- The chevron, outside the flow --------------------------------------- */
+/* It sits in the gutter immediately left of the label, so a row WITH one begins
+   where a row WITHOUT one begins. That is what stops a child landing left of its
+   parent — measured in the process documentation as L2=40 against L1=48. */
+.pf-tree__fold, .pf-tree__chev-slot {
+  position:absolute; left:calc(var(--pf-ind, var(--sp-5)) - 20px); top:0; bottom:0;
+  width:20px; display:flex; align-items:center; justify-content:center;
+  margin:0; padding:0; border:0; background:none; color:var(--color-text-light); }
+.pf-tree__fold { cursor:pointer; border-radius:var(--radius-sm); }
+.pf-tree__fold:hover { color:var(--color-text); background:var(--color-secondary-100); }
+.pf-tree__fold:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring);
+  outline-offset:calc(-1 * var(--stroke-2)); }
+/* The slot is decoration: the row it sits in is itself the control. */
+.pf-tree__chev-slot { pointer-events:none; }
+/* The glyph points RIGHT, which is the closed state — so the OPEN one turns.
+   The other way round, closed pointed up and open pointed right, which is the
+   opposite of what each means. */
+.pf-tree__chev { flex:none; transition:transform var(--duration-fast); }
+.pf-tree__fold[aria-expanded="true"] .pf-tree__chev,
+.pf-tree__row[aria-expanded="true"] > .pf-tree__chev-slot .pf-tree__chev { transform:rotate(90deg); }
+@media (prefers-reduced-motion:reduce) { .pf-tree__chev { transition:none; } }
+
+/* --- The split row -------------------------------------------------------- */
+/* Choosing a record and unfolding it are two intentions, so they get two
+   controls: a data table carries up to 75 fields, and selecting it must not mean
+   tipping all of them into the rail. */
+.pf-tree__split { position:relative; display:flex; align-items:center;
+  border-radius:var(--radius-sm); }
+.pf-tree__split:hover { background:var(--color-secondary-50); }
+.pf-tree__split > .pf-tree__row { flex:1; min-width:0; }
+.pf-tree__split > .pf-tree__row:hover { background:none; }
+
+/* --- Icon, label, count --------------------------------------------------- */
+/* The column is reserved by the LEVEL and filled by the node (decision (c),
+   docs/seitenbaum-analyse.md §5). An empty one is the visible consequence of a
+   level asking for icons and a row not supplying one — which is a thing worth
+   seeing, not hiding. */
+.pf-tree__ico { flex:none; width:1rem; height:1rem; color:var(--color-text-muted); }
+.pf-tree__row.is-active .pf-tree__ico { color:var(--color-text-800); }
+.pf-tree__label { flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; }
+/* The parentheses are drawn here so the DOM keeps a bare number for scripts and
+   assertions to read. */
+.pf-tree__n { flex:none; margin-left:auto; padding-left:var(--sp-2);
+  font-size:var(--fs-xs); color:var(--color-text-muted); font-variant-numeric:tabular-nums; }
+.pf-tree__n::before { content:"("; }
+.pf-tree__n::after { content:")"; }
+.pf-tree__row.is-active .pf-tree__n { color:var(--color-text-700); }
+
+/* A finger needs a bigger target than a mouse (WCAG 2.5.8). The gutter grows
+   with it, so the ladder still lands where the component computed it. */
+@media (pointer:coarse) {
+  .pf-tree__row { min-height:var(--target-min); padding-block:var(--sp-2-5); }
+  .pf-tree__fold, .pf-tree__chev-slot { width:var(--target-min);
+    left:calc(var(--pf-ind, var(--sp-5)) - var(--target-min)); }
+}

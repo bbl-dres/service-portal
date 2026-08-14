@@ -135,15 +135,35 @@ A2 und A4 ziehen gegeneinander. Drei Auflösungen:
 | | Regel | Folge |
 |---|---|---|
 | **(a)** | Symbol im Fluss, Einrückung = Tiefe × Schritt | Zwei **Geschwister**, eines mit Symbol, stehen um 24px versetzt. Unbrauchbar. |
-| **(b)** | Symbolspalte **je Stufe** reserviert — eine Stufe hat Symbole oder nicht, das Zeichen wählt jeder Knoten selbst | Beschriftungen sitzen immer bündig, keine leeren Spalten. Preis: innerhalb einer Stufe kein gemischter Betrieb. |
-| **(c)** | Symbolspalte **immer** reserviert | Alles bündig, aber jede symbollose Zeile trägt ein 24px-Loch — bei Shop und Prozessdoku der ganze Baum. |
+| **(b)** | Stufe führt Symbole: Zeichen zeichnen, wenn vorhanden — sonst nichts | Bündig, **solange** jede Zeile der Stufe eines mitbringt. Bringt eine keines mit, fällt sie auf (a) zurück. |
+| **(c)** | Stufe führt Symbole: Spalte **reservieren**, Zeichen zeichnen, wenn vorhanden | Bündig, immer, ohne Bedingung. Eine symbollose Zeile in einer symbolführenden Stufe trägt eine leere Spalte. |
 
-**Empfehlung (b).** Sie deckt sich mit jeder heutigen Verwendung: die geteilten
-Bäume setzen Symbole auf allen Stufen, der Katalog auf Stufe 1, Prozessdoku und
-Shop auf keiner — **nie gemischt innerhalb einer Stufe**. Und sie ist genau, was
-der Wireframe tut (W2): die Symbolspalte von L1 wird die Einrückung von L2.
+### Entschieden: (c) — 2026-08-14
 
-Das ist die eine Stelle, an der ich eine Entscheidung brauche, bevor ich baue.
+Zuerst stand hier **(b)**, mit zwei Begründungen. Eine unabhängige
+Design-Durchsicht hat beide widerlegt, und die Messungen geben ihr recht:
+
+**Die erste Begründung war falsch.** Gegen (c) stand hier, jede symbollose Zeile
+trüge ein 24px-Loch, «bei Shop und Prozessdoku der ganze Baum». Das ist nicht,
+was (c) tut. Die Spalte wird nur reserviert, wo die **Stufe** Symbole erklärt;
+Shop und Prozessdoku erklären auf keiner Stufe welche, also reserviert (c) dort
+**nichts**. Die eine handfeste Kosten, die gegen (c) angeführt wurde, existiert
+nicht. Sie entsteht ausschliesslich in einer Stufe, die Symbole **verlangt** und
+dann bei einer Zeile keines liefert — und dort *soll* es auffallen.
+
+**Die zweite Begründung war eine Bedingung, keine Eigenschaft.** «Bündig, weil
+heute nie gemischt» ist kein Verhalten des Bauteils, sondern eine Annahme über
+seine Aufrufer. Nichts erzwingt sie. Am Tag, an dem eine Anwendung einer Stufe
+ein Symbol gibt und einer Schwesterzeile keines, liefert (b) genau das Versagen,
+für das (a) verworfen wurde. Gemessen an der Vergleichstafel des Wireframes mit
+gemischten Daten: (b) **53 / 29 / 53** — die mittlere Zeile 24px daneben —
+gegen (c) **53 / 53 / 53**.
+
+Ein Bauteil, das nur richtig liegt, solange sich alle an eine ungeschriebene
+Regel halten, ist kein Bauteil. **(c)** hält ohne Regel.
+
+Praktisch heisst das: `levels[i].icons` reserviert die Spalte, `node.icon`
+füllt sie. Wer keine Symbole will, erklärt keine, und es wird nichts reserviert.
 
 ---
 

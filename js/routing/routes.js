@@ -51,7 +51,7 @@ export const NAV = [
       // row and the page it opens say the same word. That is why the fourth row
       // reads «Systeme» rather than «Datentabellen»: the catalogue groups tables
       // by the system that holds them, and that is what a reader sees on arrival.
-      { label: 'Geschäftsarchitektur', branchKey: 'architecture', branches: [
+      { label: 'Dokumentation der Geschäftsarchitektur', branchKey: 'architecture', branches: [
         { href: '#/data/architecture', label: 'Übersicht' },
         { href: '#/app/process-docs', label: 'Prozesse' },
         { href: '#/app/metadata-catalog?kind=objekt', label: 'Geschäftsobjekte' },

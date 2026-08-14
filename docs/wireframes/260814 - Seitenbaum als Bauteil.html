@@ -248,17 +248,21 @@ denselben Daten:</p>
         sobald eines ein Symbol hat und das andere nicht. Unbrauchbar.</p>
     </div>
     <div>
-      <h4>(b) Spalte je Stufe <span class="note">— Vorschlag</span></h4>
+      <h4>(b) Zeichnen, wenn vorhanden</h4>
       <div id="demo-b"></div>
-      <p class="verdict ok">Geschwister immer bündig, keine leeren Spalten.
-        Preis: innerhalb einer Stufe kein gemischter Betrieb — was heute
-        nirgends vorkommt.</p>
+      <p class="verdict bad">Bündig nur, <em>solange</em> jede Zeile der Stufe
+        ein Symbol mitbringt. An gemischten Daten fällt (b) auf (a) zurück — das
+        ist ihre Bedingung, nicht ihre Eigenschaft. Ein Bauteil, das nur trägt,
+        solange sich alle an eine ungeschriebene Regel halten, ist keines.</p>
     </div>
     <div>
-      <h4>(c) Spalte immer</h4>
+      <h4>(c) Spalte reservieren <span class="note">— gewählt</span></h4>
       <div id="demo-c"></div>
-      <p class="verdict bad">Bündig, aber jede symbollose Zeile trägt ein Loch.
-        Bei Shop und Prozessdoku wäre das der ganze Baum.</p>
+      <p class="verdict ok">Bündig, immer, ohne Bedingung. Die Spalte entsteht
+        nur, wo die <em>Stufe</em> Symbole erklärt — Shop und Prozessdoku
+        erklären keine und bekommen keine. Eine leere Spalte gibt es also nur
+        dort, wo eine Stufe Symbole verlangt und eine Zeile keines liefert, und
+        dort soll sie auffallen.</p>
     </div>
   </div>
 </div>
@@ -613,17 +617,16 @@ const MIXED = {
     n('m3', 'Mit Symbol', 3, { href: '#', icon: 'list' }),
   ]],
 };
-// (a) und (c) zeigen GEMISCHTE Symbole — dort liegt der Unterschied.
-// (b) verspricht Bündigkeit nur bei EINHEITLICHEN Symbolen je Stufe, also wird
-// sie daran gezeigt; an gemischten Daten fällt (b) auf (a) zurück, und das ist
-// keine Empfehlung, sondern ihre Bedingung.
+// Alle drei stehen an DENSELBEN gemischten Daten — sonst vergleicht man nichts.
+// Genau daran zeigt sich, dass (b) auf (a) zurückfällt, sobald eine Zeile ihrer
+// Stufe kein Symbol mitbringt, und dass nur (c) ohne Bedingung bündig bleibt.
 const UNIFORM = JSON.parse(JSON.stringify({ ...MIXED, sections: [[
   { id: 'u1', label: 'Mit Symbol', count: 4, href: '#', icon: 'db' },
   { id: 'u2', label: 'Auch mit Symbol', count: 2, href: '#', icon: 'list' },
   { id: 'u3', label: 'Ebenfalls', count: 3, href: '#', icon: 'grid' },
 ]] }));
 sidebarTree(document.getElementById('demo-a'), { ...MIXED, variant: 'badly' });
-sidebarTree(document.getElementById('demo-b'), UNIFORM);
+sidebarTree(document.getElementById('demo-b'), { ...MIXED });
 sidebarTree(document.getElementById('demo-c'), { ...MIXED, variant: 'holes' });
 
 /* ── Linien: heute gegen Vorschlag ───────────────────────────────────────── */

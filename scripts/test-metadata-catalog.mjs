@@ -59,7 +59,10 @@ const STATE = `JSON.stringify({
   branchKids: document.querySelectorAll('.pf-tree__children > .pf-tree__item').length,
   splits: document.querySelectorAll('.pf-tree__split').length,
   folds: document.querySelectorAll('.pf-tree__fold').length,
-  subs: document.querySelectorAll('.pf-tree__sub').length,
+  // Attributzeilen: die Zeilen unter einer geteilten Zeile. Es gibt keine
+  // eigene Klasse je Stufe mehr — jede Zeile ist .pf-tree__row, und die Stufe
+  // steckt in der Einrueckung, wo sie hingehoert.
+  subs: document.querySelectorAll('.pf-tree__split ~ .pf-tree__children .pf-tree__row').length,
   activeRow: ((document.querySelector('.pf-tree .is-active .pf-tree__label') || {}).textContent || ''),
   pathRows: document.querySelectorAll('.pf-tree .is-path').length,
 })`;
@@ -161,7 +164,7 @@ try {
       .find((b) => !b.closest('.pf-tree__split').classList.contains('is-active'));
     f.click();
     await new Promise((r) => setTimeout(r, 250));
-    return String(document.querySelectorAll('.pf-tree__sub').length);
+    return String(document.querySelectorAll('.pf-tree__split ~ .pf-tree__children .pf-tree__row').length);
   })()`);
   check(Number(folded) > 0, 'the chevron of an UNSELECTED record fills its list too', folded + ' Zeilen');
   o = await go(withTab(idHref, 'uebersicht'));
