@@ -70,31 +70,14 @@
   .lscape__group { width:100%; }
 }
 
-/* --- The catalogue's tab row ------------------------------------------------
-   Tabs choose the FORM, the controls beside them arrange what is inside it —
-   so they belong on the same line, and not in the sidebar, which chooses the
-   scope. On a narrow screen the controls drop below the tabs rather than
-   squeezing them. */
-.mc-bar { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;
-  gap:var(--sp-2) var(--sp-4); }
-.mc-bar > .tabs { flex:1 1 16rem; min-width:0; }
-.mc-bar__tools { flex:0 0 auto; display:flex; flex-wrap:wrap; align-items:center;
-  gap:var(--sp-2); padding-bottom:var(--sp-2); }
-/* One line, like every other control in this row. The extra ancestor is what
-   beats .form__group__select, which stacks label over control at the same
-   specificity. */
-.mc-bar__tools .mc-bar__group { display:flex; flex-direction:row; align-items:center;
-  width:auto; gap:var(--sp-2); margin:0; }
-/* A <select> sizes itself to its WIDEST option, not to the chosen one — so with
-   «keine» selected next to a «Verantwortung» in the list, the text sat a long way
-   from the chevron. Right-aligning puts the value back against its own control
-   without letting the row resize every time the choice changes. */
-.mc-bar__tools .mc-bar__group select { text-align:right; }
-/* The rule divides the two jobs in this row: arranging what is in the pane, and
-   acting on it. Sized rather than stretched, so it stays a mark between controls
-   and does not become a border on the row. */
-.mc-bar__sep { flex:none; align-self:center; width:var(--stroke-1); height:var(--sp-6);
-  background:var(--color-border); }
+/* --- The catalogue's control row --------------------------------------------
+   ONE row per pane. The data table already brings a bar (Sortieren, Filter), so
+   these controls join it as `extra`; on a tab with no table the same bar stands
+   on its own. Two bars stacked was the alternative, and it read as two unrelated
+   sets of controls for one pane. */
+/* Grouping is a button menu like «Aktionen», so nothing here needs to undo the
+   form-row layout of a <select> any more — that whole class of rule went with it. */
+
 
 /* --- The scope search -------------------------------------------------------
    Above the layout, not in the tab row: it narrows WHAT IS IN SCOPE, which is

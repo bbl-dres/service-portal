@@ -332,13 +332,10 @@ export default async function render(ctx) {
         ${treeHtml(ctx, s)}
       </aside>
       <div class="pf-main">
-        ${s.lvl === 0 ? '' : `<div class="mc-bar">
-          <div class="tabs">${C.tabBar({
+        ${s.lvl === 0 ? '' : `<div class="tabs">${C.tabBar({
     items: s.avail.map((k) => ({ id: k, label: TAB_LABEL[k] })),
     active: s.tab, idPrefix: 'mc-tab', ariaLabel: 'Darstellung', panelId: 'mc-panel',
-  })}</div>
-          <div class="mc-bar__tools" id="mc-tools">${toolsHtml(ctx, s)}</div>
-        </div>`}
+  })}</div>`}
         ${/* .tab__container carries the ONE gap between strip and panel that the
               whole portal uses (tabs.css); the root has no strip, so no class. */''}
         <div id="mc-panel"${s.lvl === 0 ? '' : ' class="tab__container" role="tabpanel" tabindex="0"'}
@@ -358,6 +355,7 @@ export default async function render(ctx) {
   const redraw = () => {
     panel.innerHTML = paneHtml(ctx, cur, unit);
     mountPane(ctx, cur, unit);
+    wireActions();
   };
 
   // Typing rewrites the URL in place rather than pushing history: a query is a
@@ -380,47 +378,34 @@ export default async function render(ctx) {
     ctx.onUnmount(() => clearTimeout(timer));
   }
 
-  const tools = mount.querySelector('#mc-tools');
-  // wireMenu binds the trigger it finds now, and paintTools replaces it — so the
-  // menu is re-wired after every repaint rather than once at mount.
+  // On a tab WITHOUT a data table nothing re-wires the menus, so they are wired
+  // here after every redraw. On the Tabelle tab the table owns them through
+  // onAction; wiring them twice there would fire every choice twice.
   const wireActions = () => {
-    if (tools) C.wireMenu(tools, (action) => runExport(action, cur, unit));
+    if (!panel.querySelector('#mc-table')) C.wireMenu(panel, (a) => onMenuAction(a, cur, unit));
   };
-  const paintTools = () => { if (tools) { tools.innerHTML = toolsHtml(ctx, cur); wireActions(); } };
   wireActions();
 
-  // Changing the grouping re-lays BOTH views and every link in the tree, so it
-  // navigates rather than redrawing in place. Unlike a tab switch it is a rare,
-  // deliberate act, and a full render is what keeps everything consistent.
-  if (tools) {
-    tools.addEventListener('change', (e) => {
-      const sel = e.target.closest('#mc-group');
-      if (!sel) return;
-      location.hash = hrefFor(cur, {
-        groupPick: sel.value === DEFAULT_GROUP(cur.lvl) ? '' : sel.value,
-      }).slice(1);
-    });
-    tools.addEventListener('click', (e) => {
-      const all = e.target.closest('[data-lscape-all]');
-      if (!all) return;
+  // Every control now lives inside the pane, so one delegated listener covers
+  // them all — through the data table's own redraws as well.
+  //
+  // Folding stays out of the URL — a view preference, not a scope change, the
+  // same reasoning as the tree's chevrons.
+  panel.addEventListener('click', (e) => {
+    const all = e.target.closest('[data-lscape-all]');
+    if (all) {
       const shut = all.dataset.lscapeAll === 'shut';
       landscapeBoxes(cur).forEach((b) => OPEN.set(`box:${b.key}`, !shut));
-      redraw(); paintTools();
-      const again = tools.querySelector('[data-lscape-all]');
+      redraw();
+      const again = panel.querySelector('[data-lscape-all]');
       if (again) again.focus();
-    });
-  }
-
-  // Folding a box is a view preference, not a scope change, so it stays out of
-  // the URL — the same reasoning as the tree's chevrons.
-  panel.addEventListener('click', (e) => {
+      return;
+    }
     const box = e.target.closest('[data-box]');
     if (!box) return;
     const key = `box:${box.dataset.box}`;
     OPEN.set(key, !isOpen(key, true));
-    // Repaint the toolbar too: whether «Alle zuklappen» or «Alle aufklappen» is
-    // the honest label depends on whether anything is still open.
-    redraw(); paintTools();
+    redraw();
     const again = panel.querySelector(`[data-box="${CSS.escape(box.dataset.box)}"]`);
     if (again) again.focus();
   });
@@ -435,8 +420,7 @@ export default async function render(ctx) {
         const str = p.toString();
         history.replaceState(history.state, '', str ? `${BASE}?${str}` : BASE);
         cur = { ...s, tab, pick: tab === DEFAULT_TAB[s.lvl] ? '' : tab };
-        // The fold control belongs to the landscape, so it comes and goes with it.
-        redraw(); paintTools();
+        redraw();
       },
     });
   }
@@ -537,6 +521,17 @@ function download(name, mime, text) {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+// Everything in the bar is a menu now, and both report here. A grouping choice
+// NAVIGATES rather than redrawing in place: it re-lays both views and every link
+// in the tree, and unlike a tab switch it is a rare, deliberate act.
+function onMenuAction(action, s, unit) {
+  if (!action.startsWith('group:')) { runExport(action, s, unit); return; }
+  const value = action.slice('group:'.length);
+  location.hash = hrefFor(s, {
+    groupPick: value === DEFAULT_GROUP(s.lvl) ? '' : value,
+  }).slice(1);
+}
+
 function runExport(action, s, unit) {
   // Printing is the browser's job, and its dialog is also where «Save as PDF»
   // lives — so there is no separate PDF path to build or to keep working.
@@ -550,6 +545,18 @@ function runExport(action, s, unit) {
 // Grouping belongs to the table and the landscape, not to the tree — so it sits
 // in the tab row rather than in the sidebar. On level 3 it disappears: ordering
 // many records is what it does, and only one record is in scope there.
+// ONE control row per pane, never two. The data table brings its own bar
+// (Sortieren, Filter), so on that tab these controls are handed to it as `extra`
+// and join the same row. Every other tab has no table, so it gets the same bar
+// standing on its own — same class, same place, same order, whichever tab the
+// reader is on.
+function toolbarHtml(ctx, s) {
+  const tools = toolsHtml(ctx, s);
+  return tools
+    ? `<div class="catbar catbar--no-search catbar--flush"><div class="catbar__controls">${tools}</div></div>`
+    : '';
+}
+
 function toolsHtml(ctx, s) {
   const { C } = ctx;
   if (s.lvl < 1) return '';
@@ -561,22 +568,31 @@ function toolsHtml(ctx, s) {
       ${C.icon(anyOpen ? 'Minus' : 'Plus', 'btn__icon')}
       <span class="btn__text">Alle ${anyOpen ? 'zuklappen' : 'aufklappen'}</span></button>`;
   // Grouping orders many records; on a record there is only one, so it goes.
-  // No visible label: the chosen value already reads as one («Domäne», «keine»),
-  // and a word in front of it only widened the row. The label stays for screen
-  // readers, which have no such context.
-  const group = s.lvl > 2 ? '' : C.select({
-    id: 'mc-group', label: 'Gruppieren', hideLabel: true, size: 'sm', bare: true, value: s.group,
-    wrapClass: 'mc-bar__group',
-    options: GROUP_DIMS(s.kind).map((d) => ({ value: d.value, label: d.label })),
+  //
+  // A button menu, not a <select> — the same control as «Aktionen» beside it, so
+  // the row is one kind of thing rather than two. It also settles two problems
+  // the <select> had here: it measured itself against its WIDEST option, so the
+  // chosen value drifted away from its own chevron, and it needed a separate
+  // word in front of it to say what it was for. The trigger states both at once,
+  // which is also how the wireframe reads it.
+  const dims = GROUP_DIMS(s.kind);
+  const chosen = dims.find((d) => d.value === s.group) || dims[0];
+  const group = s.lvl > 2 ? '' : C.menu({
+    menuId: 'mc-group', label: 'Gruppieren', triggerLabel: `Gruppieren: ${chosen.label}`,
+    items: dims.map((d) => ({ action: `group:${d.value}`, label: d.label })),
   });
-  // Grouping arranges what is IN the pane; folding and exporting act on it. The
-  // rule separates the two, so the row reads as two groups rather than four
-  // unrelated controls.
-  const rule = group ? '<span class="mc-bar__sep" aria-hidden="true"></span>' : '';
-  // No icons on the rows: three entries that all mean «take this away» would
-  // carry two identical download symbols and one printer, which sorts them by
-  // nothing. The words already say it.
-  return group + rule + fold + C.menu({
+  // No divider of our own: the bar already draws one before every .action-menu
+  // (catbar.css, from the finding that an export dropdown four pixels from the
+  // sort select reads as part of sorting). A second mechanism drew a second line.
+  //
+  // Order as in the wireframe — fold, then what ARRANGES the pane, then what
+  // ACTS on it. On the Tabelle tab the table's own Sortieren and Filter come
+  // first in the same row, which puts all the arranging together.
+  //
+  // No icons on the action rows: three entries that all mean «take this away»
+  // would carry two identical download symbols and one printer, which sorts them
+  // by nothing. The words already say it.
+  return fold + group + C.menu({
     menuId: 'mc-actions', label: 'Aktionen', triggerLabel: 'Aktionen',
     items: [
       { action: 'csv', label: 'CSV herunterladen' },
@@ -683,11 +699,14 @@ const personRows = (persons) => (persons || []).map((p) => [esc(p.role),
 function paneHtml(ctx, s, unit) {
   const { core, C } = ctx;
   if (s.lvl === 0) return homeHtml(ctx, s);
+  // The table's own bar carries the controls on that tab (see mountPane), so the
+  // pane must not put a second one above it.
   if (s.tab === 'tabelle') return '<div id="mc-table"></div>';
-  if (s.tab === 'diagramm') return landscapeHtml(ctx, s);
-  if (s.lvl === 4) return attrOverview(core, s, unit);
-  if (s.lvl === 3) return recordOverview(core, C, s, unit);
-  return scopeOverview(s, unit);
+  const bar = toolbarHtml(ctx, s);
+  if (s.tab === 'diagramm') return bar + landscapeHtml(ctx, s);
+  if (s.lvl === 4) return bar + attrOverview(core, s, unit);
+  if (s.lvl === 3) return bar + recordOverview(core, C, s, unit);
+  return bar + scopeOverview(s, unit);
 }
 
 function attrOverview(core, s, unit) {
@@ -929,6 +948,10 @@ function mountPane(ctx, s, unit) {
     ctx.onUnmount(C.mountDataTable(host, {
       id: 'mc-kids', unit: { nom: unit.kid, dat: unit.kid }, perPage: 25, compact: true, flush: true,
       caption: `${unit.kid} von ${r.name}`, rows: scopeKids(s),
+      // The controls join the table's own bar rather than opening a second one.
+      // onAction is the table's, so the menu is re-wired after every redraw of
+      // its bar — sorting or paging would otherwise leave a dead trigger.
+      extra: toolsHtml(ctx, s), onAction: (action) => onMenuAction(action, s, unit),
       // One search field and one count per page: the scope bar above carries
       // both, and it carries them on every tab rather than only on this one.
       showSearch: false, showCount: false,
@@ -960,6 +983,7 @@ function mountPane(ctx, s, unit) {
     id: 'mc-rows', unit: { nom: unit.nom, dat: unit.dat }, perPage: 25, compact: true, flush: true,
     showSearch: false, showCount: false,
     caption: s.leaf ? `${unit.nom} · ${s.leaf}` : `${unit.nom} · alle ${unit.axisPl}`,
+    extra: toolsHtml(ctx, s), onAction: (action) => onMenuAction(action, s, unit),
     // A whole branch listed flat is a wall — nineteen business objects across
     // five domains read as nineteen unrelated rows. Sectioning by the axis is
     // the same grouping the tree draws, so the two views agree. Inside ONE group

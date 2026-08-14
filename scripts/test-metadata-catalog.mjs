@@ -43,9 +43,14 @@ const STATE = `JSON.stringify({
   qDead: !!(document.querySelector('#mc-q') || {}).disabled,
   qCount: ((document.querySelector('#mc-q-count') || {}).textContent || '').replace(/\\s+/g,' ').trim(),
   tableSearch: document.querySelectorAll('#mc-panel .catbar__search').length,
-  actions: [...document.querySelectorAll('#mc-tools [data-action]')].map(b => b.dataset.action),
-  groupSel: (() => { const g = document.querySelector('#mc-group');
-    return g ? g.value + ':' + [...g.options].map(o => o.value).join(',') : '(keins)'; })(),
+  actions: [...document.querySelectorAll('[data-menu="mc-actions"] [data-action]')].map(b => b.dataset.action),
+  groupSel: (() => {
+    const m = document.querySelector('[data-menu="mc-group"]');
+    if (!m) return '(keins)';
+    const chosen = m.querySelector('.action-menu__trigger').textContent.replace(/\s+/g,' ').trim();
+    return chosen + ':' + [...m.querySelectorAll('[data-action]')]
+      .map(b => b.dataset.action.replace('group:', '')).join(',');
+  })(),
   roots: [...document.querySelectorAll('.pf-tree > .pf-tree__item')].map(li => {
     const label = li.querySelector('.pf-tree__label');
     const n = li.querySelector('.pf-tree__n');
@@ -325,7 +330,7 @@ try {
 
   head('Gruppieren — one choice, both views');
   o = await go('#/app/metadata-catalog?kind=objekt&tab=diagramm');
-  check(o.groupSel === 'achse:achse,verantwortung,status,keine',
+  check(o.groupSel === 'Gruppieren: Domäne:achse,verantwortung,status,keine',
     'a branch offers axis, stewardship, status and none', o.groupSel);
   check(o.boxes.length === 5, 'the axis divides the landscape into five', String(o.boxes.length));
   o = await go('#/app/metadata-catalog?kind=objekt&tab=diagramm&group=verantwortung');
@@ -349,7 +354,8 @@ try {
   // Reference lists have neither steward nor status in the data model yet, so
   // offering to group by them would offer a single «noch nicht erfasst» box.
   o = await go('#/app/metadata-catalog?kind=referenz&tab=diagramm');
-  check(o.groupSel === 'achse:achse,keine', 'reference data offers only what it has', o.groupSel);
+  check(o.groupSel === 'Gruppieren: Thema:achse,keine',
+    'reference data offers only what it has', o.groupSel);
   await clean(p, 'Gruppieren');
 
   head('Sections');

@@ -79,6 +79,10 @@
 .catbar__aside,
 .catbar__controls > .action-menu { min-height:var(--target-min); white-space:nowrap;
   border-left:var(--stroke-1) solid var(--color-secondary-300); padding-left:var(--sp-4); margin-left:var(--sp-3); }
+/* …unless it leads the group, where there is nothing to its left to divide from
+   and the line reads as a stray mark. Same suppression the narrow breakpoint
+   below already applies for its own reason. */
+.catbar__controls > .action-menu:first-child { border-left:0; padding-left:0; margin-left:0; }
 /* The tinted, rounded card is a deliberate decision and STAYS. Only the wrapping
    flex row changes: at 1440 it left roughly 60% of the panel empty and made
    “Reset” look like a third facet heading (Item 2.13). */
