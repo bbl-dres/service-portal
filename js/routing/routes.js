@@ -41,12 +41,22 @@ export const NAV = [
       // many; it stopped holding once the incoming request asked where the
       // business architecture is documented. The branch names the CONTENT
       // rather than the two apps, which is how people ask for it.
-      // German UI term: «Prozesse und Geschäftsobjekte»
-      { label: 'Prozesse und Geschäftsobjekte', branchKey: 'architecture', branches: [
+      // German UI term: «Geschäftsarchitektur» (2026-08-14). The former name
+      // «Prozesse und Geschäftsobjekte» listed two of the four layers the
+      // signpost covers and missed the reference data entirely; every time the
+      // catalogue gained a branch the label went further out of date. The name
+      // of the thing itself does not have that problem.
+      //
+      // Each row lands on the branch of the SAME NAME in the catalogue, so the
+      // row and the page it opens say the same word. That is why the fourth row
+      // reads «Systeme» rather than «Datentabellen»: the catalogue groups tables
+      // by the system that holds them, and that is what a reader sees on arrival.
+      { label: 'Geschäftsarchitektur', branchKey: 'architecture', branches: [
         { href: '#/data/architecture', label: 'Übersicht' },
         { href: '#/app/process-docs', label: 'Prozesse' },
-        { href: '#/app/metadata-catalog', label: 'Geschäftsobjekte' },
-        { href: '#/app/metadata-catalog?kind=tabellen', label: 'Datentabellen und Felder' },
+        { href: '#/app/metadata-catalog?kind=objekt', label: 'Geschäftsobjekte' },
+        { href: '#/app/metadata-catalog?kind=tabelle', label: 'Systeme' },
+        { href: '#/app/metadata-catalog?kind=referenz', label: 'Referenzdaten' },
       ] },
       { href: '#/app/dataportal', label: 'Datenportal' },
       { href: '#/data/catalog', label: 'Datenbezug und API Verzeichnis' },

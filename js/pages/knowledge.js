@@ -104,7 +104,7 @@ function overview(ctx) {
     // sits with the metadata catalogue it belongs with.
     // The tile stays as a CROSS-REFERENCE — people who learned to look for it
     // here should be carried across, not sent to a dead end.
-    { title: 'Prozesse und Geschäftsobjekte', icon: 'Share', href: '#/data/architecture',
+    { title: 'Geschäftsarchitektur', icon: 'Share', href: '#/data/architecture',
       desc: 'Die Dokumentation der Geschäftsarchitektur — Prozesse, Geschäftsobjekte und ihre Realisierung.',
       meta: 'In Daten und Digitalisierung' },
   ].map(C.domainTile).join('');

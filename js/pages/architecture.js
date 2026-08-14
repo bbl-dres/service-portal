@@ -20,7 +20,7 @@
 const CRUMBS = [
   { label: 'Startseite', href: '#/' },
   { label: 'Daten und Digitalisierung', href: '#/data' },
-  { label: 'Prozesse und Geschäftsobjekte' },
+  { label: 'Geschäftsarchitektur' },
 ];
 
 // NOTE: the repository's own URL is not linked from this page. Each record
@@ -50,7 +50,7 @@ export function layers(core) {
     },
     {
       key: 'geschaeftsobjekte', icon: 'Stack', title: 'Geschäftsobjekte',
-      href: '#/app/metadata-catalog',
+      href: '#/app/metadata-catalog?kind=objekt',
       count: `${objects.length} Objekte`,
       detail: `${attributes} Attribute`,
       desc: 'Worüber das BBL spricht: die fachlichen Begriffe mit Definition, Domäne und '
@@ -59,7 +59,7 @@ export function layers(core) {
     },
     {
       key: 'datentabellen', icon: 'Database', title: 'Datentabellen und Felder',
-      href: '#/app/metadata-catalog?kind=tabellen',
+      href: '#/app/metadata-catalog?kind=tabelle',
       count: `${tables.length} Tabellen`,
       detail: `${fields} Felder`,
       desc: 'Wo die Begriffe physisch liegen: Tabellen und Felder der Quellsysteme mit Format '
@@ -80,7 +80,7 @@ export function layers(core) {
 
 export default function render(ctx) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
-  setTitle('Prozesse und Geschäftsobjekte');
+  setTitle('Geschäftsarchitektur');
   setCrumbs(CRUMBS);
 
   const rows = layers(core);
@@ -114,7 +114,7 @@ export default function render(ctx) {
   mount.innerHTML = `
     ${C.pageSection({
       body: C.pageHeader({
-        title: 'Prozesse und Geschäftsobjekte',
+        title: 'Geschäftsarchitektur',
         lead: 'Dokumentation der Geschäftsarchitektur des BBL — was es gibt, wer dafür verantwortlich '
           + 'ist und wo das Original steht.',
       }),
