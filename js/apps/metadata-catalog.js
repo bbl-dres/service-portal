@@ -581,10 +581,6 @@ function toolsHtml(ctx, s) {
     menuId: 'mc-group', label: 'Gruppieren', triggerLabel: `Gruppieren: ${chosen.label}`,
     items: dims.map((d) => ({ action: `group:${d.value}`, label: d.label })),
   });
-  // No divider of our own: the bar already draws one before every .action-menu
-  // (catbar.css, from the finding that an export dropdown four pixels from the
-  // sort select reads as part of sorting). A second mechanism drew a second line.
-  //
   // Order as in the wireframe — fold, then what ARRANGES the pane, then what
   // ACTS on it. On the Tabelle tab the table's own Sortieren and Filter come
   // first in the same row, which puts all the arranging together.
@@ -592,7 +588,7 @@ function toolsHtml(ctx, s) {
   // No icons on the action rows: three entries that all mean «take this away»
   // would carry two identical download symbols and one printer, which sorts them
   // by nothing. The words already say it.
-  return fold + group + C.menu({
+  const actions = C.menu({
     menuId: 'mc-actions', label: 'Aktionen', triggerLabel: 'Aktionen',
     items: [
       { action: 'csv', label: 'CSV herunterladen' },
@@ -600,6 +596,13 @@ function toolsHtml(ctx, s) {
       { action: 'pdf', label: 'Als PDF drucken' },
     ],
   });
+  // Wrapped as one group. The bar draws a divider before every bare
+  // .action-menu that is a direct child of .catbar__controls; these are all
+  // bordered buttons, so each already reads as its own control and the lines
+  // were a third mark among three boxes. The wrapper keeps the SEPARATION that
+  // rule exists for (catbar.css: an export dropdown four pixels from the sort
+  // select reads as part of sorting) and drops only the stroke.
+  return `<span class="mc-tools">${fold}${group}${actions}</span>`;
 }
 
 // --- Tree --------------------------------------------------------------------
