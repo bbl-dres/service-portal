@@ -1012,23 +1012,11 @@ function landscapeBoxes(s) {
 }
 
 function landscapeHtml(ctx, s) {
-  const { C } = ctx;
-  const CHEV = C.icon('ChevronRight', 'lscape__chev');
-  const boxes = landscapeBoxes(s);
-  if (!boxes.length) return '<p class="lscape__empty">In diesem Umfang ist nichts erfasst.</p>';
-
-  return `<div class="lscape">${boxes.map((b) => {
-    const open = isOpen(`box:${b.key}`, true);
-    return `<section class="lscape__group">
-      <h3 class="lscape__head"><button type="button" class="lscape__toggle" data-box="${esc(b.key)}"
-        aria-expanded="${open}">${CHEV}<span>${esc(b.label)}</span>
-        <span class="lscape__n">${b.count}</span></button></h3>
-      ${!open ? '' : b.tiles.length
-    ? `<ul class="lscape__tiles">${b.tiles.map((t) => `<li><a class="lscape__tile${t.on ? ' is-active' : ''}"
-          href="${esc(t.href)}"${t.on ? ' aria-current="true"' : ''}>${esc(t.label)}</a></li>`).join('')}</ul>`
-    : `<p class="lscape__empty">Für «${esc(b.label)}» ist nichts erfasst.</p>`}
-    </section>`;
-  }).join('')}</div>`;
+  return ctx.C.landscape({
+    boxes: landscapeBoxes(s),
+    isOpen: (key) => isOpen(`box:${key}`, true),
+    emptyText: 'In diesem Umfang ist nichts erfasst.',
+  });
 }
 
 // The catalogue root has no tabs, because it is not a scope: it is the way in.

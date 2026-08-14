@@ -5,7 +5,7 @@
 import {
   actionCard, activeFilters, card, cardAction, contactBox, contactCard, detailBar,
   detailHead, detailSection, domainTile, downloadItem, downloadLink, empty,
-  heroFigure, pageHeader, pageSection, renderNotFound, sourceBox, table,
+  heroFigure, landscape, pageHeader, pageSection, renderNotFound, sourceBox, table,
 } from './content.js';
 import {
   announce, flashError, mountBanner, notification, notificationHtml, processDone, toast,
@@ -35,7 +35,7 @@ export {
   accessCard, accordion, acquireOverlayLock, actionCard, activeFilters, announce,
   announceCatalogue, backLink, badge, card, cardAction, catalogueBar,
   catalogueHash, catalogueResults, catalogueState, catalogueView, closeOverlays, contactBox,
-  contactCard, contextLine, detailBar, detailHead, detailSection, domainTile,
+  contactCard, contextLine, detailBar, detailHead, detailSection, domainTile, landscape,
   downloadItem, downloadLink, empty, errorSummary, escape, field, filterGroup,
   flashError, focusProcessDone, focusWizardStep, heroFigure, icon, loading,
   loginGate, markLang, menu, mountBanner, mountDataTable, notification, openModal,
@@ -49,7 +49,7 @@ export {
 };
 
 const C = {
-  icon, escape, badge, statusBadge, loading, pageHeader, card, table, empty,
+  icon, escape, badge, statusBadge, loading, pageHeader, card, table, empty, landscape,
   openModal, openShareModal, domainTile, announce, trapFocus,
   acquireOverlayLock, registerOverlay, closeOverlays,
   renderNotFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,

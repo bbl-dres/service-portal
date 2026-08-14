@@ -662,3 +662,33 @@ export function downloadLink(url, label, iconName = 'Download') {
     ? `<a class="btn btn--link btn--icon-left" href="${escape(safeUrl)}">${icon(iconName, 'btn__icon')}<span class="btn__text">${escape(label)}</span></a>`
     : `<span class="btn btn--link btn--icon-left" aria-disabled="true" title="Im Prototyp nicht verfügbar">${icon(iconName, 'btn__icon')}<span class="btn__text">${escape(label)}<span class="sr-only"> (im Prototyp nicht verfügbar)</span></span></span>`;
 }
+
+// --- Landschaft --------------------------------------------------------------
+// Derselbe Umfang, den eine Tabelle auflistet, als GEBIET statt als Reihenfolge.
+// Eine Tabelle beantwortet «welche Werte»; das hier beantwortet «wie viel ist da
+// und wie teilt es sich» — eine Frage, die man durch Hinsehen beantwortet, nicht
+// durch Lesen. Darum traegt eine Kachel einen Namen und sonst nichts, und die
+// Hoehe eines Kastens IST die Aussage: ein Blick sagt, dass «Bauwerk und
+// Liegenschaft» viermal so viel haelt wie «Finanzen», ohne eine Zahl zu lesen.
+//
+//   boxes    [{ key, label, count, tiles: [{ label, href, on }] }]
+//   isOpen   (key) => boolean — das Gedaechtnis gehoert dem Aufrufer, weil es
+//            seine Route ueberleben muss
+//
+// Die Gestalt steckt in css/sections/landscape.css und gilt fuer alle Aufrufer.
+export function landscape({ boxes, isOpen, emptyText = 'Hier ist nichts erfasst.' }) {
+  if (!boxes || !boxes.length) return `<p class="lscape__empty">${escape(emptyText)}</p>`;
+  const chev = icon('ChevronRight', 'lscape__chev');
+  return `<div class="lscape">${boxes.map((b) => {
+    const open = isOpen ? isOpen(b.key) !== false : true;
+    return `<section class="lscape__group">
+      <h3 class="lscape__head"><button type="button" class="lscape__toggle" data-box="${escape(b.key)}"
+        aria-expanded="${open}">${chev}<span>${escape(b.label)}</span>
+        <span class="lscape__n">${escape(String(b.count))}</span></button></h3>
+      ${!open ? '' : (b.tiles || []).length
+    ? `<ul class="lscape__tiles">${b.tiles.map((t) => `<li><a class="lscape__tile${t.on ? ' is-active' : ''}"
+          href="${escape(t.href)}"${t.on ? ' aria-current="true"' : ''}>${escape(t.label)}</a></li>`).join('')}</ul>`
+    : `<p class="lscape__empty">Für «${escape(b.label)}» ist nichts erfasst.</p>`}
+    </section>`;
+  }).join('')}</div>`;
+}
