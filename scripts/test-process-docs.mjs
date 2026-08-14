@@ -40,7 +40,12 @@ const expectedSteps = (file) => {
       branches: document.querySelectorAll('.pf-tree__section > li').length,
       leaves: [...document.querySelectorAll('.pf-tree__children .pf-tree__label')].map(x => x.textContent),
       leafCounts: [...document.querySelectorAll('.pf-tree__children .pf-tree__n')].map(x => Number(x.textContent)),
-      rows: document.querySelectorAll('.pf-main tbody tr').length,
+      rows: document.querySelectorAll('.pf-main tbody tr:not(.table__group):not(.table__subhead)').length,
+      // Seit 2026-08-14 hat die Prozessdoku dieselben drei Sichten wie die
+      // Geschaeftsarchitektur, und das Diagramm ist die Voreinstellung.
+      boxes: document.querySelectorAll('.lscape__group').length,
+      tiles: document.querySelectorAll('.lscape__tile').length,
+      views: [...document.querySelectorAll('.view-switch__btn')].map(b => b.getAttribute('aria-label')).join('|'),
       cols: [...document.querySelectorAll('.pf-main thead th')].map(t => t.textContent.trim()),
     })`));
     check(o.h1 === 'Prozessdokumentation Bauten', 'page title', o.h1);
@@ -48,8 +53,20 @@ const expectedSteps = (file) => {
     check(o.branches === 1, 'one process area (L1)', String(o.branches));
     check(o.leaves.length === 5, 'five process groups (L2)', o.leaves.join(', '));
     check(o.leafCounts.reduce((a, b) => a + b, 0) === 18, 'group counts sum to 18', o.leafCounts.join('+'));
-    check(o.rows === 12, '12 rows per page', String(o.rows));
-    check(o.cols.join('|') === 'Nr.|Prozess|Prozessgruppe|Status', 'list-view columns', o.cols.join('|'));
+    check(o.views === 'Übersicht|Diagramm|Tabelle', 'the same three views as the architecture catalogue', o.views);
+    check(o.boxes === 5 && o.tiles === 18,
+      'and it opens on the diagram: one box per process group', `${o.boxes} Kaesten · ${o.tiles} Kacheln`);
+    // Die Tabelle liegt einen Klick daneben und teilt sich nach derselben Achse.
+    const tbl = JSON.parse(await p.evaluate(`(async () => {
+      document.querySelector('#view-tabelle').click();
+      await new Promise(r => setTimeout(r, 700));
+      return JSON.stringify({
+        rows: document.querySelectorAll('.pf-main tbody tr:not(.table__group):not(.table__subhead)').length,
+        cols: [...document.querySelectorAll('.pf-main thead th')].map(t => t.textContent.trim()).join('|'),
+      });
+    })()`));
+    check(tbl.rows === 18, 'the table lists every process in scope', String(tbl.rows));
+    check(tbl.cols === 'Nr.|Prozess|Prozessgruppe|Status', 'list-view columns', tbl.cols);
     await clean(p, 'process map');
 
     // 2. Group filter through the tree.

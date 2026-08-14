@@ -170,7 +170,14 @@ function list(ctx) {
   const state = C.catalogueState(query, {
     base: BASE, perPage: PER_PAGE,
     sortOpts: SORTS.map((s) => s.value),
-    defaultView: 'list', trimQuery: false,
+    // Der Zustand muss die erlaubten Sichten KENNEN, sonst faellt jede
+    // unbekannte auf die Voreinstellung zurueck und der Wechsel tut nichts.
+    views: ['uebersicht', 'diagramm', 'tabelle'],
+    // Dieselben drei Sichten wie in der Geschaeftsarchitektur, und dieselbe
+    // Voreinstellung: das Diagramm. Wer eine Prozesslandkarte oeffnet, will
+    // zuerst SEHEN, wie sie sich teilt — das ist eine Frage ans Auge, keine an
+    // die Leseordnung. Die Liste steht einen Klick daneben.
+    defaultView: 'diagramm', trimQuery: false,
     filters: {
       group: groups.map((g) => g.key),
       status: refList(core, 'objectStatuses').map((s) => s.id),
@@ -221,6 +228,69 @@ function list(ctx) {
     ],
     rows,
   });
+
+  // --- Die drei Flaechen -----------------------------------------------------
+  // Dieselben drei wie in der Geschaeftsarchitektur, damit ein Leser, der eine
+  // der beiden Anwendungen kennt, die andere nicht neu lernen muss.
+
+  // Kaesten der Landschaft: Prozessgruppen, Kacheln sind die Prozesse. Die
+  // Gruppe ist die Achse, die diese Anwendung ohnehin fuehrt — sie steht im
+  // Baum, im Filter und in der Tabellenspalte.
+  const boxes = () => {
+    const by = new Map();
+    for (const p of sorted) {
+      if (!by.has(p.groupLabel)) by.set(p.groupLabel, []);
+      by.get(p.groupLabel).push(p);
+    }
+    // Groesstes Feld zuerst: die Karte liest sich vom groessten Gebiet abwaerts.
+    return [...by].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'de'))
+      .map(([label, mine]) => ({
+        key: label, label, count: mine.length,
+        tiles: mine.map((p) => ({ label: p.name, href: processHref(p.processId) })),
+      }));
+  };
+
+  // Was der gewaehlte Umfang IST — nicht was darin liegt. Auf der Wurzel der
+  // Bereich, sonst die Gruppe.
+  const overviewHtml = () => {
+    const one = selGroups.length === 1 ? groups.find((g) => g.key === selGroups[0]) : null;
+    const area = areas[0] || {};
+    const mine = one ? all.filter((p) => p.group === one.key) : all;
+    const stat = (label, value) => `<div class="stat"><div class="stat__value">${esc(String(value))}</div>`
+      + `<div class="stat__label">${esc(label)}</div></div>`;
+    return `<section class="detail-section">
+        <h2 class="detail-section__title">${esc(one ? one.label : area.label || TITLE)}</h2>
+        <p>${one
+    ? `Prozessgruppe im Bereich «${esc(area.label || '')}».`
+    : 'Die Prozesse des Immobilienmanagements, gegliedert in Prozessgruppen.'}</p>
+      </section>
+      <section class="detail-section">
+        <h2 class="detail-section__title">Umfang</h2>
+        <div class="stats">${stat('Prozesse', mine.length)}${
+  one ? '' : stat('Prozessgruppen', groups.length)}${
+  stat('Freigegeben', mine.filter((p) => p.status === 'valid').length)}</div>
+      </section>`;
+  };
+
+  const paneHtml = () => {
+    if (!core.available('processes')) {
+      return C.empty('Prozesse konnten nicht geladen werden (Ladefehler).', { available: false });
+    }
+    if (view === 'uebersicht') return overviewHtml();
+    if (view === 'diagramm') {
+      // EINE Kachel je Reihe: Prozessnamen sind Saetze, keine Begriffe.
+      // Zweispaltig blieb von «Objektuebergabe an LB, Mieter» ein
+      // «Objektuebergabe an L» uebrig.
+      return C.landscape({ boxes: boxes(), isOpen: () => true, cols: 1,
+        emptyText: 'In diesem Umfang ist kein Prozess erfasst.' });
+    }
+    // Tabelle: nach Prozessgruppe geteilt, wie im Katalog — die Achse, an der
+    // auch der Baum und das Diagramm sie teilen.
+    return sorted.length
+      ? listView(sorted)
+      : C.empty('Kein Prozess gefunden.', { hint: 'Passen Sie Ihre Suche oder die Filter an.',
+        action: { label: 'Suche und Filter zurücksetzen', href: BASE } });
+  };
 
   // Der Baum fuehrt Bereiche (L1) und Prozessgruppen (L2); die gefilterten
   // Prozesse (L3) stehen in der Liste daneben. Beide Stufen ohne Symbol — die
@@ -290,21 +360,15 @@ function list(ctx) {
       sort: { id: 'pd-sort', value: sortKey, options: SORTS.map((s) => ({ value: s.value, label: s.label })) },
       filterId: 'pd-filter', filterLabel: 'Filter', filterCount,
       panelId: 'pd-filters', panel,
-      view, views: [['list', 'Listenansicht', 'List'], ['gallery', 'Galerieansicht', 'Apps']],
+      view,
+      views: [['uebersicht', 'Übersicht', 'InfoCircle'], ['diagramm', 'Diagramm', 'Apps'],
+        ['tabelle', 'Tabelle', 'List']],
     })}
     ${C.activeFilters({ filters: active, resetHref: BASE })}
     <div class="pf-layout">
       <aside class="pf-sidebar" id="pd-tree" aria-label="Prozesshierarchie"></aside>
       <div class="pf-main">
-        ${C.catalogueResults({
-          resetHref: BASE, visible, count: sorted.length,
-          view, page, totalPages,
-          card, listView, unit, gridCls: 'grid grid--responsive-cols-2',
-          regionLabel: 'Prozesse',
-          paginationInputId: 'pd-page', paginationLabel: 'Seitennavigation Prozesse',
-          paginationHref: (p) => hash({ page: p }),
-          available: core.available('processes'),
-        })}
+        ${paneHtml()}
       </div>
     </div>
   </div>`;

@@ -676,10 +676,16 @@ export function downloadLink(url, label, iconName = 'Download') {
 //            seine Route ueberleben muss
 //
 // Die Gestalt steckt in css/sections/landscape.css und gilt fuer alle Aufrufer.
-export function landscape({ boxes, isOpen, emptyText = 'Hier ist nichts erfasst.' }) {
+//   cols     Kacheln je Reihe (Vorgabe 2). Die Hoehe eines Kastens soll seine
+//            Anzahl zeigen, also muessen alle Kaesten dieselbe Zahl haben — aber
+//            WELCHE Zahl haengt an der Laenge der Namen. «Areal» und «Gebaeude»
+//            stehen zu zweit nebeneinander; «Bewirtschaftung Anmiet-, Pacht-
+//            vertraege» wird dabei bis zur Unkenntlichkeit abgeschnitten, und
+//            eine Kachel, deren Name man nicht lesen kann, traegt nichts mehr.
+export function landscape({ boxes, isOpen, emptyText = 'Hier ist nichts erfasst.', cols = 2 }) {
   if (!boxes || !boxes.length) return `<p class="lscape__empty">${escape(emptyText)}</p>`;
   const chev = icon('ChevronRight', 'lscape__chev');
-  return `<div class="lscape">${boxes.map((b) => {
+  return `<div class="lscape" style="--lscape-cols:${Number(cols) || 2}">${boxes.map((b) => {
     const open = isOpen ? isOpen(b.key) !== false : true;
     return `<section class="lscape__group">
       <h3 class="lscape__head"><button type="button" class="lscape__toggle" data-box="${escape(b.key)}"

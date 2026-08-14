@@ -42,9 +42,11 @@
 /* Pushed to the far end: it labels the box, it does not continue its name. */
 .lscape__note { margin-left:auto; font-weight:var(--fw-regular); color:var(--color-text-light); }
 
-/* Always two columns, so the number of ROWS is proportional to the count and
-   two boxes can be compared by height alone. */
-.lscape__tiles { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr));
+/* Feste Spaltenzahl, damit die Zahl der REIHEN der Anzahl entspricht und zwei
+   Kaesten sich allein an der Hoehe vergleichen lassen. Wie viele Spalten, sagt
+   der Aufrufer (--lscape-cols): zwei fuer kurze Namen wie «Areal», eine fuer
+   Prozessnamen, die sonst nach zwei Wörtern abgeschnitten waeren. */
+.lscape__tiles { display:grid; grid-template-columns:repeat(var(--lscape-cols, 2), minmax(0, 1fr));
   gap:var(--sp-2); list-style:none; margin:0; padding:var(--sp-3); }
 /* Filled, and carrying the NAME alone. A tile is one record; the count lives on
    the box. Anything more turns each tile into a row and the map back into a
