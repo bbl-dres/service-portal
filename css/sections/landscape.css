@@ -80,13 +80,21 @@
 .mc-bar > .tabs { flex:1 1 16rem; min-width:0; }
 .mc-bar__tools { flex:0 0 auto; display:flex; flex-wrap:wrap; align-items:center;
   gap:var(--sp-2); padding-bottom:var(--sp-2); }
-/* The label sits beside its control, not above it: one line, like every other
-   control in this row. The extra ancestor is what beats .form__group__select,
-   which stacks label over control at the same specificity. */
+/* One line, like every other control in this row. The extra ancestor is what
+   beats .form__group__select, which stacks label over control at the same
+   specificity. */
 .mc-bar__tools .mc-bar__group { display:flex; flex-direction:row; align-items:center;
   width:auto; gap:var(--sp-2); margin:0; }
-.mc-bar__tools .mc-bar__group > label { margin:0; font-size:var(--fs-sm);
-  color:var(--color-text-muted); white-space:nowrap; }
+/* A <select> sizes itself to its WIDEST option, not to the chosen one — so with
+   «keine» selected next to a «Verantwortung» in the list, the text sat a long way
+   from the chevron. Right-aligning puts the value back against its own control
+   without letting the row resize every time the choice changes. */
+.mc-bar__tools .mc-bar__group select { text-align:right; }
+/* The rule divides the two jobs in this row: arranging what is in the pane, and
+   acting on it. Sized rather than stretched, so it stays a mark between controls
+   and does not become a border on the row. */
+.mc-bar__sep { flex:none; align-self:center; width:var(--stroke-1); height:var(--sp-6);
+  background:var(--color-border); }
 
 /* --- The scope search -------------------------------------------------------
    Above the layout, not in the tab row: it narrows WHAT IS IN SCOPE, which is

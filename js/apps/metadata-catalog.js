@@ -561,17 +561,27 @@ function toolsHtml(ctx, s) {
       ${C.icon(anyOpen ? 'Minus' : 'Plus', 'btn__icon')}
       <span class="btn__text">Alle ${anyOpen ? 'zuklappen' : 'aufklappen'}</span></button>`;
   // Grouping orders many records; on a record there is only one, so it goes.
+  // No visible label: the chosen value already reads as one («Domäne», «keine»),
+  // and a word in front of it only widened the row. The label stays for screen
+  // readers, which have no such context.
   const group = s.lvl > 2 ? '' : C.select({
-    id: 'mc-group', label: 'Gruppieren', size: 'sm', bare: true, value: s.group,
+    id: 'mc-group', label: 'Gruppieren', hideLabel: true, size: 'sm', bare: true, value: s.group,
     wrapClass: 'mc-bar__group',
     options: GROUP_DIMS(s.kind).map((d) => ({ value: d.value, label: d.label })),
   });
-  return fold + group + C.menu({
-    menuId: 'mc-actions', label: 'Aktionen', triggerLabel: 'Aktionen', triggerIcon: 'Download',
+  // Grouping arranges what is IN the pane; folding and exporting act on it. The
+  // rule separates the two, so the row reads as two groups rather than four
+  // unrelated controls.
+  const rule = group ? '<span class="mc-bar__sep" aria-hidden="true"></span>' : '';
+  // No icons on the rows: three entries that all mean «take this away» would
+  // carry two identical download symbols and one printer, which sorts them by
+  // nothing. The words already say it.
+  return group + rule + fold + C.menu({
+    menuId: 'mc-actions', label: 'Aktionen', triggerLabel: 'Aktionen',
     items: [
-      { action: 'csv', label: 'CSV herunterladen', icon: 'Download' },
-      { action: 'excel', label: 'Excel herunterladen', icon: 'Download' },
-      { action: 'pdf', label: 'Als PDF drucken', icon: 'Printer' },
+      { action: 'csv', label: 'CSV herunterladen' },
+      { action: 'excel', label: 'Excel herunterladen' },
+      { action: 'pdf', label: 'Als PDF drucken' },
     ],
   });
 }
