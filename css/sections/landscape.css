@@ -82,8 +82,23 @@
    seiner eigenen Reiterflaeche stehen. Also kommen die Bedienelemente herauf und
    die Tabelle zeichnet keine Leiste mehr (mountDataTable `bar: false`).
    Auf schmalem Schirm rutschen sie unter die Reiter, statt sie zu quetschen. */
+/* Die Linie unter der Zeile gehoert der ZEILE, nicht den Reitern. Das CD zeichnet
+   sie auf .tab__controls, und die reicht nur so weit wie die Reiter — rechts
+   davon standen die Bedienelemente ueber blankem Grund, und die Kante brach auf
+   halber Strecke ab. Sie eine Ebene hoeher zu ziehen ist die ganze Loesung: eine
+   zweite Linie unter .mc-bar__tools waere zwar naheliegend, liesse aber genau in
+   der Luecke zwischen beiden (16px) ein Loch. Innen wird sie dafuer abbestellt,
+   sonst laegen zwei uebereinander.
+
+   Gezeichnet als inset-Schatten, nicht als border: ein Rahmen macht die Zeile
+   einen Pixel hoeher und schiebt die Flaeche darunter mit — der Abstand zwischen
+   Reiterleiste und Flaeche ist im ganzen Portal 32px, und mit border waren es
+   hier 33 (check-consistency). Der Schatten liegt auf der Kante, statt sie zu
+   verschieben. */
 .mc-bar { display:flex; flex-wrap:wrap; align-items:flex-end;
-  justify-content:space-between; gap:var(--sp-2) var(--sp-4); }
+  justify-content:space-between; gap:var(--sp-2) var(--sp-4);
+  box-shadow:inset 0 calc(-1 * var(--stroke-1)) 0 var(--color-border); }
+.mc-bar > .tabs .tab__controls { border-bottom:0; }
 .mc-bar > .tabs { flex:1 1 16rem; min-width:0; }
 .mc-bar__tools { flex:0 0 auto; display:flex; flex-wrap:wrap; align-items:center;
   gap:var(--sp-2); padding-bottom:var(--sp-2); }
@@ -101,13 +116,22 @@
 
 
 /* --- The scope search -------------------------------------------------------
-   Above the layout, not in the tab row: it narrows WHAT IS IN SCOPE, which is
-   the tree's job, not the tabs'. So it sits over both columns and applies to
-   every tab. Its width is deliberately modest — a full-bleed field would read
-   as the page's main act rather than as a refinement of it. */
-.mc-search { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
-  margin-top:var(--sp-4); }
-.mc-search__field { position:relative; flex:0 1 26rem; min-width:0; display:flex; }
+   IM Seitenbaum, als erster Abschnitt ueber «Katalog». Sie schraenkt den Umfang
+   ein — das ist die Arbeit des Baums, nicht die der Reiter —, und seit sie den
+   Baum mitfiltert, steht sie da, wo ihr Ergebnis erscheint. Die Trennlinie
+   darunter ist dieselbe, die das Bauteil zwischen seinen Abschnitten zieht: die
+   Suche IST einer.
+
+   Die Seitenspalte wird dafuer zur Spalte mit festem Kopf: das Suchfeld bleibt
+   stehen, der Baum darunter rollt. Sonst waere das Feld beim Blaettern durch die
+   Treffer fort — genau dann, wenn man die Anfrage nachschaerfen will. Das
+   overflow wandert deshalb von .pf-sidebar nach innen. */
+.mc-side { display:flex; flex-direction:column; overflow:hidden; }
+.mc-side__tree { flex:1 1 auto; min-height:0; overflow:auto; }
+.mc-side__search { flex:0 0 auto; margin:0 0 var(--sp-3); padding-bottom:var(--sp-3);
+  border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
+.mc-search { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4); }
+.mc-search__field { position:relative; flex:1 1 100%; min-width:0; display:flex; }
 .mc-search__icon { position:absolute; left:var(--sp-3); top:50%; transform:translateY(-50%);
   color:var(--color-text-muted); pointer-events:none; }
 .mc-search__field > input { width:100%; min-width:0; padding:var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-9);
@@ -121,7 +145,6 @@
    out of the tab order, rather than accepting keystrokes that go nowhere. */
 .mc-search__field > input:disabled { background:var(--color-secondary-50);
   color:var(--color-text-muted); cursor:not-allowed; }
-.mc-search__count { margin:0; font-size:var(--fs-sm); color:var(--color-text-muted); }
 
 /* Printing the catalogue means printing what is IN the pane. The tree chooses
    the scope and the controls arrange it — neither is part of the answer, and on

@@ -353,9 +353,15 @@ export default async function render(ctx) {
   <div class="container section">
     ${C.pageHeader({ title: TITLE,
     lead: 'Fachbegriffe des BBL, ihre Realisierung in den Führungssystemen, und die Wertelisten, auf die beide verweisen.' })}
-    ${searchBarHtml(ctx, s)}
     <div class="pf-layout">
-      <aside class="pf-sidebar" id="mc-tree" aria-label="Katalog durchsuchen"></aside>
+      ${/* Die Suche steht im Seitenbaum, weil sie ihn einschraenkt — nicht nur
+            die Flaeche. Sie bleibt stehen, der Baum darunter rollt: ein
+            Suchfeld, das beim Blaettern durch die Treffer wegscrollt, ist genau
+            dann fort, wenn man die Anfrage praezisieren will. */''}
+      <aside class="pf-sidebar mc-side" aria-label="Katalog">
+        ${searchBarHtml(ctx, s)}
+        <div class="mc-side__tree" id="mc-tree"></div>
+      </aside>
       <div class="pf-main">
         ${/* Eine Zeile: Reiter links, Bedienelemente rechts. Die Reiter koennen
               nicht in die Leiste der Tabelle hinunter — ein Reiter darf nicht in
@@ -381,7 +387,14 @@ export default async function render(ctx) {
   </div>`;
 
   mountPane(ctx, s, unit);
-  ctx.onUnmount(C.sidebarTree(mount.querySelector('#mc-tree'), treeConfig(ctx, s)));
+  // Der Baum wird neu gezeichnet, wenn die Anfrage sich aendert — er zeigt ja
+  // jetzt die Treffer. Der aufgeklappte Zustand ueberlebt das: das Bauteil legt
+  // ihn unter seiner Kennung ab, und die bleibt «mc-tree». Das Suchfeld steht
+  // ausserhalb, der Schreibfluss wird also nicht unterbrochen.
+  const treeHost = mount.querySelector('#mc-tree');
+  let dropTree = C.sidebarTree(treeHost, treeConfig(ctx, s));
+  ctx.onUnmount(() => dropTree());
+  const paintTree = () => { dropTree(); dropTree = C.sidebarTree(treeHost, treeConfig(ctx, cur)); };
 
   // The pane is redrawn in place for anything that changes only the pane. `cur`
   // is what it is currently showing, so a landscape click after a tab switch
@@ -402,6 +415,7 @@ export default async function render(ctx) {
     panel.innerHTML = paneHtml(ctx, cur, unit);
     mountPane(ctx, cur, unit);
     paintTools();
+    paintTree();
   };
 
   // Typing rewrites the URL in place rather than pushing history: a query is a
@@ -416,8 +430,6 @@ export default async function render(ctx) {
       history.replaceState(history.state, '', str ? `${BASE}?${str}` : BASE);
       cur = { ...cur, q: input.value.trim() };
       redraw();
-      const count = mount.querySelector('#mc-q-count');
-      if (count) count.innerHTML = searchCount(cur);
     };
     input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(apply, 250); });
     input.closest('form').addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(timer); apply(); });
@@ -471,31 +483,20 @@ export default async function render(ctx) {
 // The count is the field's feedback, and it has to be there on every tab —
 // «Übersicht» lists nothing, so without it a reader typing there gets no sign
 // that anything happened at all.
-function searchCount(s) {
-  if (s.lvl >= 4 || s.lvl === 0) return '';
-  const u = s.lvl === 3 ? { nom: BRANCH_UNIT[s.kind].kid, dat: BRANCH_UNIT[s.kind].kid }
-    : BRANCH_UNIT[s.kind];
-  const all = s.lvl === 3 ? s.rec.kids : s.rows.filter((r) => !s.leaf || r.group === s.leaf);
-  const hit = s.lvl === 3 ? scopeKids(s) : scopeRows(s);
-  const n = s.lvl === 3 ? 0 : landscapeBoxes(s).length;
-  // The number of sections was the one thing the table's own count added, so it
-  // moves here rather than being lost.
-  const groups = n > 1 ? ` · ${n} ${n === 1 ? 'Gruppe' : 'Gruppen'}` : '';
-  if (!s.q) return `${all.length} ${esc(u.nom)}${groups}`;
-  return `<strong>${hit.length}</strong> von ${all.length} ${esc(u.dat)}${groups}`;
-}
-
+// Kein eigener Trefferzaehler mehr. Er stand neben dem Feld und sagte «7 von
+// 19» — dieselbe Auskunft, die jetzt im Baum an jedem Ast steht, und dort
+// zusaetzlich verraet, WO die sieben liegen. Zwei Zaehler fuer eine Zahl, von
+// denen einer weniger sagt, ist einer zu viel.
 function searchBarHtml(ctx, s) {
   const { C } = ctx;
   const scope = searchScope(s);
-  return `<form class="mc-search" role="search" aria-label="${esc(scope.label)}">
+  return `<form class="mc-search mc-side__search" role="search" aria-label="${esc(scope.label)}">
     <label class="sr-only" for="mc-q">${esc(scope.label)}</label>
     <div class="mc-search__field">
       ${C.icon('Search', 'mc-search__icon')}
       <input id="mc-q" type="search" autocomplete="off" value="${esc(s.q)}"
         placeholder="${esc(scope.label)}${scope.dead ? '' : '…'}"${scope.dead ? ' disabled' : ''}>
     </div>
-    <p class="mc-search__count" id="mc-q-count">${searchCount(s)}</p>
   </form>`;
 }
 
@@ -707,9 +708,22 @@ function treeConfig(ctx, s) {
     };
   };
 
+  // Die Suche schraenkt den Baum ein, nicht nur die Flaeche — dieselbe Prüfung
+  // wie dort (scopeRows), sonst zaehlt der Ast anders als die Tabelle darunter.
+  // Ohne Anfrage ist es die volle Liste, der Normalfall kostet also nichts.
+  const rowsOf = (kind) => {
+    const all = records(core, kind);
+    return s.q ? all.filter((r) => matches(s.q, r.name, r.def, r.group, r.steward)) : all;
+  };
+
   const branchNode = (kind) => {
-    const rows = records(core, kind);
-    const open = s.kind === kind;
+    const rows = rowsOf(kind);
+    // Ein Ast ohne Treffer verschwindet, statt mit einer Null dazustehen: die
+    // Frage ist «wo steckt das», und ein leerer Ast ist keine Antwort darauf.
+    if (s.q && !rows.length) return null;
+    // Bei einer Anfrage steht alles offen — die Treffer zu suchen, die die
+    // Suche gefunden hat, waere die Arbeit zweimal.
+    const open = s.q ? true : s.kind === kind;
     const groups = [...new Set(rows.map((r) => r.group))].sort((a, b) => a.localeCompare(b, 'de'));
     return {
       id: `kind:${kind}`,
@@ -733,7 +747,7 @@ function treeConfig(ctx, s) {
           countUnit: BRANCH_UNIT[kind].nom,
           href: hrefFor(s, { kind, leaf: g, rec: null, attr: '' }),
           state: here && !s.rec ? 'active' : here ? 'path' : '',
-          open: here,
+          open: s.q ? true : here,
           hasChildren: mine.length > 0,
           children: () => mine.map((r) => recNode(r, kind, g)),
         };
@@ -752,13 +766,13 @@ function treeConfig(ctx, s) {
       [{
         id: 'root',
         label: 'Katalog',
-        count: BRANCHES.reduce((a, k) => a + records(core, k).length, 0),
+        count: BRANCHES.reduce((a, k) => a + rowsOf(k).length, 0),
         countUnit: 'Einträge',
         icon: 'tree/library',
         href: BASE,
         state: s.lvl === 0 ? 'active' : '',
       }],
-      BRANCHES.map(branchNode),
+      BRANCHES.map(branchNode).filter(Boolean),
     ],
   };
 }

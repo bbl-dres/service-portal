@@ -41,7 +41,12 @@ const STATE = `JSON.stringify({
   allBtn: ((document.querySelector('[data-lscape-all]') || {}).textContent || '').trim(),
   q: (document.querySelector('#mc-q') || {}).placeholder,
   qDead: !!(document.querySelector('#mc-q') || {}).disabled,
-  qCount: ((document.querySelector('#mc-q-count') || {}).textContent || '').replace(/\\s+/g,' ').trim(),
+  // Der Trefferzaehler steht seit 2026-08-14 im Baum, an jedem Ast, statt einmal
+  // neben dem Feld: dieselbe Zahl, die zusaetzlich sagt, WO die Treffer liegen.
+  qCount: [...document.querySelectorAll('.pf-tree__section:last-child > li')].map((li) => {
+    const l = li.querySelector('.pf-tree__label'), n = li.querySelector('.pf-tree__n');
+    return l && n ? l.textContent.trim() + ' ' + n.textContent.trim() : null;
+  }).filter(Boolean).join(' | '),
   tableSearch: document.querySelectorAll('#mc-panel .catbar__search').length,
   actions: [...document.querySelectorAll('[data-menu="mc-actions"] [data-action]')].map(b => b.dataset.action),
   groupSel: (() => {
@@ -319,7 +324,8 @@ try {
   check(o.qDead && !/…$/.test(o.q), 'on an attribute it is disabled and says why', o.q);
 
   // The query is a property of the scope, so it applies to every tab — including
-  // the one that lists nothing, where the count is the only feedback there is.
+  // the one that lists nothing, where the tree is the only feedback there is.
+  // Und der Baum zeigt dann nur noch die Aeste, in denen etwas steht.
   o = await go('#/app/metadata-catalog?kind=objekt&tab=tabelle&q=geb');
   // A section header is a <tr> too, so subtract them to count records.
   check(o.rows - o.groups.length === 9, '«geb» narrows the Tabelle tab',
@@ -327,7 +333,8 @@ try {
   o = await go('#/app/metadata-catalog?kind=objekt&tab=diagramm&q=geb');
   check(o.tiles === 9, 'and the Diagramm tab to the same nine', String(o.tiles));
   o = await go('#/app/metadata-catalog?kind=objekt&tab=uebersicht&q=geb');
-  check(/9 von 19/.test(o.qCount), 'and the count reports it even where nothing is listed', o.qCount);
+  check(/Geschäftsobjekte 9/.test(o.qCount),
+    'and the tree still reports the nine where the tab lists nothing', o.qCount);
 
   // A new scope starts unfiltered: carrying the query along a tree click would
   // leave a reader wondering where the records went.

@@ -245,3 +245,106 @@ Alles davon ist heute in Betrieb und durch Tests abgedeckt:
    Kindern), dann Prozessdoku und Shop (die gewinnen am meisten, B2 und B4),
    die fünf geteilten zuletzt über den Adapter, weil dort am meisten Verhalten
    hängt.
+
+---
+
+## 9 — Stand 2026-08-14: was der Umzug der übrigen sieben kostet
+
+Der Katalog läuft auf dem Bauteil, die anderen sieben nicht. Die Frage ist
+nicht mehr «bauen wir ein Bauteil» — es steht —, sondern ob die sieben
+umziehen oder ob eine reine CSS-Angleichung reicht. Deshalb zuerst gemessen,
+was heute überhaupt auseinanderläuft.
+
+### 9.1 Gemessen, nicht behauptet
+
+Beide bei 1440px, gleiche Fragen an beide (`scratchpad/two-trees.mjs`):
+
+| | alt (Portfolio, 94 Zeilen) | Bauteil (Katalog) |
+|---|---|---|
+| Leiter | L1=97 L2=113 L3=129 L4=145 **L5=137** | L1=85 L2=109 L3=125 L4=141 |
+| Symbol | **94/94** — Pflicht | **4/17** — Spalte reserviert, Angabe frei |
+| Zähler | `(1)` — Klammern aus CSS `::before` | `44` — blank |
+| Aktiv | Schlagschatten, kein linker Balken | 3px grau, kein Schatten |
+| Pfad | `rgb(31,41,55)` dunkelgrau | offen (siehe 9.5) |
+| Chevron | `static` — im Fluss | `absolute`, z-index 2 |
+| Trennlinien | **auf jeder Zeile** (`border-top`, explorer.css:68) | nur zwischen Abschnitten |
+| Abschnitte | keine | 2 |
+
+> Messfehler im ersten Durchgang, hier festgehalten, damit ihn niemand
+> wiederholt: der Kopf zählte `border-bottom` und fand null. Die Linie wird
+> aber als **führende** Regel gezeichnet (`border-top`, erste Zeile
+> transparent) — der Kommentar in explorer.css:42 erklärt auch, warum. Der
+> Screenshot zeigte sie die ganze Zeit; die Messung war falsch, nicht das Bild.
+
+Zwei Zahlen sind die eigentliche Nachricht:
+
+**L5=137 nach L4=145.** Das Kind steht **8px links von seinem Elter**. Die
+umgekehrte Hierarchie, die ich in der Prozessdoku gefunden hatte, steckt auch
+im Portfolio — sie war nur nie aufgefallen, weil die fünfte Stufe (`__sub`,
+die Geschosse) selten aufgeklappt wird. Das ist kein Stilunterschied, das ist
+eine falsche Aussage über die Daten.
+
+**94/94 gegen 4/17.** Der alte Baum *muss* auf jeder Zeile ein Symbol
+zeichnen, weil `treeHTML` `C.icon(levelDef.icon)` bedingungslos ausgibt. Das
+ist Punkt B5 und der Grund, warum im Portfolio auf jeder Zeile ein Globus,
+eine Landkarte und eine Nadel stehen, auch wo sie nichts unterscheiden.
+
+### 9.2 Ein Unterschied, der keiner ist
+
+Der Messkopf fand im Katalog kein `aria-level` und keine `role="treeitem"`.
+Das ist **Absicht, kein Mangel**: das Bauteil vergibt die Baumrollen nur im
+`select`-Modus. Im `nav`-Modus sind die Zeilen Links, die die Seite wechseln —
+und ein Satz Links soll sich nicht als Bedienelement ausgeben, sonst erwartet
+die Vorlesesoftware Pfeiltastenbedienung, die es dort nicht gibt. Die beiden
+Modi haben also verschieden viel ARIA, und das ist richtig so.
+
+Für den Umzug heisst das aber: die sieben teilen sich **nicht** einen Weg.
+Prozessdoku und Shop sind `nav` — derselbe Pfad, den der Katalog schon
+beweist. Die fünf Explorer sind `select` — und dieser Pfad ist **gebaut, aber
+von keiner Oberfläche je benutzt worden**. Das ist das eigentliche Risiko.
+
+### 9.3 Der Adapter ist kleiner als gedacht
+
+`treeHTML` tut zwei Dinge, die nichts miteinander zu tun haben: es
+**gruppiert** eine flache Objektliste über `levels` zu einer Hierarchie, und
+es **zeichnet** daraus Markup. Nur das Zeichnen ist doppelt. Die Gruppierung
+ist wertvoll und im Bauteil nicht vorhanden.
+
+Also trennen statt ersetzen: `objectsToNodes(objects, {levels, leaf})` behält
+die Gruppierung Zeile für Zeile und gibt Knoten zurück statt HTML; `treeHTML`
+wird zu `C.sidebarTree(objectsToNodes(...))`. **Die Aufrufstellen der fünf
+Apps ändern sich nicht.** `markTree`, `wireTree`, `syncTreeCounts` und
+`restoreTreeSelection` bleiben als Namen bestehen und arbeiten gegen das neue
+Markup.
+
+Ein Glücksfall dabei: `leaf.children` — die Geschosse im Plan-Editor, die
+einzige Stelle mit einer Ebene unter dem Blatt — trifft genau auf die
+Funktions-Kinder, die das Bauteil für die langen Attributlisten schon hat.
+Dieselbe Mechanik, zwei Anlässe.
+
+### 9.4 Die zwei Wege, ehrlich gerechnet
+
+**(A) Nur CSS angleichen.** Klammern weg, Aktivmarkierung angleichen, Chevron
+aus dem Fluss nehmen — das geht alles im Stylesheet, ohne eine Zeile
+JavaScript. Was damit **nicht** geht: das Pflichtsymbol (B5, steckt im
+Markup), Abschnitte (gibt es im alten Markup nicht), und die L5-Umkehrung nur
+mit Mühe. Vor allem bleiben zwei Implementierungen stehen, die beim nächsten
+Mal wieder auseinanderlaufen — genau das, was gerade passiert ist.
+
+**(B) Umziehen.** Löst alle sieben Punkte an einer Stelle und lässt eine
+Codebasis zurück statt zwei. Kostet die Absicherung des `select`-Modus.
+
+Empfehlung: **(B), aber in der Reihenfolge des Risikos** — nicht (A) als
+Zwischenschritt, denn die CSS-Arbeit aus (A) wäre nach (B) wegzuwerfen.
+
+### 9.5 Reihenfolge
+
+1. **Prozessdoku und Shop** (`nav`) — bewiesener Pfad, kleine Bäume, sofortiger
+   Gewinn: die Umkehrung und die Trennlinien verschwinden.
+2. **`objectsToNodes` + Portfolio als Pilot** — der reichste Fall: fünf Stufen,
+   Blattkinder, und er zeigt die L5-Umkehrung. Was hier hält, hält überall.
+3. **Projekte, Mietobjekte, Arbeitsplätze, Plan-Editor** — gleiche Form, danach
+   mechanisch.
+4. **Pfadmarkierung** (offen aus dem Review, 1.11:1): erst danach entscheiden.
+   Sie trägt jetzt Tiefeninformation, die vorher die Einrückung trug — und die
+   Einrückung ist nach dem Umzug in allen sieben eine andere.
