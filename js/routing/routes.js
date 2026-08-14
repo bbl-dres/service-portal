@@ -138,17 +138,39 @@ export const NAV = [
 //
 // Sections whose children are a single overview row get nothing — a dropdown
 // listing only the page you are already on is a control that does nothing.
+//
+// EVERY level resolves, not just the top one (2026-08-14). CD gives a dropdown
+// to every crumb after «Startseite», the current page included; here only the
+// five NAV sections matched, so «Digitalisierung», «Geschäftsarchitektur» and
+// «Anwendungen» never had one. A branch is matched by ANY of its hrefs, not just
+// its overview, so a leaf page's own crumb opens the pages beside it.
 export function crumbChildren(href) {
+  if (!href) return [];
   const section = NAV.find((item) => item.path === href);
-  if (!section) return [];
-  const rows = [];
-  for (const child of section.children || []) {
-    if (child.branchKey) {
-      const first = (child.branches || []).find((b) => b.href);
-      if (first) rows.push({ href: first.href, label: child.label });
-    } else if (child.href) rows.push(child);
+  if (section) {
+    const rows = [];
+    for (const child of section.children || []) {
+      if (child.branchKey) {
+        const first = (child.branches || []).find((b) => b.href);
+        if (first) rows.push({ href: first.href, label: child.label });
+      } else if (child.href) rows.push(child);
+    }
+    return rows.length > 1 ? rows : [];
   }
-  return rows.length > 1 ? rows : [];
+  // A page inside a branch: the branch's own rows. Tried with the query string
+  // first, because the catalogue's branch rows ARE query strings
+  // (`?kind=objekt`); the bare path is the fallback for everything else.
+  const bare = href.split('?')[0];
+  for (const item of NAV) {
+    for (const child of item.children || []) {
+      if (!child.branchKey) continue;
+      const rows = (child.branches || []).filter((b) => b.href);
+      if (rows.some((b) => b.href === href || b.href === bare)) {
+        return rows.length > 1 ? rows : [];
+      }
+    }
+  }
+  return [];
 }
 
 // Module paths are relative to routing/router.js, where dynamic import() executes.

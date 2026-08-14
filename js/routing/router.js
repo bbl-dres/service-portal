@@ -164,11 +164,19 @@ function renderCrumbs(crumbs) {
     const last = i === crumbs.length - 1;
     const sep = i > 0 ? C.icon('ChevronRight', 'breadcrumb__include-icon') : '';
     const href = safeLinkUrl(c.href);
-    if (last) return `<li><span aria-current="page">${sep}${C.escape(c.label)}</span></li>`;
-    if (!href) return `<li><span aria-disabled="true">${sep}${C.escape(c.label)}</span></li>`;
-    const link = `<a href="${C.escape(href)}">${sep}<span>${C.escape(c.label)}</span></a>`;
-    const children = crumbChildren(c.href);
-    if (!children.length) return `<li>${link}</li>`;
+    // The trail's last item deliberately carries no href (crumbs.js) — it IS the
+    // current page, so the address to resolve its siblings by is the one in the
+    // bar. Without this the current crumb could never have a dropdown, which is
+    // exactly where CD does put one.
+    const children = crumbChildren(c.href || (last ? here : ''));
+    // The head of the crumb: a link when it goes somewhere else, plain text when
+    // it is where we already are. Both get the same disclosure beside them.
+    const head = last
+      ? `<span aria-current="page">${sep}<span>${C.escape(c.label)}</span></span>`
+      : href
+        ? `<a href="${C.escape(href)}">${sep}<span>${C.escape(c.label)}</span></a>`
+        : `<span aria-disabled="true">${sep}<span>${C.escape(c.label)}</span></span>`;
+    if (!children.length) return `<li>${head}</li>`;
     const panelId = `crumb-menu-${i}`;
     // The open page is marked in its own dropdown (CD `.active`, a 2px bar), so
     // the list doubles as «where am I among these».
@@ -178,9 +186,10 @@ function renderCrumbs(crumbs) {
       return `<li><a class="menu__item menu__item--mini menu__item--border${active ? ' active' : ''}"
         href="${C.escape(childHref)}"${active ? ' aria-current="page"' : ''}>${C.escape(child.label)}</a></li>`;
     }).join('');
-    return `<li>${link}<button type="button" class="breadcrumb__dropdown" aria-expanded="false"
-        aria-controls="${panelId}" aria-label="Bereich ${C.escape(c.label)} anzeigen">${
-        C.icon('ChevronDown', 'breadcrumb__dropdown-icon')}</button>
+    return `<li>${head}<button type="button" class="breadcrumb__dropdown" aria-expanded="false"
+        aria-controls="${panelId}" aria-label="Bereich ${C.escape(c.label)} anzeigen"><span
+        class="breadcrumb__dropdown-box">${
+        C.icon('ChevronDown', 'breadcrumb__dropdown-icon')}</span></button>
       <ul id="${panelId}" hidden>${rows}</ul></li>`;
   }).join('');
 }
