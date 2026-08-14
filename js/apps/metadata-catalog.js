@@ -323,6 +323,26 @@ function readState(ctx) {
 
 // A link that changes one part of the scope and leaves the rest — in particular
 // the chosen tab — exactly where it was.
+// Zurueck heisst hier: eine Stufe hinauf, nicht «zur Anwendungsliste». Innerhalb
+// des Katalogs ist die Stufe darueber der Ort, an dem man war — auf einem
+// Attribut der Datensatz, auf einem Datensatz seine Gruppe, und so fort. Erst an
+// der Wurzel verlaesst «zurueck» die Anwendung.
+//
+// Der Baum kann das nicht ersetzen: er zeigt, WO man ist, aber die Bewegung
+// hinauf verlangt dort, die richtige Zeile zu finden. Ein Knopf ist ein Knopf.
+function backTo(s) {
+  if (s.attr && s.rec) return { backHref: hrefFor(s, { attr: '' }), backLabel: s.rec.name };
+  if (s.rec) {
+    const group = s.rec.group;
+    return group
+      ? { backHref: hrefFor(s, { rec: null, attr: '', kind: s.rec.kind, leaf: group }), backLabel: group }
+      : { backHref: hrefFor(s, { rec: null, attr: '', kind: s.rec.kind, leaf: '' }), backLabel: BRANCH_LABEL[s.rec.kind] };
+  }
+  if (s.leaf) return { backHref: hrefFor(s, { leaf: '' }), backLabel: BRANCH_LABEL[s.kind] };
+  if (s.kind) return { backHref: BASE, backLabel: TITLE };
+  return { backHref: '#/applications', backLabel: 'Anwendungen' };
+}
+
 function hrefFor(s, patch) {
   const n = { kind: s.kind, leaf: s.leaf, rec: s.rec, attr: s.attr, pick: s.pick,
     groupPick: s.groupPick, sortPick: s.sortPick, ...patch };
@@ -365,6 +385,11 @@ export default async function render(ctx) {
 
   mount.innerHTML = `
   <div class="container section">
+    ${/* Zurueck, Teilen, Drucken — dieselbe Zeile wie auf jeder Detailseite des
+          Portals und des Bundes-CD. Drucken hat hier eine genaue Bedeutung: das
+          Stylesheet druckt die FLAECHE, ohne Baum und Bedienelemente (siehe
+          landscape.css), also genau das, was man ansieht. */''}
+    ${C.detailBar(backTo(s))}
     ${C.pageHeader({ title: TITLE,
     lead: 'Fachbegriffe des BBL, ihre Realisierung in den Führungssystemen, und die Wertelisten, auf die beide verweisen.' })}
     ${/* Dieselbe Anordnung wie im Liegenschaften Inventar: eine Leiste mit Suche
