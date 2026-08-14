@@ -154,6 +154,7 @@ lehren nichts Neues.</p>
       <h3 id="case-title"></h3>
       <p id="case-why" class="note"></p>
       <div class="ruler" id="ruler"></div>
+      <p class="note" id="lazy"></p>
     </div>
   </div>
 </div>
@@ -265,6 +266,7 @@ Sache der Anwendung, die ihre Daten kennt.</p>
 </div>
 
 <script>
+/*DATA*/
 /* ── Das Bauteil ─────────────────────────────────────────────────────────── */
 const CHEV = '<svg class="pf__ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">'
   + '<path d="M5.5 3.5 L10 8 L5.5 12.5" fill="none" stroke="currentColor" stroke-width="1.6"'
@@ -325,8 +327,12 @@ function sidebarTree(host, cfg) {
   };
 
   const render = (nodes, depth) => nodes.map((node) => {
-    const kids = kidsOf(node);
-    const canOpen = kids.length > 0 || typeof node.children === 'function';
+    // `hasChildren` sagt, DASS es Kinder gibt, ohne sie zu bauen. Ohne diese
+    // Angabe müsste children() bei jedem Zeichnen laufen, nur um zu entscheiden,
+    // ob ein Chevron nötig ist — und dann wäre nichts mehr spät.
+    const canOpen = node.hasChildren === true
+      || (Array.isArray(node.children) && node.children.length > 0);
+    const kids = canOpen && OPEN.has(node.id) ? kidsOf(node) : [];
     const open = OPEN.has(node.id);
     const lvl = depth + 1;
     const cls = 'l' + lvl + (node.state ? ' has-' + node.state : '');
@@ -393,214 +399,82 @@ function sidebarTree(host, cfg) {
   };
 }
 
-/* ── Die fünf Datenformen ────────────────────────────────────────────────── */
-const n = (id, label, count, extra) => Object.assign({ id, label, count }, extra || {});
+/* ── Die fünf Datenformen ────────────────────────────────────────────────
+   Die Bäume stehen auf den ECHTEN Daten des Portals (data/*.json, beim Bauen
+   eingespritzt), nicht auf einer Handprobe. Eine Handprobe hat überall dieselbe
+   Verzweigung und überall dieselbe Tiefe — und das ist genau der Baum, den ein
+   Raster aus Versehen überlebt. Die echten sind schief: die Schweiz trägt
+   fünfzehn Objekte, Japan eines; «Gebäude» trägt fünfundsiebzig Felder,
+   «Konditionen» fünf. */
+
+// Aus dem Datenblock einen Knoten machen. `lazy` ist eine Liste von Namen, die
+// erst beim Aufklappen zu Zeilen wird — der Katalog trägt bis zu 75 Felder je
+// Datentabelle, und die im Voraus zu bauen hiesse, für jeden Leser Hunderte
+// verborgener Zeilen anzulegen, die die meisten nie sehen.
+let LAZY_BUILDS = 0;
+const toNode = (raw) => {
+  const node = { id: raw.id, label: raw.label, count: raw.count, icon: raw.icon,
+    split: raw.split, state: raw.state, href: '#' };
+  if (raw.lazy) {
+    node.hasChildren = raw.lazy.length > 0;
+    node.children = () => {
+      LAZY_BUILDS++;
+      return raw.lazy.map((name, i) => toNode({ id: raw.id + '-f' + i, label: name }));
+    };
+  } else if (raw.children && raw.children.length) {
+    node.children = raw.children.map(toNode);
+  }
+  return node;
+};
 
 const CASES = {
   portfolio: {
     name: 'Liegenschaften',
     why: 'Flache Objektliste, nach vier Achsen gruppiert: Land, Region, Ort, '
-       + 'Wirtschaftseinheit — dann das Objekt. Jede Stufe führt ein Symbol. '
-       + 'Bauprojekte, Mietverhältnisse und Workspace haben dieselbe Form. '
-       + 'Bedienmodell: auswählen, die Adresse bleibt.',
-    cfg: {
-      title: 'Struktur', mode: 'select',
+       + 'Wirtschaftseinheit — dann das Objekt. Jede Stufe führt ein Symbol, also '
+       + 'ist die Symbolbreite hier der gleichmässige Schritt. Bauprojekte, '
+       + 'Mietverhältnisse und Workspace haben dieselbe Form.',
+    cfg: { title: 'Struktur', mode: 'select',
       levels: [{ icons: true }, { icons: true }, { icons: true }, { icons: true }, { icons: true }],
-      sections: [[
-        n('ch', 'Schweiz', 7, { icon: 'globe', children: [
-          n('be', 'Bern', 4, { icon: 'pin', children: [
-            n('be-be', 'Bern', 3, { icon: 'house', children: [
-              n('zoll', 'Bundeskampus Zollikofen', 2, { icon: 'stack', state: 'path', children: [
-                n('o1', '1080/4840/AF Verwaltungsgebäude', null, { icon: 'house', state: 'active' }),
-                n('o2', '1080/4841/AF Werkhof', null, { icon: 'house' }),
-              ] }),
-              n('mur', 'Murtenstrasse 87', 1, { icon: 'stack', children: [
-                n('o3', '1080/4902/AF Bürogebäude', null, { icon: 'house' }),
-              ] }),
-            ] }),
-            n('thun', 'Thun', 1, { icon: 'house', children: [
-              n('thun-a', 'Allmendstrasse 8', 1, { icon: 'stack', children: [
-                n('o4', '0561/1120/AF Lagerhalle', null, { icon: 'house' }),
-              ] }),
-            ] }),
-          ] }),
-          n('zh', 'Zürich', 2, { icon: 'pin', children: [
-            n('zh-zh', 'Zürich', 2, { icon: 'house', children: [
-              n('zh-a', 'Stampfenbachstrasse 85', 2, { icon: 'stack', children: [
-                n('o5', '0261/3310/AF Verwaltungsgebäude', null, { icon: 'house' }),
-                n('o6', '0261/3311/AF Nebengebäude', null, { icon: 'house' }),
-              ] }),
-            ] }),
-          ] }),
-          n('vd', 'Waadt', 1, { icon: 'pin', children: [
-            n('vd-la', 'Lausanne', 1, { icon: 'house', children: [
-              n('vd-a', 'Avenue de Rhodanie 60', 1, { icon: 'stack', children: [
-                n('o7', '5586/2140/AF Bürogebäude', null, { icon: 'house' }),
-              ] }),
-            ] }),
-          ] }),
-        ] }),
-      ]],
-    },
+      sections: [DATA.portfolio.map(toNode)] },
   },
-
   shop: {
     name: 'Shop',
-    why: 'Rekursive Kategorien beliebiger Tiefe — die Form kennt keine feste '
-       + 'Stufenzahl. Keine Symbole, keine Zähler auf den unteren Stufen. '
-       + 'Bedienmodell: navigieren.',
-    cfg: {
-      title: 'Sortiment', mode: 'nav',
+    why: 'Rekursive Kategorien — die Form kennt keine feste Stufenzahl, also darf '
+       + 'die Leiter keine Decke haben. Keine Symbole. Zähler nur, wo noch etwas '
+       + 'darunter liegt.',
+    cfg: { title: 'Sortiment', mode: 'nav',
       levels: [{ icons: false }, { icons: false }, { icons: false }, { icons: false }],
-      sections: [[
-        n('alle', 'Alle Artikel', 312, { href: '#', state: 'path', children: [
-          n('buero', 'Büromaterial', 128, { href: '#', state: 'path', children: [
-            n('schreib', 'Schreibwaren', 54, { href: '#', state: 'path', children: [
-              n('kuli', 'Kugelschreiber', null, { href: '#', state: 'active' }),
-              n('blei', 'Bleistifte', null, { href: '#' }),
-              n('marker', 'Marker und Textmarker', null, { href: '#' }),
-              n('fein', 'Feinschreiber', null, { href: '#' }),
-            ] }),
-            n('papier', 'Papier und Blöcke', 41, { href: '#', children: [
-              n('kopier', 'Kopierpapier', null, { href: '#' }),
-              n('notiz', 'Notizblöcke', null, { href: '#' }),
-            ] }),
-            n('ordnen', 'Ordnen und Ablegen', 33, { href: '#', children: [
-              n('ordner', 'Ordner und Register', null, { href: '#' }),
-              n('mappen', 'Mappen und Hüllen', null, { href: '#' }),
-            ] }),
-          ] }),
-          n('mobil', 'Mobiliar', 94, { href: '#', children: [
-            n('tische', 'Tische', 31, { href: '#', children: [
-              n('steh', 'Stehpulte', null, { href: '#' }),
-              n('sitz', 'Sitzarbeitsplätze', null, { href: '#' }),
-            ] }),
-            n('stuehle', 'Stühle', 38, { href: '#' }),
-            n('schrank', 'Schränke und Regale', 25, { href: '#' }),
-          ] }),
-          n('it', 'IT-Zubehör', 90, { href: '#', children: [
-            n('eingabe', 'Eingabegeräte', 22, { href: '#' }),
-            n('kabel', 'Kabel und Adapter', 44, { href: '#' }),
-            n('speicher', 'Speichermedien', 24, { href: '#' }),
-          ] }),
-        ] }),
-      ]],
-    },
+      sections: [DATA.shop.map(toNode)] },
   },
-
   katalog: {
     name: 'Metadaten-Katalog',
-    why: 'Echte Hierarchie, je Ast andere Stufen. Symbole nur auf Stufe 1. '
-       + 'Die Wurzel ist ein eigener Abschnitt — deshalb die einzige Linie. '
-       + 'Auf Stufe 3 die geteilte Zeile: eine Datentabelle trägt bis zu '
-       + 'fünfundsiebzig Felder, und sie zu wählen darf nicht heissen, sie alle '
-       + 'in die Leiste zu kippen. Die Kinder entstehen erst beim Aufklappen.',
-    cfg: {
-      title: 'Katalog', mode: 'nav',
+    why: 'Echte Hierarchie, je Ast andere Stufen. Symbole nur auf Stufe 1 — deshalb '
+       + 'stehen Stufe 1 und 2 bündig. Die Wurzel ist ein eigener Abschnitt und '
+       + 'damit die einzige Linie. Auf Stufe 3 die geteilte Zeile, und ihre Kinder '
+       + 'entstehen erst beim Aufklappen.',
+    cfg: { title: 'Katalog', mode: 'nav',
       levels: [{ icons: true }, { icons: false }, { icons: false }, { icons: false }],
-      sections: [
-        [n('root', 'Katalog', 44, { href: '#', icon: 'grid' })],
-        [
-          n('objekt', 'Geschäftsobjekte', 19, { href: '#', icon: 'grid', children: [
-            n('bau', 'Bauwerk und Liegenschaft', 8, { href: '#', children: () =>
-              ['Areal', 'Kampus', 'Grundstück', 'Gebäude'].map((x, i) =>
-                n('bo' + i, x, 5, { href: '#', split: true, children: () =>
-                  ['bbl_id', 'name', 'flaeche_m2'].map((f, j) =>
-                    n('bo' + i + '-' + j, f, null, { href: '#' })) })) }),
-            n('energie', 'Energie', 3, { href: '#', children: () =>
-              ['Heizzentrale', 'Stromzähler'].map((x, i) =>
-                n('en' + i, x, 4, { href: '#', split: true, children: () =>
-                  ['bbl_id', 'typ'].map((f, j) => n('en' + i + '-' + j, f, null, { href: '#' })) })) }),
-          ] }),
-          n('sys', 'Systeme', 10, { href: '#', icon: 'db', state: 'path', children: [
-            n('gis', 'GIS IMMO', 5, { href: '#', state: 'path', children: [
-              n('geb', 'Gebäude', 75, { href: '#', split: true, state: 'active',
-                children: () => ['bbl_id', 'av_stat', 'av_egid', 'av_egrid', 'adr_land',
-                  'adr_reg', 'adr_plz', 'adr_ort'].map((f) => n('f-' + f, f, null, { href: '#' })) }),
-              n('huelle', 'Gebäudehülle', 33, { href: '#', split: true,
-                children: () => ['bbl_id', 'flaeche_m2'].map((f) => n('h-' + f, f, null, { href: '#' })) }),
-            ] }),
-            n('sap', 'SAP RE-FX', 5, { href: '#', children: () =>
-              ['Wirtschaftseinheit', 'Gebäude', 'Konditionen'].map((x, i) =>
-                n('sap' + i, x, 39, { href: '#', split: true, children: () =>
-                  ['COMP_CODE', 'BUSINESS_ENTITY', 'BUILDING'].map((f, j) =>
-                    n('sap' + i + '-' + j, f, null, { href: '#' })) })) }),
-          ] }),
-          n('ref', 'Referenzdaten', 15, { href: '#', icon: 'list', children: () =>
-            ['Katalog und Metadaten', 'Bauwerk und Liegenschaft'].map((x, i) =>
-              n('rf' + i, x, 5, { href: '#', children: () =>
-                ['Objekt-Status', 'Klassifizierung'].map((f, j) =>
-                  n('rf' + i + '-' + j, f, 4, { href: '#', split: true, children: () =>
-                    ['gueltig', 'entwurf'].map((v, k) =>
-                      n('rf' + i + '-' + j + '-' + k, v, null, { href: '#' })) })) })) }),
-        ],
-      ],
-    },
+      sections: DATA.katalog.map((sec) => sec.map(toNode)) },
   },
-
   planeditor: {
     name: 'Plan-Editor',
     why: 'Wie Fall 1, aber mit einer Stufe UNTERHALB des Blattes: die Geschosse '
        + 'stecken im Gebäude, nicht daneben. Das Blatt ist deshalb wählbar UND '
        + 'aufklappbar — dieselbe geteilte Zeile wie im Katalog, von der anderen '
        + 'Seite her erreicht.',
-    cfg: {
-      title: 'Struktur', mode: 'select',
+    cfg: { title: 'Struktur', mode: 'select',
       levels: [{ icons: true }, { icons: true }, { icons: true }, { icons: true }],
-      sections: [[
-        n('ch2', 'Schweiz', 3, { icon: 'globe', children: [
-          n('be2', 'Bern', 2, { icon: 'pin', state: 'path', children: [
-            n('geb-a', 'Verwaltungsgebäude A', 4, { icon: 'house', split: true, href: '#',
-              state: 'active', children: [
-                n('eg', 'Erdgeschoss', null, { icon: 'layer', href: '#' }),
-                n('og1', '1. Obergeschoss', null, { icon: 'layer', href: '#' }),
-                n('og2', '2. Obergeschoss', null, { icon: 'layer', href: '#' }),
-                n('ug', 'Untergeschoss', null, { icon: 'layer', href: '#' }),
-              ] }),
-            n('geb-b', 'Werkhof B', 2, { icon: 'house', split: true, href: '#', children: [
-              n('b-eg', 'Erdgeschoss', null, { icon: 'layer', href: '#' }),
-              n('b-og', 'Obergeschoss', null, { icon: 'layer', href: '#' }),
-            ] }),
-          ] }),
-          n('zh2', 'Zürich', 1, { icon: 'pin', children: [
-            n('geb-c', 'Stampfenbachstrasse 85', 3, { icon: 'house', split: true, href: '#',
-              children: [
-                n('c-eg', 'Erdgeschoss', null, { icon: 'layer', href: '#' }),
-                n('c-og', 'Obergeschoss', null, { icon: 'layer', href: '#' }),
-                n('c-dg', 'Dachgeschoss', null, { icon: 'layer', href: '#' }),
-              ] }),
-          ] }),
-        ] }),
-      ]],
-    },
+      sections: [DATA.planeditor.map(toNode)] },
   },
-
   prozess: {
     name: 'Prozessdokumentation',
     why: 'Der kleinste Fall: zwei Stufen, gar keine Symbole. Er ist der Beweis, '
-       + 'dass «Symbol optional» wirklich trägt — und heute derjenige, in dem '
-       + 'das Kind links von seinem Elternteil steht.',
-    cfg: {
-      title: 'Prozesse', mode: 'nav',
+       + 'dass «Symbol optional» wirklich trägt — und heute derjenige, in dem das '
+       + 'Kind links von seinem Elternteil steht.',
+    cfg: { title: 'Prozesse', mode: 'nav',
       levels: [{ icons: false }, { icons: false }],
-      sections: [[
-        n('bau-p', 'Bauprozesse', 12, { href: '#', state: 'path', children: [
-          n('p1', 'Projektinitialisierung', null, { href: '#', state: 'active' }),
-          n('p2', 'Vorstudie und Wettbewerb', null, { href: '#' }),
-          n('p3', 'Projektierung', null, { href: '#' }),
-          n('p4', 'Ausführung', null, { href: '#' }),
-        ] }),
-        n('betrieb-p', 'Betriebsprozesse', 8, { href: '#', children: [
-          n('b1', 'Bewirtschaftung', null, { href: '#' }),
-          n('b2', 'Instandhaltung', null, { href: '#' }),
-          n('b3', 'Energiemanagement', null, { href: '#' }),
-        ] }),
-        n('quer', 'Querschnittsprozesse', 5, { href: '#', children: [
-          n('q1', 'Beschaffung', null, { href: '#' }),
-          n('q2', 'Datenmanagement', null, { href: '#' }),
-        ] }),
-      ]],
-    },
+      sections: [DATA.prozess.map(toNode)] },
   },
 };
 
@@ -642,11 +516,14 @@ function show(key) {
   current = key;
   OPEN.clear();
   // Den Pfad zur markierten Zeile aufklappen, damit jeder Fall etwas zeigt.
-  // Öffnet jeden Knoten, unter dem irgendwo eine markierte Zeile liegt —
-  // sonst zeigt ein Fall ohne markierten Wurzelknoten eine einzige Zeile.
+  // Nur der Weg zur gewählten Zeile öffnet sich, und NIE die Bestandteile eines
+  // Datensatzes: eine Datentabelle trägt bis zu 75 Felder, und sie zu wählen darf
+  // nicht heissen, sie alle in die Leiste zu kippen. Dorthin kommt man
+  // ausdrücklich über das Chevron. Deshalb wird `children` hier auch nicht
+  // aufgerufen — das würde die späten Kinder bauen, die genau das vermeiden.
   const openPath = (nodes) => nodes.reduce((any, node) => {
-    const kids = typeof node.children === 'function' ? node.children(node) : node.children;
     const marked = node.state === 'path' || node.state === 'active';
+    const kids = Array.isArray(node.children) ? node.children : null;
     const below = kids ? openPath(kids) : false;
     if (kids && (marked || below)) OPEN.add(node.id);
     return any || marked || below;
@@ -656,6 +533,10 @@ function show(key) {
   document.getElementById('case-title').textContent = CASES[key].name;
   document.getElementById('case-why').textContent = CASES[key].why;
   document.getElementById('ruler').innerHTML = measure();
+  document.getElementById('lazy').textContent =
+    'Zeilen im Baum: ' + mount.querySelectorAll('li').length
+    + ' · spät gebaute Unterlisten bisher: ' + LAZY_BUILDS
+    + ' — ein Datensatz gibt seine Bestandteile erst her, wenn das Chevron gedrückt wird.';
   document.querySelectorAll('#cases .case').forEach((b) => {
     b.classList.toggle('is-on', b.dataset.case === key);
   });
@@ -670,6 +551,10 @@ document.getElementById('cases').onclick = (e) => {
 };
 
 /* ── Die drei Symbolvarianten an denselben Daten ─────────────────────────── */
+// Die Vergleichstafeln stehen bewusst auf einer Handprobe: sie zeigen EINE
+// Regel, und dafür müssen die Zeilen sich nur in dem einen Punkt unterscheiden.
+const n = (id, label, count, extra) => Object.assign({ id, label, count }, extra || {});
+
 const MIXED = {
   title: 'Gemischt', mode: 'nav',
   levels: [{ icons: true }, { icons: false }],

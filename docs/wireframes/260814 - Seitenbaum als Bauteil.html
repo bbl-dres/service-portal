@@ -202,6 +202,7 @@ lehren nichts Neues.</p>
       <h3 id="case-title"></h3>
       <p id="case-why" class="note"></p>
       <div class="ruler" id="ruler"></div>
+      <p class="note" id="lazy"></p>
     </div>
   </div>
 </div>
@@ -313,6 +314,7 @@ Sache der Anwendung, die ihre Daten kennt.</p>
 </div>
 
 <script>
+const DATA = {"portfolio":[{"id":"pf-AU","icon":"globe","label":"Australien","count":1,"children":[{"id":"pf-AU-ACT","icon":"pin","label":"ACT","count":1,"children":[{"id":"pf-AU-ACT-Canberra","icon":"house","label":"Canberra","count":1,"children":[{"id":"pf-AU-ACT-Canberra-5620","icon":"stack","label":"WE 5620","count":1,"children":[{"id":"o-1080/5620/AA","icon":"house","label":"1080/5620/AA Schweizerische Botschaft Canberra"}]}]}]}]},{"id":"pf-BR","icon":"globe","label":"Brasilien","count":1,"children":[{"id":"pf-BR-Distrito Federal","icon":"pin","label":"Distrito Federal","count":1,"children":[{"id":"pf-BR-Distrito Federal-Brasília","icon":"house","label":"Brasília","count":1,"children":[{"id":"pf-BR-Distrito Federal-Brasília-5510","icon":"stack","label":"WE 5510","count":1,"children":[{"id":"o-1080/5510/AA","icon":"house","label":"1080/5510/AA Schweizerische Botschaft Brasília"}]}]}]}]},{"id":"pf-CH","icon":"globe","label":"Schweiz","count":16,"children":[{"id":"pf-CH-BE","icon":"pin","label":"BE","count":10,"children":[{"id":"pf-CH-BE-Bern","icon":"house","label":"Bern","count":6,"children":[{"id":"pf-CH-BE-Bern-2800","icon":"stack","label":"WE 2800","count":1,"children":[{"id":"o-1080/2800/AD","icon":"house","label":"1080/2800/AD Dienstwohnungen EDA Effingerstrasse"}]},{"id":"pf-CH-BE-Bern-4840","icon":"stack","label":"WE 4840","count":1,"children":[{"id":"o-1080/4840/AF","icon":"house","label":"1080/4840/AF Bundeshaus West"}],"state":"active"},{"id":"pf-CH-BE-Bern-4850","icon":"stack","label":"WE 4850","count":1,"children":[{"id":"o-1080/4850/AG","icon":"house","label":"1080/4850/AG Verwaltungszentrum Guisanplatz"}]},{"id":"pf-CH-BE-Bern-6430","icon":"stack","label":"WE 6430","count":1,"children":[{"id":"o-1080/6430/AA","icon":"house","label":"1080/6430/AA Schweizerische Nationalbibliothek, Tiefmagazin West"}]},{"id":"pf-CH-BE-Bern-6980","icon":"stack","label":"WE 6980","count":1,"children":[{"id":"o-1080/6980/AA","icon":"house","label":"1080/6980/AA Bundesverwaltungsgericht Schwarztorstrasse"}]},{"id":"pf-CH-BE-Bern-7090","icon":"stack","label":"WE 7090","count":1,"children":[{"id":"o-1080/7090/AA","icon":"house","label":"1080/7090/AA Bundeshaus Nord"}]}],"state":"path"},{"id":"pf-CH-BE-Liebefeld","icon":"house","label":"Liebefeld","count":1,"children":[{"id":"pf-CH-BE-Liebefeld-6650","icon":"stack","label":"WE 6650","count":1,"children":[{"id":"o-1080/6650/AA","icon":"house","label":"1080/6650/AA Verwaltungsgebäude Liebefeld (BAG / BLV)"}]}]},{"id":"pf-CH-BE-Magglingen/Macolin","icon":"house","label":"Magglingen/Macolin","count":1,"children":[{"id":"pf-CH-BE-Magglingen/Macolin-6760","icon":"stack","label":"WE 6760","count":1,"children":[{"id":"o-1080/6760/AA","icon":"house","label":"1080/6760/AA EHSM Magglingen, Neubau Lärchenplatz"}]}]},{"id":"pf-CH-BE-Wabern","icon":"house","label":"Wabern","count":1,"children":[{"id":"pf-CH-BE-Wabern-6870","icon":"stack","label":"WE 6870","count":1,"children":[{"id":"o-1080/6870/AA","icon":"house","label":"1080/6870/AA Bundesamt für Landestopografie swisstopo"}]}]},{"id":"pf-CH-BE-Zollikofen","icon":"house","label":"Zollikofen","count":1,"children":[{"id":"pf-CH-BE-Zollikofen-6540","icon":"stack","label":"WE 6540","count":1,"children":[{"id":"o-1080/6540/AA","icon":"house","label":"1080/6540/AA Verwaltungsgebäude Eichenweg 5, Areal Meielen Nord"}]}]}],"state":"path"},{"id":"pf-CH-BL","icon":"pin","label":"BL","count":1,"children":[{"id":"pf-CH-BL-Liestal","icon":"house","label":"Liestal","count":1,"children":[{"id":"pf-CH-BL-Liestal-4100","icon":"stack","label":"WE 4100","count":1,"children":[{"id":"o-1080/4100/AC","icon":"house","label":"1080/4100/AC Campus BAZG (Ausbildungszentrum Liestal)"}]}]}]},{"id":"pf-CH-TG","icon":"pin","label":"TG","count":2,"children":[{"id":"pf-CH-TG-Arbon","icon":"house","label":"Arbon","count":1,"children":[{"id":"pf-CH-TG-Arbon-6320","icon":"stack","label":"WE 6320","count":1,"children":[{"id":"o-1080/6320/AA","icon":"house","label":"1080/6320/AA Bootshaus Grenzwachtposten Arbon"}]}]},{"id":"pf-CH-TG-Frauenfeld","icon":"house","label":"Frauenfeld","count":1,"children":[{"id":"pf-CH-TG-Frauenfeld-1950","icon":"stack","label":"WE 1950","count":1,"children":[{"id":"o-1080/1950/AE","icon":"house","label":"1080/1950/AE Rechenzentrum CAMPUS Frauenfeld"}]}]}]},{"id":"pf-CH-VS","icon":"pin","label":"VS","count":1,"children":[{"id":"pf-CH-VS-Glis","icon":"house","label":"Glis","count":1,"children":[{"id":"pf-CH-VS-Glis-6210","icon":"stack","label":"WE 6210","count":1,"children":[{"id":"o-1080/6210/AA","icon":"house","label":"1080/6210/AA Zollanlage Brig-Glis"}]}]}]},{"id":"pf-CH-ZH","icon":"pin","label":"ZH","count":2,"children":[{"id":"pf-CH-ZH-Affoltern am Albis","icon":"house","label":"Affoltern am Albis","count":1,"children":[{"id":"pf-CH-ZH-Affoltern am Albis-3120","icon":"stack","label":"WE 3120","count":1,"children":[{"id":"o-1080/3120/AB","icon":"house","label":"1080/3120/AB Sammlungszentrum Schweizerisches Nationalmuseum"}]}]},{"id":"pf-CH-ZH-Zürich","icon":"house","label":"Zürich","count":1,"children":[{"id":"pf-CH-ZH-Zürich-6100","icon":"stack","label":"WE 6100","count":1,"children":[{"id":"o-1080/6100/AA","icon":"house","label":"1080/6100/AA Landesmuseum Zürich"}]}]}]}],"state":"path"},{"id":"pf-DE","icon":"globe","label":"Deutschland","count":1,"children":[{"id":"pf-DE-Berlin","icon":"pin","label":"Berlin","count":1,"children":[{"id":"pf-DE-Berlin-Berlin","icon":"house","label":"Berlin","count":1,"children":[{"id":"pf-DE-Berlin-Berlin-5210","icon":"stack","label":"WE 5210","count":1,"children":[{"id":"o-1080/5210/AA","icon":"house","label":"1080/5210/AA Schweizerische Botschaft Berlin"}]}]}]}]},{"id":"pf-JP","icon":"globe","label":"Japan","count":1,"children":[{"id":"pf-JP-Präfektur Tokio","icon":"pin","label":"Präfektur Tokio","count":1,"children":[{"id":"pf-JP-Präfektur Tokio-Tokio","icon":"house","label":"Tokio","count":1,"children":[{"id":"pf-JP-Präfektur Tokio-Tokio-5410","icon":"stack","label":"WE 5410","count":1,"children":[{"id":"o-1080/5410/AA","icon":"house","label":"1080/5410/AA Schweizerische Botschaft Tokio"}]}]}]}]},{"id":"pf-US","icon":"globe","label":"USA","count":1,"children":[{"id":"pf-US-NY","icon":"pin","label":"NY","count":1,"children":[{"id":"pf-US-NY-New York","icon":"house","label":"New York","count":1,"children":[{"id":"pf-US-NY-New York-5320","icon":"stack","label":"WE 5320","count":1,"children":[{"id":"o-1080/5320/AA","icon":"house","label":"1080/5320/AA Schweizerisches Generalkonsulat New York"}]}]}]}]}],"shop":[{"id":"shop-alle","label":"Alle Produkte","count":null},{"id":"shop-regale","label":"Regale","count":2,"children":[{"id":"shop-wandregale","label":"Wandregale","count":null},{"id":"shop-buecherregale","label":"Bücherregale","count":null},{"id":"shop-standregale","label":"Standregale","count":null}]},{"id":"shop-stuehle","label":"Stühle","count":18,"children":[{"id":"shop-besucherstuhl","label":"Besucherstuhl","count":null},{"id":"shop-konferenzsessel","label":"Konferenzsessel","count":null},{"id":"shop-buerostuehle","label":"Bürostühle","count":null},{"id":"shop-barstuehle","label":"Barstühle","count":null},{"id":"shop-barhocker","label":"Barhocker","count":null},{"id":"shop-rollhocker","label":"Rollhocker","count":null},{"id":"shop-stapelstuehle","label":"Stapelstühle","count":null},{"id":"shop-fauteuil","label":"Fauteuil","count":2,"children":[{"id":"shop-fauteuil-leder","label":"Leder","count":null},{"id":"shop-fauteuil-stoff","label":"Stoff","count":null}],"state":"active"},{"id":"shop-cafeteria-stuehle","label":"Cafeteria-Stühle","count":null},{"id":"shop-konferenzstuehle","label":"Konferenzstühle","count":null},{"id":"shop-freischwinger","label":"Freischwinger","count":null}],"state":"path"},{"id":"shop-korpus","label":"Korpus","count":2,"children":[{"id":"shop-rollkorpus","label":"Rollkorpus","count":null},{"id":"shop-standkorpus","label":"Standkorpus","count":null}]},{"id":"shop-sondermobiliar","label":"Sondermobiliar","count":null},{"id":"shop-flipcharts","label":"Flipcharts","count":null},{"id":"shop-lampen","label":"Lampen","count":2,"children":[{"id":"shop-schreibtischlampen","label":"Schreibtischlampen","count":null},{"id":"shop-stehlampen","label":"Stehlampen","count":null}]},{"id":"shop-clubsessel-sofa","label":"Clubsessel / Sofa","count":null},{"id":"shop-sichtschutz","label":"Sichtschutz / Akustik / Trennwände","count":null},{"id":"shop-usm","label":"USM","count":3,"children":[{"id":"shop-usm-haller","label":"USM Haller","count":null},{"id":"shop-usm-kitos","label":"USM Kitos","count":null}]},{"id":"shop-zeitungssammler","label":"Zeitungssammler / Ständer","count":null},{"id":"shop-tresor","label":"Tresor","count":null},{"id":"shop-garderobe","label":"Garderobe","count":1,"children":[{"id":"shop-kleiderstaender","label":"Kleiderständer","count":null},{"id":"shop-garderobenleiste","label":"Garderobenleiste","count":null}]},{"id":"shop-buerozubehoer","label":"Bürozubehör","count":null},{"id":"shop-tische","label":"Tische","count":6,"children":[{"id":"shop-schreibtische","label":"Schreibtische","count":null},{"id":"shop-konferenztische","label":"Konferenztische","count":null},{"id":"shop-beistelltische","label":"Beistelltische","count":null},{"id":"shop-stehtische","label":"Stehtische","count":null}]},{"id":"shop-sicherheitsschraenke","label":"Sicherheitsschränke","count":2,"children":[{"id":"shop-wertschutzschraenke","label":"Wertschutzschränke","count":null},{"id":"shop-datensicherung","label":"Datensicherung","count":null}]},{"id":"shop-schraenke","label":"Schränke","count":2,"children":[{"id":"shop-aktenschraenke","label":"Aktenschränke","count":null},{"id":"shop-haengeregistratur","label":"Hängeregistratur","count":null}]}],"katalog":[[{"id":"kat-root","label":"Katalog","icon":"grid","count":36}],[{"id":"kat-obj","label":"Geschäftsobjekte","icon":"grid","count":19,"children":[{"id":"dom-bauwerk","label":"Bauwerk und Liegenschaft","count":8,"children":[{"id":"bo-areal","label":"Areal","count":5,"split":true,"lazy":["Areal-ID","Bezeichnung","Fläche (m2)","Standort-Kanton","Eigentümer"]},{"id":"bo-kampus","label":"Kampus","count":4,"split":true,"lazy":["Kampus-ID","Bezeichnung","Anzahl Gebäude","Hauptnutzung"]},{"id":"bo-grundstueck","label":"Grundstück","count":5,"split":true,"lazy":["Grundbuch-Nr","EGRID","Gemeinde-BFS-Nr","Fläche (m2)","Eigentumsart"]},{"id":"bo-gebaeude","label":"Gebäude","count":7,"split":true,"lazy":["Gebäude-ID (BBL)","Bezeichnung","EGID","Baujahr","Gebäudekategorie","Anzahl Geschosse","Energieträger"]},{"id":"bo-nutzungseinheit","label":"Nutzungseinheit","count":4,"split":true,"lazy":["NE-Nummer","Nutzungsart","Fläche (m2)","Geschoss-Lage"]},{"id":"bo-geschoss","label":"Geschoss","count":4,"split":true,"lazy":["Geschoss-Nr","Bezeichnung","Geschossfläche (m2)","Nutzfläche (m2)"]},{"id":"bo-raum","label":"Raum","count":4,"split":true,"lazy":["Raum-Nr","Bezeichnung","Fläche (m2)","Nutzungsart"]},{"id":"bo-bemessung","label":"Bemessung","count":4,"split":true,"lazy":["Berechnungsart","Bezugsfläche (m2)","Norm-Referenz","Berechnungsdatum"]}]},{"id":"dom-energie","label":"Energie","count":3,"children":[{"id":"bo-heizzentrale","label":"Heizzentrale","count":4,"split":true,"lazy":["HZ-Nummer","Typ","Leistung (kW)","Baujahr"]},{"id":"bo-stromzaehler","label":"Stromzähler","count":4,"split":true,"lazy":["Zähler-Nr","Zählertyp","Messbereich","Standort"]},{"id":"bo-betriebsmesswert","label":"Betriebsmesswert","count":5,"split":true,"lazy":["Messart","Wert","Einheit","Zeitstempel","Zähler-Referenz"]}]},{"id":"dom-finanzen","label":"Finanzen","count":2,"children":[{"id":"bo-wirtschaftseinheit","label":"Wirtschaftseinheit","count":4,"split":true,"lazy":["WE-Nummer","Bezeichnung","Buchungskreis","Profit Center"]},{"id":"bo-buchungskreis","label":"Buchungskreis","count":4,"split":true,"lazy":["Buchungskreis-Nr","Bezeichnung","Währung","Kontenplan"]}]},{"id":"dom-partner","label":"Geschäftspartner","count":3,"children":[{"id":"bo-person","label":"Person","count":5,"split":true,"lazy":["Partner-Nr","AHV-Nr","Vorname","Nachname","Geburtsdatum"]},{"id":"bo-kontakt","label":"Kontakt","count":3,"split":true,"lazy":["Kontaktart","Wert","Gültig-ab"]},{"id":"bo-unternehmen","label":"Unternehmen","count":5,"split":true,"lazy":["Partner-Nr","UID","Firmenname","Rechtsform","Sitz"]}]},{"id":"dom-miete","label":"Mietverhältnisse","count":3,"children":[{"id":"bo-mietobjekt","label":"Mietobjekt","count":4,"split":true,"lazy":["MO-Nummer","Bezeichnung","Mietfläche (m2)","Status"]},{"id":"bo-mietvertrag","label":"Mietvertrag","count":5,"split":true,"lazy":["Vertrags-Nr","Beginn","Ende","Nettomiete (CHF)","Status"]},{"id":"bo-kondition","label":"Kondition","count":5,"split":true,"lazy":["Konditions-Nr","Konditionsart","Betrag (CHF)","Periodizität","Index-Basis"]}]}]},{"id":"kat-sys","label":"Systeme","icon":"db","count":10,"children":[{"id":"sys-GIS-IMMO","label":"GIS IMMO","count":5,"children":[{"id":"dt-gis-immo-building","label":"Gebäude","count":75,"split":true,"lazy":["bbl_id","bbl_buch","bbl_we","bbl_obj","bbl_bez","bbl_stat","adr_land","adr_reg","adr_ort","adr_plz","adr_str","adr_hsnr","adr_conct","wgs84_lat","wgs84_lon","lv95_e","lv95_n","egm_elev","bbl_eigen","bbl_ostr","bbl_mietm","bbl_bjahr","bbl_vjahr","bbl_port","bbl_port2","bbl_awrt","bbl_bwrt","bbl_gbda1","bbl_gbda2","bbl_ovtw","bbl_pvtw","bbl_rgrp","garea_rff","garea_rgf","av_egid","av_egrid","bfs_gem","bfs_gemnr","av_zbez","av_znut","av_nrisk","bbl_hist","bbl_arch","kgs_kat","kgs_nr","objectid","bbl_api","bbl_apr","bbl_aps","garea_gf","garea_gfo","garea_gfu","garea_acu","garea_ngf","garea_nf","garea_hnf","garea_nnf","garea_ff","garea_vf","garea_vmf","garea_ebf","gvol_gv","gvol_gvo","gvol_gvu","gvol_acu","gastw","gastw_og","gastw_ug","gastw_acu","larea_ggf","larea_gsf","larea_uf","larea_acu","etl_ts","img_url"],"state":"active"},{"id":"dt-gis-immo-building-envelope","label":"Gebäudehülle","count":33,"split":true,"lazy":["bbl_id","av_stat","av_egid","av_egrid","adr_land","adr_reg","adr_ort","adr_plz","adr_str","adr_hsnr","adr_conct","wgs84_lat","wgs84_lon","lv95_e","lv95_n","egm_elev","garea_gf","garea_acu","garea_ebf","gvol_gv","gvol_acu","gastw","gastw_acu","larea_ggf","larea_gsf","larea_uf","larea_acu","garea_daf","garea_awf","fid","fid_src","objectid","etl_ts"]},{"id":"dt-gis-immo-construction-project","label":"Bauprojekt","count":30,"split":true,"lazy":["bbl_stat","bbl_id","bbl_bez","bbl_buch","bbl_we","adr_land","adr_reg","adr_ort","adr_plz","adr_str","adr_hsnr","adr_conct","wgs84_lat","wgs84_lon","lv95_e","lv95_n","egm_elev","bbl_ptag","bbl_partb","bbl_ptypb","bbl_part","bbl_pkost","bbl_pdtin","bbl_pdtok","bbl_pdtbb","bbl_pdtbe","bbl_pvbd","bbl_ptxt1","bbl_ptxt2","etl_ts"]},{"id":"dt-gis-immo-land-cover","label":"Bodenbedeckung","count":15,"split":true,"lazy":["bbl_id","geb_id","av_type","lc_area","av_stat","av_egid","av_egrid","wgs84_lat","wgs84_lon","lv95_e","lv95_n","fid","fid_src","objectid","etl_ts"]},{"id":"dt-gis-immo-parcel","label":"Grundstück","count":44,"split":true,"lazy":["bbl_id","bbl_buch","bbl_we","bbl_obj","bbl_bez","bbl_stat","bbl_port","bbl_mietm","bbl_eigen","adr_land","adr_reg","adr_ort","adr_plz","adr_str","adr_hsnr","adr_conct","wgs84_lat","wgs84_lon","lv95_e","lv95_n","egm_elev","av_stat","av_egrid","bbl_awrt","bbl_bwrt","bbl_hgart","larea_ggf","larea_gsf","larea_uf","larea_buf","larea_uuf","larea_acu","larea_ver","larea_gre","bfs_gem","bfs_gemnr","av_nr","av_zbez","av_znut","av_nrisk","fid","fid_src","objectid","etl_ts"]}],"state":"path"},{"id":"sys-SAP-RE-FX","label":"SAP RE-FX","count":5,"children":[{"id":"dt-sap-refx-vibdbe","label":"Wirtschaftseinheit","count":39,"split":true,"lazy":["COMP_CODE","BUSINESS_ENTITY","IDENT_OBJECT_TYPE","IDENT_KEY","CREATION_USER","CREATION_DATE","CREATION_TIME","LASTCHANGE_USER","LASTCHANGE_DATE","LASTCHANGE_TIME","BUSINESS_ENTITY_TEXT","MAINTENANCE_AREA","TRANSPORT_CONNECTION","LOCATION","DISTRICT_LOCATION","REGIONAL_LOCATION","REPR_LIST_OF_RENTS","UNIT_AREA","UNIT_AREA_ISO","UNIT_VOLUME","UNIT_VOLUME_ISO","UNIT_LENGTH","UNIT_LENGTH_ISO","TENANCY_LAW","PREDEF_OPERATION_COSTS","PREDEF_HEATING_EXPENSES","AUTHORIZATION_GROUP","AUTO_FUNC_LOC_DISABLED","OBJECT_VALID_FROM","OBJECT_VALID_TO","RESPONSIBLE","STAT_PROF","NEIGHBORHOOD_01","NEIGHBORHOOD_02","NEIGHBORHOOD_03","MANDATE_OBJECT_ID","MANDATE_MNG_OBJECT_ID","MANDATE_CR_OBJECT_ID","FUNCTION"]},{"id":"dt-sap-refx-vibdbu","label":"Gebäude","count":66,"split":true,"lazy":["COMP_CODE","BUSINESS_ENTITY","BUILDING","IDENT_OBJECT_TYPE","IDENT_KEY","CREATION_USER","CREATION_DATE","CREATION_TIME","LASTCHANGE_USER","LASTCHANGE_DATE","LASTCHANGE_TIME","BUILDING_TEXT","BUILDING_TYPE","BUILDING_CONDITION","CONSTRUCTION_YEAR","MODERNIZATION_YEAR","RECONSTRUCTION_YEAR","BEGIN_CONSTRUCTION_YEAR","READY_FOR_OCCUPANCY_DATE","COMPLETION_DATE","FINAL_INSPECTION_DATE","PLANNING_INQUIRY_DATE","PRIOR_NOTICE_DATE","BUILDING_PERMIT_APPLIC_DATE","BUILDING_PERMIT_DATE","TRANSF_USE_AND_ENCUMBR_DATE","SALE_DATE","PLANNED_SALE_DATE","USAGE_END_DATE","BUILDING_PERMIT_NOTE","BUILDING_VALUE","CURRENT_BUILDING_VALUE","AMOUNT_PER_VOLUME","HAS_HIST_SITE_PROTECTION","ASSESSMENT_VALUE","ASSESSMENT_VALUE_YEAR","INSURANCE_VALUE","INSURANCE_VALUE_TYPE","HERITABLE_BLDG_RIGHT_IND","REPR_LIST_OF_RENTS","LOCATION_CLASS","MAIN_USAGE_TYPE","PUBLIC_FUNDING_FROM","PUBLIC_FUNDING_TO","FLOORS","BASEMENTS","TOP_FLOOR","ELEVATOR_TO_FLOOR","MUNICIPALITY_KEY","HAS_CURR_OCC_PRINC","UNIT_VOLUME","UNIT_VOLUME_ISO","CURRENCY","CURRENCY_ISO","AUTHORIZATION_GROUP","OBJECT_VALID_FROM","OBJECT_VALID_TO","REAL_VALID_FROM","REAL_VALID_TO","RESPONSIBLE","STAT_PROF","MANDATE_OBJECT_ID","MANDATE_MNG_OBJECT_ID","MANDATE_CR_OBJECT_ID","USES_REPR_LIST_OF_RENTS","FUNCTION"]},{"id":"dt-sap-refx-vibdkd","label":"Konditionen","count":5,"split":true,"lazy":["KDNR","MVNR","KDART","BETRAG","PERIOD"]},{"id":"dt-sap-refx-vibdme","label":"Bemessungen","count":12,"split":true,"lazy":["OBJECT_TYPE","OBJECT_ID","MEASUREMENT","VALID_FROM","VALID_TO","VALUE_AVAIL","UNIT","UNIT_ISO","VALUE_COMPL","VALUE_SET_MANUALLY","VALUE_IS_HIERARCHICAL","TOTAL_MEASUREMENT"]},{"id":"dt-sap-refx-vibdmv","label":"Mietverträge","count":6,"split":true,"lazy":["MVNR","MIOBJNR","MVBEG","MVEND","NMIETE","STATUS"]}]}],"state":"path"},{"id":"kat-ref","label":"Referenzdaten","icon":"list","count":7,"children":[{"id":"th-Katalog-und-Metadaten","label":"Katalog und Metadaten","count":4,"children":[{"id":"rl-objectStatuses","label":"objectStatuses","count":4,"split":true,"lazy":["Entwurf","Gültig","Abgelöst","Archiviert"]},{"id":"rl-classificationTiers","label":"classificationTiers","count":3,"split":true,"lazy":["INTERN","VERTRAULICH","GEHEIM"]},{"id":"rl-mappingMatches","label":"mappingMatches","count":3,"split":true,"lazy":["Exakt","Nahe","Teilweise"]},{"id":"rl-dataDomains","label":"dataDomains","count":5,"split":true,"lazy":["Bauwerk und Liegenschaft","Mietverhältnisse","Energie","Geschäftspartner","Finanzen"]}]},{"id":"th-Bauwerk-und-Liegenschaft","label":"Bauwerk und Liegenschaft","count":3,"children":[{"id":"rl-gebaeudearten","label":"gebaeudearten","count":4,"split":true,"lazy":["Verwaltung","Industrie und Gewerbe","Bildung und Forschung","Wohnen"]},{"id":"rl-buildingStatuses","label":"buildingStatuses","count":3,"split":true,"lazy":["Aktiv","Abgang","Löschvermerk"]},{"id":"rl-teilportfolios","label":"teilportfolios","count":6,"split":true,"lazy":["Verwaltungsgebäude","Diplomatische Vertretung","Lager / Logistik","Ausbildung","Wohnliegenschaft","Infrastruktur IT"]}]}]}]],"planeditor":[{"id":"pe-ch","label":"Schweiz","icon":"globe","count":16,"children":[{"id":"pe-Affoltern am Albis","label":"Affoltern am Albis","icon":"pin","count":1,"children":[{"id":"pe-b-1080/3120/AB","label":"Sammlungszentrum Schweizerisches Nationalmuseum","icon":"house","count":null,"split":false}]},{"id":"pe-Arbon","label":"Arbon","icon":"pin","count":1,"children":[{"id":"pe-b-1080/6320/AA","label":"Bootshaus Grenzwachtposten Arbon","icon":"house","count":null,"split":false}]},{"id":"pe-Bern","label":"Bern","icon":"pin","count":6,"children":[{"id":"pe-b-1080/4840/AF","label":"Bundeshaus West","icon":"house","count":1,"split":true,"children":[{"id":"pe-f-1080/4840/AF-1080-4840-AF-2og","label":"2. OG","icon":"layer"}]},{"id":"pe-b-1080/2800/AD","label":"Dienstwohnungen EDA Effingerstrasse","icon":"house","count":null,"split":false},{"id":"pe-b-1080/4850/AG","label":"Verwaltungszentrum Guisanplatz","icon":"house","count":2,"split":true,"children":[{"id":"pe-f-1080/4850/AG-1080-4850-AG-2og","label":"2. OG","icon":"layer"},{"id":"pe-f-1080/4850/AG-1080-4850-AG-3og","label":"3. OG","icon":"layer"}]},{"id":"pe-b-1080/6430/AA","label":"Schweizerische Nationalbibliothek, Tiefmagazin West","icon":"house","count":2,"split":true,"children":[{"id":"pe-f-1080/6430/AA-1080-6430-AA-ug","label":"UG","icon":"layer"},{"id":"pe-f-1080/6430/AA-1080-6430-AA-eg","label":"EG","icon":"layer"}]},{"id":"pe-b-1080/6980/AA","label":"Bundesverwaltungsgericht Schwarztorstrasse","icon":"house","count":1,"split":true,"children":[{"id":"pe-f-1080/6980/AA-1080-6980-AA-eg","label":"EG","icon":"layer"}]},{"id":"pe-b-1080/7090/AA","label":"Bundeshaus Nord","icon":"house","count":1,"split":true,"children":[{"id":"pe-f-1080/7090/AA-1080-7090-AA-3og","label":"3. OG","icon":"layer"}]}],"state":"active"},{"id":"pe-Frauenfeld","label":"Frauenfeld","icon":"pin","count":1,"children":[{"id":"pe-b-1080/1950/AE","label":"Rechenzentrum CAMPUS Frauenfeld","icon":"house","count":null,"split":false}]},{"id":"pe-Glis","label":"Glis","icon":"pin","count":1,"children":[{"id":"pe-b-1080/6210/AA","label":"Zollanlage Brig-Glis","icon":"house","count":1,"split":true,"children":[{"id":"pe-f-1080/6210/AA-1080-6210-AA-eg","label":"EG","icon":"layer"}]}]},{"id":"pe-Liebefeld","label":"Liebefeld","icon":"pin","count":1,"children":[{"id":"pe-b-1080/6650/AA","label":"Verwaltungsgebäude Liebefeld (BAG / BLV)","icon":"house","count":3,"split":true,"children":[{"id":"pe-f-1080/6650/AA-1080-6650-AA-1og","label":"1. OG","icon":"layer"},{"id":"pe-f-1080/6650/AA-1080-6650-AA-eg","label":"EG","icon":"layer"},{"id":"pe-f-1080/6650/AA-1080-6650-AA-2og","label":"2. OG","icon":"layer"}]}]},{"id":"pe-Liestal","label":"Liestal","icon":"pin","count":1,"children":[{"id":"pe-b-1080/4100/AC","label":"Campus BAZG (Ausbildungszentrum Liestal)","icon":"house","count":2,"split":true,"children":[{"id":"pe-f-1080/4100/AC-1080-4100-AC-eg","label":"EG","icon":"layer"},{"id":"pe-f-1080/4100/AC-1080-4100-AC-1og","label":"1. OG","icon":"layer"}]}]},{"id":"pe-Magglingen/Macolin","label":"Magglingen/Macolin","icon":"pin","count":1,"children":[{"id":"pe-b-1080/6760/AA","label":"EHSM Magglingen, Neubau Lärchenplatz","icon":"house","count":null,"split":false}]},{"id":"pe-Wabern","label":"Wabern","icon":"pin","count":1,"children":[{"id":"pe-b-1080/6870/AA","label":"Bundesamt für Landestopografie swisstopo","icon":"house","count":2,"split":true,"children":[{"id":"pe-f-1080/6870/AA-1080-6870-AA-eg","label":"EG","icon":"layer"},{"id":"pe-f-1080/6870/AA-1080-6870-AA-1og","label":"1. OG","icon":"layer"}]}]},{"id":"pe-Zollikofen","label":"Zollikofen","icon":"pin","count":1,"children":[{"id":"pe-b-1080/6540/AA","label":"Verwaltungsgebäude Eichenweg 5, Areal Meielen Nord","icon":"house","count":null,"split":false}]},{"id":"pe-Zürich","label":"Zürich","icon":"pin","count":1,"children":[{"id":"pe-b-1080/6100/AA","label":"Landesmuseum Zürich","icon":"house","count":2,"split":true,"children":[{"id":"pe-f-1080/6100/AA-1080-6100-AA-eg","label":"EG","icon":"layer"},{"id":"pe-f-1080/6100/AA-1080-6100-AA-1og","label":"1. OG","icon":"layer"}]}]}],"state":"path"}],"prozess":[{"id":"pr-Akquisition-Planung","label":"Akquisition & Planung","count":3,"children":[{"id":"pr-p-TQ.21.00.00.01","label":"Lösungsvorschläge Anmiete Kauf"},{"id":"pr-p-TQ.21.00.00.02","label":"Machbarkeit Projektdefinition"},{"id":"pr-p-TQ.21.00.00.03","label":"Auftragskoordination"}]},{"id":"pr-Bewirtschaftung","label":"Bewirtschaftung","count":3,"children":[{"id":"pr-p-TQ.21.00.00.30","label":"Bewirtschaftung Anmiet-, Pachtverträge, Eigene Baurechte"},{"id":"pr-p-TQ.21.00.00.35","label":"Bewirtschaftung Eigentum, Stiftungen"},{"id":"pr-p-TQ.21.00.00.45","label":"Bewirtschaftung von Vermietungen, Verpachtungen, Baurechtsvergaben"}],"state":"active"},{"id":"pr-R-ckgabe-Aufl-sung","label":"Rückgabe & Auflösung","count":6,"children":[{"id":"pr-p-TQ.21.00.00.50","label":"Objektübergabe an LB, Mieter"},{"id":"pr-p-TQ.21.00.00.60","label":"Lösungsvorschläge Rückgabe"},{"id":"pr-p-TQ.21.00.00.70","label":"Auflösung Anmiete, Pacht"},{"id":"pr-p-TQ.21.00.00.75","label":"Verurkundung Verkauf, Baurechtrückgabe"},{"id":"pr-p-TQ.21.00.00.80","label":"Objektrücknahme von LB, Mieter"},{"id":"pr-p-TQ.21.00.00.90","label":"Objektrückgabe"}]},{"id":"pr-Stammdaten-Support","label":"Stammdaten & Support","count":3,"children":[{"id":"pr-p-TQ.21.00.00.96","label":"Immostammdaten Energiedatenverwaltung"},{"id":"pr-p-TQ.21.00.00.97","label":"Aktenmanagement"},{"id":"pr-p-TQ.21.00.00.99","label":"Planverwaltung / BIM"}]},{"id":"pr-Vollzug-bernahme","label":"Vollzug & Übernahme","count":3,"children":[{"id":"pr-p-TQ.21.00.00.10","label":"Vollzug Anmiete Pacht"},{"id":"pr-p-TQ.21.00.00.15","label":"Verurkundung Kauf Baurecht"},{"id":"pr-p-TQ.21.00.00.20","label":"Objektübernahme"}]}]};
 /* ── Das Bauteil ─────────────────────────────────────────────────────────── */
 const CHEV = '<svg class="pf__ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">'
   + '<path d="M5.5 3.5 L10 8 L5.5 12.5" fill="none" stroke="currentColor" stroke-width="1.6"'
@@ -373,8 +375,12 @@ function sidebarTree(host, cfg) {
   };
 
   const render = (nodes, depth) => nodes.map((node) => {
-    const kids = kidsOf(node);
-    const canOpen = kids.length > 0 || typeof node.children === 'function';
+    // `hasChildren` sagt, DASS es Kinder gibt, ohne sie zu bauen. Ohne diese
+    // Angabe müsste children() bei jedem Zeichnen laufen, nur um zu entscheiden,
+    // ob ein Chevron nötig ist — und dann wäre nichts mehr spät.
+    const canOpen = node.hasChildren === true
+      || (Array.isArray(node.children) && node.children.length > 0);
+    const kids = canOpen && OPEN.has(node.id) ? kidsOf(node) : [];
     const open = OPEN.has(node.id);
     const lvl = depth + 1;
     const cls = 'l' + lvl + (node.state ? ' has-' + node.state : '');
@@ -441,214 +447,82 @@ function sidebarTree(host, cfg) {
   };
 }
 
-/* ── Die fünf Datenformen ────────────────────────────────────────────────── */
-const n = (id, label, count, extra) => Object.assign({ id, label, count }, extra || {});
+/* ── Die fünf Datenformen ────────────────────────────────────────────────
+   Die Bäume stehen auf den ECHTEN Daten des Portals (data/*.json, beim Bauen
+   eingespritzt), nicht auf einer Handprobe. Eine Handprobe hat überall dieselbe
+   Verzweigung und überall dieselbe Tiefe — und das ist genau der Baum, den ein
+   Raster aus Versehen überlebt. Die echten sind schief: die Schweiz trägt
+   fünfzehn Objekte, Japan eines; «Gebäude» trägt fünfundsiebzig Felder,
+   «Konditionen» fünf. */
+
+// Aus dem Datenblock einen Knoten machen. `lazy` ist eine Liste von Namen, die
+// erst beim Aufklappen zu Zeilen wird — der Katalog trägt bis zu 75 Felder je
+// Datentabelle, und die im Voraus zu bauen hiesse, für jeden Leser Hunderte
+// verborgener Zeilen anzulegen, die die meisten nie sehen.
+let LAZY_BUILDS = 0;
+const toNode = (raw) => {
+  const node = { id: raw.id, label: raw.label, count: raw.count, icon: raw.icon,
+    split: raw.split, state: raw.state, href: '#' };
+  if (raw.lazy) {
+    node.hasChildren = raw.lazy.length > 0;
+    node.children = () => {
+      LAZY_BUILDS++;
+      return raw.lazy.map((name, i) => toNode({ id: raw.id + '-f' + i, label: name }));
+    };
+  } else if (raw.children && raw.children.length) {
+    node.children = raw.children.map(toNode);
+  }
+  return node;
+};
 
 const CASES = {
   portfolio: {
     name: 'Liegenschaften',
     why: 'Flache Objektliste, nach vier Achsen gruppiert: Land, Region, Ort, '
-       + 'Wirtschaftseinheit — dann das Objekt. Jede Stufe führt ein Symbol. '
-       + 'Bauprojekte, Mietverhältnisse und Workspace haben dieselbe Form. '
-       + 'Bedienmodell: auswählen, die Adresse bleibt.',
-    cfg: {
-      title: 'Struktur', mode: 'select',
+       + 'Wirtschaftseinheit — dann das Objekt. Jede Stufe führt ein Symbol, also '
+       + 'ist die Symbolbreite hier der gleichmässige Schritt. Bauprojekte, '
+       + 'Mietverhältnisse und Workspace haben dieselbe Form.',
+    cfg: { title: 'Struktur', mode: 'select',
       levels: [{ icons: true }, { icons: true }, { icons: true }, { icons: true }, { icons: true }],
-      sections: [[
-        n('ch', 'Schweiz', 7, { icon: 'globe', children: [
-          n('be', 'Bern', 4, { icon: 'pin', children: [
-            n('be-be', 'Bern', 3, { icon: 'house', children: [
-              n('zoll', 'Bundeskampus Zollikofen', 2, { icon: 'stack', state: 'path', children: [
-                n('o1', '1080/4840/AF Verwaltungsgebäude', null, { icon: 'house', state: 'active' }),
-                n('o2', '1080/4841/AF Werkhof', null, { icon: 'house' }),
-              ] }),
-              n('mur', 'Murtenstrasse 87', 1, { icon: 'stack', children: [
-                n('o3', '1080/4902/AF Bürogebäude', null, { icon: 'house' }),
-              ] }),
-            ] }),
-            n('thun', 'Thun', 1, { icon: 'house', children: [
-              n('thun-a', 'Allmendstrasse 8', 1, { icon: 'stack', children: [
-                n('o4', '0561/1120/AF Lagerhalle', null, { icon: 'house' }),
-              ] }),
-            ] }),
-          ] }),
-          n('zh', 'Zürich', 2, { icon: 'pin', children: [
-            n('zh-zh', 'Zürich', 2, { icon: 'house', children: [
-              n('zh-a', 'Stampfenbachstrasse 85', 2, { icon: 'stack', children: [
-                n('o5', '0261/3310/AF Verwaltungsgebäude', null, { icon: 'house' }),
-                n('o6', '0261/3311/AF Nebengebäude', null, { icon: 'house' }),
-              ] }),
-            ] }),
-          ] }),
-          n('vd', 'Waadt', 1, { icon: 'pin', children: [
-            n('vd-la', 'Lausanne', 1, { icon: 'house', children: [
-              n('vd-a', 'Avenue de Rhodanie 60', 1, { icon: 'stack', children: [
-                n('o7', '5586/2140/AF Bürogebäude', null, { icon: 'house' }),
-              ] }),
-            ] }),
-          ] }),
-        ] }),
-      ]],
-    },
+      sections: [DATA.portfolio.map(toNode)] },
   },
-
   shop: {
     name: 'Shop',
-    why: 'Rekursive Kategorien beliebiger Tiefe — die Form kennt keine feste '
-       + 'Stufenzahl. Keine Symbole, keine Zähler auf den unteren Stufen. '
-       + 'Bedienmodell: navigieren.',
-    cfg: {
-      title: 'Sortiment', mode: 'nav',
+    why: 'Rekursive Kategorien — die Form kennt keine feste Stufenzahl, also darf '
+       + 'die Leiter keine Decke haben. Keine Symbole. Zähler nur, wo noch etwas '
+       + 'darunter liegt.',
+    cfg: { title: 'Sortiment', mode: 'nav',
       levels: [{ icons: false }, { icons: false }, { icons: false }, { icons: false }],
-      sections: [[
-        n('alle', 'Alle Artikel', 312, { href: '#', state: 'path', children: [
-          n('buero', 'Büromaterial', 128, { href: '#', state: 'path', children: [
-            n('schreib', 'Schreibwaren', 54, { href: '#', state: 'path', children: [
-              n('kuli', 'Kugelschreiber', null, { href: '#', state: 'active' }),
-              n('blei', 'Bleistifte', null, { href: '#' }),
-              n('marker', 'Marker und Textmarker', null, { href: '#' }),
-              n('fein', 'Feinschreiber', null, { href: '#' }),
-            ] }),
-            n('papier', 'Papier und Blöcke', 41, { href: '#', children: [
-              n('kopier', 'Kopierpapier', null, { href: '#' }),
-              n('notiz', 'Notizblöcke', null, { href: '#' }),
-            ] }),
-            n('ordnen', 'Ordnen und Ablegen', 33, { href: '#', children: [
-              n('ordner', 'Ordner und Register', null, { href: '#' }),
-              n('mappen', 'Mappen und Hüllen', null, { href: '#' }),
-            ] }),
-          ] }),
-          n('mobil', 'Mobiliar', 94, { href: '#', children: [
-            n('tische', 'Tische', 31, { href: '#', children: [
-              n('steh', 'Stehpulte', null, { href: '#' }),
-              n('sitz', 'Sitzarbeitsplätze', null, { href: '#' }),
-            ] }),
-            n('stuehle', 'Stühle', 38, { href: '#' }),
-            n('schrank', 'Schränke und Regale', 25, { href: '#' }),
-          ] }),
-          n('it', 'IT-Zubehör', 90, { href: '#', children: [
-            n('eingabe', 'Eingabegeräte', 22, { href: '#' }),
-            n('kabel', 'Kabel und Adapter', 44, { href: '#' }),
-            n('speicher', 'Speichermedien', 24, { href: '#' }),
-          ] }),
-        ] }),
-      ]],
-    },
+      sections: [DATA.shop.map(toNode)] },
   },
-
   katalog: {
     name: 'Metadaten-Katalog',
-    why: 'Echte Hierarchie, je Ast andere Stufen. Symbole nur auf Stufe 1. '
-       + 'Die Wurzel ist ein eigener Abschnitt — deshalb die einzige Linie. '
-       + 'Auf Stufe 3 die geteilte Zeile: eine Datentabelle trägt bis zu '
-       + 'fünfundsiebzig Felder, und sie zu wählen darf nicht heissen, sie alle '
-       + 'in die Leiste zu kippen. Die Kinder entstehen erst beim Aufklappen.',
-    cfg: {
-      title: 'Katalog', mode: 'nav',
+    why: 'Echte Hierarchie, je Ast andere Stufen. Symbole nur auf Stufe 1 — deshalb '
+       + 'stehen Stufe 1 und 2 bündig. Die Wurzel ist ein eigener Abschnitt und '
+       + 'damit die einzige Linie. Auf Stufe 3 die geteilte Zeile, und ihre Kinder '
+       + 'entstehen erst beim Aufklappen.',
+    cfg: { title: 'Katalog', mode: 'nav',
       levels: [{ icons: true }, { icons: false }, { icons: false }, { icons: false }],
-      sections: [
-        [n('root', 'Katalog', 44, { href: '#', icon: 'grid' })],
-        [
-          n('objekt', 'Geschäftsobjekte', 19, { href: '#', icon: 'grid', children: [
-            n('bau', 'Bauwerk und Liegenschaft', 8, { href: '#', children: () =>
-              ['Areal', 'Kampus', 'Grundstück', 'Gebäude'].map((x, i) =>
-                n('bo' + i, x, 5, { href: '#', split: true, children: () =>
-                  ['bbl_id', 'name', 'flaeche_m2'].map((f, j) =>
-                    n('bo' + i + '-' + j, f, null, { href: '#' })) })) }),
-            n('energie', 'Energie', 3, { href: '#', children: () =>
-              ['Heizzentrale', 'Stromzähler'].map((x, i) =>
-                n('en' + i, x, 4, { href: '#', split: true, children: () =>
-                  ['bbl_id', 'typ'].map((f, j) => n('en' + i + '-' + j, f, null, { href: '#' })) })) }),
-          ] }),
-          n('sys', 'Systeme', 10, { href: '#', icon: 'db', state: 'path', children: [
-            n('gis', 'GIS IMMO', 5, { href: '#', state: 'path', children: [
-              n('geb', 'Gebäude', 75, { href: '#', split: true, state: 'active',
-                children: () => ['bbl_id', 'av_stat', 'av_egid', 'av_egrid', 'adr_land',
-                  'adr_reg', 'adr_plz', 'adr_ort'].map((f) => n('f-' + f, f, null, { href: '#' })) }),
-              n('huelle', 'Gebäudehülle', 33, { href: '#', split: true,
-                children: () => ['bbl_id', 'flaeche_m2'].map((f) => n('h-' + f, f, null, { href: '#' })) }),
-            ] }),
-            n('sap', 'SAP RE-FX', 5, { href: '#', children: () =>
-              ['Wirtschaftseinheit', 'Gebäude', 'Konditionen'].map((x, i) =>
-                n('sap' + i, x, 39, { href: '#', split: true, children: () =>
-                  ['COMP_CODE', 'BUSINESS_ENTITY', 'BUILDING'].map((f, j) =>
-                    n('sap' + i + '-' + j, f, null, { href: '#' })) })) }),
-          ] }),
-          n('ref', 'Referenzdaten', 15, { href: '#', icon: 'list', children: () =>
-            ['Katalog und Metadaten', 'Bauwerk und Liegenschaft'].map((x, i) =>
-              n('rf' + i, x, 5, { href: '#', children: () =>
-                ['Objekt-Status', 'Klassifizierung'].map((f, j) =>
-                  n('rf' + i + '-' + j, f, 4, { href: '#', split: true, children: () =>
-                    ['gueltig', 'entwurf'].map((v, k) =>
-                      n('rf' + i + '-' + j + '-' + k, v, null, { href: '#' })) })) })) }),
-        ],
-      ],
-    },
+      sections: DATA.katalog.map((sec) => sec.map(toNode)) },
   },
-
   planeditor: {
     name: 'Plan-Editor',
     why: 'Wie Fall 1, aber mit einer Stufe UNTERHALB des Blattes: die Geschosse '
        + 'stecken im Gebäude, nicht daneben. Das Blatt ist deshalb wählbar UND '
        + 'aufklappbar — dieselbe geteilte Zeile wie im Katalog, von der anderen '
        + 'Seite her erreicht.',
-    cfg: {
-      title: 'Struktur', mode: 'select',
+    cfg: { title: 'Struktur', mode: 'select',
       levels: [{ icons: true }, { icons: true }, { icons: true }, { icons: true }],
-      sections: [[
-        n('ch2', 'Schweiz', 3, { icon: 'globe', children: [
-          n('be2', 'Bern', 2, { icon: 'pin', state: 'path', children: [
-            n('geb-a', 'Verwaltungsgebäude A', 4, { icon: 'house', split: true, href: '#',
-              state: 'active', children: [
-                n('eg', 'Erdgeschoss', null, { icon: 'layer', href: '#' }),
-                n('og1', '1. Obergeschoss', null, { icon: 'layer', href: '#' }),
-                n('og2', '2. Obergeschoss', null, { icon: 'layer', href: '#' }),
-                n('ug', 'Untergeschoss', null, { icon: 'layer', href: '#' }),
-              ] }),
-            n('geb-b', 'Werkhof B', 2, { icon: 'house', split: true, href: '#', children: [
-              n('b-eg', 'Erdgeschoss', null, { icon: 'layer', href: '#' }),
-              n('b-og', 'Obergeschoss', null, { icon: 'layer', href: '#' }),
-            ] }),
-          ] }),
-          n('zh2', 'Zürich', 1, { icon: 'pin', children: [
-            n('geb-c', 'Stampfenbachstrasse 85', 3, { icon: 'house', split: true, href: '#',
-              children: [
-                n('c-eg', 'Erdgeschoss', null, { icon: 'layer', href: '#' }),
-                n('c-og', 'Obergeschoss', null, { icon: 'layer', href: '#' }),
-                n('c-dg', 'Dachgeschoss', null, { icon: 'layer', href: '#' }),
-              ] }),
-          ] }),
-        ] }),
-      ]],
-    },
+      sections: [DATA.planeditor.map(toNode)] },
   },
-
   prozess: {
     name: 'Prozessdokumentation',
     why: 'Der kleinste Fall: zwei Stufen, gar keine Symbole. Er ist der Beweis, '
-       + 'dass «Symbol optional» wirklich trägt — und heute derjenige, in dem '
-       + 'das Kind links von seinem Elternteil steht.',
-    cfg: {
-      title: 'Prozesse', mode: 'nav',
+       + 'dass «Symbol optional» wirklich trägt — und heute derjenige, in dem das '
+       + 'Kind links von seinem Elternteil steht.',
+    cfg: { title: 'Prozesse', mode: 'nav',
       levels: [{ icons: false }, { icons: false }],
-      sections: [[
-        n('bau-p', 'Bauprozesse', 12, { href: '#', state: 'path', children: [
-          n('p1', 'Projektinitialisierung', null, { href: '#', state: 'active' }),
-          n('p2', 'Vorstudie und Wettbewerb', null, { href: '#' }),
-          n('p3', 'Projektierung', null, { href: '#' }),
-          n('p4', 'Ausführung', null, { href: '#' }),
-        ] }),
-        n('betrieb-p', 'Betriebsprozesse', 8, { href: '#', children: [
-          n('b1', 'Bewirtschaftung', null, { href: '#' }),
-          n('b2', 'Instandhaltung', null, { href: '#' }),
-          n('b3', 'Energiemanagement', null, { href: '#' }),
-        ] }),
-        n('quer', 'Querschnittsprozesse', 5, { href: '#', children: [
-          n('q1', 'Beschaffung', null, { href: '#' }),
-          n('q2', 'Datenmanagement', null, { href: '#' }),
-        ] }),
-      ]],
-    },
+      sections: [DATA.prozess.map(toNode)] },
   },
 };
 
@@ -690,11 +564,14 @@ function show(key) {
   current = key;
   OPEN.clear();
   // Den Pfad zur markierten Zeile aufklappen, damit jeder Fall etwas zeigt.
-  // Öffnet jeden Knoten, unter dem irgendwo eine markierte Zeile liegt —
-  // sonst zeigt ein Fall ohne markierten Wurzelknoten eine einzige Zeile.
+  // Nur der Weg zur gewählten Zeile öffnet sich, und NIE die Bestandteile eines
+  // Datensatzes: eine Datentabelle trägt bis zu 75 Felder, und sie zu wählen darf
+  // nicht heissen, sie alle in die Leiste zu kippen. Dorthin kommt man
+  // ausdrücklich über das Chevron. Deshalb wird `children` hier auch nicht
+  // aufgerufen — das würde die späten Kinder bauen, die genau das vermeiden.
   const openPath = (nodes) => nodes.reduce((any, node) => {
-    const kids = typeof node.children === 'function' ? node.children(node) : node.children;
     const marked = node.state === 'path' || node.state === 'active';
+    const kids = Array.isArray(node.children) ? node.children : null;
     const below = kids ? openPath(kids) : false;
     if (kids && (marked || below)) OPEN.add(node.id);
     return any || marked || below;
@@ -704,6 +581,10 @@ function show(key) {
   document.getElementById('case-title').textContent = CASES[key].name;
   document.getElementById('case-why').textContent = CASES[key].why;
   document.getElementById('ruler').innerHTML = measure();
+  document.getElementById('lazy').textContent =
+    'Zeilen im Baum: ' + mount.querySelectorAll('li').length
+    + ' · spät gebaute Unterlisten bisher: ' + LAZY_BUILDS
+    + ' — ein Datensatz gibt seine Bestandteile erst her, wenn das Chevron gedrückt wird.';
   document.querySelectorAll('#cases .case').forEach((b) => {
     b.classList.toggle('is-on', b.dataset.case === key);
   });
@@ -718,6 +599,10 @@ document.getElementById('cases').onclick = (e) => {
 };
 
 /* ── Die drei Symbolvarianten an denselben Daten ─────────────────────────── */
+// Die Vergleichstafeln stehen bewusst auf einer Handprobe: sie zeigen EINE
+// Regel, und dafür müssen die Zeilen sich nur in dem einen Punkt unterscheiden.
+const n = (id, label, count, extra) => Object.assign({ id, label, count }, extra || {});
+
 const MIXED = {
   title: 'Gemischt', mode: 'nav',
   levels: [{ icons: true }, { icons: false }],
