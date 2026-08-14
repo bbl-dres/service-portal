@@ -234,6 +234,11 @@ export function catalogueBar({
   sort = null, filterId = '', filterLabel = 'Filter', filterCount = 0,
   panelId = '', panel = '', panelHidden = true,
   view = 'gallery', views, showSearch = true, showCount = true, extra = '', flush = false,
+  // Ein Feld, das nichts einschraenken kann, sagt das und nimmt sich aus der
+  // Tastreihenfolge — besser, als Anschlaege entgegenzunehmen, die nirgends
+  // hinfuehren. Der Katalog braucht das auf der Attributstufe, wo unterhalb
+  // nichts mehr liegt.
+  searchDisabled = false,
 }) {
   // Once opened, a panel stays open until the user closes it.
   if (panelId && PANEL_OPEN.has(panelId)) panelHidden = false;
@@ -269,7 +274,7 @@ export function catalogueBar({
             btn.postcss:160-166), with no duplicate aria-label beside it. */''}
       <form class="catbar__search" id="${escape(formId)}" role="search" aria-label="${escape(searchLabel)}">
         <label class="sr-only" for="${escape(inputId)}">${escape(searchLabel)}</label>
-        <input id="${escape(inputId)}" type="search" placeholder="${escape(placeholder)}" value="${escape(q)}" autocomplete="off">
+        <input id="${escape(inputId)}" type="search" placeholder="${escape(placeholder)}" value="${escape(q)}" autocomplete="off"${searchDisabled ? ' disabled' : ''}>
         <button class="btn btn--bare btn--icon-only catbar__submit" type="submit" title="Suchen">${icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
       </form>` : '';
   // `flush`: the bar's top margin separates it from a page header above it. When
@@ -286,7 +291,14 @@ export function catalogueBar({
             this slot it would sit in a second, otherwise empty right-aligned row
             above. Empty by default, so the four catalogue bars see nothing.
             Caller escapes and wires it. */''}
-      <div class="catbar__controls">${sortHtml}${filterHtml}${views ? viewSwitch(view, views) : ''}${extra}</div>
+      ${/* Der Ansichtswechsel steht GANZ rechts, auch wenn ein Aufrufer eigene
+            Bedienelemente mitbringt: er ist die einzige Schaltung in der Zeile,
+            die die Darstellung wechselt statt den Inhalt einzuschraenken, und im
+            ganzen Portal steht er am Ende. `extra` rueckt darum davor. Kein
+            Aufrufer benutzt heute beides zugleich (nur Raumbuchung nutzt
+            `extra`, und die hat keinen Ansichtswechsel), die Reihenfolge aendert
+            also nichts Bestehendes. */''}
+      <div class="catbar__controls">${sortHtml}${filterHtml}${extra}${views ? viewSwitch(view, views) : ''}</div>
     </div>${filterId ? `
     <div class="catbar__panel" id="${escape(panelId)}"${panelHidden ? ' hidden' : ''}>${panel}</div>` : ''}`;
 }

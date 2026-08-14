@@ -22,8 +22,11 @@ const clean = async (p, label) => {
 // check happened to leave on screen.
 const STATE = `JSON.stringify({
   h1: (document.querySelector('h1') || {}).textContent,
-  tabs: [...document.querySelectorAll('[role="tab"]')].map(t => t.textContent.trim()),
-  active: ((document.querySelector('.tab__control--active') || {}).textContent || '').trim(),
+  // Seit 2026-08-14 ist die Darstellungswahl ein Ansichtswechsel (.view-switch)
+  // statt eines Reiterbandes — dieselbe Anordnung wie im Liegenschaften
+  // Inventar. Die Zeichen tragen ihren Namen in aria-label.
+  tabs: [...document.querySelectorAll('.view-switch__btn')].map(b => b.getAttribute('aria-label')),
+  active: (document.querySelector('.view-switch__btn[aria-pressed="true"]') || {}).ariaLabel || '',
   sections: [...document.querySelectorAll('#mc-panel .detail-section__title')].map(t => t.textContent),
   keys: [...document.querySelectorAll('#mc-panel .kv dt')].map(t => t.textContent),
   vals: [...document.querySelectorAll('#mc-panel .kv dd')].map(t => t.textContent.replace(/\\s+/g,' ').trim()),

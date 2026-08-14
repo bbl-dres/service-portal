@@ -139,7 +139,10 @@ const cdp = await launch();
     ['dataset fields', '/data/catalog/11?tab=fields'],
     ['case', '/my-cases/seed-1'],
     ['portfolio building', '/app/portfolio?id=1080%2F4840%2FAF'],
-    ['metadata table', '/app/metadata-catalog?table=sap-refx-vibdbe'],
+    // Kein Eintrag mehr fuer den Katalog: seine Darstellungswahl ist seit
+    // 2026-08-14 ein Ansichtswechsel, kein Reiterband — es gibt dort keine
+    // Reiterflaeche, deren Abstand man messen koennte. Die Regel selbst gilt
+    // unveraendert fuer die sechs uebrigen Oberflaechen mit echten Reitern.
     ['tenancy', '/app/tenancies/MV-2026-001'],
     ['project', '/app/projects/PRJ-01'],
   ];

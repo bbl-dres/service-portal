@@ -90,6 +90,10 @@ const matchBadge = (core, id) => {
 // --- The model ---------------------------------------------------------------
 
 const TAB_LABEL = { uebersicht: 'Übersicht', diagramm: 'Diagramm', tabelle: 'Tabelle' };
+// Der Ansichtswechsel traegt Zeichen statt Woerter, wie ueberall im Portal:
+// «Übersicht» beschreibt den Umfang, «Diagramm» zeigt ihn als Feld von Kacheln,
+// «Tabelle» als Liste.
+const VIEW_ICON = { uebersicht: 'InfoCircle', diagramm: 'Apps', tabelle: 'List' };
 // Not every level offers every tab. A record has no landscape of its own — its
 // parts are a list, not a territory — and an attribute has nothing below it at all.
 const TABS_AT = (lvl) => (lvl === 0 ? [] : lvl >= 4 ? ['uebersicht']
@@ -363,40 +367,38 @@ export default async function render(ctx) {
   <div class="container section">
     ${C.pageHeader({ title: TITLE,
     lead: 'Fachbegriffe des BBL, ihre Realisierung in den Führungssystemen, und die Wertelisten, auf die beide verweisen.' })}
+    ${/* Dieselbe Anordnung wie im Liegenschaften Inventar: eine Leiste mit Suche
+          links und Bedienelementen rechts, darunter die aktiven Einschraenkungen,
+          darunter Baum und Flaeche.
+
+          Der Katalog hatte dafuer eine eigene Zeile erfunden — nicht aus Not,
+          sondern weil «Diagramm» und «Tabelle» als ARIA-REITER gebaut waren: ein
+          Reiter darf nicht in seiner eigenen Reiterflaeche stehen, also konnten
+          die Bedienelemente nicht in die Leiste hinunter und brauchten eine
+          Zeile fuer sich. Als Ansichtswechsel faellt der Zwang weg, und es ist
+          ohnehin die ehrlichere Beschreibung: drei Sichten auf denselben
+          Umfang, was der Ansichtswechsel im ganzen Portal bedeutet. */''}
+    ${s.lvl === 0 ? '' : C.catalogueBar({
+    formId: 'mc-search', inputId: 'mc-q',
+    searchLabel: searchScope(s).label,
+    placeholder: `${searchScope(s).label}${searchScope(s).dead ? '' : '…'}`,
+    q: s.q,
+    searchDisabled: searchScope(s).dead,
+    // Der Zaehler steht im Baum, an jedem Ast — dort sagt er zusaetzlich, WO die
+    // Treffer liegen. Zweimal dieselbe Zahl waere einmal zu viel.
+    showCount: false,
+    extra: `<span id="mc-tools">${toolsHtml(ctx, s)}</span>`,
+    view: s.tab,
+    views: s.avail.map((k) => [k, TAB_LABEL[k], VIEW_ICON[k]]),
+  })}
+    <div id="mc-activefilters">${s.lvl === 0 ? '' : activeFiltersHtml(ctx, s)}</div>
     <div class="pf-layout">
-      ${/* Die Suche steht im Seitenbaum, weil sie ihn einschraenkt — nicht nur
-            die Flaeche. Sie bleibt stehen, der Baum darunter rollt: ein
-            Suchfeld, das beim Blaettern durch die Treffer wegscrollt, ist genau
-            dann fort, wenn man die Anfrage praezisieren will. */''}
-      <aside class="pf-sidebar mc-side" aria-label="Katalog">
-        ${/* Die Ueberschrift zuerst: sie benennt die Spalte, und was benannt
-              wird, steht vor dem, was darin bedient wird. Deshalb traegt der
-              Baum hier keinen eigenen Titel mehr — sonst stuende er ein
-              zweites Mal, unter der Suche. */''}
-        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Katalog</h2></div>
-        ${searchBarHtml(ctx, s)}
-        <div class="mc-side__tree" id="mc-tree"></div>
-      </aside>
+      <aside class="pf-sidebar" id="mc-tree" aria-label="Katalog"></aside>
       <div class="pf-main">
-        ${/* Eine Zeile: Reiter links, Bedienelemente rechts. Die Reiter koennen
-              nicht in die Leiste der Tabelle hinunter — ein Reiter darf nicht in
-              seiner eigenen Reiterflaeche stehen, sonst zeigt aria-controls auf
-              den Vorfahren des Reiters. Also kommen die Bedienelemente herauf,
-              und die Tabelle zeichnet gar keine Leiste mehr. */''}
-        ${s.lvl === 0 ? '' : `<div class="mc-bar">
-          <div class="tabs">${C.tabBar({
-    items: s.avail.map((k) => ({ id: k, label: TAB_LABEL[k] })),
-    active: s.tab, idPrefix: 'mc-tab', ariaLabel: 'Darstellung', panelId: 'mc-panel',
-  })}</div>
-          <div class="mc-bar__tools" id="mc-tools">${toolsHtml(ctx, s)}</div>
-        </div>`}
-        ${/* .tab__container carries the ONE gap between strip and panel that the
-              whole portal uses (tabs.css); the root has no strip, so no class. */''}
-        ${/* .mc-pane carries the catalogue's density (css/sections/landscape.css);
-              .tab__container carries the ONE gap between strip and panel that the
-              whole portal uses (tabs.css). The root has no strip, so no container. */''}
-        <div id="mc-panel" class="mc-pane${s.lvl === 0 ? '' : ' tab__container'}"${
-  s.lvl === 0 ? '' : ' role="tabpanel" tabindex="0"'}>${paneHtml(ctx, s, unit)}</div>
+        ${/* .mc-pane traegt die Dichte des Katalogs (css/sections/landscape.css).
+              Keine Reiterflaeche mehr: der Ansichtswechsel ist eine Gruppe von
+              Schaltern, kein Reiterband — also auch kein role="tabpanel". */''}
+        <div id="mc-panel" class="mc-pane">${paneHtml(ctx, s, unit)}</div>
       </div>
     </div>
   </div>`;
@@ -426,11 +428,13 @@ export default async function render(ctx) {
     tools.innerHTML = toolsHtml(ctx, cur);
     C.wireMenu(tools, (a) => onMenuAction(a, cur, unit));
   };
+  const pills = mount.querySelector('#mc-activefilters');
   const redraw = () => {
     panel.innerHTML = paneHtml(ctx, cur, unit);
     mountPane(ctx, cur, unit);
     paintTools();
     paintTree();
+    if (pills) pills.innerHTML = activeFiltersHtml(ctx, cur);
   };
 
   // Typing rewrites the URL in place rather than pushing history: a query is a
@@ -479,40 +483,63 @@ export default async function render(ctx) {
     if (again) again.focus();
   });
 
-  // Tabs change the presentation only, so the panel is swapped in place rather
-  // than the route re-run: the tree keeps its scroll position and its focus.
-  if (s.lvl > 0) {
-    C.wireTabs(mount, {
-      onSelect: (tab) => {
+  // Der Ansichtswechsel aendert nur die Darstellung, also wird die Flaeche an
+  // Ort und Stelle getauscht statt die Route neu zu fahren: der Baum behaelt
+  // seine Rollhoehe und seinen Fokus.
+  const bar = mount.querySelector('.catbar');
+  if (bar) {
+    bar.addEventListener('click', (e) => {
+      const b = e.target.closest('.view-switch__btn');
+      if (!b) return;
+      const tab = b.dataset.view;
+      if (tab === cur.tab) return;
+      const p = new URLSearchParams(location.hash.split('?')[1] || '');
+      if (tab === DEFAULT_TAB[cur.lvl]) p.delete('tab'); else p.set('tab', tab);
+      const str = p.toString();
+      history.replaceState(history.state, '', str ? `${BASE}?${str}` : BASE);
+      cur = { ...cur, tab, pick: tab === DEFAULT_TAB[cur.lvl] ? '' : tab };
+      bar.querySelectorAll('.view-switch__btn').forEach((x) => {
+        x.setAttribute('aria-pressed', String(x.dataset.view === tab));
+      });
+      redraw();
+    });
+    // Eine Marke abwaehlen: die Anfrage loeschen oder den Umfang auf die Wurzel
+    // zuruecksetzen. Beides sind Adressen, also faehrt der Router.
+    if (pills) {
+      pills.addEventListener('click', (e) => {
+        const rm = e.target.closest('[data-remove]');
+        if (!rm) return;
+        e.preventDefault();
+        if (rm.dataset.remove !== 'q') { location.hash = BASE.replace(/^#/, ''); return; }
         const p = new URLSearchParams(location.hash.split('?')[1] || '');
-        if (tab === DEFAULT_TAB[s.lvl]) p.delete('tab'); else p.set('tab', tab);
+        p.delete('q');
         const str = p.toString();
         history.replaceState(history.state, '', str ? `${BASE}?${str}` : BASE);
-        cur = { ...s, tab, pick: tab === DEFAULT_TAB[s.lvl] ? '' : tab };
+        const box = mount.querySelector('#mc-q');
+        if (box) box.value = '';
+        cur = { ...cur, q: '' };
         redraw();
-      },
-    });
+      });
+    }
   }
 }
 
 // The count is the field's feedback, and it has to be there on every tab —
 // «Übersicht» lists nothing, so without it a reader typing there gets no sign
 // that anything happened at all.
-// Kein eigener Trefferzaehler mehr. Er stand neben dem Feld und sagte «7 von
-// 19» — dieselbe Auskunft, die jetzt im Baum an jedem Ast steht, und dort
-// zusaetzlich verraet, WO die sieben liegen. Zwei Zaehler fuer eine Zahl, von
-// denen einer weniger sagt, ist einer zu viel.
-function searchBarHtml(ctx, s) {
+// Was gerade einschraenkt, als abwaehlbare Marken — dieselbe Zeile wie im
+// Liegenschaften Inventar. Der Umfang kommt aus dem Baum, die Anfrage aus dem
+// Feld; beides sind Einschraenkungen, und beide gehoeren dorthin, wo man sie
+// wieder los wird. Vorher liess sich der Umfang nur ueber den Baum
+// zuruecknehmen — man musste wissen, dass die Wurzel «alles» bedeutet.
+function activeFiltersHtml(ctx, s) {
   const { C } = ctx;
-  const scope = searchScope(s);
-  return `<form class="mc-search mc-side__search" role="search" aria-label="${esc(scope.label)}">
-    <label class="sr-only" for="mc-q">${esc(scope.label)}</label>
-    <div class="mc-search__field">
-      ${C.icon('Search', 'mc-search__icon')}
-      <input id="mc-q" type="search" autocomplete="off" value="${esc(s.q)}"
-        placeholder="${esc(scope.label)}${scope.dead ? '' : '…'}"${scope.dead ? ' disabled' : ''}>
-    </div>
-  </form>`;
+  const filters = [];
+  if (s.q) filters.push({ label: `Suche: ${s.q}`, remove: 'q' });
+  if (s.rec) filters.push({ label: s.rec.name, remove: 'scope' });
+  else if (s.leaf) filters.push({ label: s.leaf, remove: 'scope' });
+  else if (s.lvl > 0) filters.push({ label: BRANCH_LABEL[s.kind], remove: 'scope' });
+  return filters.length ? C.activeFilters({ filters, resetHref: BASE }) : '';
 }
 
 // --- Export ------------------------------------------------------------------
@@ -772,7 +799,7 @@ function treeConfig(ctx, s) {
 
   return {
     id: 'mc-tree',
-    // Ohne Titel: den traegt die Spalte selbst, ueber der Suche.
+    title: 'Katalog',
     mode: 'nav',
     levels,
     // Zwei Abschnitte, also genau eine Linie: die Wurzel ist etwas anderes als

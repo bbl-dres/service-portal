@@ -70,91 +70,27 @@
   .lscape__group { width:100%; }
 }
 
-/* --- The catalogue's control row --------------------------------------------
-   ONE row per pane. The data table already brings a bar (Sortieren, Filter), so
-   these controls join it as `extra`; on a tab with no table the same bar stands
-   on its own. Two bars stacked was the alternative, and it read as two unrelated
-   sets of controls for one pane. */
-/* --- Die Reiterzeile: EINE Zeile ---------------------------------------------
-   Reiter links, Bedienelemente rechts. Zwei Zeilen uebereinander — Reiter oben,
-   Steuerung darunter — lasen sich als zwei Saetze fuer eine Flaeche. Die Reiter
-   koennen nicht hinunter in die Leiste der Tabelle: ein Reiter darf nicht in
-   seiner eigenen Reiterflaeche stehen. Also kommen die Bedienelemente herauf und
-   die Tabelle zeichnet keine Leiste mehr (mountDataTable `bar: false`).
-   Auf schmalem Schirm rutschen sie unter die Reiter, statt sie zu quetschen. */
-/* Die Linie unter der Zeile gehoert der ZEILE, nicht den Reitern. Das CD zeichnet
-   sie auf .tab__controls, und die reicht nur so weit wie die Reiter — rechts
-   davon standen die Bedienelemente ueber blankem Grund, und die Kante brach auf
-   halber Strecke ab. Sie eine Ebene hoeher zu ziehen ist die ganze Loesung: eine
-   zweite Linie unter .mc-bar__tools waere zwar naheliegend, liesse aber genau in
-   der Luecke zwischen beiden (16px) ein Loch. Innen wird sie dafuer abbestellt,
-   sonst laegen zwei uebereinander.
-
-   Gezeichnet als inset-Schatten, nicht als border: ein Rahmen macht die Zeile
-   einen Pixel hoeher und schiebt die Flaeche darunter mit — der Abstand zwischen
-   Reiterleiste und Flaeche ist im ganzen Portal 32px, und mit border waren es
-   hier 33 (check-consistency). Der Schatten liegt auf der Kante, statt sie zu
-   verschieben. */
-.mc-bar { display:flex; flex-wrap:wrap; align-items:flex-end;
-  justify-content:space-between; gap:var(--sp-2) var(--sp-4);
-  box-shadow:inset 0 calc(-1 * var(--stroke-1)) 0 var(--color-border); }
-.mc-bar > .tabs .tab__controls { border-bottom:0; }
-.mc-bar > .tabs { flex:1 1 16rem; min-width:0; }
-.mc-bar__tools { flex:0 0 auto; display:flex; flex-wrap:wrap; align-items:center;
-  gap:var(--sp-2); padding-bottom:var(--sp-2); }
-
-/* The catalogue's own controls, as ONE group inside the bar.
-   Inside the group there is no divider: these are all bordered buttons, and a
-   line between things that already have edges is a third mark among three boxes.
-   BEFORE the group there is one, because what precedes it — the table's own
-   Sortieren and Filter — is bare, and that is the case the rule exists for
-   (catbar.css: an export dropdown four pixels from the sort select reads as part
-   of sorting). Where the group leads the bar there is nothing to divide from. */
-.mc-tools { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2); }
+/* --- Die Bedienelemente des Katalogs -----------------------------------------
+   Sie sitzen jetzt in der GETEILTEN Leiste (.catbar) des Portals, als `extra`
+   zwischen Sortierung und Ansichtswechsel — dieselbe Zeile wie im
+   Liegenschaften Inventar. Die eigene Zeile, die der Katalog dafuer hatte, gab
+   es nur, weil «Diagramm» und «Tabelle» ARIA-Reiter waren und ein Reiter nicht
+   in seiner eigenen Flaeche stehen darf. Als Ansichtswechsel entfaellt der
+   Zwang. */
+/* Die Katalog-Bedienelemente als EINE Gruppe in der Leiste.
+   Innerhalb der Gruppe keine Trennlinie: es sind lauter gerahmte Schalter, und
+   ein Strich zwischen Dingen, die schon Kanten haben, ist eine dritte Marke
+   unter dreien. */
+.mc-tools { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2);
+  min-height:var(--target-min); }
 .mc-tools > .action-menu { border-left:0; padding-left:0; margin-left:0; }
-.mc-tools { min-height:var(--target-min); }
-
-
-/* --- The scope search -------------------------------------------------------
-   IM Seitenbaum, als erster Abschnitt ueber «Katalog». Sie schraenkt den Umfang
-   ein — das ist die Arbeit des Baums, nicht die der Reiter —, und seit sie den
-   Baum mitfiltert, steht sie da, wo ihr Ergebnis erscheint. Die Trennlinie
-   darunter ist dieselbe, die das Bauteil zwischen seinen Abschnitten zieht: die
-   Suche IST einer.
-
-   Die Seitenspalte wird dafuer zur Spalte mit festem Kopf: das Suchfeld bleibt
-   stehen, der Baum darunter rollt. Sonst waere das Feld beim Blaettern durch die
-   Treffer fort — genau dann, wenn man die Anfrage nachschaerfen will. Das
-   overflow wandert deshalb von .pf-sidebar nach innen. */
-.mc-side { display:flex; flex-direction:column; overflow:hidden; }
-.mc-side__tree { flex:1 1 auto; min-height:0; overflow:auto; }
-/* Dieselbe Linie, die das Bauteil zwischen seinen Abschnitten zieht — gleiche
-   Farbe, gleicher Rhythmus (sidebar-tree.css). Die Suche IST ein Abschnitt, und
-   zwei Striche in einer Spalte duerfen nicht aus zwei Quellen kommen. */
-.mc-side__search { flex:0 0 auto; margin:0 0 var(--sp-2); padding-bottom:var(--sp-2);
-  border-bottom:var(--stroke-1) solid var(--color-border); }
-.mc-search { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4); }
-.mc-search__field { position:relative; flex:1 1 100%; min-width:0; display:flex; }
-.mc-search__icon { position:absolute; left:var(--sp-3); top:50%; transform:translateY(-50%);
-  color:var(--color-text-muted); pointer-events:none; }
-.mc-search__field > input { width:100%; min-width:0; padding:var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-9);
-  min-height:var(--target-min); border:var(--stroke-1) solid var(--color-border);
-  border-radius:var(--radius-sm); background:var(--surface-bg); font:inherit;
-  font-size:var(--fs-sm); color:var(--color-text); }
-.mc-search__field > input::placeholder { color:var(--color-text-muted); }
-.mc-search__field > input:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring);
-  outline-offset:var(--stroke-1); }
-/* A field that cannot do anything says so in its placeholder and takes itself
-   out of the tab order, rather than accepting keystrokes that go nowhere. */
-.mc-search__field > input:disabled { background:var(--color-secondary-50);
-  color:var(--color-text-muted); cursor:not-allowed; }
 
 /* Printing the catalogue means printing what is IN the pane. The tree chooses
    the scope and the controls arrange it — neither is part of the answer, and on
    paper neither can be used. The portal's own print cascade (utilities.css)
    already removes the surrounding chrome. */
 @media print {
-  .pf-sidebar, .mc-bar__tools, .mc-search, .catbar,
+  .pf-sidebar, .active-filters, .catbar,
   .lscape__toggle .lscape__chev, .table__group-chev { display:none !important; }
   .pf-layout { display:block !important; }
   /* A landscape on paper has no folding, so every box is laid flat and allowed
