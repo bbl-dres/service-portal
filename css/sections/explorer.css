@@ -155,8 +155,14 @@
 /* The key column: monospace, tabular, measured in `ch` so the segments of one
    level line up exactly and the labels all start at the same x. A width in rem
    left slack that read as a gap between the key and the name. */
-.pf-tree__id { flex:none; min-width:2ch; font-family:var(--font-mono); font-size:var(--fs-xs);
-  color:var(--color-text-light); font-variant-numeric:tabular-nums; }
+/* Der Ordnungsbegriff steht VOR dem Namen und liest sich als Teil davon: «AF
+   Bundeshaus West». Keine eigene Schrift mehr, keine eigene Groesse, keine
+   eigene Farbe — er war in Consolas 12px grau gesetzt und damit als etwas
+   Technisches markiert, das man ueberliest. Die Leute haben diese Kuerzel aber
+   im Kopf und suchen danach; sie gehoeren zum Namen, nicht in eine Fussnote.
+   Die Mindestbreite bleibt, damit die Namen einer Stufe an derselben Kante
+   beginnen. */
+.pf-tree__id { flex:none; min-width:2ch; }
 :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub).is-active .pf-tree__id { color:var(--color-text-700); }
 .pf-tree__label { flex:0 1 auto; min-width:4ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* The count reads as «(7)». The parentheses are presentation, added here rather

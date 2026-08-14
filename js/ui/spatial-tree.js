@@ -19,8 +19,20 @@
 
 const compareGerman = (a, b) => String(a).localeCompare(String(b), 'de');
 
+// `attr` hiess frueher: SO heisst das data-Attribut im Markup. Gelesen wurde es
+// aber ueber `dataset`, und das macht aus `data-business-entity` von selbst
+// `businessEntity` — den Schluessel, unter dem die Anwendung ihre Auswahl fuehrt.
+// Diese Umwandlung ist also Teil des Vertrags, nicht Beiwerk des DOM: ohne sie
+// bekam das Portfolio `'business-entity'`, einen Schluessel, den `inSel` nie
+// liest — die Wirtschaftseinheit sah gewaehlt aus und filterte nichts.
+//
+// Bei den Mietverhaeltnissen zeigt sich die andere Haelfte: dort ist `key`
+// (`canton`) das Datenfeld und `attr` (`region`) der Zustandsschluessel. Beide
+// Faelle trifft dieselbe Regel.
+const camel = (s) => String(s).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+
 export function objectsToNodes(objects, { levels, leaf }, sel = {}) {
-  const attrs = levels.map((l) => l.attr || l.key);
+  const attrs = levels.map((l) => camel(l.attr || l.key));
   const deeperKeys = [...attrs, 'obj', 'sub'];
   const has = (v) => v !== undefined && v !== null && v !== '';
 
@@ -67,7 +79,7 @@ export function objectsToNodes(objects, { levels, leaf }, sel = {}) {
       });
     }
     const def = levels[depth];
-    const attribute = def.attr || def.key;
+    const attribute = camel(def.attr || def.key);
     const groups = new Map();
     for (const o of items) {
       if (!groups.has(o[def.key])) groups.set(o[def.key], []);

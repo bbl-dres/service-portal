@@ -103,13 +103,15 @@ export default async function render(ctx) {
       { key: 'region', icon: 'tree/map' },
       { key: 'city', icon: 'tree/map-pin' },
 
-      // The number alone: the Folder icon and the level's position already
-      // identify the business entity, so the «WE» prefix only cost key-column
-      // width. `word` keeps the level named for assistive technology, which
-      // would otherwise hear a bare number.
+      // «WE 4840», nicht die Nummer plus den Namen ihres ersten Gebaeudes. Die
+      // Wirtschaftseinheit trug bisher einen geliehenen Namen, und weil ihr
+      // einziges Kind meist dasselbe Gebaeude ist, stand derselbe Name zweimal
+      // untereinander: «5620 Schweizerische Botschaft Canberra» ueber «AA
+      // Schweizerische Botschaft Canberra». Eine Wirtschaftseinheit ist kein
+      // Gebaeude; sie hat eine Nummer, und die haben die Leute im Kopf.
       { key: 'businessEntity', attr: 'business-entity', icon: 'tree/folder',
-        idText: (v) => String(v), word: 'Wirtschaftseinheit',
-        label: (v, es) => ((es.find((x) => x.kind === 'building') || es[0] || {}).name || ''),
+        word: 'Wirtschaftseinheit',
+        label: (v) => `WE ${v}`,
         sort: (a, b) => (a < b ? -1 : a > b ? 1 : 0) },
     ],
 
@@ -301,11 +303,14 @@ export default async function render(ctx) {
       id: 'pf-tree',
       mode: 'select',
       ariaLabel: 'Standorte',
-      // Nur die oberste Stufe fuehrt Symbole; ab da traegt der Schritt die
-      // Tiefe. Vorher stand auf jeder der 94 Zeilen eines — Globus, Karte,
-      // Nadel, Ordner —, und wo ein Symbol auf jeder Zeile steht, unterscheidet
-      // es nichts mehr.
-      levels: [{ icons: true }, { icons: false }, { icons: false }, { icons: false }],
+      // Land, Region, Ort tragen Symbole, Wirtschaftseinheit und Objekt nicht.
+      //
+      // Der Einwand gegen Symbole auf jeder Zeile bleibt richtig — aber er traf
+      // den Fall, in dem alle dasselbe zeigen. Hier zeigt jede der drei Stufen
+      // ein ANDERES Zeichen (Globus, Karte, Nadel), und das unterscheidet
+      // genau das, was man beim Rollen verliert: auf welcher Stufe man ist.
+      // Ab der Wirtschaftseinheit hoert die Ortsachse auf, also auch die Reihe.
+      levels: [{ icons: true }, { icons: true }, { icons: true }, { icons: false }],
       // Diese App nennt das gewaehlte Objekt `id`, der Adapter nennt es `obj`
       // (so hiess es im data-Attribut). Uebersetzt wird an der Grenze, damit
       // weder der Zustand dieser App noch der Adapter der anderen nachgeben muss.

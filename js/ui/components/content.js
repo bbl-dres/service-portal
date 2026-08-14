@@ -203,16 +203,20 @@ export function table({ columns, rows, groups, zebra, caption, showCaption, foot
   // software dieselben Spalten ein zweites Mal ansagen.
   const subHead = `<tr class="table__subhead" aria-hidden="true">${columns.map((c) => (
     `<td${al(c)}>${c.labelHidden ? '' : escape(c.label)}</td>`)).join('')}</tr>`;
-  const sections = (groups || []).map((g, i) => `<tbody>
+  const sections = (groups || []).map((g) => `<tbody>
     <tr class="table__group"><th scope="colgroup" colspan="${columns.length}">
       <button type="button" class="table__group-toggle" data-group="${escape(g.key)}"
         aria-expanded="${g.open !== false}">${icon('ChevronRight', 'table__group-chev')}
         <span>${escape(g.label)}</span>${g.count == null ? ''
     : ` <span class="table__group-n">${escape(String(g.count))}</span>`}</button></th></tr>
-    ${/* Nicht im ersten Abschnitt — dort staende die Wiederholung unmittelbar
-          unter dem Original. Und nicht in einem zugeklappten: es gibt keine
-          Zeilen zu beschriften. */''}
-    ${i === 0 || g.open === false ? '' : subHead}
+    ${/* In JEDEM offenen Abschnitt, auch im ersten. Zuerst hatte ich ihn dort
+          weggelassen, weil er unmittelbar unter dem Original staende — das
+          erzeugte aber zwei Leserichtungen in einer Tabelle: der erste
+          Abschnitt las sich «Spalten, Gruppe, Zeilen», jeder weitere «Gruppe,
+          Spalten, Zeilen». Stattdessen tritt jetzt der echte <thead> zurueck
+          (siehe .table--grouped in table.css): er bleibt fuer die
+          Vorlesesoftware, sichtbar fuehrt jede Gruppe ihre eigenen Koepfe. */''}
+    ${g.open === false ? '' : subHead}
     ${g.open === false ? '' : (g.rows || []).map(dataRow).join('')}</tbody>`).join('');
   // `rowsClickable`: the entire row follows its FIRST link. This is purely a
   // mouse convenience; keyboard and screen-reader interaction still uses that
@@ -220,6 +224,9 @@ export function table({ columns, rows, groups, zebra, caption, showCaption, foot
   // a link target would be unreachable to both.
   const cls = ['table', zebra ? 'table--zebra' : '', showCaption ? 'table--caption' : '',
     compact ? 'table--compact' : '',
+    // Gruppiert: der echte <thead> tritt sichtbar zurueck, jede Gruppe fuehrt
+    // ihre eigenen Spaltenkoepfe. Sonst haette die Tabelle zwei Leserichtungen.
+    groups ? 'table--grouped' : '',
     rowsClickable ? 'table--rows-clickable' : ''].filter(Boolean).join(' ');
   // Only a named table becomes a named region. `aria-label="Tabelle"` named 11 of
   // 15 tables, producing eleven indistinguishable «Tabelle» regions in the
