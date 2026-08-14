@@ -165,8 +165,14 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 /* Do not convey state by color alone (WCAG 1.4.1, P2-10): the surface alone did
    exactly that, and forced-colors removes it without replacement. The underline
    now conveys state through shape (Item 2.6). */
+/* Der Strich BLEIBT — er ist der Grund, warum der Zustand auch dann noch
+   ankommt, wenn forced-colors Hintergrund und Textfarbe wegnimmt (Punkt 2.6
+   oben). Aber nicht mehr in Rot: er war die lauteste Marke auf dem Schirm, und
+   er sagt dem Leser, welchen Knopf er gerade selbst gedrueckt hat. Dieselbe
+   Entscheidung wie beim Balken des Seitenbaums, aus demselben Grund. Grau misst
+   gegen den getoenten Grund 3.4:1 und bleibt damit als Anzeige lesbar. */
 .view-switch__btn[aria-pressed="true"] { color:var(--color-text); background:var(--color-secondary-100);
-  box-shadow:var(--state-underline-primary); }
+  box-shadow:inset 0 calc(-1 * var(--stroke-3)) 0 var(--color-text-light); }
 
 /* Action-card rows (`C.actionCard`, js/ui/components/content.js). These lived in
    the lazily loaded `apps/floorplan.css`, which portfolio and the shop never

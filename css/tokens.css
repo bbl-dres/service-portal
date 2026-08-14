@@ -270,7 +270,6 @@
   /* Component-state indicators are rings/bars rather than elevations. Keeping
      them beside the elevation scale prevents one-off shadow recipes. */
   --state-bar-primary: inset var(--stroke-3) 0 0 var(--color-primary-600);
-  --state-underline-primary: inset 0 calc(-1 * var(--stroke-3)) 0 var(--color-primary-600);
   --state-ring-primary: inset 0 0 0 var(--stroke-1) var(--color-primary-600);
   --state-ring-warning: inset 0 0 0 var(--stroke-2) var(--color-warning-text);
   --state-ring-focus: inset 0 0 0 var(--stroke-4) var(--color-focus-ring);
