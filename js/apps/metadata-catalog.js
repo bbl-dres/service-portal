@@ -128,8 +128,17 @@ const matches = (q, ...fields) => {
   const needle = q.toLowerCase();
   return fields.some((f) => String(f == null ? '' : f).toLowerCase().includes(needle));
 };
+// EINE Definition davon, worin gesucht wird. Es waren drei: die Tabelle innerhalb
+// eines Astes nahm den Status mit, die drei uebrigen Stellen nicht. Bei «gueltig»
+// zeigte die Tabelle darum 17 Zeilen, waehrend der Baum daneben leer blieb —
+// dieselbe Anfrage, zwei Antworten auf einem Schirm.
+//
+// Der Status faellt dabei weg, und zwar absichtlich: er ist eine Eigenschaft zum
+// FILTERN, kein Suchbegriff. «gueltig» traf jeden gueltigen Datensatz und sagte
+// damit nichts — ein Treffer, der alles trifft, trennt nichts.
+const recordMatches = (q, r) => matches(q, r.name, r.def, r.group, r.steward);
 const scopeRows = (s) => s.rows.filter((r) => (!s.leaf || r.group === s.leaf)
-  && matches(s.q, r.name, r.def, r.group, r.steward, r.status));
+  && recordMatches(s.q, r));
 const scopeKids = (s) => (s.rec ? s.rec.kids : [])
   .filter((k) => matches(s.q, k.name, k.def, k.type));
 
@@ -137,12 +146,13 @@ const scopeKids = (s) => (s.rec ? s.rec.kids : [])
 // tree of five thousand records tells a reader nothing about what they are about
 // to search.
 function searchScope(s) {
-  const u = BRANCH_UNIT[s.kind];
-  if (s.lvl === 0) return { label: 'Im ganzen Katalog suchen', dead: false };
+  // Ein Text fuer alle Stufen. Frueher nannte das Feld den Umfang, in dem man
+  // gerade stand («In Geschaeftsobjekte suchen») — das stimmt nicht mehr, seit
+  // die Suche im Seitenbaum steht und ALLE Aeste einschraenkt, nicht nur den
+  // offenen. Ein Feld, das einen zu kleinen Umfang verspricht, ist schlechter
+  // als eines, das gar keinen nennt.
   if (s.lvl >= 4) return { label: 'Auf dieser Stufe gibt es nichts zu durchsuchen', dead: true };
-  if (s.lvl === 3) return { label: `${u.kid} in «${s.rec.name}» suchen`, dead: false };
-  if (s.lvl === 2) return { label: `In ${s.leaf} suchen`, dead: false };
-  return { label: `In ${BRANCH_LABEL[s.kind]} suchen`, dead: false };
+  return { label: 'Im Katalog suchen', dead: false };
 }
 
 // Grouping is a property of the PRESENTATION, and both presentations share it:
@@ -522,7 +532,7 @@ function exportTable(s, unit) {
   }
   if (s.lvl === 0) {
     const hits = BRANCHES.flatMap((k) => records(core0, k).map((r) => ({ ...r, kind: k })))
-      .filter((r) => matches(s.q, r.name, r.def, r.group, r.steward));
+      .filter((r) => recordMatches(s.q, r));
     return { name: s.q ? `Treffer für ${s.q}` : 'Katalog',
       head: ['Bereich', 'Name', 'Gruppe', 'Beschreibung', 'Verantwortung', 'Bestandteile', 'Status'],
       rows: hits.map((r) => [BRANCH_LABEL[r.kind], r.name, r.group, r.def, r.steward, r.n, r.status]) };
@@ -718,7 +728,7 @@ function treeConfig(ctx, s) {
   // Ohne Anfrage ist es die volle Liste, der Normalfall kostet also nichts.
   const rowsOf = (kind) => {
     const all = records(core, kind);
-    return s.q ? all.filter((r) => matches(s.q, r.name, r.def, r.group, r.steward)) : all;
+    return s.q ? all.filter((r) => recordMatches(s.q, r)) : all;
   };
 
   const branchNode = (kind) => {
@@ -1021,7 +1031,7 @@ function mountPane(ctx, s, unit) {
 
   if (s.lvl === 0) {
     const hits = BRANCHES.flatMap((k) => records(core, k).map((r) => ({ ...r, kind: k })))
-      .filter((r) => matches(s.q, r.name, r.def, r.group, r.steward));
+      .filter((r) => recordMatches(s.q, r));
     ctx.onUnmount(C.mountDataTable(host, {
       id: 'mc-all', unit: { nom: 'Einträge', dat: 'Einträgen' }, perPage: 25, compact: true, flush: true,
       showSearch: false, showCount: false,

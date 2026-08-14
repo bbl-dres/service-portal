@@ -47,6 +47,8 @@ const STATE = `JSON.stringify({
     const l = li.querySelector('.pf-tree__label'), n = li.querySelector('.pf-tree__n');
     return l && n ? l.textContent.trim() + ' ' + n.textContent.trim() : null;
   }).filter(Boolean).join(' | '),
+  emptyMsg: ((document.querySelector('#mc-panel .table__empty, #mc-panel tbody td[colspan]') || {})
+    .textContent || '').replace(/\s+/g, ' ').trim(),
   tableSearch: document.querySelectorAll('#mc-panel .catbar__search').length,
   actions: [...document.querySelectorAll('[data-menu="mc-actions"] [data-action]')].map(b => b.dataset.action),
   groupSel: (() => {
@@ -313,15 +315,27 @@ try {
   await clean(p, 'Aktionen');
 
   head('Suche — narrows the scope, not the tab');
+  // Seit die Suche im Seitenbaum steht (2026-08-14), schraenkt sie ALLE Aeste
+  // ein, nicht nur den offenen. Das Feld nennt darum keinen Umfang mehr: einen
+  // zu kleinen zu versprechen waere schlechter, als keinen zu nennen.
   o = await go('#/app/metadata-catalog?kind=objekt');
-  check(o.q === 'In Geschäftsobjekte suchen…', 'the field names what it would narrow', o.q);
+  check(o.q === 'Im Katalog suchen…', 'the field promises no scope it does not have', o.q);
   check(o.tableSearch === 0, 'and it is the only search field on the page', String(o.tableSearch));
   o = await go(L2);
-  check(o.q === 'In Bauwerk und Liegenschaft suchen…', 'down a level it names the group', o.q);
+  check(o.q === 'Im Katalog suchen…', 'and says the same a level down', o.q);
   o = await go('#/app/metadata-catalog?id=areal');
-  check(o.q === 'Attribute in «Areal» suchen…', 'on a record it narrows the parts', o.q);
+  check(o.q === 'Im Katalog suchen…', 'and on a record', o.q);
   o = await go('#/app/metadata-catalog?id=areal&attr=Areal-ID');
   check(o.qDead && !/…$/.test(o.q), 'on an attribute it is disabled and says why', o.q);
+
+  // Eine Anfrage, eine Antwort. «gueltig» stand frueher nur im Feld `status`,
+  // das genau eine der vier Suchstellen mitnahm: die Tabelle zeigte 17 Zeilen,
+  // waehrend der Baum daneben leer blieb.
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=tabelle&q=g%C3%BCltig');
+  check(o.rows <= 1 && /Kein Treffer/.test(o.emptyMsg || ''),
+    'a status word finds nothing rather than everything', `${o.rows} Zeilen · ${o.emptyMsg || ''}`);
+  check(!/[1-9]/.test(o.qCount || ''),
+    'and the tree agrees with the table instead of contradicting it', o.qCount || '(leer)');
 
   // The query is a property of the scope, so it applies to every tab — including
   // the one that lists nothing, where the tree is the only feedback there is.
