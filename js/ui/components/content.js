@@ -192,12 +192,27 @@ export function table({ columns, rows, groups, zebra, caption, showCaption, foot
   const body = (rows || []).map(dataRow).join('');
   // A collapsed section keeps its header — that is the whole point of collapsing,
   // and it is also what stays as the control to open it again.
-  const sections = (groups || []).map((g) => `<tbody>
+  // Die Spaltenkoepfe wiederholen sich je Abschnitt. Bei acht Zeilen in
+  // «Bauwerk und Liegenschaft» steht die echte Kopfzeile beim zweiten Abschnitt
+  // laengst ausserhalb des Bildes, und «4» in einer Spalte ohne Kopf ist eine
+  // Zahl ohne Frage.
+  //
+  // Rein sichtbar: <td> statt <th> und aria-hidden. Die Zuordnung Zelle→Spalte
+  // macht der echte <thead>, und die gilt fuer die ganze Tabelle. Ein zweiter
+  // Satz <th scope="col"> wuerde sie nicht verbessern, sondern der Vorlese-
+  // software dieselben Spalten ein zweites Mal ansagen.
+  const subHead = `<tr class="table__subhead" aria-hidden="true">${columns.map((c) => (
+    `<td${al(c)}>${c.labelHidden ? '' : escape(c.label)}</td>`)).join('')}</tr>`;
+  const sections = (groups || []).map((g, i) => `<tbody>
     <tr class="table__group"><th scope="colgroup" colspan="${columns.length}">
       <button type="button" class="table__group-toggle" data-group="${escape(g.key)}"
         aria-expanded="${g.open !== false}">${icon('ChevronRight', 'table__group-chev')}
         <span>${escape(g.label)}</span>${g.count == null ? ''
     : ` <span class="table__group-n">${escape(String(g.count))}</span>`}</button></th></tr>
+    ${/* Nicht im ersten Abschnitt — dort staende die Wiederholung unmittelbar
+          unter dem Original. Und nicht in einem zugeklappten: es gibt keine
+          Zeilen zu beschriften. */''}
+    ${i === 0 || g.open === false ? '' : subHead}
     ${g.open === false ? '' : (g.rows || []).map(dataRow).join('')}</tbody>`).join('');
   // `rowsClickable`: the entire row follows its FIRST link. This is purely a
   // mouse convenience; keyboard and screen-reader interaction still uses that

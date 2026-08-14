@@ -98,6 +98,20 @@
    fresh start rather than a continuation. */
 .table--zebra tbody > .table__group ~ tr:nth-child(even) { background:transparent; }
 .table--zebra tbody > .table__group ~ tr:nth-child(odd) { background:var(--color-secondary-50); }
+/* Wiederholte Spaltenkoepfe verschieben die Zaehlung noch einmal um eins — ein
+   Abschnitt mit Kopfzeile faenge sonst auf getoenter Zeile an, einer ohne auf
+   weisser, und dieselbe Tabelle haette zwei Rhythmen. Also dort umdrehen, wo die
+   Wiederholung steht, und sie selbst aus dem Streifenmuster nehmen. */
+.table--zebra tbody:has(.table__subhead) > .table__group ~ tr:nth-child(odd) { background:transparent; }
+.table--zebra tbody:has(.table__subhead) > .table__group ~ tr:nth-child(even) { background:var(--color-secondary-50); }
+.table--zebra tbody > .table__subhead { background:transparent; }
+/* Wie der echte Kopf, nur leiser: er ordnet ein, er kuendigt nichts Neues an.
+   Die Linie darunter trennt ihn von seinen Zeilen, so wie oben auch. */
+.table__subhead > td { padding-top:var(--sp-2); padding-bottom:var(--sp-2);
+  font-size:var(--fs-sm); font-weight:var(--fw-bold); color:var(--color-text-muted);
+  text-transform:uppercase; letter-spacing:.02em;
+  border-bottom:var(--stroke-1) solid var(--color-border); }
+.table--compact .table__subhead > td { padding-top:var(--sp-1); padding-bottom:var(--sp-1); }
 .table__group > th { padding-top:var(--sp-3); padding-bottom:var(--sp-3); background:transparent; }
 /* Air between sections, on the header's padding rather than a margin: a table in
    border-collapse ignores margins on its rows. The first section takes the

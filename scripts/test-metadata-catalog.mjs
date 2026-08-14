@@ -28,7 +28,12 @@ const STATE = `JSON.stringify({
   keys: [...document.querySelectorAll('#mc-panel .kv dt')].map(t => t.textContent),
   vals: [...document.querySelectorAll('#mc-panel .kv dd')].map(t => t.textContent.replace(/\\s+/g,' ').trim()),
   cols: [...document.querySelectorAll('#mc-panel thead th')].map(t => t.textContent.trim()),
-  rows: document.querySelectorAll('#mc-panel tbody tr').length,
+  // Nur DATENzeilen: der Abschnittskopf ist ein <tr>, und seit die Spaltenkoepfe
+  // sich je Abschnitt wiederholen (2026-08-14) auch die Wiederholung. Beides
+  // abzuziehen waere Rechnen mit der Darstellung — hier wird gezaehlt, was
+  // Inhalt ist.
+  rows: document.querySelectorAll(
+    '#mc-panel tbody tr:not(.table__group):not(.table__subhead)').length,
   cards: document.querySelectorAll('#mc-panel .card').length,
   groups: [...document.querySelectorAll('#mc-panel .table__group-toggle')].map(
     b => b.textContent.replace(/\\s+/g,' ').trim()),
@@ -342,8 +347,8 @@ try {
   // Und der Baum zeigt dann nur noch die Aeste, in denen etwas steht.
   o = await go('#/app/metadata-catalog?kind=objekt&tab=tabelle&q=geb');
   // A section header is a <tr> too, so subtract them to count records.
-  check(o.rows - o.groups.length === 9, '«geb» narrows the Tabelle tab',
-    o.rows + ' Zeilen minus ' + o.groups.length + ' Abschnitte');
+  check(o.rows === 9, '«geb» narrows the Tabelle tab',
+    o.rows + ' Datenzeilen in ' + o.groups.length + ' Abschnitten');
   o = await go('#/app/metadata-catalog?kind=objekt&tab=diagramm&q=geb');
   check(o.tiles === 9, 'and the Diagramm tab to the same nine', String(o.tiles));
   o = await go('#/app/metadata-catalog?kind=objekt&tab=uebersicht&q=geb');
