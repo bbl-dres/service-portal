@@ -338,14 +338,17 @@ export default async function render(ctx) {
   })}</div>`}
         ${/* .tab__container carries the ONE gap between strip and panel that the
               whole portal uses (tabs.css); the root has no strip, so no class. */''}
-        <div id="mc-panel"${s.lvl === 0 ? '' : ' class="tab__container" role="tabpanel" tabindex="0"'}
-          >${paneHtml(ctx, s, unit)}</div>
+        ${/* .mc-pane carries the catalogue's density (css/sections/landscape.css);
+              .tab__container carries the ONE gap between strip and panel that the
+              whole portal uses (tabs.css). The root has no strip, so no container. */''}
+        <div id="mc-panel" class="mc-pane${s.lvl === 0 ? '' : ' tab__container'}"${
+  s.lvl === 0 ? '' : ' role="tabpanel" tabindex="0"'}>${paneHtml(ctx, s, unit)}</div>
       </div>
     </div>
   </div>`;
 
   mountPane(ctx, s, unit);
-  wireTree(mount);
+  wireTree(mount, ctx, s);
 
   // The pane is redrawn in place for anything that changes only the pane. `cur`
   // is what it is currently showing, so a landscape click after a tab switch
@@ -615,6 +618,18 @@ function toolsHtml(ctx, s) {
 // the sidebar on every click buries the tree. The link picks the record, the
 // chevron opens it. Every other row navigates and unfolds in one move, because
 // there the branch below IS what was asked for.
+// The rows under a record. Module level, because the chevron builds them too:
+// a table can carry seventy-five fields and five of them sit in one system, so
+// rendering every list up front would put hundreds of hidden nodes in the
+// sidebar for a reader who opens none of them. They are built when asked.
+function attrRowsHtml(s, r, kind, group) {
+  const GAP = '<span class="pf-tree__chev--empty" aria-hidden="true"></span>';
+  return r.kids.map((k) => `
+    <li class="pf-tree__item"><a class="pf-tree__sub" href="${esc(hrefFor(s, { rec: r, attr: k.name, kind, leaf: group }))}"
+      ${s.attr === k.name ? ' aria-current="true"' : ''}>${GAP}<span class="pf-tree__label">${
+  esc(k.name)}</span></a></li>`).join('');
+}
+
 function treeHtml(ctx, s) {
   const { core, C } = ctx;
   const CHEV = C.icon('ChevronRight', 'pf-tree__chev');
@@ -622,17 +637,23 @@ function treeHtml(ctx, s) {
   const label = (text, n) => `<span class="pf-tree__label">${esc(text)}</span>`
     + (n == null ? '' : `<span class="pf-tree__n">${n}</span>`);
 
-  const attrRows = (r, kind, group) => r.kids.map((k) => `
-    <li class="pf-tree__item"><a class="pf-tree__sub" href="${esc(hrefFor(s, { rec: r, attr: k.name, kind, leaf: group }))}"
-      ${s.attr === k.name ? ' aria-current="true"' : ''}>${GAP}${label(k.name, null)}</a></li>`).join('');
+  const attrRows = (r, kind, group) => attrRowsHtml(s, r, kind, group);
 
   const recRows = (mine, kind, group) => mine.map((r) => {
     const on = s.rec && s.rec.id === r.id;
-    // An attribute in scope forces its parent open — the selection has to be visible.
-    const open = on && (!!s.attr || isOpen(`rec:${r.id}`, false));
+    // Folding is the chevron's business and NOTHING else's. It used to require
+    // the record to be selected as well, so the chevron of any other record
+    // opened an empty list: the toggle flips `hidden` on a list the renderer had
+    // filled only for the record in scope. A reader comparing two tables needs
+    // both open at once, and neither of them has to be the one selected.
+    //
+    // The one thing that still forces it open is an attribute in scope — the
+    // selection has to be visible.
+    const open = (on && !!s.attr) || isOpen(`rec:${r.id}`, false);
     return `<li class="pf-tree__item">
       <span class="pf-tree__split${on && !s.attr ? ' is-active' : on ? ' is-path' : ''}">
-        <button type="button" class="pf-tree__fold" data-fold="rec:${esc(r.id)}" aria-expanded="${open}"
+        <button type="button" class="pf-tree__fold" data-fold="rec:${esc(r.id)}"
+          data-kind="${esc(kind)}" data-leaf="${esc(group)}" aria-expanded="${open}"
           aria-label="${esc(r.name)} ${open ? 'zuklappen' : 'aufklappen'}">${CHEV}</button>
         <a class="pf-tree__go" href="${esc(hrefFor(s, { rec: r, attr: '', kind, leaf: group }))}"
           ${on && !s.attr ? ' aria-current="true"' : ''}>${label(r.name, r.n)}</a>
@@ -669,7 +690,7 @@ function treeHtml(ctx, s) {
 }
 
 // One delegated listener for the whole sidebar; it dies with the sidebar.
-function wireTree(mount) {
+function wireTree(mount, ctx, s) {
   const side = mount.querySelector('.pf-sidebar');
   if (!side) return;
   side.addEventListener('click', (e) => {
@@ -679,6 +700,18 @@ function wireTree(mount) {
     const list = fold.closest('.pf-tree__item').querySelector('.pf-tree__children');
     const open = fold.getAttribute('aria-expanded') !== 'true';
     fold.setAttribute('aria-expanded', String(open));
+    fold.setAttribute('aria-label',
+      fold.getAttribute('aria-label').replace(open ? 'aufklappen' : 'zuklappen',
+        open ? 'zuklappen' : 'aufklappen'));
+    // Build the rows the first time this record is opened. The renderer only
+    // fills a list it already knows to be open, so without this the chevron of
+    // any other record revealed an empty one.
+    if (open && list && !list.children.length) {
+      const { kind, leaf } = fold.dataset;
+      const id = fold.dataset.fold.slice('rec:'.length);
+      const rec = records(ctx.core, kind).find((r) => r.id === id);
+      if (rec) list.innerHTML = attrRowsHtml(s, rec, kind, leaf);
+    }
     if (list) list.hidden = !open;
     OPEN.set(fold.dataset.fold, open);
   });

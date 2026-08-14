@@ -153,6 +153,17 @@ try {
   check(o.cols.join('/') === 'Attribut/Beschreibung/Werttyp/Schlüssel', 'attribute columns', o.cols.join('/'));
   check(o.activeRow.trim().length > 0, 'the tree marks the record', o.activeRow);
   check(o.subs === 0, 'and does NOT unfold it — that is what the chevron is for', String(o.subs));
+  // The chevron must work on ANY record, not only the selected one: it used to
+  // reveal a list the renderer had filled only for the record in scope, so on
+  // every other record it opened an empty one.
+  const folded = await p.evaluate(`(async () => {
+    const f = [...document.querySelectorAll('.pf-tree__fold')]
+      .find((b) => !b.closest('.pf-tree__split').classList.contains('is-active'));
+    f.click();
+    await new Promise((r) => setTimeout(r, 250));
+    return String(document.querySelectorAll('.pf-tree__sub').length);
+  })()`);
+  check(Number(folded) > 0, 'the chevron of an UNSELECTED record fills its list too', folded + ' Zeilen');
   o = await go(withTab(idHref, 'uebersicht'));
   check(o.sections.join('/') === 'Definition/Verantwortlich/Metadaten',
     'the record overview is the same three sections', o.sections.join('/'));

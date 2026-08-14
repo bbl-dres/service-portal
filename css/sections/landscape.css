@@ -127,3 +127,28 @@
   .lscape__tile { background:transparent !important; color:#000 !important;
     border-color:#999 !important; }
 }
+
+/* --- The catalogue's own density --------------------------------------------
+   A reference tool is read by scanning, and its tables already say so
+   (.table--compact). The panes around them were still at page scale, which read
+   as three chapters rather than three fields of one record: section headings at
+   32px/40px with 48px between them, and 258px-tall figure cards. The numbers
+   here are the wireframe's, and they are the same step down the tables took.
+   Scoped to the pane, so no other surface in the portal moves. */
+.mc-pane .detail-section { margin-top:var(--sp-5); }
+.mc-pane .detail-section:first-child { margin-top:0; }
+/* A section label, not a chapter title — it names a field of three lines. */
+.mc-pane .detail-section__title { margin-bottom:var(--sp-2);
+  font-size:var(--fs-base); line-height:var(--lh-tight); }
+.mc-pane .kv { font-size:var(--fs-sm); }
+.mc-pane .kv dt, .mc-pane .kv dd { padding-block:var(--sp-1-5); }
+.mc-pane .detail-section > p { font-size:var(--fs-sm); }
+
+/* The figure cards. The number stays the largest thing on the page — it is the
+   point of the card — but everything around it stops holding it at arm's
+   length. */
+.mc-pane .stats { gap:var(--sp-4); }
+.mc-pane .stats .card__body { padding:var(--sp-4); }
+.mc-pane .stats .stat__num { font-size:var(--text-2xl); margin-bottom:var(--sp-1); }
+.mc-pane .stats .stat__label { margin:0 0 var(--sp-2); font-size:var(--fs-sm); }
+.mc-pane .stats .card__text { margin:0; font-size:var(--fs-sm); }
