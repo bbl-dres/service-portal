@@ -128,8 +128,11 @@
    overflow wandert deshalb von .pf-sidebar nach innen. */
 .mc-side { display:flex; flex-direction:column; overflow:hidden; }
 .mc-side__tree { flex:1 1 auto; min-height:0; overflow:auto; }
-.mc-side__search { flex:0 0 auto; margin:0 0 var(--sp-3); padding-bottom:var(--sp-3);
-  border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
+/* Dieselbe Linie, die das Bauteil zwischen seinen Abschnitten zieht — gleiche
+   Farbe, gleicher Rhythmus (sidebar-tree.css). Die Suche IST ein Abschnitt, und
+   zwei Striche in einer Spalte duerfen nicht aus zwei Quellen kommen. */
+.mc-side__search { flex:0 0 auto; margin:0 0 var(--sp-2); padding-bottom:var(--sp-2);
+  border-bottom:var(--stroke-1) solid var(--color-border); }
 .mc-search { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4); }
 .mc-search__field { position:relative; flex:1 1 100%; min-width:0; display:flex; }
 .mc-search__icon { position:absolute; left:var(--sp-3); top:50%; transform:translateY(-50%);

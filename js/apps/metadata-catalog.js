@@ -359,6 +359,11 @@ export default async function render(ctx) {
             Suchfeld, das beim Blaettern durch die Treffer wegscrollt, ist genau
             dann fort, wenn man die Anfrage praezisieren will. */''}
       <aside class="pf-sidebar mc-side" aria-label="Katalog">
+        ${/* Die Ueberschrift zuerst: sie benennt die Spalte, und was benannt
+              wird, steht vor dem, was darin bedient wird. Deshalb traegt der
+              Baum hier keinen eigenen Titel mehr — sonst stuende er ein
+              zweites Mal, unter der Suche. */''}
+        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Katalog</h2></div>
         ${searchBarHtml(ctx, s)}
         <div class="mc-side__tree" id="mc-tree"></div>
       </aside>
@@ -757,7 +762,7 @@ function treeConfig(ctx, s) {
 
   return {
     id: 'mc-tree',
-    title: 'Katalog',
+    // Ohne Titel: den traegt die Spalte selbst, ueber der Suche.
     mode: 'nav',
     levels,
     // Zwei Abschnitte, also genau eine Linie: die Wurzel ist etwas anderes als

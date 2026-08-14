@@ -78,6 +78,101 @@ export function syncTreeCounts(root, visible, levelsOf, idOf) {
 // `data-obj`, exactly the shape read by syncTreeCounts/wireTree/restore.
 const compareGerman = (a, b) => String(a).localeCompare(String(b), 'de');
 
+// `treeHTML` tut zwei Dinge, die nichts miteinander zu tun haben: es GRUPPIERT
+// eine flache Objektliste ueber `levels` zu einer Hierarchie, und es ZEICHNET
+// daraus Markup. Nur das Zeichnen war doppelt — das Seitenbaum-Bauteil kann es
+// besser und fuer alle acht Oberflaechen gleich. Die Gruppierung ist wertvoll
+// und gibt es dort nicht.
+//
+// Also getrennt statt ersetzt: hier bleibt das Gruppieren, heraus kommen Knoten
+// statt HTML. Die Aufrufer reichen sie an C.sidebarTree weiter.
+//
+// `sel` ist die aktuelle Auswahl in derselben Form, die `wireTree` lieferte
+// ({country, region, city, businessEntity, obj, sub}). Daraus faellt die
+// Markierung ab: ein Knoten, auf den die Auswahl genau passt, ist «active»;
+// einer, auf den sie als Anfangsstueck passt, liegt auf dem Weg dorthin.
+// Damit erledigen sich markTree und restoreTreeSelection — beides ist jetzt
+// dasselbe wie «mit dem aktuellen Zustand zeichnen».
+export function objectsToNodes(objects, { levels, leaf }, sel = {}) {
+  const attrs = levels.map((l) => l.attr || l.key);
+  const deeperKeys = [...attrs, 'obj', 'sub'];
+  const has = (v) => v !== undefined && v !== null && v !== '';
+
+  const stateOf = (pairs) => {
+    if (!pairs.every(([a, v]) => String(sel[a]) === String(v))) return '';
+    // Auf dem Weg, wenn unterhalb noch etwas gewaehlt ist; sonst ist DIES die
+    // Auswahl.
+    const below = deeperKeys.slice(deeperKeys.indexOf(pairs[pairs.length - 1][0]) + 1);
+    return below.some((k) => has(sel[k])) ? 'path' : 'active';
+  };
+
+  const build = (items, depth, pairs) => {
+    if (depth === levels.length) {
+      const sorted = leaf.sort ? items.slice().sort(leaf.sort) : items;
+      return sorted.map((o) => {
+        const own = [...pairs, ['obj', leaf.objId(o)]];
+        // Die Ebene UNTER dem Blatt — die Geschosse im Plan-Editor, die einzige
+        // Stelle, an der das Gewaehlte im Objekt steckt statt daneben. Sie
+        // trifft genau auf die Funktions-Kinder, die das Bauteil fuer die langen
+        // Attributlisten des Katalogs schon hat: dieselbe Mechanik, zwei Anlaesse.
+        const kids = (leaf.children ? leaf.children(o) : null) || [];
+        return {
+          id: `obj:${leaf.objId(o)}`,
+          label: leaf.label(o),
+          idText: leaf.idText ? leaf.idText(o) : '',
+          srPrefix: leaf.word || '',
+          icon: leaf.icon(o),
+          count: leaf.count ? leaf.count(o) : null,
+          countUnit: leaf.countWord || '',
+          state: stateOf(own),
+          sel: Object.fromEntries(own),
+          split: kids.length > 0,
+          hasChildren: kids.length > 0,
+          children: () => kids.map((c) => ({
+            id: `sub:${leaf.objId(o)}:${c.id}`,
+            label: c.label,
+            idText: c.idText || '',
+            srPrefix: leaf.subWord || '',
+            icon: c.icon || 'Stack',
+            state: stateOf([...own, ['sub', c.id]]),
+            sel: Object.fromEntries([...own, ['sub', c.id]]),
+          })),
+        };
+      });
+    }
+    const def = levels[depth];
+    const attribute = def.attr || def.key;
+    const groups = new Map();
+    for (const o of items) {
+      if (!groups.has(o[def.key])) groups.set(o[def.key], []);
+      groups.get(o[def.key]).push(o);
+    }
+    const label = (k, es) => (def.label ? def.label(k, es) : k);
+    return [...groups.keys()]
+      .sort(def.sort || ((a, b) => compareGerman(label(a, groups.get(a)), label(b, groups.get(b)))))
+      .map((key) => {
+        const entries = groups.get(key);
+        const own = [...pairs, [attribute, key]];
+        return {
+          id: `${attribute}:${own.map(([, v]) => v).join('▸')}`,
+          label: label(key, entries),
+          idText: def.idText ? def.idText(key, entries) : '',
+          srPrefix: def.word || '',
+          icon: def.icon,
+          count: entries.length,
+          countUnit: def.countWord || 'Objekte',
+          state: stateOf(own),
+          sel: Object.fromEntries(own),
+          split: true,
+          hasChildren: entries.length > 0,
+          children: () => build(entries, depth + 1, own),
+        };
+      });
+  };
+
+  return build(objects, 0, []);
+}
+
 export function treeHTML(C, objects, { levels, leaf, ariaLabel = 'Struktur' }) {
   const esc = C.escape;
   // The count is a bare number in the DOM — the parentheses are drawn by CSS, so
