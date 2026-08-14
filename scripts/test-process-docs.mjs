@@ -35,9 +35,11 @@ const expectedSteps = (file) => {
     let o = JSON.parse(await p.evaluate(`JSON.stringify({
       h1: document.querySelector('h1').textContent.trim(),
       count: document.getElementById('pd-count').textContent.replace(/[\\s\\u00a0]+/g, ' ').trim(),
-      branches: document.querySelectorAll('.pf-tree__node').length,
-      leaves: [...document.querySelectorAll('.pf-tree__leaf .pf-tree__label')].map(x => x.textContent),
-      leafCounts: [...document.querySelectorAll('.pf-tree__leaf .pf-tree__n')].map(x => Number(x.textContent)),
+      // Seit dem Umzug auf das Seitenbaum-Bauteil (2026-08-14): Aeste sind die
+      // Eintraege des Abschnitts, Blaetter stehen in .pf-tree__children.
+      branches: document.querySelectorAll('.pf-tree__section > li').length,
+      leaves: [...document.querySelectorAll('.pf-tree__children .pf-tree__label')].map(x => x.textContent),
+      leafCounts: [...document.querySelectorAll('.pf-tree__children .pf-tree__n')].map(x => Number(x.textContent)),
       rows: document.querySelectorAll('.pf-main tbody tr').length,
       cols: [...document.querySelectorAll('.pf-main thead th')].map(t => t.textContent.trim()),
     })`));
@@ -53,14 +55,15 @@ const expectedSteps = (file) => {
     // 2. Group filter through the tree.
     head('Group filter (tree → hash → chip)');
     o = JSON.parse(await p.evaluate(`(async () => {
-      const a = [...document.querySelectorAll('.pf-tree__leaf')].find(x => /Bewirtschaftung/.test(x.textContent));
+      const a = [...document.querySelectorAll('.pf-tree__children .pf-tree__row')]
+        .find(x => /Bewirtschaftung/.test(x.textContent));
       a.click();
       await new Promise(r => setTimeout(r, 800));
       return JSON.stringify({
         hash: location.hash,
         count: document.getElementById('pd-count').textContent.replace(/[\\s\\u00a0]+/g, ' ').trim(),
         chip: (document.querySelector('.active-filter') || {}).textContent,
-        active: (document.querySelector('.pf-tree__leaf.is-active .pf-tree__label') || {}).textContent,
+        active: (document.querySelector('.pf-tree__children .pf-tree__row.is-active .pf-tree__label') || {}).textContent,
       });
     })()`));
     check(/group=bewirtschaftung/.test(o.hash), 'group appears in the hash', o.hash);

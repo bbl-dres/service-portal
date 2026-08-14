@@ -142,9 +142,8 @@ const truncateText = (s, n = 130) => {
   return `${cut.slice(0, cut.lastIndexOf(' '))}…`;
 };
 
-// Persist only explicit tree expand/collapse choices across this module's redraws.
-const OPEN = new Map();
-const isOpen = (key, fallback) => (OPEN.has(key) ? OPEN.get(key) : fallback);
+// Den aufgeklappten Zustand merkt sich jetzt das Seitenbaum-Bauteil, unter der
+// Kennung «pd-tree» — dieselbe Mechanik fuer alle Baeume statt einer Map je App.
 
 export default async function render(ctx) {
   const id = ctx.query.get('id');
@@ -223,34 +222,54 @@ function list(ctx) {
     rows,
   });
 
-  // The tree contains L1 areas and L2 groups; filtered L3 processes appear in the list.
-  const row = (label, count) => `<span class="pf-tree__label">${esc(label)}</span><span class="pf-tree__n">${count}</span>`;
-  const leaf = (label, count, href, on) =>
-    `<li class="pf-tree__item"><a class="pf-tree__leaf plain-link interactive-control${on ? ' is-active' : ''}" href="${href}"${on ? ' aria-current="true"' : ''}>${row(label, count)}</a></li>`;
-  const branch = (key, domId, label, count, href, on, open, children) => `
-    <li class="pf-tree__item">
-      <button type="button" class="pf-tree__node interactive-control${on ? ' is-active' : ''}" data-branch="${esc(key)}"
-        data-href="${esc(href)}" aria-expanded="${open}" aria-controls="${domId}">
-        ${C.icon('ChevronRight', 'pf-tree__chev')}${row(label, count)}</button>
-      <ul class="pf-tree__children" id="${domId}"${open ? '' : ' hidden'}>${children}</ul>
-    </li>`;
-  const treeHTML = () => `<ul class="pf-tree pf-tree--plain">
-    ${areas.map((a, areaIndex) => {
+  // Der Baum fuehrt Bereiche (L1) und Prozessgruppen (L2); die gefilterten
+  // Prozesse (L3) stehen in der Liste daneben. Beide Stufen ohne Symbol — die
+  // Einrueckung sagt bereits, was wozu gehoert, und ein Symbol, das auf jeder
+  // Zeile dasselbe zeigt, unterscheidet nichts.
+  const treeConfig = () => ({
+    id: 'pd-tree',
+    title: 'Prozesshierarchie',
+    mode: 'nav',
+    levels: [{ icons: false }, { icons: false }],
+    sections: [areas.map((a) => {
       const inArea = all.filter((p) => p.area === a.key);
-      const items = groups
-        .filter((g) => inArea.some((p) => p.group === g.key))
-        .map((g) => leaf(g.label, inArea.filter((p) => p.group === g.key).length,
-          hash({ q: '', sort: '', group: [g.key], status: [], page: 1 }),
-          selGroups.length === 1 && selGroups[0] === g.key))
-        .join('');
-      return branch(a.key, `pd-branch-${areaIndex}`, `${a.label}`, inArea.length,
-        // Preserve query and view when building branch links so an active branch
-        // can toggle without discarding search state.
-        hash({ sort: '', group: [], status: [], page: 1 }),
-        !selGroups.length && !selStatus.length && !rawQ,
-        selGroups.length ? true : isOpen(a.key, true), items);
-    }).join('')}
-  </ul>`;
+      const mine = groups.filter((g) => inArea.some((p) => p.group === g.key));
+      // Ein Bereich liegt auf dem WEG zur Auswahl, wenn eine seiner Gruppen
+      // gewaehlt ist — er ist nie selbst die Auswahl. Vorher trug er
+      // «is-active», sobald ueberhaupt nicht gefiltert war: dann leuchteten
+      // alle sechs Bereiche gleichzeitig, was nichts aussagt.
+      const holdsSel = selGroups.length === 1 && mine.some((g) => g.key === selGroups[0]);
+      return {
+        id: `area:${a.key}`,
+        label: a.label,
+        count: inArea.length,
+        countUnit: 'Prozesse',
+        // Der Bereich ist keine Filterachse — sein Verweis raeumt den
+        // Gruppenfilter ab. Suche und Ansicht bleiben stehen, damit ein Wechsel
+        // nicht nebenbei den Suchtext wegwirft.
+        href: hash({ sort: '', group: [], status: [], page: 1 }),
+        state: holdsSel ? 'path' : '',
+        // Geteilte Zeile: das Chevron klappt, die Beschriftung navigiert. Ohne
+        // das waere die Zeile ein blosser Verweis mit einem Chevron, das nur
+        // aussieht wie ein Bedienelement — anfassen liesse es sich nicht.
+        split: true,
+        // Voreingestellt offen, aber zuklappbar: die Bereiche sind die Landkarte
+        // dieser Anwendung, und die zeigt man aufgeschlagen. Wer zuklappt, will
+        // das behalten — auch ueber einen Filterwechsel hinweg (defaultOpen,
+        // nicht open).
+        defaultOpen: true,
+        hasChildren: mine.length > 0,
+        children: () => mine.map((g) => ({
+          id: `group:${g.key}`,
+          label: g.label,
+          count: inArea.filter((p) => p.group === g.key).length,
+          countUnit: 'Prozesse',
+          href: hash({ q: '', sort: '', group: [g.key], status: [], page: 1 }),
+          state: selGroups.length === 1 && selGroups[0] === g.key ? 'active' : '',
+        })),
+      };
+    })],
+  });
 
   const filterCount = selGroups.length + selStatus.length;
   const panel = `
@@ -275,10 +294,7 @@ function list(ctx) {
     })}
     ${C.activeFilters({ filters: active, resetHref: BASE })}
     <div class="pf-layout">
-      <aside class="pf-sidebar" aria-label="Prozesshierarchie">
-        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Prozesshierarchie</h2></div>
-        ${treeHTML()}
-      </aside>
+      <aside class="pf-sidebar" id="pd-tree" aria-label="Prozesshierarchie"></aside>
       <div class="pf-main">
         ${C.catalogueResults({
           resetHref: BASE, visible, count: sorted.length,
@@ -300,21 +316,11 @@ function list(ctx) {
   });
   ctx.onUnmount(C.wireTableRows(mount));
 
-  // A branch control navigates when changing branch and toggles when already active.
-  mount.querySelector('.pf-sidebar').addEventListener('click', (e) => {
-    const btn = e.target.closest('.pf-tree__node[data-branch]');
-    if (!btn) return;
-    if (location.hash !== btn.dataset.href) {
-      OPEN.set(btn.dataset.branch, true);
-      location.hash = btn.dataset.href;
-      return;
-    }
-    const open = btn.getAttribute('aria-expanded') === 'true';
-    btn.setAttribute('aria-expanded', String(!open));
-    const kids = mount.querySelector(`#${btn.getAttribute('aria-controls')}`);
-    if (kids) kids.hidden = open;
-    OPEN.set(btn.dataset.branch, !open);
-  });
+  // Waehlen und Aufklappen sind jetzt zwei Bedienelemente statt eines
+  // ueberladenen: das Chevron klappt, die Beschriftung navigiert. Vorher tat
+  // derselbe Knopf beides, je nachdem, wo man gerade stand — «navigiert, ausser
+  // wenn schon dort, dann klappt es» ist eine Regel, die man nicht sieht.
+  ctx.onUnmount(C.sidebarTree(mount.querySelector('#pd-tree'), treeConfig()));
 }
 
 // Process detail: overview, diagram, and steps.

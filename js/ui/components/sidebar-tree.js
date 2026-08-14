@@ -45,7 +45,10 @@ const STEP = 16;     // a level that declares no icons
 // the tree that issued them.
 const FOLDS = new Map();
 const foldsFor = (id) => {
-  if (!FOLDS.has(id)) FOLDS.set(id, new Set());
+  // Map, nicht Set: ein Set kann nur «aufgeklappt» merken. Ein Ast, der von Haus
+  // aus offen steht (defaultOpen), braucht aber die Gegenrichtung — sonst macht
+  // ein Filterwechsel jedes Zuklappen des Lesers wieder rueckgaengig.
+  if (!FOLDS.has(id)) FOLDS.set(id, new Map());
   return FOLDS.get(id);
 };
 
@@ -73,7 +76,13 @@ const canOpen = (node) => node.hasChildren === true
  *   onSelect (node, event) => void, for mode 'select'
  *
  * A node: { id, label, count, countUnit?, icon?, href?, children?, hasChildren?,
- *           state?: 'active'|'path', split?: true, open?: true }
+ *           state?: 'active'|'path', split?: true, open?: true, defaultOpen?: true }
+ *
+ * `open` and `defaultOpen` are not the same question. `open` INSISTS — it wins
+ * over the reader, and is for the case where the application must show
+ * something (the branch the reader just navigated into). `defaultOpen` merely
+ * states the starting position and yields to the first click. Use `open` where
+ * a closed row would hide the answer, `defaultOpen` where it is only a habit.
  *
  * `href` + `children` + `split` gives the split row: the link chooses, the
  * chevron opens. Without `split` a link row expands by navigating, and a row
@@ -119,8 +128,15 @@ export function sidebarTree(host, cfg = {}) {
     // seine Gruppen zu zeigen; einen DATENSATZ zu wählen darf nicht heissen,
     // seine fünfundsiebzig Bestandteile mitzubringen. Das kann das Bauteil nicht
     // erraten.
-    const isOpen = expandable
-      && (open.has(node.id) || node.open === true || node.state === 'path');
+    // Die Reihenfolge ist die Aussage. Besteht die Anwendung darauf, gewinnt sie:
+    // wer in einen zugeklappten Ast hineinnavigiert, muss seine Auswahl sehen,
+    // sonst zeigt der Baum auf nichts. Sonst entscheidet der Leser. Und erst
+    // wenn der noch nichts gesagt hat, gilt die Voreinstellung.
+    const isOpen = expandable && (
+      node.open === true || node.state === 'path'
+        ? true
+        : open.has(node.id) ? open.get(node.id) === true
+          : node.defaultOpen === true);
     const href = node.href ? safeLinkUrl(node.href) : '';
     const state = node.state === 'active' ? ' is-active'
       : node.state === 'path' ? ' is-path' : '';
@@ -182,7 +198,13 @@ export function sidebarTree(host, cfg = {}) {
   };
 
   const toggle = (key, focusBack) => {
-    if (open.has(key)) open.delete(key); else open.add(key);
+    // Gegen den GEZEICHNETEN Zustand kippen, nicht gegen das Gedaechtnis: eine
+    // Zeile kann auch offen stehen, weil sie auf dem Weg zur Auswahl liegt oder
+    // weil die Anwendung sie so voreingestellt hat. Ein Klick auf ein offenes
+    // Chevron muss zuklappen, gleich woher das Offensein kam.
+    const shown = host.querySelector(`[data-fold="${CSS.escape(key)}"]`);
+    const now = shown ? shown.getAttribute('aria-expanded') === 'true' : open.get(key) === true;
+    open.set(key, !now);
     draw();
     const again = host.querySelector(`[data-fold="${CSS.escape(key)}"]`);
     if (again && focusBack) again.focus();
@@ -233,7 +255,7 @@ export function sidebarTree(host, cfg = {}) {
     else if (key === 'End') go(items.length - 1);
     else if (key === 'ArrowRight' || key === 'ArrowLeft') {
       const nid = document.activeElement.dataset.node;
-      const wasOpen = open.has(nid);
+      const wasOpen = document.activeElement.getAttribute('aria-expanded') === 'true';
       if (key === 'ArrowRight' && !wasOpen && document.activeElement.getAttribute('aria-expanded')) {
         e.preventDefault(); toggle(nid, false);
       } else if (key === 'ArrowLeft' && wasOpen) { e.preventDefault(); toggle(nid, false); }
