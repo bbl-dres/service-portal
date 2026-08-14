@@ -63,9 +63,9 @@ function overview(ctx) {
       meta: `${datasets} Datensätze` },
     // No count: this overview does not depend on the metadata collection
     // (`needs`), and a hard-coded count would drift from the file.
-    { title: 'Metadaten Katalog Bauten', icon: 'Stack', href: '#/app/metadata-catalog',
-      desc: 'Fachbegriffe der Bauten und Liegenschaften und ihre Realisierung in den Führungssystemen — Geschäftsobjekte, Attribute und Datentabellen.',
-      meta: 'Geschäftsobjekte und Datentabellen' },
+    { title: 'Dokumentation der Geschäftsarchitektur', icon: 'Stack', href: '#/app/metadata-catalog',
+      desc: 'Geschäftsobjekte des BBL, ihre Realisierung in den Führungssystemen und die Wertelisten, auf die beide verweisen.',
+      meta: 'Geschäftsobjekte, Systeme und Referenzdaten' },
     // No count, for the same reason as the metadata catalogue.
     { title: 'Prozessdokumentation Bauten', icon: 'Share', href: '#/app/process-docs',
       desc: 'Die Prozesse des Immobilienmanagements mit BPMN-Diagrammen und Prozessschritten — von der Akquisition bis zur Rückgabe.',

@@ -35,7 +35,7 @@ const ROUTES = [
   ['/app/dataportal',               ''],
   ['/app/projects',                 'Bauprojekte'],
   ['/app/tenancies',                'Mietende'],
-  ['/app/metadata-catalog',         'Metadaten Katalog'],
+  ['/app/metadata-catalog',         'Dokumentation der Geschäftsarchitektur'],
   ['/app/process-docs',             'Prozessdokumentation'],
   ['/app/shop',                     'BBL Intranetshop'],
   ['/app/document-archive',         'Bauwerksdokumentation'],

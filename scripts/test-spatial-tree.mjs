@@ -30,7 +30,7 @@ const SURFACES = [
   // Depth is what this probe measures, and the catalogue root is deliberately
   // collapsed — so aim at a scope that actually has three levels on screen.
   // `component: true` — laeuft auf C.sidebarTree (js/ui/components/sidebar-tree.js)
-  ['Metadaten Katalog', '/app/metadata-catalog?kind=objekt&leaf=Bauwerk%20und%20Liegenschaft', false, true],
+  ['Geschäftsarchitektur', '/app/metadata-catalog?kind=objekt&leaf=Bauwerk%20und%20Liegenschaft', false, true],
   ['Prozessdokumentation', '/app/process-docs', false],
 ];
 

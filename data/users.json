@@ -7,15 +7,51 @@
     "orgShort": "BAFU",
     "demoDefault": true,
     "bookmarks": [
-      { "kind": "service", "id": "raumbuchung", "addedAt": "2026-02-11" },
-      { "kind": "application", "id": "raumbuchung", "addedAt": "2026-02-11" },
-      { "kind": "room", "id": "1080-6650-AA-eg-06", "addedAt": "2026-02-18" },
-      { "kind": "service", "id": "stoerung-melden", "addedAt": "2026-04-02" },
-      { "kind": "building", "id": "1080/4840/AF", "addedAt": "2026-06-15" },
-      { "kind": "service", "id": "umzug-anmelden", "addedAt": "2026-07-30" },
-      { "kind": "application", "id": "bauprojekte-eppm", "addedAt": "2026-08-12" },
-      { "kind": "application", "id": "liegenschaften-inventar", "addedAt": "2026-08-12" },
-      { "kind": "dataset", "id": "1", "addedAt": "2026-08-12" }
+      {
+        "kind": "service",
+        "id": "raumbuchung",
+        "addedAt": "2026-02-11"
+      },
+      {
+        "kind": "application",
+        "id": "raumbuchung",
+        "addedAt": "2026-02-11"
+      },
+      {
+        "kind": "room",
+        "id": "1080-6650-AA-eg-06",
+        "addedAt": "2026-02-18"
+      },
+      {
+        "kind": "service",
+        "id": "stoerung-melden",
+        "addedAt": "2026-04-02"
+      },
+      {
+        "kind": "building",
+        "id": "1080/4840/AF",
+        "addedAt": "2026-06-15"
+      },
+      {
+        "kind": "service",
+        "id": "umzug-anmelden",
+        "addedAt": "2026-07-30"
+      },
+      {
+        "kind": "application",
+        "id": "bauprojekte-eppm",
+        "addedAt": "2026-08-12"
+      },
+      {
+        "kind": "application",
+        "id": "liegenschaften-inventar",
+        "addedAt": "2026-08-12"
+      },
+      {
+        "kind": "dataset",
+        "id": "1",
+        "addedAt": "2026-08-12"
+      }
     ]
   },
   {
@@ -25,10 +61,26 @@
     "org": "Generalsekretariat UVEK",
     "orgShort": "GS UVEK",
     "bookmarks": [
-      { "kind": "application", "id": "datenportal", "addedAt": "2026-01-20" },
-      { "kind": "dataset", "id": "3", "addedAt": "2026-01-20" },
-      { "kind": "project", "id": "PRJ-01", "addedAt": "2026-03-09" },
-      { "kind": "news", "id": "N-04", "addedAt": "2026-05-04" }
+      {
+        "kind": "application",
+        "id": "datenportal",
+        "addedAt": "2026-01-20"
+      },
+      {
+        "kind": "dataset",
+        "id": "3",
+        "addedAt": "2026-01-20"
+      },
+      {
+        "kind": "project",
+        "id": "PRJ-01",
+        "addedAt": "2026-03-09"
+      },
+      {
+        "kind": "news",
+        "id": "N-04",
+        "addedAt": "2026-05-04"
+      }
     ]
   },
   {
@@ -38,13 +90,41 @@
     "org": "Bundesamt für Bauten und Logistik BBL",
     "orgShort": "BBL",
     "bookmarks": [
-      { "kind": "application", "id": "liegenschaften-inventar", "addedAt": "2025-11-06" },
-      { "kind": "building", "id": "1080/4840/AF", "addedAt": "2025-11-06" },
-      { "kind": "building", "id": "1080/4100/AC", "addedAt": "2026-01-14" },
-      { "kind": "project", "id": "PRJ-04", "addedAt": "2026-02-27" },
-      { "kind": "tenancy", "id": "MV-2026-001", "addedAt": "2026-04-21" },
-      { "kind": "dataset", "id": "1", "addedAt": "2026-06-02" },
-      { "kind": "application", "id": "bauprojekte-eppm", "addedAt": "2026-07-08" }
+      {
+        "kind": "application",
+        "id": "liegenschaften-inventar",
+        "addedAt": "2025-11-06"
+      },
+      {
+        "kind": "building",
+        "id": "1080/4840/AF",
+        "addedAt": "2025-11-06"
+      },
+      {
+        "kind": "building",
+        "id": "1080/4100/AC",
+        "addedAt": "2026-01-14"
+      },
+      {
+        "kind": "project",
+        "id": "PRJ-04",
+        "addedAt": "2026-02-27"
+      },
+      {
+        "kind": "tenancy",
+        "id": "MV-2026-001",
+        "addedAt": "2026-04-21"
+      },
+      {
+        "kind": "dataset",
+        "id": "1",
+        "addedAt": "2026-06-02"
+      },
+      {
+        "kind": "application",
+        "id": "bauprojekte-eppm",
+        "addedAt": "2026-07-08"
+      }
     ]
   },
   {
@@ -54,10 +134,26 @@
     "org": "Eidgenössische Finanzverwaltung EFV",
     "orgShort": "EFV",
     "bookmarks": [
-      { "kind": "application", "id": "metadaten-katalog", "addedAt": "2026-03-17" },
-      { "kind": "application", "id": "datenbezug", "addedAt": "2026-03-17" },
-      { "kind": "dataset", "id": "4", "addedAt": "2026-03-24" },
-      { "kind": "process", "id": "TQ.21.00.00.10", "addedAt": "2026-05-11" }
+      {
+        "kind": "application",
+        "id": "geschaeftsarchitektur",
+        "addedAt": "2026-03-17"
+      },
+      {
+        "kind": "application",
+        "id": "datenbezug",
+        "addedAt": "2026-03-17"
+      },
+      {
+        "kind": "dataset",
+        "id": "4",
+        "addedAt": "2026-03-24"
+      },
+      {
+        "kind": "process",
+        "id": "TQ.21.00.00.10",
+        "addedAt": "2026-05-11"
+      }
     ]
   },
   {
@@ -67,11 +163,31 @@
     "org": "Bundesamt für Bauten und Logistik BBL",
     "orgShort": "BBL",
     "bookmarks": [
-      { "kind": "application", "id": "workspace", "addedAt": "2026-02-03" },
-      { "kind": "application", "id": "floorplan-editor", "addedAt": "2026-02-03" },
-      { "kind": "service", "id": "eshop-bestellen", "addedAt": "2026-04-28" },
-      { "kind": "shop-product", "id": "3", "addedAt": "2026-04-28" },
-      { "kind": "room", "id": "1080-6650-AA-1og-16", "addedAt": "2026-06-19" }
+      {
+        "kind": "application",
+        "id": "workspace",
+        "addedAt": "2026-02-03"
+      },
+      {
+        "kind": "application",
+        "id": "floorplan-editor",
+        "addedAt": "2026-02-03"
+      },
+      {
+        "kind": "service",
+        "id": "eshop-bestellen",
+        "addedAt": "2026-04-28"
+      },
+      {
+        "kind": "shop-product",
+        "id": "3",
+        "addedAt": "2026-04-28"
+      },
+      {
+        "kind": "room",
+        "id": "1080-6650-AA-1og-16",
+        "addedAt": "2026-06-19"
+      }
     ]
   }
 ]

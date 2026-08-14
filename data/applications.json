@@ -249,8 +249,8 @@
     }
   },
   {
-    "appId": "metadaten-katalog",
-    "name": "Metadaten Katalog Bauten (Portal)",
+    "appId": "geschaeftsarchitektur",
+    "name": "Dokumentation der Geschäftsarchitektur (Portal)",
     "group": "Immobilien & Bau",
     "icon": "Stack",
     "audience": [
@@ -260,9 +260,9 @@
       "kind": "app",
       "href": "#/app/metadata-catalog"
     },
-    "description": "Fachbegriffe der Bauten und Liegenschaften und ihre Realisierung in den Führungssystemen — Geschäftsobjekte, Attribute und die Felder, die sie tragen.",
+    "description": "Geschäftsobjekte des BBL, ihre Realisierung in den Führungssystemen und die Wertelisten, auf die beide verweisen.",
     "area": "buildings",
-    "long": "Der Metadaten Katalog Bauten beschreibt die Daten des Immobilienbereichs auf zwei Ebenen. Technologieneutral steht das Geschäftsobjekt: was ein Gebäude, ein Mietobjekt oder eine Wirtschaftseinheit fachlich ist, welche Attribute dazugehören, welche Norm sie belegt und wer sie verantwortet — unabhängig davon, in welchem System sie gerade liegen. Systemgebunden stehen daneben die Tabellen und Layer der Führungssysteme SAP RE-FX und GIS IMMO mit ihren Feldern. Verbunden sind beide Ebenen über die Abbildung am Attribut; sie beantwortet die Frage, an der Datenprojekte sonst hängenbleiben: welches Feld welchen Systems trägt diesen Begriff. Der Katalog ergänzt damit das «Datenbezug und API Verzeichnis», das die publizierten Datensätze nach DCAT-AP CH beschreibt — dort steht, was man beziehen kann, hier, was es bedeutet und wo es herkommt.",
+    "long": "Beschreibt die Daten des Immobilienbereichs auf drei Ebenen. Technologieneutral steht das Geschäftsobjekt: was ein Gebäude, ein Mietobjekt oder eine Wirtschaftseinheit fachlich ist, welche Attribute dazugehören, welche Norm sie belegt und wer sie verantwortet. Systemgebunden stehen daneben die Tabellen und Layer der Führungssysteme SAP RE-FX und GIS IMMO mit ihren Feldern. Und darunter die Referenzdaten — die Wertelisten, auf die beide verweisen. Verbunden sind die Ebenen über die Abbildung am Attribut; sie beantwortet die Frage, an der Datenprojekte sonst hängenbleiben: welches Feld welchen Systems trägt diesen Begriff. Der Katalog ergänzt damit das «Datenbezug und API Verzeichnis», das die publizierten Datensätze nach DCAT-AP CH beschreibt — dort steht, was man beziehen kann, hier, was es bedeutet und wo es herkommt.",
     "access": {
       "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
       "steps": [
@@ -329,7 +329,7 @@
       }
     ],
     "related": [
-      "metadaten-katalog",
+      "geschaeftsarchitektur",
       "liegenschaften-inventar"
     ],
     "contact": "immobilienmanagement",

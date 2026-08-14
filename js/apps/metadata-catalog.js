@@ -24,9 +24,10 @@ import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
 export const needs = ['businessObjects', 'dataTables', 'contacts'];
 
 const BASE = '#/app/metadata-catalog';
-// The catalogue covers the real-estate domain, not the complete office. Keep
-// its single title source for document title, breadcrumb, heading, and back links.
-const TITLE = 'Metadaten Katalog Bauten';
+// Eine Quelle für Dokumenttitel, Brotkrume, Überschrift und Rücklinks.
+// Der Name ist auch der des Wegweisers (#/data/architecture) und der Menüzeile:
+// derselbe Gegenstand, an drei Stellen benannt.
+const TITLE = 'Dokumentation der Geschäftsarchitektur';
 
 // Type labels describe storage forms, so keep them here rather than in the domain code lists.
 const TABLE_TYPE = {
