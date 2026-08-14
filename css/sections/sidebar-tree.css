@@ -36,7 +36,25 @@
    er der lauteste Strich der ganzen Leiste und zog das Auge auf eine Zeile, die
    der Leser gerade selbst gewählt hat: die weiss er schon. Kein Schatten mehr;
    der Balken ist ein Rand, kein Objekt über der Fläche. */
-.pf-tree__row.is-path, .pf-tree__split.is-path { background:var(--color-gray-100); }
+/* Der Weg trägt einen Balken wie das Ziel, nur leiser — und das ist der Punkt:
+   der Weg IST eine Kette von der Wurzel zur Auswahl, und alle Balken stehen auf
+   derselben Senkrechten, gleich wie tief die Zeile liegt. So liest sich die
+   Kette als Spur, die am dunklen Balken der Auswahl endet.
+
+   Nicht über die Tönung: die stand bei 1.10:1 gegen Weiss und war damit
+   praktisch unsichtbar. Sie anzuheben ginge nur bis in die Nähe der Auswahl
+   (1.28:1) — dann wären «Weg» und «Ziel» nicht mehr auseinanderzuhalten. Zwei
+   Zustände auf demselben Kanal drängen sich; also ein zweiter Kanal.
+   Gemessen: Balken 2.86:1 gegen Weiss, der der Auswahl 4.83:1. */
+.pf-tree__row.is-path, .pf-tree__split.is-path {
+  background:var(--color-gray-100);
+  border-left:var(--stroke-3) solid var(--color-secondary-300);
+  padding-left:calc(var(--pf-ind, var(--sp-5)) - var(--stroke-3)); }
+/* Wie bei der Auswahl: die geteilte Zeile trägt den Balken selbst, ihre innere
+   Zeile darf ihn nicht doppeln. */
+.pf-tree__split.is-path { padding-left:0; }
+.pf-tree__split.is-path > .pf-tree__row { border-left:0; background:none;
+  padding-left:var(--pf-ind, var(--sp-5)); }
 .pf-tree__row.is-active, .pf-tree__split.is-active {
   background:var(--color-secondary-100); font-weight:var(--fw-bold);
   border-left:var(--stroke-3) solid var(--color-text-light);
