@@ -671,6 +671,12 @@ function list(ctx) {
 
   mount.innerHTML = `
   <div class="container section">
+    ${/* Zurueck, Teilen, Drucken — dieselbe Zeile wie auf jeder Detailseite des
+          Portals. «Zurueck» heisst eine Stufe hinauf: von einem Umfang zur
+          Wurzel, von der Wurzel aus der Anwendung heraus. */''}
+    ${C.detailBar(atRoot
+    ? { backHref: '#/applications', backLabel: 'Anwendungen' }
+    : { backHref: BASE, backLabel: TITLE })}
     ${C.pageHeader({
       title: TITLE,
       lead: 'Die Prozesse des Immobilienmanagements als navigierbare Landkarte — je Prozess mit BPMN-Diagramm, Prozessschritten und Verantwortlichkeiten.',
