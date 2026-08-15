@@ -13,6 +13,7 @@ import * as links from '../links.js';
 // Reuse escape and badge directly from components.js, as metadata-catalog does.
 import { escape as esc, badge } from '../components.js';
 import { runTableExport, slug } from '../ui/export-table.js';
+import { landscapeState } from '../ui/landscape-state.js';
 
 // Die Achse, an der die Landschaft ihre Kaesten teilt. Prozessgruppe ist die
 // Achse dieser Anwendung — sie steht im Baum, im Filter und in der Tabelle —,
@@ -25,9 +26,9 @@ const AXES = [
   { value: 'status', label: 'Status', of: (p, core) => statusOf(core, p.status).label },
   { value: 'keine', label: '(keine)', of: null },
 ];
-// Aufgeklappte Kaesten, ueber das Neuzeichnen hinweg — wie im Katalog.
-const BOXES = new Map();
-const boxOpen = (key) => (BOXES.has(key) ? BOXES.get(key) : true);
+// Aufgeklappte Kaesten, ueber das Neuzeichnen hinweg — dasselbe Gedaechtnis wie
+// im Katalog, nur unter eigener Kennung.
+const BOXES = landscapeState('process-docs');
 
 // EINE Quelle fuer die Prozessdokumentation: processes.json traegt beide Aeste
 // mit allem, was eine Zeile braucht. Dazu die Diagramme unter assets/bpmn/ und
@@ -464,8 +465,22 @@ function list(ctx) {
   // Die Achse reist mit. Ohne das verloere sie jeder Verweis, den der Baum
   // baut: man waehlt «Status», klickt eine Gruppe an, und ist wieder bei
   // «Prozessgruppe» — ohne dass man es angefasst haette.
-  const hashA = (patch = {}) => hash({
-    axis: axis.value === AXES[0].value ? '' : axis.value, ...patch });
+  // Jede Adresse traegt den UMFANG und die ACHSE mit. `catalogueHash` kennt nur
+  // q, page, view, sort und die angemeldeten Filter — von branch/org/area/axis
+  // weiss es nichts, und was es nicht kennt, laesst es weg. Genau daran fiel der
+  // Ansichtswechsel auf «Fachliche Prozesse» zurueck auf die Wurzel: der
+  // Umfang verschwand aus der Adresse (Nutzerfund).
+  const hashA = (patch = {}) => {
+    const base = hash({
+      axis: axis.value === defaultAxis ? '' : axis.value, ...patch });
+    // Der Umfang steht in einem eigenen Parameter; er wird nur ersetzt, wenn
+    // der Aufrufer selbst einen setzt.
+    if (!scope || SCOPES.some((x) => x.param in patch)) return base;
+    const [route, qs] = base.replace(/^#/, '').split('?');
+    const q2 = new URLSearchParams(qs || '');
+    q2.set(scope.param, scope.value);
+    return `#${route}?${q2}`;
+  };
   const boxes = () => {
     const tile = (p) => ({ label: p.name, href: processHref(p.processId) });
     if (!axis.of) return [{ key: 'alle', label: 'Alle Prozesse', count: sorted.length, tiles: sorted.map(tile) }];
@@ -483,7 +498,7 @@ function list(ctx) {
   // Reihenfolge wie im Katalog: erst zuklappen, dann was die Flaeche ORDNET,
   // dann was auf sie WIRKT.
   const toolsHtml = () => {
-    const anyOpen = !atRoot && view === 'diagramm' && boxes().some((b) => boxOpen(`box:${b.key}`));
+    const anyOpen = !atRoot && view === 'diagramm' && BOXES.anyOpen(boxes().map((b) => b.key));
     // Die Beschriftung sagt, was der Druck TUN wird, nicht wie der Zustand heisst.
     const fold = atRoot || view !== 'diagramm' ? '' : `
       <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-lscape-all="${anyOpen ? 'shut' : 'open'}">
@@ -664,7 +679,7 @@ function list(ctx) {
       // EINE Kachel je Reihe: Prozessnamen sind Saetze, keine Begriffe.
       // Zweispaltig blieb von «Objektuebergabe an LB, Mieter» ein
       // «Objektuebergabe an L» uebrig.
-      return C.landscape({ boxes: boxes(), isOpen: (key) => boxOpen(`box:${key}`), cols: 1,
+      return C.landscape({ boxes: boxes(), isOpen: BOXES.isOpen, cols: 1,
         emptyText: 'In diesem Umfang ist kein Prozess erfasst.' });
     }
     // Tabelle: nach Prozessgruppe geteilt, wie im Katalog — die Achse, an der
@@ -757,7 +772,9 @@ function list(ctx) {
   </div>`;
 
   C.announceCatalogue({ count: sorted.length, total: universe.length, unit, view });
-  C.wireCatalogue(mount, { formId: 'pd-search', inputId: 'pd-q', hash });
+  // hashA, nicht hash: der Ansichtswechsel und die Suche laufen hierueber, und
+  // beide muessen den Umfang behalten.
+  C.wireCatalogue(mount, { formId: 'pd-search', inputId: 'pd-q', hash: hashA });
   ctx.onUnmount(C.wireTableRows(mount));
 
   // Waehlen und Aufklappen sind jetzt zwei Bedienelemente statt eines
@@ -792,7 +809,7 @@ function list(ctx) {
       const all = e.target.closest('[data-lscape-all]');
       if (!all) return;
       const open = all.dataset.lscapeAll === 'open';
-      boxes().forEach((b) => BOXES.set(`box:${b.key}`, open));
+      BOXES.setAll(boxes().map((b) => b.key), open);
       redraw();
     });
   }
@@ -801,8 +818,7 @@ function list(ctx) {
     paneEl.addEventListener('click', (e) => {
       const t = e.target.closest('.lscape__toggle');
       if (!t) return;
-      const key = `box:${t.dataset.box}`;
-      BOXES.set(key, !boxOpen(key));
+      BOXES.toggle(t.dataset.box);
       redraw();
     });
   }
@@ -977,6 +993,18 @@ async function detail(ctx, rawId, { portal = false } = {}) {
     formId: 'pd-search', inputId: 'pd-q', searchLabel: 'Prozess suchen',
     placeholder: 'Prozess suchen…', q: '', showCount: false,
     view,
+    // «Aktionen» auch hier: dieselbe Stelle, dieselbe Moeglichkeit. Im Katalog
+    // traegt jede Stufe ab 1 ihre Werkzeugzeile; die Prozessansicht hatte als
+    // einzige gar keine. «Alle zuklappen» und «Gruppieren» fehlen bewusst — sie
+    // betreffen die Landschaft, und ein einzelner Ablauf hat keine.
+    extra: `<span id="pd-tools">${C.menu({
+    menuId: 'pd-actions', label: 'Aktionen', triggerLabel: 'Aktionen',
+    items: [
+      { action: 'csv', label: 'CSV herunterladen' },
+      { action: 'excel', label: 'Excel herunterladen' },
+      { action: 'pdf', label: 'Drucken' },
+    ],
+  })}</span>`,
     views: [['uebersicht', 'Übersicht', 'InfoCircle'], ['diagramm', 'Diagramm', 'Apps'],
       ['tabelle', `Prozessschritte (${steps.length})`, 'List']],
   })}
@@ -1110,6 +1138,18 @@ async function detail(ctx, rawId, { portal = false } = {}) {
     scopeOf: () => '',
     href: (kind, value) => `${BASE}?${new URLSearchParams({ [kind]: value })}`,
   })));
+
+  const detailTools = mount.querySelector('#pd-tools');
+  if (detailTools) {
+    C.wireMenu(detailTools, (action) => {
+      // Was mitgenommen wird, ist was hier steht: die Schritte dieses Prozesses.
+      runTableExport(action, {
+        name: p.name,
+        head: ['Nr.', 'Schritt', 'Typ', 'Rolle'],
+        rows: steps.map((x) => [x.number, x.name, x.typeLabel, x.lane || '']),
+      }, `prozess_${slug(p.processId, 'prozess')}`);
+    });
+  }
 
   if (active === 'diagram') startViewer();
 }

@@ -19,6 +19,7 @@ import * as links from '../links.js';
 // Reuse one module-level escape helper and badge factory across all views.
 import { escape as esc, badge } from '../components.js';
 import { runTableExport, slug } from '../ui/export-table.js';
+import { landscapeState } from '../ui/landscape-state.js';
 import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
 
 // contacts supplies stewardship for both layers.
@@ -102,8 +103,9 @@ const hostOf = (url) => { try { return new URL(url).host; } catch { return Strin
 // exportTable needs the data at level 0, where it has no scope to read it from.
 // Set on every render; the module outlives the page but never predates it.
 let core0 = null;
-const OPEN = new Map();
-const isOpen = (key, fallback) => (OPEN.has(key) ? OPEN.get(key) : fallback);
+// Aufgeklappte Kaesten der Landschaft — dasselbe Gedaechtnis wie in der
+// Prozessdokumentation, unter eigener Kennung.
+const BOXES = landscapeState('metadata-catalog');
 
 // Put exact/near/partial explanations on each value instead of a distant shared legend.
 const MATCH_HINT = {
@@ -524,7 +526,7 @@ export default async function render(ctx) {
       const all = e.target.closest('[data-lscape-all]');
       if (!all) return;
       const shut = all.dataset.lscapeAll === 'shut';
-      landscapeBoxes(cur).forEach((b) => OPEN.set(`box:${b.key}`, !shut));
+      BOXES.setAll(landscapeBoxes(cur).map((b) => b.key), !shut);
       redraw();
       const again = tools.querySelector('[data-lscape-all]');
       if (again) again.focus();
@@ -536,8 +538,7 @@ export default async function render(ctx) {
   panel.addEventListener('click', (e) => {
     const box = e.target.closest('[data-box]');
     if (!box) return;
-    const key = `box:${box.dataset.box}`;
-    OPEN.set(key, !isOpen(key, true));
+    BOXES.toggle(box.dataset.box);
     redraw();
     const again = panel.querySelector(`[data-box="${CSS.escape(box.dataset.box)}"]`);
     if (again) again.focus();
@@ -665,7 +666,7 @@ function toolsHtml(ctx, s) {
   const { C } = ctx;
   if (s.lvl < 1) return '';
   const anyOpen = s.tab === 'diagramm'
-    && landscapeBoxes(s).some((b) => isOpen(`box:${b.key}`, true));
+    && BOXES.anyOpen(landscapeBoxes(s).map((b) => b.key));
   // The label states what pressing it WILL do, not what the state is called.
   const fold = s.tab !== 'diagramm' ? '' : `
     <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-lscape-all="${anyOpen ? 'shut' : 'open'}">
@@ -976,7 +977,7 @@ function landscapeBoxes(s) {
 function landscapeHtml(ctx, s) {
   return ctx.C.landscape({
     boxes: landscapeBoxes(s),
-    isOpen: (key) => isOpen(`box:${key}`, true),
+    isOpen: BOXES.isOpen,
     emptyText: 'In diesem Umfang ist nichts erfasst.',
   });
 }
