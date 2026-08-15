@@ -688,14 +688,15 @@ function list(ctx) {
     })}
     ${C.catalogueBar({
       formId: 'pd-search', inputId: 'pd-q', searchLabel: 'Prozess suchen', placeholder: 'Prozess suchen…', q: rawQ,
-      countId: 'pd-count',
-      // Keine Seitenangabe mehr: seit die Flaeche Diagramm, Tabelle und Übersicht
-      // zeigt statt einer geblaetterten Kartenliste, gibt es keine Seiten. «Seite
-      // 1 von 2» versprach eine zweite, die es nicht gibt.
+      // Zaehler, Sortierung und Filter sind vorerst draussen: sie drueckten die
+      // Zeile auseinander, sobald die drei Bedienelemente und der
+      // Ansichtswechsel danebenstanden. Der Umfang steht im Baum an jeder Zeile,
+      // und die Ordnung uebernimmt «Gruppieren». Wenn sie zurueckkommen, dann
+      // mit einer Zeile, die fuer sie gebaut ist.
+      // Der Zaehler bleibt im Dokument, nur unsichtbar: die Vorlesesoftware und
+      // die Live-Meldung brauchen ihn weiterhin. Weg ist er von der ZEILE.
+      countId: 'pd-count', showCount: false,
       count: `<strong>${sorted.length}</strong> von ${all.length} ${esc(unit.dat)}`,
-      sort: { id: 'pd-sort', value: sortKey, options: SORTS.map((s) => ({ value: s.value, label: s.label })) },
-      filterId: 'pd-filter', filterLabel: 'Filter', filterCount,
-      panelId: 'pd-filters', panel,
       view,
       extra: `<span id="pd-tools">${toolsHtml()}</span>`,
       // Auf der Wurzel gibt es nichts zu wechseln: sie ist der Weg hinein, kein
@@ -714,10 +715,7 @@ function list(ctx) {
   </div>`;
 
   C.announceCatalogue({ count: sorted.length, total: all.length, unit, view });
-  C.wireCatalogue(mount, {
-    formId: 'pd-search', inputId: 'pd-q', hash,
-    sortId: 'pd-sort', filterToggleId: 'pd-filter', panelId: 'pd-filters',
-  });
+  C.wireCatalogue(mount, { formId: 'pd-search', inputId: 'pd-q', hash });
   ctx.onUnmount(C.wireTableRows(mount));
 
   // Waehlen und Aufklappen sind jetzt zwei Bedienelemente statt eines
