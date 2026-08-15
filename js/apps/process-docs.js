@@ -182,7 +182,7 @@ export default async function render(ctx) {
 // Der Baum, geteilt von Liste und Prozessansicht: dieselbe Spalte, dieselben
 // drei Stufen, nur die Markierung unterscheidet sich.
 function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = null,
-  scopeOf = () => '', pathOf = () => false, href = () => BASE }) {
+  scopeOf = () => '', pathOf = () => false, href = () => BASE, leafTab = '' }) {
   // EINE Quelle: jeder Datensatz sagt selbst, in welchem Ast er haengt
   // (branch/branchLabel), unter welcher Organisation (org) und in welcher
   // Gruppe MIT Bezeichnung (group/groupLabel). Der Baum fuegt nichts mehr
@@ -216,12 +216,18 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = 
     }, inner);
   };
 
+  // Die gewaehlte Sicht reist mit, wenn man von einem Prozess zum naechsten
+  // geht: wer ein Diagramm liest und den Nachbarn aufschlaegt, will das
+  // Diagramm des Nachbarn — nicht wieder dessen Übersicht. Aus der LISTE
+  // heraus reist sie nicht mit; dort heisst «Diagramm» die Landschaft und
+  // meint etwas anderes als das BPMN eines einzelnen Ablaufs.
+  const withTab = (base) => (leafTab ? `${base}&tab=${encodeURIComponent(leafTab)}` : base);
   const leafNode = (r) => ({
     id: `proc:${r.processId}`,
     label: r.name,
-    href: r.branch === 'portal'
+    href: withTab(r.branch === 'portal'
       ? `${BASE}?def=${encodeURIComponent(r.processId)}`
-      : processHref(r.processId),
+      : processHref(r.processId)),
     state: (activeId === r.processId || activeDef === r.processId) ? 'active' : '',
   });
 
@@ -1137,6 +1143,9 @@ async function detail(ctx, rawId, { portal = false } = {}) {
     activeDef: portal ? p.processId : null,
     scopeOf: () => '',
     href: (kind, value) => `${BASE}?${new URLSearchParams({ [kind]: value })}`,
+    // Nur wenn es nicht ohnehin die Voreinstellung ist — sonst stuende in jeder
+    // Adresse ein Parameter, der nichts aendert.
+    leafTab: active === tabs[0].id ? '' : legacyValueByTab[active],
   })));
 
   const detailTools = mount.querySelector('#pd-tools');
