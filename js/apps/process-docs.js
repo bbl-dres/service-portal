@@ -430,8 +430,14 @@ function list(ctx) {
   const { visible, totalPages, page } = state.clamp(sorted);
   const unit = { nom: 'Prozesse', dat: 'Prozessen' };
 
+  // Die Marken zeigen, was WIRKLICH einschraenkt — also auch den Umfang aus der
+  // Adresse. Ast, Organisation und Prozessbereich standen nirgends: man sah am
+  // Baum, wo man war, aber die Zeile darueber behauptete «nichts gefiltert».
+  // Die Gruppe kommt weiterhin ueber selGroups; sie ist Umfang UND Filter.
+  const scopeChip = scope && scope.key !== 'group' ? [{ label: scope.label, href: BASE }] : [];
   const active = [
     ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '', page: 1 }) }] : []),
+    ...scopeChip,
     ...selGroups.map((x) => ({ label: (groups.find((g) => g.key === x) || {}).label || x, href: hash({ group: selGroups.filter((y) => y !== x), page: 1 }) })),
     ...selStatus.map((x) => ({ label: statusOf(core, x).label, href: hash({ status: selStatus.filter((y) => y !== x), page: 1 }) })),
   ];
@@ -714,6 +720,19 @@ function list(ctx) {
     if (view && view !== 'diagramm') qs.set('view', view);
     return `${BASE}?${qs}`;
   };
+  // Der Weg hinauf, Stufe fuer Stufe. SCOPES laeuft von eng nach weit, also ist
+  // die naechste Stufe der naechste Eintrag, dessen Wert es im Umfang gibt.
+  const upFrom = () => {
+    if (!scope) return { backHref: '#/applications', backLabel: 'Anwendungen' };
+    const here = SCOPES.findIndex((x) => x.key === scope.key);
+    const row = scope.rows[0] || {};
+    for (let i = here + 1; i < SCOPES.length; i++) {
+      const v = SCOPES[i].of(row);
+      if (v) return { backHref: `${BASE}?${new URLSearchParams({ [SCOPES[i].param]: v })}`,
+        backLabel: SCOPES[i].label(row) || String(v) };
+    }
+    return { backHref: BASE, backLabel: TITLE };
+  };
   const treeConfig = () => buildTree({
     all: everything, areas, groups, hash: hashA, selGroups, activeId: null,
     activeDef: query.get('def') || null,
@@ -742,9 +761,12 @@ function list(ctx) {
     ${/* Zurueck, Teilen, Drucken — dieselbe Zeile wie auf jeder Detailseite des
           Portals. «Zurueck» heisst eine Stufe hinauf: von einem Umfang zur
           Wurzel, von der Wurzel aus der Anwendung heraus. */''}
-    ${C.detailBar(atRoot
-    ? { backHref: '#/applications', backLabel: 'Anwendungen' }
-    : { backHref: BASE, backLabel: TITLE })}
+    ${/* Eine Stufe hinauf, nicht gleich zur Wurzel — wie im Katalog. Von einer
+          Gruppe fuehrt «Zurueck» in ihren Prozessbereich, von dort in die
+          Organisation, dann in den Ast, dann zur Wurzel. Vorher sprang jede
+          Stufe direkt auf die Wurzel und liess die Zwischenstufen aus, die man
+          gerade durchschritten hatte. */''}
+    ${C.detailBar(upFrom())}
     ${C.pageHeader({
       title: TITLE,
       lead: 'Die Prozesse des Immobilienmanagements als navigierbare Landkarte — je Prozess mit BPMN-Diagramm, Prozessschritten und Verantwortlichkeiten.',
@@ -1014,8 +1036,12 @@ async function detail(ctx, rawId, { portal = false } = {}) {
     views: [['uebersicht', 'Übersicht', 'InfoCircle'], ['diagramm', 'Diagramm', 'Apps'],
       ['tabelle', `Prozessschritte (${steps.length})`, 'List']],
   })}
+    ${/* Die Marke nennt, was gewaehlt IST — den Prozess. Vorher stand hier seine
+          Gruppe, und die Zeile behauptete damit einen Umfang, in dem man gar
+          nicht mehr stand. Abwaehlen fuehrt eine Stufe hinauf, in eben diese
+          Gruppe. */''}
     <div id="pd-activefilters">${C.activeFilters({
-    filters: [{ label: p.groupLabel, remove: 'scope' }], resetHref: BASE })}</div>
+    filters: [{ label: p.name, href: hashFor(p) }], resetHref: BASE })}</div>
     <div class="pf-layout">
       <aside class="pf-sidebar" id="pd-tree" aria-label="Prozesshierarchie"></aside>
       <div class="pf-main">
