@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+    xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="xdefinitions_gebaeude_erfassung"
+    targetNamespace="http://kundenportal.local/bpmn">
+  <bpmn:process id="xproc_gebaeude_erfassung" name="Gebäude-Erfassung" isExecutable="false">
+    <bpmn:laneSet id="xgebaeude_erfassung_laneset">
+      <bpmn:lane id="xgebaeude_erfassung_lane_erfassende_stelle" name="Erfassende Stelle">
+        <bpmn:flowNodeRef>xgebaeude_erfassung_start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xgebaeude_erfassung_s1_eingereicht</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xgebaeude_erfassung_lane_portfoliomanagement_bbl" name="Portfoliomanagement BBL">
+        <bpmn:flowNodeRef>xgebaeude_erfassung_s2_in_pruefung_pfm</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xgebaeude_erfassung_s3_genehmigt</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xgebaeude_erfassung_lane_stammdatenpflege" name="Stammdatenpflege">
+        <bpmn:flowNodeRef>xgebaeude_erfassung_s4_abgeschlossen</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xgebaeude_erfassung_end</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+      <bpmn:startEvent id="xgebaeude_erfassung_start" name="Antrag ausgeloest">
+        <bpmn:outgoing>xgebaeude_erfassung_f1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="xgebaeude_erfassung_s1_eingereicht" name="Eingereicht">
+        <bpmn:incoming>xgebaeude_erfassung_f1</bpmn:incoming>
+        <bpmn:outgoing>xgebaeude_erfassung_f2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xgebaeude_erfassung_s2_in_pruefung_pfm" name="In Prüfung (PFM)">
+        <bpmn:incoming>xgebaeude_erfassung_f2</bpmn:incoming>
+        <bpmn:outgoing>xgebaeude_erfassung_f3</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xgebaeude_erfassung_s3_genehmigt" name="Genehmigt">
+        <bpmn:incoming>xgebaeude_erfassung_f3</bpmn:incoming>
+        <bpmn:outgoing>xgebaeude_erfassung_f4</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="xgebaeude_erfassung_s4_abgeschlossen" name="Publiziert">
+        <bpmn:incoming>xgebaeude_erfassung_f4</bpmn:incoming>
+        <bpmn:outgoing>xgebaeude_erfassung_f5</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="xgebaeude_erfassung_end" name="Abgeschlossen">
+        <bpmn:incoming>xgebaeude_erfassung_f5</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="xgebaeude_erfassung_f1" sourceRef="xgebaeude_erfassung_start" targetRef="xgebaeude_erfassung_s1_eingereicht"/>
+      <bpmn:sequenceFlow id="xgebaeude_erfassung_f2" sourceRef="xgebaeude_erfassung_s1_eingereicht" targetRef="xgebaeude_erfassung_s2_in_pruefung_pfm"/>
+      <bpmn:sequenceFlow id="xgebaeude_erfassung_f3" sourceRef="xgebaeude_erfassung_s2_in_pruefung_pfm" targetRef="xgebaeude_erfassung_s3_genehmigt"/>
+      <bpmn:sequenceFlow id="xgebaeude_erfassung_f4" sourceRef="xgebaeude_erfassung_s3_genehmigt" targetRef="xgebaeude_erfassung_s4_abgeschlossen"/>
+      <bpmn:sequenceFlow id="xgebaeude_erfassung_f5" sourceRef="xgebaeude_erfassung_s4_abgeschlossen" targetRef="xgebaeude_erfassung_end"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="xgebaeude_erfassung_diagram">
+    <bpmndi:BPMNPlane id="xgebaeude_erfassung_plane" bpmnElement="xproc_gebaeude_erfassung">
+        <bpmndi:BPMNShape id="xgebaeude_erfassung_lane_erfassende_stelle_di" bpmnElement="xgebaeude_erfassung_lane_erfassende_stelle" isHorizontal="true">
+          <dc:Bounds x="180" y="40" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xgebaeude_erfassung_lane_portfoliomanagement_bbl_di" bpmnElement="xgebaeude_erfassung_lane_portfoliomanagement_bbl" isHorizontal="true">
+          <dc:Bounds x="180" y="180" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xgebaeude_erfassung_lane_stammdatenpflege_di" bpmnElement="xgebaeude_erfassung_lane_stammdatenpflege" isHorizontal="true">
+          <dc:Bounds x="180" y="320" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xgebaeude_erfassung_start_di" bpmnElement="xgebaeude_erfassung_start">
+          <dc:Bounds x="297" y="82" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xgebaeude_erfassung_s1_eingereicht_di" bpmnElement="xgebaeude_erfassung_s1_eingereicht">
+          <dc:Bounds x="450" y="60" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xgebaeude_erfassung_s2_in_pruefung_pfm_di" bpmnElement="xgebaeude_erfassung_s2_in_pruefung_pfm">
+          <dc:Bounds x="660" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xgebaeude_erfassung_s3_genehmigt_di" bpmnElement="xgebaeude_erfassung_s3_genehmigt">
+          <dc:Bounds x="870" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xgebaeude_erfassung_s4_abgeschlossen_di" bpmnElement="xgebaeude_erfassung_s4_abgeschlossen">
+          <dc:Bounds x="1080" y="340" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xgebaeude_erfassung_end_di" bpmnElement="xgebaeude_erfassung_end">
+          <dc:Bounds x="1347" y="362" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNEdge id="xgebaeude_erfassung_f1_di" bpmnElement="xgebaeude_erfassung_f1">
+          <di:waypoint x="333" y="100"/>
+          <di:waypoint x="450" y="100"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xgebaeude_erfassung_f2_di" bpmnElement="xgebaeude_erfassung_f2">
+          <di:waypoint x="600" y="100"/>
+          <di:waypoint x="660" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xgebaeude_erfassung_f3_di" bpmnElement="xgebaeude_erfassung_f3">
+          <di:waypoint x="810" y="240"/>
+          <di:waypoint x="870" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xgebaeude_erfassung_f4_di" bpmnElement="xgebaeude_erfassung_f4">
+          <di:waypoint x="1020" y="240"/>
+          <di:waypoint x="1080" y="380"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xgebaeude_erfassung_f5_di" bpmnElement="xgebaeude_erfassung_f5">
+          <di:waypoint x="1230" y="380"/>
+          <di:waypoint x="1347" y="380"/>
+        </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -166,6 +166,11 @@ const truncateText = (s, n = 130) => {
 export default async function render(ctx) {
   const id = ctx.query.get('id');
   if (id) return detail(ctx, id);
+  // Ein Portal-Ablauf ist derselbe Fall wie ein fachlicher Prozess: eine Stufe
+  // des Baums mit drei Sichten. Nur die Metadaten sind andere, und die Datei
+  // liegt unter einem anderen Namen.
+  const def = ctx.query.get('def');
+  if (def) return detail(ctx, def, { portal: true });
   return list(ctx);
 }
 
@@ -764,10 +769,33 @@ function list(ctx) {
 }
 
 // Process detail: overview, diagram, and steps.
-async function detail(ctx, rawId) {
+async function detail(ctx, rawId, { portal = false } = {}) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   // URLSearchParams already decodes once; decoding again would corrupt literal percent escapes.
-  const p = core.processDoc(rawId);
+  // Ein Portal-Ablauf wird in die Form eines Prozesses gebracht, damit Ansicht,
+  // Betrachter und Schritt-Tabelle dieselben bleiben. Was er NICHT hat —
+  // Prozessbereich, Version, verantwortliche Personen — bekommt er auch nicht
+  // angedichtet; seine Übersicht ist eine eigene (siehe portalOverviewHTML).
+  const def = portal ? core.processDefinition(rawId) : null;
+  const svc = portal && def
+    ? (core.services() || []).find((x) => x.processDefId === def.defId || x.serviceId === def.serviceId)
+    : null;
+  const dom = svc ? (core.ref().domains || []).find((x) => x.key === svc.domain) : null;
+  const p = portal
+    ? (def && {
+      processId: def.defId,
+      name: def.name,
+      description: svc ? svc.short || svc.description || '' : '',
+      // Voller Pfad wie in processes.json — safeAssetUrl prueft gegen dieses
+      // Praefix, ein blosser Dateiname faellt durch und die Datei bliebe leer.
+      bpmn: `assets/bpmn/portal-${def.defId}.bpmn`,
+      group: svc ? svc.domain : '',
+      groupLabel: dom ? dom.label : 'Kundenportal',
+      steps: def.steps || [],
+      audience: def.audience,
+      serviceId: def.serviceId,
+    })
+    : core.processDoc(rawId);
   if (!p) {
     return C.renderNotFound(ctx, {
       thing: 'Dieser Prozess', title: 'Prozess nicht gefunden',
@@ -804,7 +832,11 @@ async function detail(ctx, rawId) {
   let active = tabByLegacyValue[query.get('tab')] || tabs[0].id;
   if (!tabs.some((x) => x.id === active)) active = tabs[0].id;
   const syncHash = (tab) => {
-    const qs = new URLSearchParams({ id: p.processId });
+    // Ein Portal-Ablauf haengt an `def`, ein fachlicher Prozess an `id`. Beide
+    // hier zu schreiben waere falsch: mit `id` sucht der Router einen Prozess,
+    // und der Ablauf «raumbedarf» ist keiner — die Sichtwahl landete auf
+    // «Prozess nicht gefunden».
+    const qs = new URLSearchParams(portal ? { def: p.processId } : { id: p.processId });
     if (tab !== tabs[0].id) qs.set('tab', legacyValueByTab[tab]);
     history.replaceState(history.state, '', `${BASE}?${qs}`);
   };
@@ -818,7 +850,40 @@ async function detail(ctx, rawId) {
            target="_blank" rel="noopener noreferrer external">AdminDir ${esc(x.admindirId)}</a></dd>`).join('')}
     </dl>` : '<p class="muted m-0">Für diesen Prozess ist keine verantwortliche Person hinterlegt.</p>'}</div>`;
 
-  const overviewHTML = () => `<div class="detail-layout"><div>${personsSection(p.responsiblePersons)}
+  // Was ein Portal-Ablauf IST: welches Anliegen ihn ausloest, wer ihn sieht,
+  // wie viele Schritte er hat und welche Rollen daran beteiligt sind. Keine
+  // Prozessbereiche und keine Versionen — die gibt es hier nicht.
+  const portalOverviewHTML = () => {
+    const roles = [...new Set((p.steps || []).map((x) => x.role).filter(Boolean))];
+    const kinds = new Map();
+    (p.steps || []).forEach((x) => kinds.set(x.kind, (kinds.get(x.kind) || 0) + 1));
+    const KIND_WORD = { user: 'durch Menschen', auto: 'automatisch', system: 'durch ein System' };
+    return `<section class="detail-section">
+        <h2 class="detail-section__title">Definition</h2>
+        <p class="m-0">${p.description ? esc(p.description)
+    : 'Ein Ablauf des Portals. Die Schritte unten zeigen, welche Stationen ein Antrag durchläuft.'}</p>
+      </section>
+      <section class="detail-section">
+        <h2 class="detail-section__title">Beteiligte</h2>
+        <dl class="kv kv--ruled">
+          <dt>Rollen</dt><dd>${roles.length ? roles.map((r) => esc(r)).join('<br>') : '—'}</dd>
+          <dt>Zielgruppe</dt><dd>${esc(p.audience === 'external' ? 'Kundinnen und Kunden'
+    : p.audience === 'internal' ? 'BBL-intern' : p.audience || '—')}</dd>
+        </dl>
+      </section>
+      <section class="detail-section">
+        <h2 class="detail-section__title">Metadaten</h2>
+        <dl class="kv kv--ruled">
+          <dt>Gruppe</dt><dd>${esc(p.groupLabel)}</dd>
+          <dt>Schritte</dt><dd>${(p.steps || []).length}</dd>
+          <dt>Art der Schritte</dt><dd>${[...kinds].map(([k, n]) => `${n} ${KIND_WORD[k] || k}`).join(' · ') || '—'}</dd>
+          ${p.serviceId ? `<dt>Dienstleistung</dt><dd><a href="${esc(links.service(p.serviceId))}">${esc(p.serviceId)}</a></dd>` : ''}
+          <dt>ID</dt><dd><code>${esc(p.processId)}</code></dd>
+        </dl>
+      </section>`;
+  };
+
+  const overviewHTML = () => (portal ? portalOverviewHTML() : `<div class="detail-layout"><div>${personsSection(p.responsiblePersons)}
     <section class="detail-section">
       <h2 class="detail-section__title">Metadaten</h2>
       <dl class="kv kv--ruled">
@@ -845,7 +910,7 @@ async function detail(ctx, rawId) {
             whom to ask. */''}
       ${C.sourceBox(p.source, (core.ref().sourceRoles || []).find((r) => r.key === (p.source || {}).role))}
       ${C.contactBox(contact, { title: 'Kontakt', heading: 'h2' })}
-    </aside></div>`;
+    </aside></div>`);
 
   const diagramHTML = () => `
     <section class="detail-section">

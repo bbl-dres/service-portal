@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+    xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="xdefinitions_stoerung"
+    targetNamespace="http://kundenportal.local/bpmn">
+  <bpmn:process id="xproc_stoerung" name="Störungsmeldung" isExecutable="false">
+    <bpmn:laneSet id="xstoerung_laneset">
+      <bpmn:lane id="xstoerung_lane_meldende_person" name="Meldende Person">
+        <bpmn:flowNodeRef>xstoerung_start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xstoerung_s1_eingereicht</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xstoerung_lane_objektbetrieb" name="Objektbetrieb">
+        <bpmn:flowNodeRef>xstoerung_s2_triage</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xstoerung_s3_in_arbeit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xstoerung_s4_erledigt</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xstoerung_end</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+      <bpmn:startEvent id="xstoerung_start" name="Antrag ausgeloest">
+        <bpmn:outgoing>xstoerung_f1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="xstoerung_s1_eingereicht" name="Gemeldet">
+        <bpmn:incoming>xstoerung_f1</bpmn:incoming>
+        <bpmn:outgoing>xstoerung_f2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xstoerung_s2_triage" name="Triage">
+        <bpmn:incoming>xstoerung_f2</bpmn:incoming>
+        <bpmn:outgoing>xstoerung_f3</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xstoerung_s3_in_arbeit" name="In Arbeit">
+        <bpmn:incoming>xstoerung_f3</bpmn:incoming>
+        <bpmn:outgoing>xstoerung_f4</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xstoerung_s4_erledigt" name="Erledigt">
+        <bpmn:incoming>xstoerung_f4</bpmn:incoming>
+        <bpmn:outgoing>xstoerung_f5</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:endEvent id="xstoerung_end" name="Abgeschlossen">
+        <bpmn:incoming>xstoerung_f5</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="xstoerung_f1" sourceRef="xstoerung_start" targetRef="xstoerung_s1_eingereicht"/>
+      <bpmn:sequenceFlow id="xstoerung_f2" sourceRef="xstoerung_s1_eingereicht" targetRef="xstoerung_s2_triage"/>
+      <bpmn:sequenceFlow id="xstoerung_f3" sourceRef="xstoerung_s2_triage" targetRef="xstoerung_s3_in_arbeit"/>
+      <bpmn:sequenceFlow id="xstoerung_f4" sourceRef="xstoerung_s3_in_arbeit" targetRef="xstoerung_s4_erledigt"/>
+      <bpmn:sequenceFlow id="xstoerung_f5" sourceRef="xstoerung_s4_erledigt" targetRef="xstoerung_end"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="xstoerung_diagram">
+    <bpmndi:BPMNPlane id="xstoerung_plane" bpmnElement="xproc_stoerung">
+        <bpmndi:BPMNShape id="xstoerung_lane_meldende_person_di" bpmnElement="xstoerung_lane_meldende_person" isHorizontal="true">
+          <dc:Bounds x="180" y="40" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xstoerung_lane_objektbetrieb_di" bpmnElement="xstoerung_lane_objektbetrieb" isHorizontal="true">
+          <dc:Bounds x="180" y="180" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xstoerung_start_di" bpmnElement="xstoerung_start">
+          <dc:Bounds x="297" y="82" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xstoerung_s1_eingereicht_di" bpmnElement="xstoerung_s1_eingereicht">
+          <dc:Bounds x="450" y="60" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xstoerung_s2_triage_di" bpmnElement="xstoerung_s2_triage">
+          <dc:Bounds x="660" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xstoerung_s3_in_arbeit_di" bpmnElement="xstoerung_s3_in_arbeit">
+          <dc:Bounds x="870" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xstoerung_s4_erledigt_di" bpmnElement="xstoerung_s4_erledigt">
+          <dc:Bounds x="1080" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xstoerung_end_di" bpmnElement="xstoerung_end">
+          <dc:Bounds x="1347" y="222" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNEdge id="xstoerung_f1_di" bpmnElement="xstoerung_f1">
+          <di:waypoint x="333" y="100"/>
+          <di:waypoint x="450" y="100"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xstoerung_f2_di" bpmnElement="xstoerung_f2">
+          <di:waypoint x="600" y="100"/>
+          <di:waypoint x="660" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xstoerung_f3_di" bpmnElement="xstoerung_f3">
+          <di:waypoint x="810" y="240"/>
+          <di:waypoint x="870" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xstoerung_f4_di" bpmnElement="xstoerung_f4">
+          <di:waypoint x="1020" y="240"/>
+          <di:waypoint x="1080" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xstoerung_f5_di" bpmnElement="xstoerung_f5">
+          <di:waypoint x="1230" y="240"/>
+          <di:waypoint x="1347" y="240"/>
+        </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

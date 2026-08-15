@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+    xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="xdefinitions_sicherheitsvorfall"
+    targetNamespace="http://kundenportal.local/bpmn">
+  <bpmn:process id="xproc_sicherheitsvorfall" name="Sicherheits-/Datenschutzvorfall" isExecutable="false">
+    <bpmn:laneSet id="xsicherheitsvorfall_laneset">
+      <bpmn:lane id="xsicherheitsvorfall_lane_meldende_person" name="Meldende Person">
+        <bpmn:flowNodeRef>xsicherheitsvorfall_start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xsicherheitsvorfall_s1_eingereicht</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xsicherheitsvorfall_lane_informationssicherheit_bbl_isbo" name="Informationssicherheit BBL (ISBO)">
+        <bpmn:flowNodeRef>xsicherheitsvorfall_s2_in_bearbeitung</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xsicherheitsvorfall_lane_isbo" name="ISBO">
+        <bpmn:flowNodeRef>xsicherheitsvorfall_s3_erledigt</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xsicherheitsvorfall_end</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+      <bpmn:startEvent id="xsicherheitsvorfall_start" name="Antrag ausgeloest">
+        <bpmn:outgoing>xsicherheitsvorfall_f1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="xsicherheitsvorfall_s1_eingereicht" name="Gemeldet">
+        <bpmn:incoming>xsicherheitsvorfall_f1</bpmn:incoming>
+        <bpmn:outgoing>xsicherheitsvorfall_f2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xsicherheitsvorfall_s2_in_bearbeitung" name="In Bearbeitung">
+        <bpmn:incoming>xsicherheitsvorfall_f2</bpmn:incoming>
+        <bpmn:outgoing>xsicherheitsvorfall_f3</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xsicherheitsvorfall_s3_erledigt" name="Abgeschlossen">
+        <bpmn:incoming>xsicherheitsvorfall_f3</bpmn:incoming>
+        <bpmn:outgoing>xsicherheitsvorfall_f4</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:endEvent id="xsicherheitsvorfall_end" name="Abgeschlossen">
+        <bpmn:incoming>xsicherheitsvorfall_f4</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="xsicherheitsvorfall_f1" sourceRef="xsicherheitsvorfall_start" targetRef="xsicherheitsvorfall_s1_eingereicht"/>
+      <bpmn:sequenceFlow id="xsicherheitsvorfall_f2" sourceRef="xsicherheitsvorfall_s1_eingereicht" targetRef="xsicherheitsvorfall_s2_in_bearbeitung"/>
+      <bpmn:sequenceFlow id="xsicherheitsvorfall_f3" sourceRef="xsicherheitsvorfall_s2_in_bearbeitung" targetRef="xsicherheitsvorfall_s3_erledigt"/>
+      <bpmn:sequenceFlow id="xsicherheitsvorfall_f4" sourceRef="xsicherheitsvorfall_s3_erledigt" targetRef="xsicherheitsvorfall_end"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="xsicherheitsvorfall_diagram">
+    <bpmndi:BPMNPlane id="xsicherheitsvorfall_plane" bpmnElement="xproc_sicherheitsvorfall">
+        <bpmndi:BPMNShape id="xsicherheitsvorfall_lane_meldende_person_di" bpmnElement="xsicherheitsvorfall_lane_meldende_person" isHorizontal="true">
+          <dc:Bounds x="180" y="40" width="1190" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xsicherheitsvorfall_lane_informationssicherheit_bbl_isbo_di" bpmnElement="xsicherheitsvorfall_lane_informationssicherheit_bbl_isbo" isHorizontal="true">
+          <dc:Bounds x="180" y="180" width="1190" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xsicherheitsvorfall_lane_isbo_di" bpmnElement="xsicherheitsvorfall_lane_isbo" isHorizontal="true">
+          <dc:Bounds x="180" y="320" width="1190" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xsicherheitsvorfall_start_di" bpmnElement="xsicherheitsvorfall_start">
+          <dc:Bounds x="297" y="82" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xsicherheitsvorfall_s1_eingereicht_di" bpmnElement="xsicherheitsvorfall_s1_eingereicht">
+          <dc:Bounds x="450" y="60" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xsicherheitsvorfall_s2_in_bearbeitung_di" bpmnElement="xsicherheitsvorfall_s2_in_bearbeitung">
+          <dc:Bounds x="660" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xsicherheitsvorfall_s3_erledigt_di" bpmnElement="xsicherheitsvorfall_s3_erledigt">
+          <dc:Bounds x="870" y="340" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xsicherheitsvorfall_end_di" bpmnElement="xsicherheitsvorfall_end">
+          <dc:Bounds x="1137" y="362" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNEdge id="xsicherheitsvorfall_f1_di" bpmnElement="xsicherheitsvorfall_f1">
+          <di:waypoint x="333" y="100"/>
+          <di:waypoint x="450" y="100"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xsicherheitsvorfall_f2_di" bpmnElement="xsicherheitsvorfall_f2">
+          <di:waypoint x="600" y="100"/>
+          <di:waypoint x="660" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xsicherheitsvorfall_f3_di" bpmnElement="xsicherheitsvorfall_f3">
+          <di:waypoint x="810" y="240"/>
+          <di:waypoint x="870" y="380"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xsicherheitsvorfall_f4_di" bpmnElement="xsicherheitsvorfall_f4">
+          <di:waypoint x="1020" y="380"/>
+          <di:waypoint x="1137" y="380"/>
+        </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

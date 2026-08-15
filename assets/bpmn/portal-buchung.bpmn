@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+    xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="xdefinitions_buchung"
+    targetNamespace="http://kundenportal.local/bpmn">
+  <bpmn:process id="xproc_buchung" name="Raumbuchung" isExecutable="false">
+    <bpmn:laneSet id="xbuchung_laneset">
+      <bpmn:lane id="xbuchung_lane_buchende_person" name="Buchende Person">
+        <bpmn:flowNodeRef>xbuchung_start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xbuchung_s1_eingereicht</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xbuchung_lane_workspace_bbl" name="Workspace BBL">
+        <bpmn:flowNodeRef>xbuchung_s2_abgeschlossen</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xbuchung_end</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+      <bpmn:startEvent id="xbuchung_start" name="Antrag ausgeloest">
+        <bpmn:outgoing>xbuchung_f1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="xbuchung_s1_eingereicht" name="Angefragt">
+        <bpmn:incoming>xbuchung_f1</bpmn:incoming>
+        <bpmn:outgoing>xbuchung_f2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="xbuchung_s2_abgeschlossen" name="Bestätigt">
+        <bpmn:incoming>xbuchung_f2</bpmn:incoming>
+        <bpmn:outgoing>xbuchung_f3</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="xbuchung_end" name="Abgeschlossen">
+        <bpmn:incoming>xbuchung_f3</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="xbuchung_f1" sourceRef="xbuchung_start" targetRef="xbuchung_s1_eingereicht"/>
+      <bpmn:sequenceFlow id="xbuchung_f2" sourceRef="xbuchung_s1_eingereicht" targetRef="xbuchung_s2_abgeschlossen"/>
+      <bpmn:sequenceFlow id="xbuchung_f3" sourceRef="xbuchung_s2_abgeschlossen" targetRef="xbuchung_end"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="xbuchung_diagram">
+    <bpmndi:BPMNPlane id="xbuchung_plane" bpmnElement="xproc_buchung">
+        <bpmndi:BPMNShape id="xbuchung_lane_buchende_person_di" bpmnElement="xbuchung_lane_buchende_person" isHorizontal="true">
+          <dc:Bounds x="180" y="40" width="980" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbuchung_lane_workspace_bbl_di" bpmnElement="xbuchung_lane_workspace_bbl" isHorizontal="true">
+          <dc:Bounds x="180" y="180" width="980" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbuchung_start_di" bpmnElement="xbuchung_start">
+          <dc:Bounds x="297" y="82" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbuchung_s1_eingereicht_di" bpmnElement="xbuchung_s1_eingereicht">
+          <dc:Bounds x="450" y="60" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbuchung_s2_abgeschlossen_di" bpmnElement="xbuchung_s2_abgeschlossen">
+          <dc:Bounds x="660" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbuchung_end_di" bpmnElement="xbuchung_end">
+          <dc:Bounds x="927" y="222" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNEdge id="xbuchung_f1_di" bpmnElement="xbuchung_f1">
+          <di:waypoint x="333" y="100"/>
+          <di:waypoint x="450" y="100"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xbuchung_f2_di" bpmnElement="xbuchung_f2">
+          <di:waypoint x="600" y="100"/>
+          <di:waypoint x="660" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xbuchung_f3_di" bpmnElement="xbuchung_f3">
+          <di:waypoint x="810" y="240"/>
+          <di:waypoint x="927" y="240"/>
+        </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

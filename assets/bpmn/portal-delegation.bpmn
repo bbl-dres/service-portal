@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+    xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="xdefinitions_delegation"
+    targetNamespace="http://kundenportal.local/bpmn">
+  <bpmn:process id="xproc_delegation" name="Delegationsgesuch" isExecutable="false">
+    <bpmn:laneSet id="xdelegation_laneset">
+      <bpmn:lane id="xdelegation_lane_verwaltungseinheit" name="Verwaltungseinheit">
+        <bpmn:flowNodeRef>xdelegation_start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xdelegation_s1_eingereicht</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xdelegation_s5_gegenzeichnung</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xdelegation_lane_einkauf_it_bbl" name="Einkauf IT BBL">
+        <bpmn:flowNodeRef>xdelegation_s2_erstpruefung</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xdelegation_lane_pruefinstanz_bbl" name="Prüfinstanz BBL">
+        <bpmn:flowNodeRef>xdelegation_s3_entscheid</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xdelegation_lane_beschaffung_bbl" name="Beschaffung BBL">
+        <bpmn:flowNodeRef>xdelegation_s4_vereinbarung</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xdelegation_s6_abgeschlossen</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xdelegation_end</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+      <bpmn:startEvent id="xdelegation_start" name="Antrag ausgeloest">
+        <bpmn:outgoing>xdelegation_f1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="xdelegation_s1_eingereicht" name="Gesuch eingereicht">
+        <bpmn:incoming>xdelegation_f1</bpmn:incoming>
+        <bpmn:outgoing>xdelegation_f2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xdelegation_s2_erstpruefung" name="Erstprüfung">
+        <bpmn:incoming>xdelegation_f2</bpmn:incoming>
+        <bpmn:outgoing>xdelegation_f3</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xdelegation_s3_entscheid" name="Entscheid der Prüfinstanz">
+        <bpmn:incoming>xdelegation_f3</bpmn:incoming>
+        <bpmn:outgoing>xdelegation_f4</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xdelegation_s4_vereinbarung" name="Vereinbarung erstellt">
+        <bpmn:incoming>xdelegation_f4</bpmn:incoming>
+        <bpmn:outgoing>xdelegation_f5</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xdelegation_s5_gegenzeichnung" name="Digital gegengezeichnet">
+        <bpmn:incoming>xdelegation_f5</bpmn:incoming>
+        <bpmn:outgoing>xdelegation_f6</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="xdelegation_s6_abgeschlossen" name="Im Delegationstool erfasst">
+        <bpmn:incoming>xdelegation_f6</bpmn:incoming>
+        <bpmn:outgoing>xdelegation_f7</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="xdelegation_end" name="Abgeschlossen">
+        <bpmn:incoming>xdelegation_f7</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="xdelegation_f1" sourceRef="xdelegation_start" targetRef="xdelegation_s1_eingereicht"/>
+      <bpmn:sequenceFlow id="xdelegation_f2" sourceRef="xdelegation_s1_eingereicht" targetRef="xdelegation_s2_erstpruefung"/>
+      <bpmn:sequenceFlow id="xdelegation_f3" sourceRef="xdelegation_s2_erstpruefung" targetRef="xdelegation_s3_entscheid"/>
+      <bpmn:sequenceFlow id="xdelegation_f4" sourceRef="xdelegation_s3_entscheid" targetRef="xdelegation_s4_vereinbarung"/>
+      <bpmn:sequenceFlow id="xdelegation_f5" sourceRef="xdelegation_s4_vereinbarung" targetRef="xdelegation_s5_gegenzeichnung"/>
+      <bpmn:sequenceFlow id="xdelegation_f6" sourceRef="xdelegation_s5_gegenzeichnung" targetRef="xdelegation_s6_abgeschlossen"/>
+      <bpmn:sequenceFlow id="xdelegation_f7" sourceRef="xdelegation_s6_abgeschlossen" targetRef="xdelegation_end"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="xdelegation_diagram">
+    <bpmndi:BPMNPlane id="xdelegation_plane" bpmnElement="xproc_delegation">
+        <bpmndi:BPMNShape id="xdelegation_lane_verwaltungseinheit_di" bpmnElement="xdelegation_lane_verwaltungseinheit" isHorizontal="true">
+          <dc:Bounds x="180" y="40" width="1820" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xdelegation_lane_einkauf_it_bbl_di" bpmnElement="xdelegation_lane_einkauf_it_bbl" isHorizontal="true">
+          <dc:Bounds x="180" y="180" width="1820" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xdelegation_lane_pruefinstanz_bbl_di" bpmnElement="xdelegation_lane_pruefinstanz_bbl" isHorizontal="true">
+          <dc:Bounds x="180" y="320" width="1820" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xdelegation_lane_beschaffung_bbl_di" bpmnElement="xdelegation_lane_beschaffung_bbl" isHorizontal="true">
+          <dc:Bounds x="180" y="460" width="1820" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xdelegation_start_di" bpmnElement="xdelegation_start">
+          <dc:Bounds x="297" y="82" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xdelegation_s1_eingereicht_di" bpmnElement="xdelegation_s1_eingereicht">
+          <dc:Bounds x="450" y="60" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xdelegation_s2_erstpruefung_di" bpmnElement="xdelegation_s2_erstpruefung">
+          <dc:Bounds x="660" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xdelegation_s3_entscheid_di" bpmnElement="xdelegation_s3_entscheid">
+          <dc:Bounds x="870" y="340" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xdelegation_s4_vereinbarung_di" bpmnElement="xdelegation_s4_vereinbarung">
+          <dc:Bounds x="1080" y="480" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xdelegation_s5_gegenzeichnung_di" bpmnElement="xdelegation_s5_gegenzeichnung">
+          <dc:Bounds x="1290" y="60" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xdelegation_s6_abgeschlossen_di" bpmnElement="xdelegation_s6_abgeschlossen">
+          <dc:Bounds x="1500" y="480" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xdelegation_end_di" bpmnElement="xdelegation_end">
+          <dc:Bounds x="1767" y="502" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNEdge id="xdelegation_f1_di" bpmnElement="xdelegation_f1">
+          <di:waypoint x="333" y="100"/>
+          <di:waypoint x="450" y="100"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xdelegation_f2_di" bpmnElement="xdelegation_f2">
+          <di:waypoint x="600" y="100"/>
+          <di:waypoint x="660" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xdelegation_f3_di" bpmnElement="xdelegation_f3">
+          <di:waypoint x="810" y="240"/>
+          <di:waypoint x="870" y="380"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xdelegation_f4_di" bpmnElement="xdelegation_f4">
+          <di:waypoint x="1020" y="380"/>
+          <di:waypoint x="1080" y="520"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xdelegation_f5_di" bpmnElement="xdelegation_f5">
+          <di:waypoint x="1230" y="520"/>
+          <di:waypoint x="1290" y="100"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xdelegation_f6_di" bpmnElement="xdelegation_f6">
+          <di:waypoint x="1440" y="100"/>
+          <di:waypoint x="1500" y="520"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xdelegation_f7_di" bpmnElement="xdelegation_f7">
+          <di:waypoint x="1650" y="520"/>
+          <di:waypoint x="1767" y="520"/>
+        </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

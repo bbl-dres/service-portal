@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+    xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="xdefinitions_bestellung"
+    targetNamespace="http://kundenportal.local/bpmn">
+  <bpmn:process id="xproc_bestellung" name="Bestellung" isExecutable="false">
+    <bpmn:laneSet id="xbestellung_laneset">
+      <bpmn:lane id="xbestellung_lane_bestellende_person" name="Bestellende Person">
+        <bpmn:flowNodeRef>xbestellung_start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xbestellung_s1_eingereicht</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xbestellung_lane_logistik_bbl" name="Logistik BBL">
+        <bpmn:flowNodeRef>xbestellung_s2_in_bearbeitung</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xbestellung_s3_geliefert</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xbestellung_lane_bbl" name="BBL">
+        <bpmn:flowNodeRef>xbestellung_s4_abgeschlossen</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xbestellung_end</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+      <bpmn:startEvent id="xbestellung_start" name="Antrag ausgeloest">
+        <bpmn:outgoing>xbestellung_f1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="xbestellung_s1_eingereicht" name="Bestellt">
+        <bpmn:incoming>xbestellung_f1</bpmn:incoming>
+        <bpmn:outgoing>xbestellung_f2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xbestellung_s2_in_bearbeitung" name="In Bearbeitung">
+        <bpmn:incoming>xbestellung_f2</bpmn:incoming>
+        <bpmn:outgoing>xbestellung_f3</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xbestellung_s3_geliefert" name="Geliefert">
+        <bpmn:incoming>xbestellung_f3</bpmn:incoming>
+        <bpmn:outgoing>xbestellung_f4</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="xbestellung_s4_abgeschlossen" name="Abgeschlossen">
+        <bpmn:incoming>xbestellung_f4</bpmn:incoming>
+        <bpmn:outgoing>xbestellung_f5</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="xbestellung_end" name="Abgeschlossen">
+        <bpmn:incoming>xbestellung_f5</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="xbestellung_f1" sourceRef="xbestellung_start" targetRef="xbestellung_s1_eingereicht"/>
+      <bpmn:sequenceFlow id="xbestellung_f2" sourceRef="xbestellung_s1_eingereicht" targetRef="xbestellung_s2_in_bearbeitung"/>
+      <bpmn:sequenceFlow id="xbestellung_f3" sourceRef="xbestellung_s2_in_bearbeitung" targetRef="xbestellung_s3_geliefert"/>
+      <bpmn:sequenceFlow id="xbestellung_f4" sourceRef="xbestellung_s3_geliefert" targetRef="xbestellung_s4_abgeschlossen"/>
+      <bpmn:sequenceFlow id="xbestellung_f5" sourceRef="xbestellung_s4_abgeschlossen" targetRef="xbestellung_end"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="xbestellung_diagram">
+    <bpmndi:BPMNPlane id="xbestellung_plane" bpmnElement="xproc_bestellung">
+        <bpmndi:BPMNShape id="xbestellung_lane_bestellende_person_di" bpmnElement="xbestellung_lane_bestellende_person" isHorizontal="true">
+          <dc:Bounds x="180" y="40" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbestellung_lane_logistik_bbl_di" bpmnElement="xbestellung_lane_logistik_bbl" isHorizontal="true">
+          <dc:Bounds x="180" y="180" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbestellung_lane_bbl_di" bpmnElement="xbestellung_lane_bbl" isHorizontal="true">
+          <dc:Bounds x="180" y="320" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbestellung_start_di" bpmnElement="xbestellung_start">
+          <dc:Bounds x="297" y="82" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbestellung_s1_eingereicht_di" bpmnElement="xbestellung_s1_eingereicht">
+          <dc:Bounds x="450" y="60" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbestellung_s2_in_bearbeitung_di" bpmnElement="xbestellung_s2_in_bearbeitung">
+          <dc:Bounds x="660" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbestellung_s3_geliefert_di" bpmnElement="xbestellung_s3_geliefert">
+          <dc:Bounds x="870" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbestellung_s4_abgeschlossen_di" bpmnElement="xbestellung_s4_abgeschlossen">
+          <dc:Bounds x="1080" y="340" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbestellung_end_di" bpmnElement="xbestellung_end">
+          <dc:Bounds x="1347" y="362" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNEdge id="xbestellung_f1_di" bpmnElement="xbestellung_f1">
+          <di:waypoint x="333" y="100"/>
+          <di:waypoint x="450" y="100"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xbestellung_f2_di" bpmnElement="xbestellung_f2">
+          <di:waypoint x="600" y="100"/>
+          <di:waypoint x="660" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xbestellung_f3_di" bpmnElement="xbestellung_f3">
+          <di:waypoint x="810" y="240"/>
+          <di:waypoint x="870" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xbestellung_f4_di" bpmnElement="xbestellung_f4">
+          <di:waypoint x="1020" y="240"/>
+          <di:waypoint x="1080" y="380"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xbestellung_f5_di" bpmnElement="xbestellung_f5">
+          <di:waypoint x="1230" y="380"/>
+          <di:waypoint x="1347" y="380"/>
+        </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

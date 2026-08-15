@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+    xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="xdefinitions_banf"
+    targetNamespace="http://kundenportal.local/bpmn">
+  <bpmn:process id="xproc_banf" name="Bedarfsmeldung BANF" isExecutable="false">
+    <bpmn:laneSet id="xbanf_laneset">
+      <bpmn:lane id="xbanf_lane_bedarfsstelle" name="Bedarfsstelle">
+        <bpmn:flowNodeRef>xbanf_start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xbanf_s1_eingereicht</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xbanf_lane_informatik_bbl" name="Informatik BBL">
+        <bpmn:flowNodeRef>xbanf_s2_in_bearbeitung</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xbanf_s3_genehmigt</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xbanf_lane_beschaffung" name="Beschaffung">
+        <bpmn:flowNodeRef>xbanf_s4_abgeschlossen</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xbanf_end</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+      <bpmn:startEvent id="xbanf_start" name="Antrag ausgeloest">
+        <bpmn:outgoing>xbanf_f1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="xbanf_s1_eingereicht" name="Eingereicht">
+        <bpmn:incoming>xbanf_f1</bpmn:incoming>
+        <bpmn:outgoing>xbanf_f2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xbanf_s2_in_bearbeitung" name="In Prüfung">
+        <bpmn:incoming>xbanf_f2</bpmn:incoming>
+        <bpmn:outgoing>xbanf_f3</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xbanf_s3_genehmigt" name="Genehmigt">
+        <bpmn:incoming>xbanf_f3</bpmn:incoming>
+        <bpmn:outgoing>xbanf_f4</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="xbanf_s4_abgeschlossen" name="Beschafft">
+        <bpmn:incoming>xbanf_f4</bpmn:incoming>
+        <bpmn:outgoing>xbanf_f5</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="xbanf_end" name="Abgeschlossen">
+        <bpmn:incoming>xbanf_f5</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="xbanf_f1" sourceRef="xbanf_start" targetRef="xbanf_s1_eingereicht"/>
+      <bpmn:sequenceFlow id="xbanf_f2" sourceRef="xbanf_s1_eingereicht" targetRef="xbanf_s2_in_bearbeitung"/>
+      <bpmn:sequenceFlow id="xbanf_f3" sourceRef="xbanf_s2_in_bearbeitung" targetRef="xbanf_s3_genehmigt"/>
+      <bpmn:sequenceFlow id="xbanf_f4" sourceRef="xbanf_s3_genehmigt" targetRef="xbanf_s4_abgeschlossen"/>
+      <bpmn:sequenceFlow id="xbanf_f5" sourceRef="xbanf_s4_abgeschlossen" targetRef="xbanf_end"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="xbanf_diagram">
+    <bpmndi:BPMNPlane id="xbanf_plane" bpmnElement="xproc_banf">
+        <bpmndi:BPMNShape id="xbanf_lane_bedarfsstelle_di" bpmnElement="xbanf_lane_bedarfsstelle" isHorizontal="true">
+          <dc:Bounds x="180" y="40" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbanf_lane_informatik_bbl_di" bpmnElement="xbanf_lane_informatik_bbl" isHorizontal="true">
+          <dc:Bounds x="180" y="180" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbanf_lane_beschaffung_di" bpmnElement="xbanf_lane_beschaffung" isHorizontal="true">
+          <dc:Bounds x="180" y="320" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbanf_start_di" bpmnElement="xbanf_start">
+          <dc:Bounds x="297" y="82" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbanf_s1_eingereicht_di" bpmnElement="xbanf_s1_eingereicht">
+          <dc:Bounds x="450" y="60" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbanf_s2_in_bearbeitung_di" bpmnElement="xbanf_s2_in_bearbeitung">
+          <dc:Bounds x="660" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbanf_s3_genehmigt_di" bpmnElement="xbanf_s3_genehmigt">
+          <dc:Bounds x="870" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbanf_s4_abgeschlossen_di" bpmnElement="xbanf_s4_abgeschlossen">
+          <dc:Bounds x="1080" y="340" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xbanf_end_di" bpmnElement="xbanf_end">
+          <dc:Bounds x="1347" y="362" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNEdge id="xbanf_f1_di" bpmnElement="xbanf_f1">
+          <di:waypoint x="333" y="100"/>
+          <di:waypoint x="450" y="100"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xbanf_f2_di" bpmnElement="xbanf_f2">
+          <di:waypoint x="600" y="100"/>
+          <di:waypoint x="660" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xbanf_f3_di" bpmnElement="xbanf_f3">
+          <di:waypoint x="810" y="240"/>
+          <di:waypoint x="870" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xbanf_f4_di" bpmnElement="xbanf_f4">
+          <di:waypoint x="1020" y="240"/>
+          <di:waypoint x="1080" y="380"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xbanf_f5_di" bpmnElement="xbanf_f5">
+          <di:waypoint x="1230" y="380"/>
+          <di:waypoint x="1347" y="380"/>
+        </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

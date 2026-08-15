@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+    xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="xdefinitions_planfreigabe"
+    targetNamespace="http://kundenportal.local/bpmn">
+  <bpmn:process id="xproc_planfreigabe" name="Planfreigabe" isExecutable="false">
+    <bpmn:laneSet id="xplanfreigabe_laneset">
+      <bpmn:lane id="xplanfreigabe_lane_antragstellende_stelle" name="Antragstellende Stelle">
+        <bpmn:flowNodeRef>xplanfreigabe_start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xplanfreigabe_s1_eingereicht</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xplanfreigabe_lane_flaechenmanagement_bbl" name="Flächenmanagement BBL">
+        <bpmn:flowNodeRef>xplanfreigabe_s2_in_pruefung_fm</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xplanfreigabe_s3_freigegeben</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xplanfreigabe_s4_abgeschlossen</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xplanfreigabe_end</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+      <bpmn:startEvent id="xplanfreigabe_start" name="Antrag ausgeloest">
+        <bpmn:outgoing>xplanfreigabe_f1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="xplanfreigabe_s1_eingereicht" name="Antrag eingereicht">
+        <bpmn:incoming>xplanfreigabe_f1</bpmn:incoming>
+        <bpmn:outgoing>xplanfreigabe_f2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xplanfreigabe_s2_in_pruefung_fm" name="Zweitprüfung Flächenmanagement">
+        <bpmn:incoming>xplanfreigabe_f2</bpmn:incoming>
+        <bpmn:outgoing>xplanfreigabe_f3</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xplanfreigabe_s3_freigegeben" name="Freigegeben">
+        <bpmn:incoming>xplanfreigabe_f3</bpmn:incoming>
+        <bpmn:outgoing>xplanfreigabe_f4</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="xplanfreigabe_s4_abgeschlossen" name="In den Geschossplan übernommen">
+        <bpmn:incoming>xplanfreigabe_f4</bpmn:incoming>
+        <bpmn:outgoing>xplanfreigabe_f5</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="xplanfreigabe_end" name="Abgeschlossen">
+        <bpmn:incoming>xplanfreigabe_f5</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="xplanfreigabe_f1" sourceRef="xplanfreigabe_start" targetRef="xplanfreigabe_s1_eingereicht"/>
+      <bpmn:sequenceFlow id="xplanfreigabe_f2" sourceRef="xplanfreigabe_s1_eingereicht" targetRef="xplanfreigabe_s2_in_pruefung_fm"/>
+      <bpmn:sequenceFlow id="xplanfreigabe_f3" sourceRef="xplanfreigabe_s2_in_pruefung_fm" targetRef="xplanfreigabe_s3_freigegeben"/>
+      <bpmn:sequenceFlow id="xplanfreigabe_f4" sourceRef="xplanfreigabe_s3_freigegeben" targetRef="xplanfreigabe_s4_abgeschlossen"/>
+      <bpmn:sequenceFlow id="xplanfreigabe_f5" sourceRef="xplanfreigabe_s4_abgeschlossen" targetRef="xplanfreigabe_end"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="xplanfreigabe_diagram">
+    <bpmndi:BPMNPlane id="xplanfreigabe_plane" bpmnElement="xproc_planfreigabe">
+        <bpmndi:BPMNShape id="xplanfreigabe_lane_antragstellende_stelle_di" bpmnElement="xplanfreigabe_lane_antragstellende_stelle" isHorizontal="true">
+          <dc:Bounds x="180" y="40" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xplanfreigabe_lane_flaechenmanagement_bbl_di" bpmnElement="xplanfreigabe_lane_flaechenmanagement_bbl" isHorizontal="true">
+          <dc:Bounds x="180" y="180" width="1400" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xplanfreigabe_start_di" bpmnElement="xplanfreigabe_start">
+          <dc:Bounds x="297" y="82" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xplanfreigabe_s1_eingereicht_di" bpmnElement="xplanfreigabe_s1_eingereicht">
+          <dc:Bounds x="450" y="60" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xplanfreigabe_s2_in_pruefung_fm_di" bpmnElement="xplanfreigabe_s2_in_pruefung_fm">
+          <dc:Bounds x="660" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xplanfreigabe_s3_freigegeben_di" bpmnElement="xplanfreigabe_s3_freigegeben">
+          <dc:Bounds x="870" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xplanfreigabe_s4_abgeschlossen_di" bpmnElement="xplanfreigabe_s4_abgeschlossen">
+          <dc:Bounds x="1080" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xplanfreigabe_end_di" bpmnElement="xplanfreigabe_end">
+          <dc:Bounds x="1347" y="222" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNEdge id="xplanfreigabe_f1_di" bpmnElement="xplanfreigabe_f1">
+          <di:waypoint x="333" y="100"/>
+          <di:waypoint x="450" y="100"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xplanfreigabe_f2_di" bpmnElement="xplanfreigabe_f2">
+          <di:waypoint x="600" y="100"/>
+          <di:waypoint x="660" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xplanfreigabe_f3_di" bpmnElement="xplanfreigabe_f3">
+          <di:waypoint x="810" y="240"/>
+          <di:waypoint x="870" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xplanfreigabe_f4_di" bpmnElement="xplanfreigabe_f4">
+          <di:waypoint x="1020" y="240"/>
+          <di:waypoint x="1080" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xplanfreigabe_f5_di" bpmnElement="xplanfreigabe_f5">
+          <di:waypoint x="1230" y="240"/>
+          <di:waypoint x="1347" y="240"/>
+        </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

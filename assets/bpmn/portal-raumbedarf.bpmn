@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+    xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="xdefinitions_raumbedarf"
+    targetNamespace="http://kundenportal.local/bpmn">
+  <bpmn:process id="xproc_raumbedarf" name="Raumbedarf-Antrag" isExecutable="false">
+    <bpmn:laneSet id="xraumbedarf_laneset">
+      <bpmn:lane id="xraumbedarf_lane_antragstellende_stelle" name="Antragstellende Stelle">
+        <bpmn:flowNodeRef>xraumbedarf_start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xraumbedarf_s1_eingereicht</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xraumbedarf_lane_generalsekretariat" name="Generalsekretariat">
+        <bpmn:flowNodeRef>xraumbedarf_s2_in_pruefung_gs</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xraumbedarf_lane_portfoliomanagement_bbl" name="Portfoliomanagement BBL">
+        <bpmn:flowNodeRef>xraumbedarf_s3_in_pruefung_pfm</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xraumbedarf_s4_genehmigt</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xraumbedarf_lane_bbl_bau" name="BBL Bau">
+        <bpmn:flowNodeRef>xraumbedarf_s5_in_projekt</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="xraumbedarf_lane_bbl" name="BBL">
+        <bpmn:flowNodeRef>xraumbedarf_s6_abgeschlossen</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>xraumbedarf_end</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+      <bpmn:startEvent id="xraumbedarf_start" name="Antrag ausgeloest">
+        <bpmn:outgoing>xraumbedarf_f1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="xraumbedarf_s1_eingereicht" name="Eingereicht">
+        <bpmn:incoming>xraumbedarf_f1</bpmn:incoming>
+        <bpmn:outgoing>xraumbedarf_f2</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xraumbedarf_s2_in_pruefung_gs" name="In Prüfung (GS)">
+        <bpmn:incoming>xraumbedarf_f2</bpmn:incoming>
+        <bpmn:outgoing>xraumbedarf_f3</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xraumbedarf_s3_in_pruefung_pfm" name="In Prüfung (PFM)">
+        <bpmn:incoming>xraumbedarf_f3</bpmn:incoming>
+        <bpmn:outgoing>xraumbedarf_f4</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="xraumbedarf_s4_genehmigt" name="Genehmigt">
+        <bpmn:incoming>xraumbedarf_f4</bpmn:incoming>
+        <bpmn:outgoing>xraumbedarf_f5</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:serviceTask id="xraumbedarf_s5_in_projekt" name="In Projekt überführt">
+        <bpmn:incoming>xraumbedarf_f5</bpmn:incoming>
+        <bpmn:outgoing>xraumbedarf_f6</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:serviceTask id="xraumbedarf_s6_abgeschlossen" name="Abgeschlossen">
+        <bpmn:incoming>xraumbedarf_f6</bpmn:incoming>
+        <bpmn:outgoing>xraumbedarf_f7</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="xraumbedarf_end" name="Abgeschlossen">
+        <bpmn:incoming>xraumbedarf_f7</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="xraumbedarf_f1" sourceRef="xraumbedarf_start" targetRef="xraumbedarf_s1_eingereicht"/>
+      <bpmn:sequenceFlow id="xraumbedarf_f2" sourceRef="xraumbedarf_s1_eingereicht" targetRef="xraumbedarf_s2_in_pruefung_gs"/>
+      <bpmn:sequenceFlow id="xraumbedarf_f3" sourceRef="xraumbedarf_s2_in_pruefung_gs" targetRef="xraumbedarf_s3_in_pruefung_pfm"/>
+      <bpmn:sequenceFlow id="xraumbedarf_f4" sourceRef="xraumbedarf_s3_in_pruefung_pfm" targetRef="xraumbedarf_s4_genehmigt"/>
+      <bpmn:sequenceFlow id="xraumbedarf_f5" sourceRef="xraumbedarf_s4_genehmigt" targetRef="xraumbedarf_s5_in_projekt"/>
+      <bpmn:sequenceFlow id="xraumbedarf_f6" sourceRef="xraumbedarf_s5_in_projekt" targetRef="xraumbedarf_s6_abgeschlossen"/>
+      <bpmn:sequenceFlow id="xraumbedarf_f7" sourceRef="xraumbedarf_s6_abgeschlossen" targetRef="xraumbedarf_end"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="xraumbedarf_diagram">
+    <bpmndi:BPMNPlane id="xraumbedarf_plane" bpmnElement="xproc_raumbedarf">
+        <bpmndi:BPMNShape id="xraumbedarf_lane_antragstellende_stelle_di" bpmnElement="xraumbedarf_lane_antragstellende_stelle" isHorizontal="true">
+          <dc:Bounds x="180" y="40" width="1820" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xraumbedarf_lane_generalsekretariat_di" bpmnElement="xraumbedarf_lane_generalsekretariat" isHorizontal="true">
+          <dc:Bounds x="180" y="180" width="1820" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xraumbedarf_lane_portfoliomanagement_bbl_di" bpmnElement="xraumbedarf_lane_portfoliomanagement_bbl" isHorizontal="true">
+          <dc:Bounds x="180" y="320" width="1820" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xraumbedarf_lane_bbl_bau_di" bpmnElement="xraumbedarf_lane_bbl_bau" isHorizontal="true">
+          <dc:Bounds x="180" y="460" width="1820" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xraumbedarf_lane_bbl_di" bpmnElement="xraumbedarf_lane_bbl" isHorizontal="true">
+          <dc:Bounds x="180" y="600" width="1820" height="140"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xraumbedarf_start_di" bpmnElement="xraumbedarf_start">
+          <dc:Bounds x="297" y="82" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xraumbedarf_s1_eingereicht_di" bpmnElement="xraumbedarf_s1_eingereicht">
+          <dc:Bounds x="450" y="60" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xraumbedarf_s2_in_pruefung_gs_di" bpmnElement="xraumbedarf_s2_in_pruefung_gs">
+          <dc:Bounds x="660" y="200" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xraumbedarf_s3_in_pruefung_pfm_di" bpmnElement="xraumbedarf_s3_in_pruefung_pfm">
+          <dc:Bounds x="870" y="340" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xraumbedarf_s4_genehmigt_di" bpmnElement="xraumbedarf_s4_genehmigt">
+          <dc:Bounds x="1080" y="340" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xraumbedarf_s5_in_projekt_di" bpmnElement="xraumbedarf_s5_in_projekt">
+          <dc:Bounds x="1290" y="480" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xraumbedarf_s6_abgeschlossen_di" bpmnElement="xraumbedarf_s6_abgeschlossen">
+          <dc:Bounds x="1500" y="620" width="150" height="80"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="xraumbedarf_end_di" bpmnElement="xraumbedarf_end">
+          <dc:Bounds x="1767" y="642" width="36" height="36"/>
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNEdge id="xraumbedarf_f1_di" bpmnElement="xraumbedarf_f1">
+          <di:waypoint x="333" y="100"/>
+          <di:waypoint x="450" y="100"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xraumbedarf_f2_di" bpmnElement="xraumbedarf_f2">
+          <di:waypoint x="600" y="100"/>
+          <di:waypoint x="660" y="240"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xraumbedarf_f3_di" bpmnElement="xraumbedarf_f3">
+          <di:waypoint x="810" y="240"/>
+          <di:waypoint x="870" y="380"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xraumbedarf_f4_di" bpmnElement="xraumbedarf_f4">
+          <di:waypoint x="1020" y="380"/>
+          <di:waypoint x="1080" y="380"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xraumbedarf_f5_di" bpmnElement="xraumbedarf_f5">
+          <di:waypoint x="1230" y="380"/>
+          <di:waypoint x="1290" y="520"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xraumbedarf_f6_di" bpmnElement="xraumbedarf_f6">
+          <di:waypoint x="1440" y="520"/>
+          <di:waypoint x="1500" y="660"/>
+        </bpmndi:BPMNEdge>
+        <bpmndi:BPMNEdge id="xraumbedarf_f7_di" bpmnElement="xraumbedarf_f7">
+          <di:waypoint x="1650" y="660"/>
+          <di:waypoint x="1767" y="660"/>
+        </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
