@@ -28,7 +28,7 @@ const AXES = [
 const BOXES = new Map();
 const boxOpen = (key) => (BOXES.has(key) ? BOXES.get(key) : true);
 
-export const needs = ['processes', 'processDefinitions', 'contacts'];
+export const needs = ['processes', 'processDefinitions', 'services', 'contacts'];
 
 const BASE = '#/app/process-docs';
 const TITLE = 'Prozessdokumentation Bauten';   // Single source for title, breadcrumb, heading, and back links.
@@ -171,7 +171,7 @@ export default async function render(ctx) {
 
 // Der Baum, geteilt von Liste und Prozessansicht: dieselbe Spalte, dieselben
 // drei Stufen, nur die Markierung unterscheidet sich.
-function buildTree({ all, areas, groups, hash, selGroups, activeId, org = [], branches = [], defs = [], activeDef = null }) {
+function buildTree({ all, areas, groups, hash, selGroups, activeId, org = [], branches = [], defs = [], activeDef = null, services = [], domains = [] }) {
   // Zwei Aeste, wie der Katalog drei hat.
   //
   // «Fachliche Prozesse» sind die Prozesse des Immobilienmanagements, wie das
@@ -203,14 +203,42 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, org = [], br
     children: () => kids,
   }], inner);
 
-  const portalNodes = () => defs.map((d) => ({
+  // Die Portal-Ablaeufe haengen an denselben Gruppen wie die Dienstleistungen
+  // im Menue «Dienstleistungen» — Unterbringung, Objektbetrieb, Beschaffung und
+  // so fort. Sie ueber den Dienst zu gruppieren statt sie flach aufzureihen ist
+  // nicht Kosmetik: ein Ablauf gehoert zu dem Anliegen, das ihn ausloest, und
+  // genau darueber sucht ihn jemand.
+  const defNode = (d) => ({
     id: `def:${d.defId}`,
     label: d.name,
     count: (d.steps || []).length,
     countUnit: 'Schritte',
     href: `${BASE}?def=${encodeURIComponent(d.defId)}`,
     state: activeDef === d.defId ? 'active' : '',
-  }));
+  });
+  const portalNodes = () => {
+    const byDomain = new Map();
+    for (const d of defs) {
+      const svc = services.find((x) => x.processDefId === d.defId || x.serviceId === d.serviceId);
+      const key = svc ? svc.domain : '';
+      if (!byDomain.has(key)) byDomain.set(key, []);
+      byDomain.get(key).push(d);
+    }
+    return [...byDomain]
+      .map(([key, mine]) => {
+        const dom = domains.find((x) => x.key === key);
+        return {
+          id: `dom:${key || 'ohne'}`,
+          label: dom ? dom.label : 'Ohne Zuordnung',
+          count: mine.length,
+          countUnit: 'Abläufe',
+          state: mine.some((d) => d.defId === activeDef) ? 'path' : '',
+          hasChildren: true,
+          children: () => mine.map(defNode),
+        };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label, 'de'));
+  };
 
   const branchNode = (b, kids, holdsActive) => ({
     id: `branch:${b.id}`,
@@ -632,6 +660,7 @@ function list(ctx) {
     org: refList(core, 'processOrgLevels'),
     branches: refList(core, 'processBranches'),
     defs, activeDef: query.get('def') || null,
+    services: core.services ? core.services() : [], domains: refList(core, 'domains'),
   });
 
   const filterCount = selGroups.length + selStatus.length;
@@ -982,6 +1011,7 @@ async function detail(ctx, rawId) {
     hash: () => hashFor(p), org: refList(core, 'processOrgLevels'),
     branches: refList(core, 'processBranches'),
     defs: core.processDefinitions ? core.processDefinitions() : [],
+    services: core.services ? core.services() : [], domains: refList(core, 'domains'),
   })));
 
   if (active === 'diagram') startViewer();
