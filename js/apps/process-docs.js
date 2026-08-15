@@ -1,7 +1,7 @@
 import { APPLICATIONS, trail } from '../crumbs.js';
 import { loadExternalAssets } from '../core/external-assets.js';
 import { formatDate } from '../format.js';
-import { safeAssetUrl } from '../security/urls.js';
+import { safeAssetUrl, safeMailto } from '../security/urls.js';
 // Real-estate management process catalogue.
 // Route: #/app/process-docs, with ?id=<processId> details and stable ?tab values.
 // It mirrors the metadata catalogue: a process-area/group tree, catalogue bar,
@@ -413,24 +413,56 @@ function list(ctx) {
 
   // Was der gewaehlte Umfang IST — nicht was darin liegt. Auf der Wurzel der
   // Bereich, sonst die Gruppe.
+  // Dieselbe Form wie im Katalog: Definition, Verantwortlich, Metadaten. Vorher
+  // standen hier drei Kennzahlkacheln — «18 Prozesse, 5 Prozessgruppen, 18
+  // freigegeben». Die Zahlen stehen aber schon im Baum an jeder Zeile und in der
+  // Zaehlung der Leiste; als Kacheln sagten sie es ein drittes Mal und liessen
+  // die Fragen unbeantwortet, die eine Übersicht beantworten soll: was IST
+  // dieser Umfang, wer verantwortet ihn, woher kommt er.
+  const section = (title, body) =>
+    `<section class="detail-section"><h2 class="detail-section__title">${esc(title)}</h2>${body}</section>`;
+  const kv = (rows) => `<dl class="kv kv--ruled">${rows.filter(Boolean)
+    .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
+
   const overviewHtml = () => {
     const one = selGroups.length === 1 ? groups.find((g) => g.key === selGroups[0]) : null;
     const area = areas[0] || {};
-    const mine = one ? all.filter((p) => p.group === one.key) : all;
-    const stat = (label, value) => `<div class="stat"><div class="stat__value">${esc(String(value))}</div>`
-      + `<div class="stat__label">${esc(label)}</div></div>`;
-    return `<section class="detail-section">
-        <h2 class="detail-section__title">${esc(one ? one.label : area.label || TITLE)}</h2>
-        <p>${one
-    ? `Prozessgruppe im Bereich «${esc(area.label || '')}».`
-    : 'Die Prozesse des Immobilienmanagements, gegliedert in Prozessgruppen.'}</p>
-      </section>
-      <section class="detail-section">
-        <h2 class="detail-section__title">Umfang</h2>
-        <div class="stats">${stat('Prozesse', mine.length)}${
-  one ? '' : stat('Prozessgruppen', groups.length)}${
-  stat('Freigegeben', mine.filter((p) => p.status === 'valid').length)}</div>
-      </section>`;
+    const mine = one ? all.filter((x) => x.group === one.key) : all;
+    const contact = core.contacts().find((c) => c.contactId === CONTACT_ID);
+    // Stand ist das juengste Datum im Umfang, nicht ein erfundenes Gesamtdatum.
+    const newest = mine.map((x) => x.updated).filter(Boolean).sort().pop();
+    // Die Quelle ist fuer alle Prozesse dieselbe Ablage; ein Beispiel genuegt,
+    // um sie zu benennen und zu verlinken.
+    const src = (mine.find((x) => x.source && x.source.url) || {}).source;
+    // Systeme und Normen sind Eigenschaften der Prozesse; im Umfang
+    // zusammengefasst sagen sie, woran dieser Teil der Karte haengt.
+    const uniq = (key) => [...new Set(mine.flatMap((x) => x[key] || []))].sort((a, b) => a.localeCompare(b, 'de'));
+    const systems = uniq('systems');
+    const standards = uniq('standards');
+    const byStatus = [...new Set(mine.map((x) => statusOf(core, x.status).label))];
+
+    return section('Definition', `<p class="m-0">${one
+      ? `Prozessgruppe im Bereich «${esc(area.label || '')}». Sie fasst ${mine.length} Prozesse `
+        + 'zusammen, die derselben Phase des Immobilienlebenszyklus angehoeren.'
+      : 'Die Prozesse des Immobilienmanagements des BBL, gegliedert in Prozessgruppen. '
+        + 'Jeder Prozess ist mit BPMN-Diagramm, Prozessschritten und Verantwortlichkeiten erfasst.'}</p>`)
+      + section('Verantwortlich', kv([
+        ['Prozessbereich', esc(area.label || '—')],
+        contact ? ['Fachstelle', esc(contact.name || contact.title || CONTACT_ID)] : null,
+        contact && contact.email
+          ? ['Kontakt', `<a href="${esc(safeMailto(contact.email))}">${esc(contact.email)}</a>`] : null,
+      ]))
+      + section('Metadaten', kv([
+        one ? ['Prozessgruppe', esc(one.label)] : ['Prozessgruppen', String(groups.length)],
+        ['Prozesse', String(mine.length)],
+        ['Status', byStatus.length === 1 ? esc(byStatus[0]) : esc(byStatus.join(', '))],
+        systems.length ? ['Systeme', esc(systems.join(' · '))] : null,
+        standards.length ? ['Normen', esc(standards.join(' · '))] : null,
+        newest ? ['Stand', esc(formatDate(newest))] : null,
+        src && src.url
+          ? ['Quelle', `<a href="${esc(src.url)}" rel="noopener">${esc(new URL(src.url).hostname)}</a>`]
+          : null,
+      ]));
   };
 
   const paneHtml = () => {
