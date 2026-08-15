@@ -188,12 +188,17 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, org = [], br
   // Die Organisation liegt UNTER dem fachlichen Ast: sie sagt, wo dessen
   // Prozesse haengen. Sie traegt keinen Verweis — es gibt nichts, was sie
   // einschraenken wuerde.
-  const nest = (inner) => org.reduceRight((kids, o) => [{
+  // Offen ist, was auf dem WEG zur Auswahl liegt — sonst nichts. Vorher stand
+  // der ganze Baum aufgeschlagen da: neun Portal-Ablaeufe und fuenf
+  // Prozessgruppen auf einmal, obwohl der Leser noch nichts gewaehlt hatte.
+  // Der Katalog macht es umgekehrt und richtig: die Wurzel zeigt die Aeste,
+  // aufgeklappt wird, was man ansieht.
+  const nest = (inner, onPath) => org.reduceRight((kids, o) => [{
     id: `org:${o.id}`,
     label: o.label,
     count: all.length,
     countUnit: 'Prozesse',
-    defaultOpen: true,
+    state: onPath ? 'path' : '',
     hasChildren: true,
     children: () => kids,
   }], inner);
@@ -213,7 +218,6 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, org = [], br
     count: b.id === 'portal' ? defs.length : all.length,
     countUnit: b.id === 'portal' ? 'Abläufe' : 'Prozesse',
     icon: ICON[b.id],
-    defaultOpen: true,
     state: holdsActive ? 'path' : '',
     hasChildren: kids.length > 0,
     children: () => kids,
@@ -265,11 +269,7 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, org = [], br
         // das waere die Zeile ein blosser Verweis mit einem Chevron, das nur
         // aussieht wie ein Bedienelement — anfassen liesse es sich nicht.
         split: true,
-        // Voreingestellt offen, aber zuklappbar: die Bereiche sind die Landkarte
-        // dieser Anwendung, und die zeigt man aufgeschlagen. Wer zuklappt, will
-        // das behalten — auch ueber einen Filterwechsel hinweg (defaultOpen,
-        // nicht open).
-        defaultOpen: true,
+
         hasChildren: mine.length > 0,
         children: () => mine.map((g) => {
           const procs = inArea.filter((p) => p.group === g.key);
@@ -319,7 +319,8 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, org = [], br
           };
         }),
       };
-          })), !activeDef && (!!activeId || !!selGroups.length)),
+          }), !activeDef && (!!activeId || !!selGroups.length)),
+        !activeDef && (!!activeId || !!selGroups.length)),
         branchNode(branches.find((b) => b.id === 'portal') || { id: 'portal', label: 'Kundenportal' },
           portalNodes(), !!activeDef),
       ],
