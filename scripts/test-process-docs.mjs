@@ -80,7 +80,9 @@ const expectedSteps = (file) => {
         hash: location.hash,
         count: document.getElementById('pd-count').textContent.replace(/[\\s\\u00a0]+/g, ' ').trim(),
         chip: (document.querySelector('.active-filter') || {}).textContent,
-        active: (document.querySelector('.pf-tree__children .pf-tree__row.is-active .pf-tree__label') || {}).textContent,
+        // Die Gruppe ist seit der dritten Stufe eine GETEILTE Zeile: die Markierung
+        // sitzt dann auf der Huelle, nicht auf der Zeile darin.
+        active: (document.querySelector('.pf-tree__children :is(.pf-tree__row, .pf-tree__split).is-active .pf-tree__label') || {}).textContent,
       });
     })()`));
     check(/group=bewirtschaftung/.test(o.hash), 'group appears in the hash', o.hash);

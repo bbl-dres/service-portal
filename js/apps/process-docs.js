@@ -300,7 +300,7 @@ function list(ctx) {
     id: 'pd-tree',
     title: 'Prozesshierarchie',
     mode: 'nav',
-    levels: [{ icons: false }, { icons: false }],
+    levels: [{ icons: false }, { icons: false }, { icons: false }],
     sections: [areas.map((a) => {
       const inArea = all.filter((p) => p.area === a.key);
       const mine = groups.filter((g) => inArea.some((p) => p.group === g.key));
@@ -329,14 +329,47 @@ function list(ctx) {
         // nicht open).
         defaultOpen: true,
         hasChildren: mine.length > 0,
-        children: () => mine.map((g) => ({
-          id: `group:${g.key}`,
-          label: g.label,
-          count: inArea.filter((p) => p.group === g.key).length,
-          countUnit: 'Prozesse',
-          href: hash({ q: '', sort: '', group: [g.key], status: [], page: 1 }),
-          state: selGroups.length === 1 && selGroups[0] === g.key ? 'active' : '',
-        })),
+        children: () => mine.map((g) => {
+          const procs = inArea.filter((p) => p.group === g.key);
+          return {
+            id: `group:${g.key}`,
+            label: g.label,
+            count: procs.length,
+            countUnit: 'Prozesse',
+            href: hash({ q: '', sort: '', group: [g.key], status: [], page: 1 }),
+            state: selGroups.length === 1 && selGroups[0] === g.key ? 'active' : '',
+            // Wie der Datensatz im Katalog: die Beschriftung waehlt den Umfang,
+            // das Chevron zeigt, was drin liegt. Zwei Absichten, zwei
+            // Bedienelemente.
+            split: true,
+            // Eine Gruppe zu waehlen heisst NICHT, ihre Prozesse aufzuklappen —
+            // dieselbe Entscheidung wie bei den Attributen im Katalog. Wer den
+            // Umfang einschraenkt, will die Liste daneben sehen, nicht eine
+            // zweite Liste derselben Namen in der Spalte.
+            hasChildren: procs.length > 0,
+            children: () => procs
+              .slice()
+              .sort((x, y) => x.processId.localeCompare(y.processId, undefined, { numeric: true }))
+              .map((pr) => ({
+                id: `proc:${pr.processId}`,
+                // Kein Zaehler: unter einem Prozess liegt nichts mehr, und eine
+                // Zahl, die nichts zaehlt, ist eine Frage ohne Gegenstand.
+                //
+                // Und keine Nummer vor dem Namen. Im Liegenschaften-Baum steht
+                // sie dort («AF Bundeshaus West»), weil sie zwei Zeichen lang
+                // ist. «TQ.21.00.00.30» ist vierzehn und frisst in einer 288px
+                // breiten Spalte genau den Teil des Namens, der die
+                // Geschwister unterscheidet: gemessen standen alle drei
+                // Prozesse der Bewirtschaftung als «Bewirtschaf…» da, und die
+                // Unterschiede — «Anmiet-, Pachtvertraege», «Eigentum,
+                // Stiftungen», «von Vermietungen» — waren abgeschnitten. Die
+                // Nummer steht in der Spalte «Nr.» der Tabelle und auf der
+                // Detailseite; der Baum dient dem Finden nach Namen.
+                label: pr.name,
+                href: processHref(pr.processId),
+              })),
+          };
+        }),
       };
     })],
   });
