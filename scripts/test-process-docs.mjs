@@ -52,6 +52,8 @@ const expectedSteps = (file) => {
       // Geschaeftsarchitektur, und das Diagramm ist die Voreinstellung.
       boxes: document.querySelectorAll('.lscape__group').length,
       tiles: document.querySelectorAll('.lscape__tile').length,
+      cards: document.querySelectorAll('#pd-panel .stats .card').length,
+      sections: [...document.querySelectorAll('#pd-panel .detail-section__title')].map(t => t.textContent),
       views: [...document.querySelectorAll('.view-switch__btn')].map(b => b.getAttribute('aria-label')).join('|'),
       cols: [...document.querySelectorAll('.pf-main thead th')].map(t => t.textContent.trim()),
     })`));
@@ -62,19 +64,31 @@ const expectedSteps = (file) => {
       o.orgChain.join(' > '));
     check(o.leaves.length === 5, 'five process groups (L2)', o.leaves.join(', '));
     check(o.leafCounts.reduce((a, b) => a + b, 0) === 18, 'group counts sum to 18', o.leafCounts.join('+'));
-    check(o.views === 'Übersicht|Diagramm|Tabelle', 'the same three views as the architecture catalogue', o.views);
-    check(o.boxes === 5 && o.tiles === 18,
-      'and it opens on the diagram: one box per process group', `${o.boxes} Kaesten · ${o.tiles} Kacheln`);
+    // Die Wurzel ist kein Umfang, sondern der Weg hinein — wie im Katalog auf
+    // Stufe 0: keine Ansichtswahl, sondern eine Einstiegsseite.
+    check(o.views === '', 'the root offers no view switch: it is the way in, not a scope', o.views || '(keine)');
+    check(o.cards === 5 && /Letzte Änderungen/.test(o.sections.join('|')),
+      'the root is an overview: one card per process group, plus what changed',
+      `${o.cards} Karten · ${o.sections.join(' | ')}`);
     // Die Tabelle liegt einen Klick daneben und teilt sich nach derselben Achse.
+    // Ein Umfang, dann die Sichten: erst dort gibt es etwas zu wechseln.
     const tbl = JSON.parse(await p.evaluate(`(async () => {
+      location.hash = '/app/process-docs?group=bewirtschaftung';
+      await new Promise(r => setTimeout(r, 900));
+      const views = [...document.querySelectorAll('.view-switch__btn')].map(b => b.getAttribute('aria-label')).join('|');
+      const boxes = document.querySelectorAll('.lscape__group').length;
       document.querySelector('#view-tabelle').click();
       await new Promise(r => setTimeout(r, 700));
       return JSON.stringify({
+        views, boxes,
         rows: document.querySelectorAll('.pf-main tbody tr:not(.table__group):not(.table__subhead)').length,
         cols: [...document.querySelectorAll('.pf-main thead th')].map(t => t.textContent.trim()).join('|'),
       });
     })()`));
-    check(tbl.rows === 18, 'the table lists every process in scope', String(tbl.rows));
+    check(tbl.views === 'Übersicht|Diagramm|Tabelle',
+      'a scope offers the same three views as the architecture catalogue', tbl.views);
+    check(tbl.boxes >= 1, 'and opens on the diagram', `${tbl.boxes} Kaesten`);
+    check(tbl.rows === 3, 'the table lists every process in scope', String(tbl.rows));
     check(tbl.cols === 'Nr.|Prozess|Prozessgruppe|Status', 'list-view columns', tbl.cols);
     await clean(p, 'process map');
 

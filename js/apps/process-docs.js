@@ -400,14 +400,14 @@ function list(ctx) {
   // Reihenfolge wie im Katalog: erst zuklappen, dann was die Flaeche ORDNET,
   // dann was auf sie WIRKT.
   const toolsHtml = () => {
-    const anyOpen = view === 'diagramm' && boxes().some((b) => boxOpen(`box:${b.key}`));
+    const anyOpen = !atRoot && view === 'diagramm' && boxes().some((b) => boxOpen(`box:${b.key}`));
     // Die Beschriftung sagt, was der Druck TUN wird, nicht wie der Zustand heisst.
-    const fold = view !== 'diagramm' ? '' : `
+    const fold = atRoot || view !== 'diagramm' ? '' : `
       <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-lscape-all="${anyOpen ? 'shut' : 'open'}">
         ${C.icon(anyOpen ? 'Minus' : 'Plus', 'btn__icon')}
         <span class="btn__text">Alle ${anyOpen ? 'zuklappen' : 'aufklappen'}</span></button>`;
     // Gruppieren ordnet viele Prozesse; in der Übersicht steht keiner zur Wahl.
-    const group = view === 'uebersicht' ? '' : C.menu({
+    const group = atRoot || view === 'uebersicht' ? '' : C.menu({
       menuId: 'pd-group', label: 'Gruppieren', triggerLabel: `Gruppieren: ${axis.label}`,
       items: AXES.map((x) => ({ action: `axis:${x.value}`, label: x.label })),
     });
@@ -444,7 +444,80 @@ function list(ctx) {
   const kv = (rows) => `<dl class="kv kv--ruled">${rows.filter(Boolean)
     .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
 
-  const overviewHtml = () => {
+  // «Wurzel» heisst: nichts eingeschraenkt. Sobald eine Gruppe, ein Status oder
+  // eine Suche im Spiel ist, sieht der Leser einen Umfang an und will ihn
+  // ansehen koennen — dann treten die drei Sichten an.
+  const atRoot = !selGroups.length && !selStatus.length && !rawQ;
+
+  // Die Wurzel ist kein Umfang, sondern der Weg hinein — genau wie im Katalog.
+  // Darum keine Ansichtswahl und keine Metadatenliste, sondern drei Fragen, mit
+  // denen ein Leser tatsaechlich ankommt: wie gross ist das hier, was hat sich
+  // zuletzt bewegt, und wie teilt es sich.
+  const homeHtml = () => {
+    // Eine Karte je Prozessgruppe. Die Zahlen der Zustaende werden GEZAEHLT, nicht
+    // benannt: welche es gibt, ist Sache der Daten, und «Gültig · Entwurf» hier
+    // hineinzuschreiben ginge beim ersten neuen Wert der Werteliste schief.
+    const cards = groups.map((g) => {
+      const mine = all.filter((x) => x.group === g.key);
+      const tally = new Map();
+      mine.forEach((x) => { const k = statusOf(core, x.status).label;
+        tally.set(k, (tally.get(k) || 0) + 1); });
+      const detail = [...tally].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${k}`).join(' · ');
+      return `<a class="card card--default card--clickable" href="${esc(hashA({ q: '', sort: '', group: [g.key], status: [], page: 1 }))}">
+        <div class="card__body">
+          <p class="stat__num">${mine.length}</p>
+          <h2 class="stat__label">${esc(g.label)}</h2>
+          <p class="card__text">${esc(detail)}</p>
+        </div></a>`;
+    }).join('');
+
+    const recent = all.filter((x) => x.updated)
+      .slice()
+      .sort((a, b) => String(b.updated).localeCompare(String(a.updated)))
+      .slice(0, 8);
+
+    // Wie sich die Karte teilt — und woran jede Gruppe haengt.
+    const byGroup = groups.map((g) => {
+      const mine = all.filter((x) => x.group === g.key);
+      return {
+        name: g.label, n: mine.length,
+        systems: [...new Set(mine.flatMap((x) => x.systems || []))].length,
+        href: hashA({ q: '', sort: '', group: [g.key], status: [], page: 1 }),
+      };
+    });
+
+    return `<div class="stats">${cards}</div>
+
+      <section class="detail-section">
+        <h2 class="detail-section__title">Letzte Änderungen</h2>
+        ${C.table({ zebra: true, compact: true, caption: 'Zuletzt geänderte Prozesse', rows: recent,
+    emptyText: 'Für keinen Prozess ist ein Änderungsdatum erfasst.',
+    columns: [
+      { key: 'name', label: 'Prozess',
+        render: (r) => `<a href="${esc(processHref(r.processId))}">${esc(r.name)}</a>` },
+      { key: 'group', label: 'Prozessgruppe', width: '13rem', render: (r) => esc(r.groupLabel) },
+      { key: 'status', label: 'Status', width: '9rem',
+        render: (r) => esc(statusOf(core, r.status).label) },
+      { key: 'updated', label: 'Geändert', width: '8rem', nowrap: true,
+        render: (r) => esc(formatDate(r.updated)) },
+    ] })}
+      </section>
+
+      <section class="detail-section">
+        <h2 class="detail-section__title">Prozessgruppen</h2>
+        ${C.table({ zebra: true, compact: true, caption: 'Prozessgruppen des Immobilienmanagements', rows: byGroup,
+    columns: [
+      { key: 'name', label: 'Prozessgruppe',
+        render: (r) => `<a href="${esc(r.href)}">${esc(r.name)}</a>` },
+      { key: 'n', label: 'Umfang', width: '11rem', render: (r) => `${r.n} Prozesse` },
+      { key: 'systems', label: 'Systeme', width: '9rem', render: (r) => String(r.systems) },
+    ] })}
+      </section>`;
+  };
+
+  // Ein gewaehlter Umfang bekommt seine Metadaten — was er IST, wer ihn
+  // verantwortet, woher er kommt.
+  const scopeOverviewHtml = () => {
     const one = selGroups.length === 1 ? groups.find((g) => g.key === selGroups[0]) : null;
     const area = areas[0] || {};
     const mine = one ? all.filter((x) => x.group === one.key) : all;
@@ -489,7 +562,9 @@ function list(ctx) {
     if (!core.available('processes')) {
       return C.empty('Prozesse konnten nicht geladen werden (Ladefehler).', { available: false });
     }
-    if (view === 'uebersicht') return overviewHtml();
+    // Die Wurzel: kein Umfang gewaehlt, keine Anfrage — der Weg hinein.
+    if (atRoot) return homeHtml();
+    if (view === 'uebersicht') return scopeOverviewHtml();
     if (view === 'diagramm') {
       // EINE Kachel je Reihe: Prozessnamen sind Saetze, keine Begriffe.
       // Zweispaltig blieb von «Objektuebergabe an LB, Mieter» ein
@@ -527,14 +602,20 @@ function list(ctx) {
     ${C.catalogueBar({
       formId: 'pd-search', inputId: 'pd-q', searchLabel: 'Prozess suchen', placeholder: 'Prozess suchen…', q: rawQ,
       countId: 'pd-count',
-      count: `<strong>${sorted.length}</strong> von ${all.length} ${esc(unit.dat)}${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
+      // Keine Seitenangabe mehr: seit die Flaeche Diagramm, Tabelle und Übersicht
+      // zeigt statt einer geblaetterten Kartenliste, gibt es keine Seiten. «Seite
+      // 1 von 2» versprach eine zweite, die es nicht gibt.
+      count: `<strong>${sorted.length}</strong> von ${all.length} ${esc(unit.dat)}`,
       sort: { id: 'pd-sort', value: sortKey, options: SORTS.map((s) => ({ value: s.value, label: s.label })) },
       filterId: 'pd-filter', filterLabel: 'Filter', filterCount,
       panelId: 'pd-filters', panel,
       view,
       extra: `<span id="pd-tools">${toolsHtml()}</span>`,
-      views: [['uebersicht', 'Übersicht', 'InfoCircle'], ['diagramm', 'Diagramm', 'Apps'],
-        ['tabelle', 'Tabelle', 'List']],
+      // Auf der Wurzel gibt es nichts zu wechseln: sie ist der Weg hinein, kein
+      // Umfang — dieselbe Regel wie im Katalog auf Stufe 0.
+      views: atRoot ? null
+        : [['uebersicht', 'Übersicht', 'InfoCircle'], ['diagramm', 'Diagramm', 'Apps'],
+          ['tabelle', 'Tabelle', 'List']],
     })}
     ${C.activeFilters({ filters: active, resetHref: BASE })}
     <div class="pf-layout">
@@ -545,9 +626,9 @@ function list(ctx) {
     </div>
   </div>`;
 
-  C.announceCatalogue({ count: sorted.length, total: all.length, unit, page, totalPages, view });
+  C.announceCatalogue({ count: sorted.length, total: all.length, unit, view });
   C.wireCatalogue(mount, {
-    formId: 'pd-search', inputId: 'pd-q', pageInputId: 'pd-page', page, totalPages, hash,
+    formId: 'pd-search', inputId: 'pd-q', hash,
     sortId: 'pd-sort', filterToggleId: 'pd-filter', panelId: 'pd-filters',
   });
   ctx.onUnmount(C.wireTableRows(mount));
