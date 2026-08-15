@@ -11,7 +11,7 @@ let DEFS = [];
 let SEEDED = [];
 
 // Failure register: the same principle as core/index.js. Without it, a 404 for
-// process-definitions.json remained invisible: DEFS = [], no message, and
+// the definition source remained invisible: DEFS = [], no message, and
 // start() invented a replacement definition (H10).
 const FAILED = new Set();
 const DATA_AREA_LABELS = { definitions: 'Prozessdefinitionen', instances: 'Vorgänge' };
@@ -97,12 +97,18 @@ function mutateLS(change) {
 async function load() {
   FAILED.clear();
   const [definitions, instances] = await Promise.allSettled([
-    fetchJSON('data/process-definitions.json', { shape: 'array' }),
+    // Die Ablaufdefinitionen stehen seit 2026-08-15 in processes.json, zusammen
+    // mit den fachlichen Prozessen: eine Quelle fuer alles, was ein Prozess ist.
+    // Der Motor nimmt sich daraus die Datensaetze des Portal-Astes — sie tragen
+    // dieselben Felder wie zuvor (defId hiess dort processId).
+    fetchJSON('data/processes.json', { shape: 'array' }),
     fetchJSON('data/process-instances.json', { shape: 'array' }),
   ]);
   try {
     if (definitions.status !== 'fulfilled') throw definitions.reason;
-    DEFS = cleanDefinitions(definitions.value);
+    DEFS = cleanDefinitions((definitions.value || [])
+      .filter((r) => r && r.branch === 'portal' && Array.isArray(r.steps) && r.steps.length)
+      .map((r) => ({ ...r, defId: r.processId })));
   } catch (error) {
     console.warn('[engine] definitions', error?.message);
     DEFS = [];

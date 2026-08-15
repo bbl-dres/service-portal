@@ -186,7 +186,13 @@ export default async function render(ctx) {
   // Process definitions normally load only through the engine; load them once
   // here to populate process-definitions examples outside the core inventory.
   let processDefs = [];
-  try { processDefs = await fetchJSON('data/process-definitions.json', { shape: 'array', signal }); } catch (e) { /* Examples remain unavailable. */ }
+  // Seit 2026-08-15 stehen die Ablaufdefinitionen in processes.json (Ast
+  // «portal»), zusammen mit den fachlichen Prozessen.
+  try {
+    const all = await fetchJSON('data/processes.json', { shape: 'array', signal });
+    processDefs = (all || []).filter((r) => r && r.branch === 'portal')
+      .map((r) => ({ ...r, defId: r.processId }));
+  } catch (e) { /* Examples remain unavailable. */ }
   if (stale && stale()) return;
   const spec = specs[specId];
 

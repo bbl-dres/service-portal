@@ -1,4 +1,4 @@
-// Aus data/process-definitions.json grobe BPMN-Dateien bauen.
+// Aus dem Portal-Ast von data/processes.json grobe BPMN-Dateien bauen.
 //
 // Die Ablaeufe des Portals sind als Schrittketten erfasst — Status, Bezeichnung,
 // Rolle, Art. Das ist genug fuer ein lesbares Diagramm: Startereignis, je Schritt
@@ -13,7 +13,11 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const ROOT = 'c:/Users/david/Documents/GitHub/service-portal/';
 const OUT = ROOT + 'assets/bpmn/';
-const defs = JSON.parse(readFileSync(ROOT + 'data/process-definitions.json', 'utf8'));
+// Seit 2026-08-15 stehen die Ablaeufe in processes.json, unterschieden durch
+// ihren Ast. `defId` heisst dort `processId`.
+const defs = JSON.parse(readFileSync(ROOT + 'data/processes.json', 'utf8'))
+  .filter((r) => r.branch === 'portal' && Array.isArray(r.steps) && r.steps.length)
+  .map((r) => ({ ...r, defId: r.processId }));
 
 const esc = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

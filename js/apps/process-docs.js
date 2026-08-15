@@ -28,7 +28,10 @@ const AXES = [
 const BOXES = new Map();
 const boxOpen = (key) => (BOXES.has(key) ? BOXES.get(key) : true);
 
-export const needs = ['processes', 'processDefinitions', 'services', 'contacts'];
+// EINE Quelle fuer die Prozessdokumentation: processes.json traegt beide Aeste
+// mit allem, was eine Zeile braucht. Dazu die Diagramme unter assets/bpmn/ und
+// die Kontakte fuer die Fachstelle in der Übersicht.
+export const needs = ['processes', 'contacts'];
 
 const BASE = '#/app/process-docs';
 const TITLE = 'Prozessdokumentation Bauten';   // Single source for title, breadcrumb, heading, and back links.
@@ -176,85 +179,107 @@ export default async function render(ctx) {
 
 // Der Baum, geteilt von Liste und Prozessansicht: dieselbe Spalte, dieselben
 // drei Stufen, nur die Markierung unterscheidet sich.
-function buildTree({ all, areas, groups, hash, selGroups, activeId, org = [], branches = [], defs = [], activeDef = null, services = [], domains = [] }) {
-  // Zwei Aeste, wie der Katalog drei hat.
-  //
-  // «Fachliche Prozesse» sind die Prozesse des Immobilienmanagements, wie das
-  // Architektur-Repository sie fuehrt. Darunter haengt die Organisation
-  // (BBL Bauten) und darunter der Prozessbereich — «Immobilienmanagement (K0)»
-  // ist nur EINER davon, in der Produktion kommen weitere dazu.
-  //
-  // «Kundenportal» sind die Ablaeufe des Portals selbst: welche Schritte ein
-  // Antrag durchlaeuft und wer ihn bearbeitet. Sie standen bisher nirgends,
-  // obwohl sie dokumentiert sind — und wer sie nicht sieht, kann auch nicht
-  // sagen, dass ein Schritt fehlt oder einer zu viel ist.
+function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = null }) {
+  // EINE Quelle: jeder Datensatz sagt selbst, in welchem Ast er haengt
+  // (branch/branchLabel), unter welcher Organisation (org) und in welcher
+  // Gruppe MIT Bezeichnung (group/groupLabel). Der Baum fuegt nichts mehr
+  // zusammen — er gruppiert nur noch, was auf den Zeilen steht.
   const ICON = { fachlich: 'tree/workflow', portal: 'tree/app-window' };
+  const UNIT = { fachlich: 'Prozesse', portal: 'Abläufe' };
 
-  // Die Organisation liegt UNTER dem fachlichen Ast: sie sagt, wo dessen
-  // Prozesse haengen. Sie traegt keinen Verweis — es gibt nichts, was sie
-  // einschraenken wuerde.
-  // Offen ist, was auf dem WEG zur Auswahl liegt — sonst nichts. Vorher stand
-  // der ganze Baum aufgeschlagen da: neun Portal-Ablaeufe und fuenf
-  // Prozessgruppen auf einmal, obwohl der Leser noch nichts gewaehlt hatte.
-  // Der Katalog macht es umgekehrt und richtig: die Wurzel zeigt die Aeste,
-  // aufgeklappt wird, was man ansieht.
-  const nest = (inner, onPath) => org.reduceRight((kids, o) => [{
-    id: `org:${o.id}`,
-    label: o.label,
-    count: all.length,
-    countUnit: 'Prozesse',
-    state: onPath ? 'path' : '',
-    hasChildren: true,
-    children: () => kids,
-  }], inner);
-
-  // Die Portal-Ablaeufe haengen an denselben Gruppen wie die Dienstleistungen
-  // im Menue «Dienstleistungen» — Unterbringung, Objektbetrieb, Beschaffung und
-  // so fort. Sie ueber den Dienst zu gruppieren statt sie flach aufzureihen ist
-  // nicht Kosmetik: ein Ablauf gehoert zu dem Anliegen, das ihn ausloest, und
-  // genau darueber sucht ihn jemand.
-  const defNode = (d) => ({
-    id: `def:${d.defId}`,
-    label: d.name,
-    count: (d.steps || []).length,
-    countUnit: 'Schritte',
-    href: `${BASE}?def=${encodeURIComponent(d.defId)}`,
-    state: activeDef === d.defId ? 'active' : '',
-  });
-  const portalNodes = () => {
-    const byDomain = new Map();
-    for (const d of defs) {
-      const svc = services.find((x) => x.processDefId === d.defId || x.serviceId === d.serviceId);
-      const key = svc ? svc.domain : '';
-      if (!byDomain.has(key)) byDomain.set(key, []);
-      byDomain.get(key).push(d);
-    }
-    return [...byDomain]
-      .map(([key, mine]) => {
-        const dom = domains.find((x) => x.key === key);
-        return {
-          id: `dom:${key || 'ohne'}`,
-          label: dom ? dom.label : 'Ohne Zuordnung',
-          count: mine.length,
-          countUnit: 'Abläufe',
-          state: mine.some((d) => d.defId === activeDef) ? 'path' : '',
-          hasChildren: true,
-          children: () => mine.map(defNode),
-        };
-      })
-      .sort((a, b) => a.label.localeCompare(b.label, 'de'));
+  // Die Organisation liegt UNTER dem Ast und kommt vom Datensatz — damit ein
+  // zweiter Prozessbereich unter einer anderen Einheit haengen kann.
+  const nest = (rows, inner, onPath) => {
+    const chain = (rows[0] || {}).org || [];
+    return chain.reduceRight((kids, label) => [{
+      id: `org:${label}`,
+      label,
+      count: rows.length,
+      countUnit: 'Prozesse',
+      state: onPath ? 'path' : '',
+      hasChildren: true,
+      children: () => kids,
+    }], inner);
   };
 
-  const branchNode = (b, kids, holdsActive) => ({
-    id: `branch:${b.id}`,
-    label: b.label,
-    count: b.id === 'portal' ? defs.length : all.length,
-    countUnit: b.id === 'portal' ? 'Abläufe' : 'Prozesse',
-    icon: ICON[b.id],
-    state: holdsActive ? 'path' : '',
-    hasChildren: kids.length > 0,
-    children: () => kids,
+  const leafNode = (r) => ({
+    id: `proc:${r.processId}`,
+    label: r.name,
+    href: r.branch === 'portal'
+      ? `${BASE}?def=${encodeURIComponent(r.processId)}`
+      : processHref(r.processId),
+    state: (activeId === r.processId || activeDef === r.processId) ? 'active' : '',
   });
+
+  const groupNodes = (rows, holdsActive) => {
+    const by = new Map();
+    for (const r of rows) {
+      if (!by.has(r.group)) by.set(r.group, { label: r.groupLabel || r.group, rows: [] });
+      by.get(r.group).rows.push(r);
+    }
+    return [...by].map(([key, g]) => ({
+      id: `group:${key}`,
+      label: g.label,
+      count: g.rows.length,
+      countUnit: 'Prozesse',
+      href: hash({ q: '', sort: '', group: [key], status: [], page: 1 }),
+      state: g.rows.some((r) => r.processId === activeId || r.processId === activeDef) ? 'path'
+        : selGroups.length === 1 && selGroups[0] === key ? 'active' : '',
+      split: true,
+      hasChildren: g.rows.length > 0,
+      children: () => g.rows
+        .slice()
+        .sort((a, b) => String(a.processId).localeCompare(String(b.processId), undefined, { numeric: true }))
+        .map(leafNode),
+    }));
+  };
+
+  // Der fachliche Ast traegt zusaetzlich seinen Prozessbereich; der Portal-Ast
+  // nicht — ein Ablauf haengt am Anliegen, nicht an einer Verwaltungseinheit.
+  const areaNodes = (rows, holdsActive) => areas
+    .filter((a) => rows.some((r) => r.area === a.key))
+    .map((a) => {
+      const mine = rows.filter((r) => r.area === a.key);
+      return {
+        id: `area:${a.key}`,
+        label: a.label,
+        count: mine.length,
+        countUnit: 'Prozesse',
+        href: hash({ sort: '', group: [], status: [], page: 1 }),
+        state: holdsActive && mine.some((r) => r.processId === activeId
+          || (selGroups.length === 1 && r.group === selGroups[0])) ? 'path' : '',
+        split: true,
+        hasChildren: true,
+        children: () => groupNodes(mine, holdsActive),
+      };
+    });
+
+  const branchNode = (id, rows) => {
+    // Auf dem Weg liegt der Ast auch dann, wenn eine seiner GRUPPEN gewaehlt
+    // ist — nicht nur, wenn ein einzelner Datensatz offen steht. Sonst bleibt
+    // er zu, und die gewaehlte Gruppe waere unsichtbar.
+    const holds = rows.some((r) => r.processId === activeId || r.processId === activeDef
+      || (selGroups.length === 1 && r.group === selGroups[0]));
+    const inner = id === 'fachlich'
+      ? nest(rows, areaNodes(rows, holds), holds)
+      : groupNodes(rows, holds);
+    return {
+      id: `branch:${id}`,
+      label: (rows[0] || {}).branchLabel || id,
+      count: rows.length,
+      countUnit: UNIT[id] || 'Prozesse',
+      icon: ICON[id],
+      state: holds ? 'path' : '',
+      hasChildren: rows.length > 0,
+      children: () => inner,
+    };
+  };
+
+  const byBranch = new Map();
+  for (const r of all) {
+    if (!byBranch.has(r.branch)) byBranch.set(r.branch, []);
+    byBranch.get(r.branch).push(r);
+  }
 
   return ({
     id: 'pd-tree',
@@ -282,83 +307,8 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, org = [], br
         state: !activeId && !selGroups.length ? 'active' : '',
       }],
       [
-        branchNode(branches.find((b) => b.id === 'fachlich') || { id: 'fachlich', label: 'Fachliche Prozesse' },
-          nest(areas.map((a) => {
-      const inArea = all.filter((p) => p.area === a.key);
-      const mine = groups.filter((g) => inArea.some((p) => p.group === g.key));
-      // Ein Bereich liegt auf dem WEG zur Auswahl, wenn eine seiner Gruppen
-      // gewaehlt ist — er ist nie selbst die Auswahl. Vorher trug er
-      // «is-active», sobald ueberhaupt nicht gefiltert war: dann leuchteten
-      // alle sechs Bereiche gleichzeitig, was nichts aussagt.
-      const holdsSel = selGroups.length === 1 && mine.some((g) => g.key === selGroups[0]);
-      return {
-        id: `area:${a.key}`,
-        label: a.label,
-        count: inArea.length,
-        countUnit: 'Prozesse',
-        // Der Bereich ist keine Filterachse — sein Verweis raeumt den
-        // Gruppenfilter ab. Suche und Ansicht bleiben stehen, damit ein Wechsel
-        // nicht nebenbei den Suchtext wegwirft.
-        href: hash({ sort: '', group: [], status: [], page: 1 }),
-        state: holdsSel || (activeId && inArea.some((x) => x.processId === activeId)) ? 'path' : '',
-        // Geteilte Zeile: das Chevron klappt, die Beschriftung navigiert. Ohne
-        // das waere die Zeile ein blosser Verweis mit einem Chevron, das nur
-        // aussieht wie ein Bedienelement — anfassen liesse es sich nicht.
-        split: true,
-
-        hasChildren: mine.length > 0,
-        children: () => mine.map((g) => {
-          const procs = inArea.filter((p) => p.group === g.key);
-          return {
-            id: `group:${g.key}`,
-            label: g.label,
-            count: procs.length,
-            countUnit: 'Prozesse',
-            href: hash({ q: '', sort: '', group: [g.key], status: [], page: 1 }),
-            state: activeId && procs.some((x) => x.processId === activeId) ? 'path'
-              : selGroups.length === 1 && selGroups[0] === g.key ? 'active' : '',
-            // Wie der Datensatz im Katalog: die Beschriftung waehlt den Umfang,
-            // das Chevron zeigt, was drin liegt. Zwei Absichten, zwei
-            // Bedienelemente.
-            split: true,
-            // Eine Gruppe zu waehlen heisst NICHT, ihre Prozesse aufzuklappen —
-            // dieselbe Entscheidung wie bei den Attributen im Katalog. Wer den
-            // Umfang einschraenkt, will die Liste daneben sehen, nicht eine
-            // zweite Liste derselben Namen in der Spalte.
-            hasChildren: procs.length > 0,
-            children: () => procs
-              .slice()
-              .sort((x, y) => x.processId.localeCompare(y.processId, undefined, { numeric: true }))
-              .map((pr) => ({
-                id: `proc:${pr.processId}`,
-                // Kein Zaehler: unter einem Prozess liegt nichts mehr, und eine
-                // Zahl, die nichts zaehlt, ist eine Frage ohne Gegenstand.
-                //
-                // Und keine Nummer vor dem Namen. Im Liegenschaften-Baum steht
-                // sie dort («AF Bundeshaus West»), weil sie zwei Zeichen lang
-                // ist. «TQ.21.00.00.30» ist vierzehn und frisst in einer 288px
-                // breiten Spalte genau den Teil des Namens, der die
-                // Geschwister unterscheidet: gemessen standen alle drei
-                // Prozesse der Bewirtschaftung als «Bewirtschaf…» da, und die
-                // Unterschiede — «Anmiet-, Pachtvertraege», «Eigentum,
-                // Stiftungen», «von Vermietungen» — waren abgeschnitten. Die
-                // Nummer steht in der Spalte «Nr.» der Tabelle und auf der
-                // Detailseite; der Baum dient dem Finden nach Namen.
-                label: pr.name,
-                href: processHref(pr.processId),
-                // Der gewaehlte Prozess ist die Auswahl; seine Gruppe und sein
-                // Bereich liegen auf dem Weg dorthin. Das Bauteil klappt einen
-                // Weg von selbst auf, also findet man die Zeile auch dann, wenn
-                // man ueber einen Verweis von aussen hereinkommt.
-                state: activeId === pr.processId ? 'active' : '',
-              })),
-          };
-        }),
-      };
-          }), !activeDef && (!!activeId || !!selGroups.length)),
-        !activeDef && (!!activeId || !!selGroups.length)),
-        branchNode(branches.find((b) => b.id === 'portal') || { id: 'portal', label: 'Kundenportal' },
-          portalNodes(), !!activeDef),
+        branchNode('fachlich', byBranch.get('fachlich') || []),
+        branchNode('portal', byBranch.get('portal') || []),
       ],
     ],
   });
@@ -370,7 +320,14 @@ function list(ctx) {
   setTitle(TITLE);
   setCrumbs(trail(APPLICATIONS, { label: TITLE }));
 
-  const all = core.processes();
+  // Der ganze Bestand — beide Aeste — fuer den Baum und die Einstiegsseite.
+  const everything = core.processes();
+  // Die LISTE zeigt die fachlichen Prozesse. Prozessbereich, Prozessgruppe,
+  // Status und Nummer sind ihre Begriffe; ein Portal-Ablauf hat keinen
+  // Prozessbereich und keine TQ-Nummer, und in derselben Tabelle
+  // nebeneinandergestellt behaupten die Spalten etwas Falsches ueber ihn. Er
+  // hat seine eigene Stufe im Baum und seine eigenen drei Sichten.
+  const all = everything.filter((p) => p.branch !== 'portal');
   // Derive L1/L2 ordering from first appearance in the process inventory.
   const areas = [...new Map(all.map((p) => [p.area, { key: p.area, code: p.areaCode, label: p.areaLabel }])).values()];
   const groups = [...new Map(all.map((p) => [p.group, { key: p.group, label: p.groupLabel }])).values()];
@@ -523,19 +480,25 @@ function list(ctx) {
     // die Einstiegsseite die Gruppen eines beliebigen davon auf. Die Aeste sind
     // die stabile Teilung: was fachlich dokumentiert ist, und was das Portal
     // selbst tut.
-    const branches = refList(core, 'processBranches');
-    const cards = branches.map((b) => {
-      const isPortal = b.id === 'portal';
-      const n = isPortal ? defs.length : all.length;
+    // Eine Karte je Ast, gebildet aus den Datensaetzen selbst: ihr Ast und
+    // dessen Bezeichnung stehen auf jeder Zeile.
+    const byBranch = new Map();
+    for (const r of everything) {
+      if (!byBranch.has(r.branch)) byBranch.set(r.branch, []);
+      byBranch.get(r.branch).push(r);
+    }
+    const cards = [...byBranch].map(([bid, rows]) => {
+      const isPortal = bid === 'portal';
       const detail = isPortal
-        ? `${defs.reduce((a, d) => a + (d.steps || []).length, 0)} Schritte · `
-          + `${new Set(defs.map((d) => d.audience)).size} Zielgruppen`
-        : `${groups.length} Prozessgruppen · ${new Set(all.map((x) => x.area)).size} Prozessbereich`;
+        ? `${rows.reduce((a, r) => a + (r.steps || []).length, 0)} Schritte · `
+          + `${new Set(rows.map((r) => r.audience)).size} Zielgruppen`
+        : `${new Set(rows.map((r) => r.group)).size} Prozessgruppen · `
+          + `${new Set(rows.map((r) => r.area)).size} Prozessbereich`;
       return `<a class="card card--default card--clickable" href="${esc(isPortal
         ? `${BASE}?branch=portal` : hashA({ q: '', sort: '', group: [], status: [], page: 1 }))}">
         <div class="card__body">
-          <p class="stat__num">${n}</p>
-          <h2 class="stat__label">${esc(b.label)}</h2>
+          <p class="stat__num">${rows.length}</p>
+          <h2 class="stat__label">${esc((rows[0] || {}).branchLabel || bid)}</h2>
           <p class="card__text">${esc(detail)}</p>
         </div></a>`;
     }).join('');
@@ -653,13 +616,9 @@ function list(ctx) {
   // Prozesse (L3) stehen in der Liste daneben. Beide Stufen ohne Symbol — die
   // Einrueckung sagt bereits, was wozu gehoert, und ein Symbol, das auf jeder
   // Zeile dasselbe zeigt, unterscheidet nichts.
-  const defs = core.processDefinitions ? core.processDefinitions() : [];
   const treeConfig = () => buildTree({
-    all, areas, groups, hash: hashA, selGroups, activeId: null,
-    org: refList(core, 'processOrgLevels'),
-    branches: refList(core, 'processBranches'),
-    defs, activeDef: query.get('def') || null,
-    services: core.services ? core.services() : [], domains: refList(core, 'domains'),
+    all: everything, areas, groups, hash: hashA, selGroups, activeId: null,
+    activeDef: query.get('def') || null,
   });
 
   mount.innerHTML = `
@@ -762,26 +721,12 @@ async function detail(ctx, rawId, { portal = false } = {}) {
   // Betrachter und Schritt-Tabelle dieselben bleiben. Was er NICHT hat —
   // Prozessbereich, Version, verantwortliche Personen — bekommt er auch nicht
   // angedichtet; seine Übersicht ist eine eigene (siehe portalOverviewHTML).
-  const def = portal ? core.processDefinition(rawId) : null;
-  const svc = portal && def
-    ? (core.services() || []).find((x) => x.processDefId === def.defId || x.serviceId === def.serviceId)
-    : null;
-  const dom = svc ? (core.ref().domains || []).find((x) => x.key === svc.domain) : null;
-  const p = portal
-    ? (def && {
-      processId: def.defId,
-      name: def.name,
-      description: svc ? svc.short || svc.description || '' : '',
-      // Voller Pfad wie in processes.json — safeAssetUrl prueft gegen dieses
-      // Praefix, ein blosser Dateiname faellt durch und die Datei bliebe leer.
-      bpmn: `assets/bpmn/portal-${def.defId}.bpmn`,
-      group: svc ? svc.domain : '',
-      groupLabel: dom ? dom.label : 'Kundenportal',
-      steps: def.steps || [],
-      audience: def.audience,
-      serviceId: def.serviceId,
-    })
-    : core.processDoc(rawId);
+  // Kein Zusammenfuegen mehr: der Datensatz traegt alles, was die Ansicht
+  // braucht — Ast, Gruppe mit Bezeichnung, Schritte, Zielgruppe, Diagrammpfad.
+  // Vorher wurde ein Portal-Ablauf aus drei Dateien gebaut (Definition, Dienst,
+  // Domaenenliste), und jede Zeile der Ansicht haette an einer davon scheitern
+  // koennen.
+  const p = core.processDoc(rawId);
   if (!p) {
     return C.renderNotFound(ctx, {
       thing: 'Dieser Prozess', title: 'Prozess nicht gefunden',
@@ -1065,10 +1010,8 @@ async function detail(ctx, rawId, { portal = false } = {}) {
 
   ctx.onUnmount(C.sidebarTree(mount.querySelector('#pd-tree'), buildTree({
     all: allProcs, areas, groups, selGroups: [], activeId: p.processId,
-    hash: () => hashFor(p), org: refList(core, 'processOrgLevels'),
-    branches: refList(core, 'processBranches'),
-    defs: core.processDefinitions ? core.processDefinitions() : [],
-    services: core.services ? core.services() : [], domains: refList(core, 'domains'),
+    hash: () => hashFor(p),
+    activeDef: portal ? p.processId : null,
   })));
 
   if (active === 'diagram') startViewer();

@@ -109,7 +109,7 @@ So the catalog isn't a separate dataset to invent — it is **generated from the
 | `data-products.json` | DataProduct | ~15 (datasets + services + concepts) |
 | `news.json` | NewsArticle | ~10 |
 | `weisungen.json` | Directive | ~15–20 (by topic) |
-| `process-definitions.json` / `process-instances.json` | Process | 5 defs + ~8 seeded Vorgänge |
+| `process-instances.json` | Process | ~8 seeded Vorgänge. Die Definitionen dazu stehen seit 2026-08-15 in `processes.json` (Ast `portal`) — eine Quelle fuer alles, was ein Prozess ist. |
 | `reference-data.json` | code-lists | the §3 enumerations |
 
 ---
