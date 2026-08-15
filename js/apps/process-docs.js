@@ -135,6 +135,9 @@ const refList = (core, key) => core.ref()[key] || [];
 // Processes use the catalogue object's DRAFT/VALID/SUPERSEDED/ARCHIVED lifecycle.
 const statusOf = (core, id) => refList(core, 'objectStatuses').find((s) => s.id === id) || { label: id, variant: 'gray' };
 const processHref = (id) => `${BASE}?id=${encodeURIComponent(id)}`;
+// Eine Stufe hinauf heisst hier: zurueck in die Liste, eingeschraenkt auf die
+// Gruppe des Prozesses — der Ort, an dem man ihn gefunden hat.
+const hashFor = (p) => `${BASE}?group=${encodeURIComponent(p.group)}`;
 const truncateText = (s, n = 130) => {
   const t = String(s || '');
   if (t.length <= n) return t;
@@ -149,6 +152,94 @@ export default async function render(ctx) {
   const id = ctx.query.get('id');
   if (id) return detail(ctx, id);
   return list(ctx);
+}
+
+// Der Baum, geteilt von Liste und Prozessansicht: dieselbe Spalte, dieselben
+// drei Stufen, nur die Markierung unterscheidet sich.
+function buildTree({ all, areas, groups, hash, selGroups, activeId }) {
+  return ({
+    id: 'pd-tree',
+    title: 'Prozesshierarchie',
+    mode: 'nav',
+    levels: [{ icons: false }, { icons: false }, { icons: false }],
+    sections: [areas.map((a) => {
+      const inArea = all.filter((p) => p.area === a.key);
+      const mine = groups.filter((g) => inArea.some((p) => p.group === g.key));
+      // Ein Bereich liegt auf dem WEG zur Auswahl, wenn eine seiner Gruppen
+      // gewaehlt ist — er ist nie selbst die Auswahl. Vorher trug er
+      // «is-active», sobald ueberhaupt nicht gefiltert war: dann leuchteten
+      // alle sechs Bereiche gleichzeitig, was nichts aussagt.
+      const holdsSel = selGroups.length === 1 && mine.some((g) => g.key === selGroups[0]);
+      return {
+        id: `area:${a.key}`,
+        label: a.label,
+        count: inArea.length,
+        countUnit: 'Prozesse',
+        // Der Bereich ist keine Filterachse — sein Verweis raeumt den
+        // Gruppenfilter ab. Suche und Ansicht bleiben stehen, damit ein Wechsel
+        // nicht nebenbei den Suchtext wegwirft.
+        href: hash({ sort: '', group: [], status: [], page: 1 }),
+        state: holdsSel || (activeId && inArea.some((x) => x.processId === activeId)) ? 'path' : '',
+        // Geteilte Zeile: das Chevron klappt, die Beschriftung navigiert. Ohne
+        // das waere die Zeile ein blosser Verweis mit einem Chevron, das nur
+        // aussieht wie ein Bedienelement — anfassen liesse es sich nicht.
+        split: true,
+        // Voreingestellt offen, aber zuklappbar: die Bereiche sind die Landkarte
+        // dieser Anwendung, und die zeigt man aufgeschlagen. Wer zuklappt, will
+        // das behalten — auch ueber einen Filterwechsel hinweg (defaultOpen,
+        // nicht open).
+        defaultOpen: true,
+        hasChildren: mine.length > 0,
+        children: () => mine.map((g) => {
+          const procs = inArea.filter((p) => p.group === g.key);
+          return {
+            id: `group:${g.key}`,
+            label: g.label,
+            count: procs.length,
+            countUnit: 'Prozesse',
+            href: hash({ q: '', sort: '', group: [g.key], status: [], page: 1 }),
+            state: activeId && procs.some((x) => x.processId === activeId) ? 'path'
+              : selGroups.length === 1 && selGroups[0] === g.key ? 'active' : '',
+            // Wie der Datensatz im Katalog: die Beschriftung waehlt den Umfang,
+            // das Chevron zeigt, was drin liegt. Zwei Absichten, zwei
+            // Bedienelemente.
+            split: true,
+            // Eine Gruppe zu waehlen heisst NICHT, ihre Prozesse aufzuklappen —
+            // dieselbe Entscheidung wie bei den Attributen im Katalog. Wer den
+            // Umfang einschraenkt, will die Liste daneben sehen, nicht eine
+            // zweite Liste derselben Namen in der Spalte.
+            hasChildren: procs.length > 0,
+            children: () => procs
+              .slice()
+              .sort((x, y) => x.processId.localeCompare(y.processId, undefined, { numeric: true }))
+              .map((pr) => ({
+                id: `proc:${pr.processId}`,
+                // Kein Zaehler: unter einem Prozess liegt nichts mehr, und eine
+                // Zahl, die nichts zaehlt, ist eine Frage ohne Gegenstand.
+                //
+                // Und keine Nummer vor dem Namen. Im Liegenschaften-Baum steht
+                // sie dort («AF Bundeshaus West»), weil sie zwei Zeichen lang
+                // ist. «TQ.21.00.00.30» ist vierzehn und frisst in einer 288px
+                // breiten Spalte genau den Teil des Namens, der die
+                // Geschwister unterscheidet: gemessen standen alle drei
+                // Prozesse der Bewirtschaftung als «Bewirtschaf…» da, und die
+                // Unterschiede — «Anmiet-, Pachtvertraege», «Eigentum,
+                // Stiftungen», «von Vermietungen» — waren abgeschnitten. Die
+                // Nummer steht in der Spalte «Nr.» der Tabelle und auf der
+                // Detailseite; der Baum dient dem Finden nach Namen.
+                label: pr.name,
+                href: processHref(pr.processId),
+                // Der gewaehlte Prozess ist die Auswahl; seine Gruppe und sein
+                // Bereich liegen auf dem Weg dorthin. Das Bauteil klappt einen
+                // Weg von selbst auf, also findet man die Zeile auch dann, wenn
+                // man ueber einen Verweis von aussen hereinkommt.
+                state: activeId === pr.processId ? 'active' : '',
+              })),
+          };
+        }),
+      };
+    })],
+  });
 }
 
 // Process map: list and tree.
@@ -296,83 +387,7 @@ function list(ctx) {
   // Prozesse (L3) stehen in der Liste daneben. Beide Stufen ohne Symbol — die
   // Einrueckung sagt bereits, was wozu gehoert, und ein Symbol, das auf jeder
   // Zeile dasselbe zeigt, unterscheidet nichts.
-  const treeConfig = () => ({
-    id: 'pd-tree',
-    title: 'Prozesshierarchie',
-    mode: 'nav',
-    levels: [{ icons: false }, { icons: false }, { icons: false }],
-    sections: [areas.map((a) => {
-      const inArea = all.filter((p) => p.area === a.key);
-      const mine = groups.filter((g) => inArea.some((p) => p.group === g.key));
-      // Ein Bereich liegt auf dem WEG zur Auswahl, wenn eine seiner Gruppen
-      // gewaehlt ist — er ist nie selbst die Auswahl. Vorher trug er
-      // «is-active», sobald ueberhaupt nicht gefiltert war: dann leuchteten
-      // alle sechs Bereiche gleichzeitig, was nichts aussagt.
-      const holdsSel = selGroups.length === 1 && mine.some((g) => g.key === selGroups[0]);
-      return {
-        id: `area:${a.key}`,
-        label: a.label,
-        count: inArea.length,
-        countUnit: 'Prozesse',
-        // Der Bereich ist keine Filterachse — sein Verweis raeumt den
-        // Gruppenfilter ab. Suche und Ansicht bleiben stehen, damit ein Wechsel
-        // nicht nebenbei den Suchtext wegwirft.
-        href: hash({ sort: '', group: [], status: [], page: 1 }),
-        state: holdsSel ? 'path' : '',
-        // Geteilte Zeile: das Chevron klappt, die Beschriftung navigiert. Ohne
-        // das waere die Zeile ein blosser Verweis mit einem Chevron, das nur
-        // aussieht wie ein Bedienelement — anfassen liesse es sich nicht.
-        split: true,
-        // Voreingestellt offen, aber zuklappbar: die Bereiche sind die Landkarte
-        // dieser Anwendung, und die zeigt man aufgeschlagen. Wer zuklappt, will
-        // das behalten — auch ueber einen Filterwechsel hinweg (defaultOpen,
-        // nicht open).
-        defaultOpen: true,
-        hasChildren: mine.length > 0,
-        children: () => mine.map((g) => {
-          const procs = inArea.filter((p) => p.group === g.key);
-          return {
-            id: `group:${g.key}`,
-            label: g.label,
-            count: procs.length,
-            countUnit: 'Prozesse',
-            href: hash({ q: '', sort: '', group: [g.key], status: [], page: 1 }),
-            state: selGroups.length === 1 && selGroups[0] === g.key ? 'active' : '',
-            // Wie der Datensatz im Katalog: die Beschriftung waehlt den Umfang,
-            // das Chevron zeigt, was drin liegt. Zwei Absichten, zwei
-            // Bedienelemente.
-            split: true,
-            // Eine Gruppe zu waehlen heisst NICHT, ihre Prozesse aufzuklappen —
-            // dieselbe Entscheidung wie bei den Attributen im Katalog. Wer den
-            // Umfang einschraenkt, will die Liste daneben sehen, nicht eine
-            // zweite Liste derselben Namen in der Spalte.
-            hasChildren: procs.length > 0,
-            children: () => procs
-              .slice()
-              .sort((x, y) => x.processId.localeCompare(y.processId, undefined, { numeric: true }))
-              .map((pr) => ({
-                id: `proc:${pr.processId}`,
-                // Kein Zaehler: unter einem Prozess liegt nichts mehr, und eine
-                // Zahl, die nichts zaehlt, ist eine Frage ohne Gegenstand.
-                //
-                // Und keine Nummer vor dem Namen. Im Liegenschaften-Baum steht
-                // sie dort («AF Bundeshaus West»), weil sie zwei Zeichen lang
-                // ist. «TQ.21.00.00.30» ist vierzehn und frisst in einer 288px
-                // breiten Spalte genau den Teil des Namens, der die
-                // Geschwister unterscheidet: gemessen standen alle drei
-                // Prozesse der Bewirtschaftung als «Bewirtschaf…» da, und die
-                // Unterschiede — «Anmiet-, Pachtvertraege», «Eigentum,
-                // Stiftungen», «von Vermietungen» — waren abgeschnitten. Die
-                // Nummer steht in der Spalte «Nr.» der Tabelle und auf der
-                // Detailseite; der Baum dient dem Finden nach Namen.
-                label: pr.name,
-                href: processHref(pr.processId),
-              })),
-          };
-        }),
-      };
-    })],
-  });
+  const treeConfig = () => buildTree({ all, areas, groups, hash, selGroups, activeId: null });
 
   const filterCount = selGroups.length + selStatus.length;
   const panel = `
@@ -520,24 +535,51 @@ async function detail(ctx, rawId) {
       </div>
     </section>`;
 
+  // Der Prozess ist eine STUFE des Baums, keine eigene Seite. Also dieselbe
+  // Flaeche wie die Liste daneben: Leiste oben, Baum links, eine Flaeche rechts
+  // — und die drei Schalter, die im ganzen Portal die Darstellung wechseln,
+  // zeigen hier Übersicht, Diagramm und Schritte. Vorher war das ein eigenes
+  // Reiterband auf einer eigenen Seite, und der Baum verschwand beim Anklicken
+  // eines Prozesses: man verlor genau in dem Moment die Übersicht, in dem man
+  // sich fuer einen Punkt darin entschieden hatte.
+  const VIEW_OF_TAB = { overview: 'uebersicht', diagram: 'diagramm', steps: 'tabelle' };
+  const TAB_OF_VIEW = { uebersicht: 'overview', diagramm: 'diagram', tabelle: 'steps' };
+  const view = VIEW_OF_TAB[active];
+  const core2 = core;
+  const allProcs = core2.processes();
+  const areas = [...new Map(allProcs.map((x) => [x.area, { key: x.area, code: x.areaCode, label: x.areaLabel }])).values()];
+  const groups = [...new Map(allProcs.map((x) => [x.group, { key: x.group, label: x.groupLabel }])).values()];
+
   mount.innerHTML = `
   <div class="container section">
-    ${C.detailBar({ backHref: BASE, backLabel: TITLE })}
-    <h1 tabindex="-1">${esc(p.name)}</h1>
-    ${p.description ? `<p class="lead">${esc(p.description)}</p>` : ''}
-    <div class="tabs mt-6">
-      ${C.tabBar({ items: tabs, active, idPrefix: 'pd-tab', ariaLabel: 'Prozess' })}
-      ${C.tabPanels({ items: tabs, active, idPrefix: 'pd-tab', heading: true, render: (tid) => (
-        tid === 'overview' ? overviewHTML()
-          : tid === 'diagram' ? diagramHTML()
-            : '<div id="pd-steps"></div>'
-      ) })}
+    ${C.detailBar({ backHref: hashFor(p), backLabel: p.groupLabel })}
+    ${C.pageHeader({ title: p.name, lead: p.description || '' })}
+    ${C.catalogueBar({
+    formId: 'pd-search', inputId: 'pd-q', searchLabel: 'Prozess suchen',
+    placeholder: 'Prozess suchen…', q: '', showCount: false,
+    view,
+    views: [['uebersicht', 'Übersicht', 'InfoCircle'], ['diagramm', 'Diagramm', 'Apps'],
+      ['tabelle', `Prozessschritte (${steps.length})`, 'List']],
+  })}
+    <div id="pd-activefilters">${C.activeFilters({
+    filters: [{ label: p.groupLabel, remove: 'scope' }], resetHref: BASE })}</div>
+    <div class="pf-layout">
+      <aside class="pf-sidebar" id="pd-tree" aria-label="Prozesshierarchie"></aside>
+      <div class="pf-main">
+        <div id="pd-panel" class="mc-pane">${
+  active === 'overview' ? overviewHTML()
+    : active === 'diagram' ? diagramHTML()
+      : '<div id="pd-steps"></div>'}</div>
+      </div>
     </div>
   </div>`;
 
   // Accessible process-step tab.
+  // Nur die GEWAEHLTE Sicht steht in der Flaeche — anders als beim Reiterband,
+  // das alle drei anlegte und zwei davon versteckte. Die Tabelle wird also nur
+  // aufgebaut, wenn sie auch da ist.
   const stepsHost = mount.querySelector('#pd-steps');
-  if (!xml) {
+  if (!stepsHost) { /* andere Sicht */ } else if (!xml) {
     stepsHost.innerHTML = C.notificationHtml(
       `<strong>Die Prozessschritte können nicht gelesen werden.</strong> Das BPMN-Diagramm (${esc(p.bpmn)}) ist nicht erreichbar${xmlError ? ` — ${esc(xmlError)}` : ''}.`,
       'error', 'WarningCircle');
@@ -618,7 +660,7 @@ async function detail(ctx, rawId) {
 
   // Delegate zoom controls from the tab subtree, which is replaced on redraw,
   // to avoid accumulating listeners on the router-reused mount.
-  mount.querySelector('.tabs').addEventListener('click', (e) => {
+  mount.querySelector('#pd-panel').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-bpmn]');
     if (!btn || !viewer) return;
     const canvas = viewer.get('canvas');
@@ -626,11 +668,26 @@ async function detail(ctx, rawId) {
     else canvas.zoom(canvas.zoom() * (btn.dataset.bpmn === 'in' ? 1.2 : 1 / 1.2));
   });
 
-  C.wireTabs(mount, { syncHash, onSelect: (tab) => {
-    if (tab !== 'diagram') return;
-    startViewer();
-    // Complete deferred fitting once the panel is visible and measurable again.
-    if (needsFit) requestAnimationFrame(fitDiagram);
-  } });
+  // Der Ansichtswechsel faehrt ueber die Adresse: der Router zeichnet neu, und
+  // die gewaehlte Sicht steht damit im Verlauf und im Link. Die BPMN-Datei ist
+  // eine oertliche Ressource, das Neuzeichnen kostet also nichts, was den
+  // Gewinn — eine Sicht, die man verschicken kann — nicht aufwiegt.
+  const bar = mount.querySelector('.catbar');
+  if (bar) {
+    bar.addEventListener('click', (e) => {
+      const b = e.target.closest('.view-switch__btn');
+      if (!b) return;
+      const next = TAB_OF_VIEW[b.dataset.view];
+      if (!next || next === active) return;
+      syncHash(next);
+      ctx.rerender ? ctx.rerender() : window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+  }
+
+  ctx.onUnmount(C.sidebarTree(mount.querySelector('#pd-tree'), buildTree({
+    all: allProcs, areas, groups, selGroups: [], activeId: p.processId,
+    hash: () => hashFor(p),
+  })));
+
   if (active === 'diagram') startViewer();
 }

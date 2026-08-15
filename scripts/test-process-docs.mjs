@@ -100,8 +100,10 @@ const expectedSteps = (file) => {
       await s(600);
       return JSON.stringify({
         h1: document.querySelector('h1').textContent.trim(),
-        tabs: [...document.querySelectorAll('.tab__control')].map(b => b.textContent.trim()),
-        active: (document.querySelector('.tab__control--active') || {}).dataset?.tab || '',
+        // Seit 2026-08-15 liegt die Prozessansicht auf derselben Flaeche wie die
+        // Liste: Ansichtswechsel (.view-switch) statt Reiterband.
+        tabs: [...document.querySelectorAll('.view-switch__btn')].map(b => b.getAttribute('aria-label')),
+        active: (document.querySelector('.view-switch__btn[aria-pressed="true"]') || {}).dataset?.view || '',
         bpmnHost: !!document.querySelector('#pd-tab-panel-overview #pd-bpmn'),
         toolbar: document.querySelectorAll('#pd-tab-panel-overview [data-bpmn]').length,
         dts: [...document.querySelectorAll('.detail-layout dl.kv--ruled dt')].map(d => d.textContent),
@@ -112,9 +114,9 @@ const expectedSteps = (file) => {
       });
     })()`));
     check(o.h1 === 'Machbarkeit Projektdefinition', 'process name is the h1', o.h1);
-    check(o.tabs.length === 3 && o.tabs[0] === 'Übersicht' && o.tabs[1] === 'Prozessdiagramm', 'three tabs', o.tabs.join(' | '));
+    check(o.tabs.length === 3 && o.tabs[0] === 'Übersicht' && o.tabs[1] === 'Diagramm', 'three views', o.tabs.join(' | '));
     check(/Prozessschritte \(\d+\)/.test(o.tabs[2] || ''), 'step count appears in the tab label', o.tabs[2]);
-    check(o.active === 'overview', 'overview is the default tab', o.active);
+    check(o.active === 'uebersicht', 'overview is the default view', o.active);
     check(!o.bpmnHost && o.toolbar === 0, 'overview has no diagram');
     check(o.dts.includes('Prozessbereich') && o.dts.includes('Prozessgruppe') && o.dts.includes('Status') && o.dts.includes('ID'),
       'Metadaten-Zeilen', o.dts.join(', '));
@@ -132,7 +134,7 @@ const expectedSteps = (file) => {
       const s = ms => new Promise(r => setTimeout(r, ms));
       let n = 0; while (!document.querySelector('#pd-bpmn svg .djs-element') && n++ < 200) await s(100);
       await s(300);
-      const firstTool = document.querySelector('#pd-tab-panel-diagram [data-bpmn]');
+      const firstTool = document.querySelector('#pd-panel [data-bpmn]');
       firstTool?.focus();
       const focusOutline = firstTool ? getComputedStyle(firstTool).outlineStyle : '';
       if (firstTool) firstTool.disabled = true;
@@ -140,21 +142,21 @@ const expectedSteps = (file) => {
       const disabledCursor = firstTool ? getComputedStyle(firstTool).cursor : '';
       if (firstTool) firstTool.disabled = false;
       return JSON.stringify({
-        active: (document.querySelector('.tab__control--active') || {}).dataset?.tab || '',
+        active: (document.querySelector('.view-switch__btn[aria-pressed="true"]') || {}).dataset?.view || '',
         djs: document.querySelectorAll('#pd-bpmn .djs-element').length,
         loadingLeft: !!document.querySelector('#pd-bpmn .loading'),
-        toolbar: document.querySelectorAll('#pd-tab-panel-diagram [data-bpmn]').length,
-        tools: [...document.querySelectorAll('#pd-tab-panel-diagram [data-bpmn]')].map(b => b.dataset.bpmn).join('|'),
-        toolbarPosition: getComputedStyle(document.querySelector('#pd-tab-panel-diagram .bpmn-toolbar')).position,
-        toolbarDirection: getComputedStyle(document.querySelector('#pd-tab-panel-diagram .bpmn-toolbar')).flexDirection,
-        sharedToolbar: !!document.querySelector('#pd-tab-panel-diagram .viewer-toolbar--vertical .viewer-toolbar__button'),
+        toolbar: document.querySelectorAll('#pd-panel [data-bpmn]').length,
+        tools: [...document.querySelectorAll('#pd-panel [data-bpmn]')].map(b => b.dataset.bpmn).join('|'),
+        toolbarPosition: getComputedStyle(document.querySelector('#pd-panel .bpmn-toolbar')).position,
+        toolbarDirection: getComputedStyle(document.querySelector('#pd-panel .bpmn-toolbar')).flexDirection,
+        sharedToolbar: !!document.querySelector('#pd-panel .viewer-toolbar--vertical .viewer-toolbar__button'),
         focusOutline,
         disabledOpacity,
         disabledCursor,
-        asideInPanel: !!document.querySelector('#pd-tab-panel-diagram .detail-layout__aside'),
+        asideInPanel: !!document.querySelector('#pd-panel .detail-layout__aside'),
       });
     })()`));
-    check(o.active === 'diagram', 'diagram tab is active through the deep link', o.active);
+    check(o.active === 'diagramm', 'diagram view is active through the deep link', o.active);
     check(o.djs >= 20, 'diagram renders with bpmn-js', `${o.djs} elements`);
     check(!o.loadingLeft, 'loading state is removed');
     check(o.toolbar === 3, 'zoom toolbar has three buttons', String(o.toolbar));
@@ -173,7 +175,7 @@ const expectedSteps = (file) => {
     p = await openPage(cdp, `${APP_BASE}/app/process-docs?id=TQ.21.00.00.02&tab=schritte`);
     await sleep(1800);
     o = JSON.parse(await p.evaluate(`JSON.stringify({
-      active: (document.querySelector('.tab__control--active') || {}).textContent,
+      active: (document.querySelector('.view-switch__btn[aria-pressed="true"]') || {}).getAttribute('aria-label'),
       cols: [...document.querySelectorAll('#pd-steps thead th')].map(t => t.textContent.trim()),
       count: (document.getElementById('pd-st-count') || {}).textContent.replace(/[\\s\\u00a0]+/g, ' ').trim(),
       rows: document.querySelectorAll('#pd-steps tbody tr').length,
