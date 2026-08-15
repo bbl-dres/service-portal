@@ -27,5 +27,7 @@ am wenigsten in derselben Spalte.
 | `briefcase.svg` | Bauprojekt |
 | `house.svg` | Mietobjekt |
 | `layers.svg` | Geschoss |
+| `workflow.svg` | Fachliche Prozesse |
+| `app-window.svg` | Kundenportal — die Ablaeufe des Portals selbst |
 
 Nachziehen: scripts/fetch-tree-icons.mjs

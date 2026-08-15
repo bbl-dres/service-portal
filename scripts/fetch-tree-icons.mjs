@@ -31,6 +31,10 @@ const WANTED = {
   briefcase: 'Bauprojekt',
   house: 'Mietobjekt',
   layers: 'Geschoss',
+
+  // Prozessdokumentation: die beiden Aeste.
+  workflow: 'Fachliche Prozesse',
+  'app-window': 'Kundenportal — die Ablaeufe des Portals selbst',
 };
 
 mkdirSync(OUT, { recursive: true });

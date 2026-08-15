@@ -422,14 +422,21 @@
   ],
   "processOrgLevels": [
     {
-      "id": "bbl",
-      "label": "BBL",
-      "definition": "Bundesamt für Bauten und Logistik"
-    },
-    {
       "id": "bbl-bauten",
       "label": "BBL Bauten",
       "definition": "Geschäftsbereich Bauten des BBL"
+    }
+  ],
+  "processBranches": [
+    {
+      "id": "fachlich",
+      "label": "Fachliche Prozesse",
+      "definition": "Die Prozesse des Immobilienmanagements, wie sie im Architektur-Repository geführt werden"
+    },
+    {
+      "id": "portal",
+      "label": "Kundenportal",
+      "definition": "Die Abläufe des Portals selbst — welche Schritte ein Antrag durchläuft und wer ihn bearbeitet"
     }
   ]
 }

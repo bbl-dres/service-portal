@@ -53,23 +53,29 @@ const expectedSteps = (file) => {
       boxes: document.querySelectorAll('.lscape__group').length,
       tiles: document.querySelectorAll('.lscape__tile').length,
       cards: document.querySelectorAll('#pd-panel .stats .card').length,
+      branchLabels: [...document.querySelectorAll('.pf-tree__section:last-child > li > .pf-tree__row .pf-tree__label, .pf-tree__section:last-child > li > .pf-tree__split .pf-tree__label')]
+        .map(x => x.textContent.trim()).join('|'),
       sections: [...document.querySelectorAll('#pd-panel .detail-section__title')].map(t => t.textContent),
       views: [...document.querySelectorAll('.view-switch__btn')].map(b => b.getAttribute('aria-label')).join('|'),
       cols: [...document.querySelectorAll('.pf-main thead th')].map(t => t.textContent.trim()),
     })`));
     check(o.h1 === 'Prozessdokumentation Bauten', 'page title', o.h1);
     check(/18 von 18 Prozessen/.test(o.count), 'result count is 18', o.count);
-    check(o.orgChain.join(' > ') === 'BBL > BBL Bauten > Immobilienmanagement (K0)',
-      'the map hangs off the organisation: BBL, BBL Bauten, then the process area',
+    check(o.orgChain.join(' > ') === 'Fachliche Prozesse > BBL Bauten > Immobilienmanagement (K0)',
+      'the business branch hangs off the organisation, then the process area',
       o.orgChain.join(' > '));
     check(o.leaves.length === 5, 'five process groups (L2)', o.leaves.join(', '));
     check(o.leafCounts.reduce((a, b) => a + b, 0) === 18, 'group counts sum to 18', o.leafCounts.join('+'));
     // Die Wurzel ist kein Umfang, sondern der Weg hinein — wie im Katalog auf
     // Stufe 0: keine Ansichtswahl, sondern eine Einstiegsseite.
     check(o.views === '', 'the root offers no view switch: it is the way in, not a scope', o.views || '(keine)');
-    check(o.cards === 5 && /Letzte Änderungen/.test(o.sections.join('|')),
-      'the root is an overview: one card per process group, plus what changed',
+    // Eine Karte je AST, nicht je Prozessgruppe: «Immobilienmanagement (K0)» ist
+    // nur einer von mehreren Prozessbereichen, die Aeste sind die stabile Teilung.
+    check(o.cards === 2 && /Letzte Änderungen/.test(o.sections.join('|')),
+      'the root is an overview: one card per branch, plus what changed',
       `${o.cards} Karten · ${o.sections.join(' | ')}`);
+    check(o.branchLabels === 'Fachliche Prozesse|Kundenportal',
+      'and the tree carries both branches', o.branchLabels);
     // Die Tabelle liegt einen Klick daneben und teilt sich nach derselben Achse.
     // Ein Umfang, dann die Sichten: erst dort gibt es etwas zu wechseln.
     const tbl = JSON.parse(await p.evaluate(`(async () => {

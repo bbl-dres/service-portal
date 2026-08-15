@@ -85,6 +85,11 @@ const DEFERRED = {
   // processes (L1–L3 denormalised on the record, BPMN path per process under
   // assets/bpmn/). The app loads each diagram on its detail page.
   processes:        'data/processes.json',
+  // Die Ablaeufe des Portals selbst: welche Schritte ein Antrag durchlaeuft und
+  // wer ihn bearbeitet. Die Prozessdokumentation zeigt sie neben den fachlichen
+  // Prozessen, damit sichtbar wird, wie das Portal arbeitet — und damit man es
+  // aendern kann, wenn der Ablauf nicht passt.
+  processDefinitions: 'data/process-definitions.json',
   // BBL intranet shop (#/app/shop): product catalogue from the workspace-
   // management prototype. Images are mirrored under assets/images/shop/.
   shopProducts:     'data/shop-products.json',
@@ -118,7 +123,7 @@ const DATA_AREA_LABELS = {
   multispaceModules: 'Multispace-Module',
   workspaceExamples: 'Multispace-Beispiele',
   businessObjects: 'Geschäftsobjekte', dataTables: 'Datentabellen',
-  processes: 'Prozesse', users: 'Benutzende',
+  processes: 'Prozesse', processDefinitions: 'Portal-Abläufe', users: 'Benutzende',
   shopProducts: 'Shop-Produkte', shopCategories: 'Shop-Kategorien',
 };
 
@@ -133,7 +138,7 @@ const RECORD_IDS = {
   assets: 'assetId', contracts: 'contractId', costs: 'costId', areas: 'areaMeasurementId',
   buildingContacts: 'contactId', tenancies: 'tenancyId', floors: 'floorId', spaces: 'spaceId',
   workspacePlanning: 'buildingId', businessObjects: 'objectId', dataTables: 'tableId',
-  processes: 'processId', shopProducts: 'id', shopCategories: 'id',
+  processes: 'processId', processDefinitions: 'defId', shopProducts: 'id', shopCategories: 'id',
 };
 
 // Buildings come from the SAP RE-FX Golden Record (data/buildings.geojson): the
@@ -423,6 +428,10 @@ export const core = {
   // Building process documentation: flat list, detail lookup by processId.
   processes: () => DATA.processes || [],
   processDoc: (id) => find(DATA.processes, 'processId', id),
+  // Die Ablaeufe des Portals selbst — dieselbe Form: flache Liste, Nachschlagen
+  // ueber die Kennung.
+  processDefinitions: () => DATA.processDefinitions || [],
+  processDefinition: (id) => find(DATA.processDefinitions, 'defId', id),
   // The Multispace standard: one document carrying the edition and its modules, so the
   // two cannot be read apart. `multispaceModule` looks one up by its handbook number.
   multispaceModules: () => DATA.multispaceModules || Object.create(null),
