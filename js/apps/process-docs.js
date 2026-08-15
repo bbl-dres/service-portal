@@ -162,7 +162,21 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId }) {
     title: 'Prozesshierarchie',
     mode: 'nav',
     levels: [{ icons: false }, { icons: false }, { icons: false }],
-    sections: [areas.map((a) => {
+    sections: [
+      // Eigener Abschnitt fuer die Wurzel — wie im Katalog. Sie ist etwas
+      // anderes als die Bereiche darunter (der Weg zurueck zur ganzen Karte,
+      // kein Umfang darin), und weil das Bauteil nur ZWISCHEN Abschnitten eine
+      // Linie zieht, ist sie zugleich die einzige Linie der Spalte.
+      [{
+        id: 'root',
+        // Nicht noch einmal «Prozesshierarchie»: so heisst die Spalte schon.
+        label: 'Übersicht',
+        count: all.length,
+        countUnit: 'Prozesse',
+        href: hash({ q: '', sort: '', group: [], status: [], page: 1 }),
+        state: !activeId && !selGroups.length ? 'active' : '',
+      }],
+      areas.map((a) => {
       const inArea = all.filter((p) => p.area === a.key);
       const mine = groups.filter((g) => inArea.some((p) => p.group === g.key));
       // Ein Bereich liegt auf dem WEG zur Auswahl, wenn eine seiner Gruppen
@@ -238,7 +252,8 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId }) {
           };
         }),
       };
-    })],
+      }),
+    ],
   });
 }
 

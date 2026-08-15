@@ -18,6 +18,7 @@ import { formatDate } from '../format.js';
 import * as links from '../links.js';
 // Reuse one module-level escape helper and badge factory across all views.
 import { escape as esc, badge } from '../components.js';
+import { runTableExport, slug } from '../ui/export-table.js';
 import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
 
 // contacts supplies stewardship for both layers.
@@ -631,40 +632,6 @@ function exportTable(s, unit) {
 }
 
 // A field is quoted only when it has to be (RFC 4180), and the file opens with a
-// BOM because without one Excel reads UTF-8 as the local code page and every
-// umlaut in the catalogue comes out wrong.
-const csvCell = (v) => {
-  const t = String(v == null ? '' : v);
-  return /[",\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
-};
-const toCsv = (t) => '\uFEFF' + [t.head, ...t.rows]
-  .map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
-
-// Excel gets an HTML table rather than a comma file. A .csv forces a guess about
-// the separator — German Excel expects «;», the interchange format says «,» —
-// and whichever is chosen is wrong somewhere. A table has no separator to guess.
-const toXls = (t) => '<html xmlns:x="urn:schemas-microsoft-com:office:excel">'
-  + '<head><meta charset="utf-8"></head><body><table border="1"><thead><tr>'
-  + t.head.map((h) => `<th>${esc(h)}</th>`).join('') + '</tr></thead><tbody>'
-  + t.rows.map((row) => '<tr>' + row.map((c) => `<td>${esc(c)}</td>`).join('') + '</tr>').join('')
-  + '</tbody></table></body></html>';
-
-const slug = (x) => String(x).toLowerCase()
-  .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-  .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'katalog';
-
-function download(name, mime, text) {
-  const url = URL.createObjectURL(new Blob([text], { type: mime }));
-  const a = document.createElement('a');
-  a.href = url; a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  // Revoke on the next turn: doing it synchronously can cancel the download in
-  // some browsers before it has read the blob.
-  setTimeout(() => URL.revokeObjectURL(url), 0);
-}
-
 // Everything in the bar is a menu now, and both report here. A grouping choice
 // NAVIGATES rather than redrawing in place: it re-lays both views and every link
 // in the tree, and unlike a tab switch it is a rare, deliberate act.
@@ -687,13 +654,8 @@ function onMenuAction(action, s, unit) {
 }
 
 function runExport(action, s, unit) {
-  // Printing is the browser's job, and its dialog is also where «Save as PDF»
-  // lives — so there is no separate PDF path to build or to keep working.
-  if (action === 'pdf') { window.print(); return; }
   const t = exportTable(s, unit);
-  const base = `metadaten-katalog_${slug(t.name)}`;
-  if (action === 'csv') download(`${base}.csv`, 'text/csv;charset=utf-8', toCsv(t));
-  if (action === 'excel') download(`${base}.xls`, 'application/vnd.ms-excel;charset=utf-8', toXls(t));
+  runTableExport(action, t, `geschaeftsarchitektur_${slug(t.name, 'katalog')}`);
 }
 
 // Grouping belongs to the table and the landscape, not to the tree — so it sits
