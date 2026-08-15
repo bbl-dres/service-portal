@@ -419,5 +419,17 @@
       "definition": "Im Portal selbst bewirtschaftet — heute der Datensatzkatalog nach DCAT-AP-CH.",
       "icon": "FileDatabase"
     }
+  ],
+  "processOrgLevels": [
+    {
+      "id": "bbl",
+      "label": "BBL",
+      "definition": "Bundesamt für Bauten und Logistik"
+    },
+    {
+      "id": "bbl-bauten",
+      "label": "BBL Bauten",
+      "definition": "Geschäftsbereich Bauten des BBL"
+    }
   ]
 }

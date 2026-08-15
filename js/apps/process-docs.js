@@ -171,12 +171,32 @@ export default async function render(ctx) {
 
 // Der Baum, geteilt von Liste und Prozessansicht: dieselbe Spalte, dieselben
 // drei Stufen, nur die Markierung unterscheidet sich.
-function buildTree({ all, areas, groups, hash, selGroups, activeId }) {
+function buildTree({ all, areas, groups, hash, selGroups, activeId, org = [] }) {
+  // Die Prozesskarte haengt an der Organisation: BBL ▸ BBL Bauten ▸
+  // Immobilienmanagement (K0). «Immobilienmanagement» stand bisher zuoberst und
+  // sah damit aus wie die Wurzel — es ist aber die DRITTE Stufe, und die beiden
+  // darueber fehlten. Sie kommen aus den Referenzdaten (processOrgLevels), nicht
+  // aus dem Code: es sind Angaben ueber die Organisation, keine Programmlogik.
+  //
+  // Sie tragen keinen eigenen Verweis: man kann sie nicht «waehlen», weil es
+  // unterhalb nichts gibt, was sie einschraenken wuerden — es gibt genau einen
+  // Geschaeftsbereich. Sie sagen, WO die Karte haengt, und das ist ihre Aufgabe.
+  const nest = (inner) => org.reduceRight((kids, o, i) => [{
+    id: `org:${o.id}`,
+    label: o.label,
+    count: all.length,
+    countUnit: 'Prozesse',
+    defaultOpen: true,
+    hasChildren: true,
+    children: () => kids,
+    state: '',
+    _depth: i,
+  }], inner);
   return ({
     id: 'pd-tree',
     title: 'Prozesshierarchie',
     mode: 'nav',
-    levels: [{ icons: false }, { icons: false }, { icons: false }],
+    levels: [{ icons: false }, { icons: false }, { icons: false }, { icons: false }, { icons: false }],
     sections: [
       // Eigener Abschnitt fuer die Wurzel — wie im Katalog. Sie ist etwas
       // anderes als die Bereiche darunter (der Weg zurueck zur ganzen Karte,
@@ -191,7 +211,7 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId }) {
         href: hash({ q: '', sort: '', group: [], status: [], page: 1 }),
         state: !activeId && !selGroups.length ? 'active' : '',
       }],
-      areas.map((a) => {
+      nest(areas.map((a) => {
       const inArea = all.filter((p) => p.area === a.key);
       const mine = groups.filter((g) => inArea.some((p) => p.group === g.key));
       // Ein Bereich liegt auf dem WEG zur Auswahl, wenn eine seiner Gruppen
@@ -267,7 +287,7 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId }) {
           };
         }),
       };
-      }),
+      })),
     ],
   });
 }
@@ -489,7 +509,8 @@ function list(ctx) {
   // Prozesse (L3) stehen in der Liste daneben. Beide Stufen ohne Symbol — die
   // Einrueckung sagt bereits, was wozu gehoert, und ein Symbol, das auf jeder
   // Zeile dasselbe zeigt, unterscheidet nichts.
-  const treeConfig = () => buildTree({ all, areas, groups, hash: hashA, selGroups, activeId: null });
+  const treeConfig = () => buildTree({
+    all, areas, groups, hash: hashA, selGroups, activeId: null, org: refList(core, 'processOrgLevels') });
 
   const filterCount = selGroups.length + selStatus.length;
   const panel = `
@@ -830,7 +851,7 @@ async function detail(ctx, rawId) {
 
   ctx.onUnmount(C.sidebarTree(mount.querySelector('#pd-tree'), buildTree({
     all: allProcs, areas, groups, selGroups: [], activeId: p.processId,
-    hash: () => hashFor(p),
+    hash: () => hashFor(p), org: refList(core, 'processOrgLevels'),
   })));
 
   if (active === 'diagram') startViewer();

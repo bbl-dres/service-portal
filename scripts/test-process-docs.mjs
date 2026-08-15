@@ -40,8 +40,13 @@ const expectedSteps = (file) => {
       // Zwei Abschnitte seit 2026-08-15: die Wurzel «Übersicht» und die
       // Bereiche. Gezaehlt werden die Bereiche.
       branches: document.querySelectorAll('.pf-tree__section:last-child > li').length,
-      leaves: [...document.querySelectorAll('.pf-tree__children .pf-tree__label')].map(x => x.textContent),
-      leafCounts: [...document.querySelectorAll('.pf-tree__children .pf-tree__n')].map(x => Number(x.textContent)),
+      // Die Karte haengt seit 2026-08-15 an der Organisation: BBL ▸ BBL Bauten ▸
+      // Immobilienmanagement (K0) ▸ Prozessgruppen. Die Gruppen liegen damit
+      // drei Kinderlisten tief, nicht mehr einer.
+      orgChain: [...document.querySelectorAll('.pf-tree__section:last-child .pf-tree__label')]
+        .slice(0, 3).map(x => x.textContent.trim()),
+      leaves: [...document.querySelectorAll('.pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__label')].map(x => x.textContent),
+      leafCounts: [...document.querySelectorAll('.pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__n')].map(x => Number(x.textContent)),
       rows: document.querySelectorAll('.pf-main tbody tr:not(.table__group):not(.table__subhead)').length,
       // Seit 2026-08-14 hat die Prozessdoku dieselben drei Sichten wie die
       // Geschaeftsarchitektur, und das Diagramm ist die Voreinstellung.
@@ -52,7 +57,9 @@ const expectedSteps = (file) => {
     })`));
     check(o.h1 === 'Prozessdokumentation Bauten', 'page title', o.h1);
     check(/18 von 18 Prozessen/.test(o.count), 'result count is 18', o.count);
-    check(o.branches === 1, 'one process area (L1)', String(o.branches));
+    check(o.orgChain.join(' > ') === 'BBL > BBL Bauten > Immobilienmanagement (K0)',
+      'the map hangs off the organisation: BBL, BBL Bauten, then the process area',
+      o.orgChain.join(' > '));
     check(o.leaves.length === 5, 'five process groups (L2)', o.leaves.join(', '));
     check(o.leafCounts.reduce((a, b) => a + b, 0) === 18, 'group counts sum to 18', o.leafCounts.join('+'));
     check(o.views === 'Übersicht|Diagramm|Tabelle', 'the same three views as the architecture catalogue', o.views);
