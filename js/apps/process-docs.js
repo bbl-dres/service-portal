@@ -20,6 +20,7 @@ import { runTableExport, slug } from '../ui/export-table.js';
 // die Dokumentation. «keine» ist eine echte Wahl und kein Fehlen einer: sie
 // legt alle Prozesse in ein Feld.
 const AXES = [
+  { value: 'bereich', label: 'Prozessbereich', of: (p) => p.areaLabel || p.branchLabel },
   { value: 'gruppe', label: 'Prozessgruppe', of: (p) => p.groupLabel },
   { value: 'status', label: 'Status', of: (p, core) => statusOf(core, p.status).label },
   { value: 'keine', label: '(keine)', of: null },
@@ -179,7 +180,8 @@ export default async function render(ctx) {
 
 // Der Baum, geteilt von Liste und Prozessansicht: dieselbe Spalte, dieselben
 // drei Stufen, nur die Markierung unterscheidet sich.
-function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = null }) {
+function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = null,
+  scopeOf = () => '', pathOf = () => false, href = () => BASE }) {
   // EINE Quelle: jeder Datensatz sagt selbst, in welchem Ast er haengt
   // (branch/branchLabel), unter welcher Organisation (org) und in welcher
   // Gruppe MIT Bezeichnung (group/groupLabel). Der Baum fuegt nichts mehr
@@ -191,15 +193,26 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = 
   // zweiter Prozessbereich unter einer anderen Einheit haengen kann.
   const nest = (rows, inner, onPath) => {
     const chain = (rows[0] || {}).org || [];
-    return chain.reduceRight((kids, label) => [{
-      id: `org:${label}`,
-      label,
-      count: rows.length,
-      countUnit: 'Prozesse',
-      state: onPath ? 'path' : '',
-      hasChildren: true,
-      children: () => kids,
-    }], inner);
+    return chain.reduceRight((kids, label) => {
+      const mine = scopeOf('org') === label;
+      const onWay = onPath || pathOf('org', label);
+      return [{
+        id: `org:${label}`,
+        label,
+        count: rows.length,
+        countUnit: 'Prozesse',
+        href: href('org', label),
+        // Angeklickt heisst gewaehlt UND aufgeklappt: wer eine Stufe waehlt,
+        // will hineinsehen. Aber `defaultOpen`, nicht `open` — sonst liesse
+        // sich die gewaehlte Zeile nicht mehr zuklappen, und genau das soll das
+        // Chevron koennen: waehlen und aufklappen sind zwei Absichten.
+        state: mine ? 'active' : onWay ? 'path' : '',
+        defaultOpen: mine || undefined,
+        split: true,
+        hasChildren: true,
+        children: () => kids,
+      }];
+    }, inner);
   };
 
   const leafNode = (r) => ({
@@ -222,9 +235,10 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = 
       label: g.label,
       count: g.rows.length,
       countUnit: 'Prozesse',
-      href: hash({ q: '', sort: '', group: [key], status: [], page: 1 }),
-      state: g.rows.some((r) => r.processId === activeId || r.processId === activeDef) ? 'path'
-        : selGroups.length === 1 && selGroups[0] === key ? 'active' : '',
+      href: href('group', key),
+      state: scopeOf('group') === key || (selGroups.length === 1 && selGroups[0] === key) ? 'active'
+        : g.rows.some((r) => r.processId === activeId || r.processId === activeDef)
+          || pathOf('group', key) ? 'path' : '',
       split: true,
       hasChildren: g.rows.length > 0,
       children: () => g.rows
@@ -245,9 +259,11 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = 
         label: a.label,
         count: mine.length,
         countUnit: 'Prozesse',
-        href: hash({ sort: '', group: [], status: [], page: 1 }),
-        state: holdsActive && mine.some((r) => r.processId === activeId
-          || (selGroups.length === 1 && r.group === selGroups[0])) ? 'path' : '',
+        href: href('area', a.key),
+        state: scopeOf('area') === a.key ? 'active'
+          : pathOf('area', a.key) || (holdsActive && mine.some((r) => r.processId === activeId
+            || (selGroups.length === 1 && r.group === selGroups[0]))) ? 'path' : '',
+        defaultOpen: scopeOf('area') === a.key || undefined,
         split: true,
         hasChildren: true,
         children: () => groupNodes(mine, holdsActive),
@@ -258,18 +274,22 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = 
     // Auf dem Weg liegt der Ast auch dann, wenn eine seiner GRUPPEN gewaehlt
     // ist — nicht nur, wenn ein einzelner Datensatz offen steht. Sonst bleibt
     // er zu, und die gewaehlte Gruppe waere unsichtbar.
-    const holds = rows.some((r) => r.processId === activeId || r.processId === activeDef
-      || (selGroups.length === 1 && r.group === selGroups[0]));
+    const holds = pathOf('branch', id) || rows.some((r) => r.processId === activeId
+      || r.processId === activeDef || (selGroups.length === 1 && r.group === selGroups[0]));
     const inner = id === 'fachlich'
       ? nest(rows, areaNodes(rows, holds), holds)
       : groupNodes(rows, holds);
+    const mine = scopeOf('branch') === id;
     return {
       id: `branch:${id}`,
       label: (rows[0] || {}).branchLabel || id,
       count: rows.length,
       countUnit: UNIT[id] || 'Prozesse',
       icon: ICON[id],
-      state: holds ? 'path' : '',
+      href: href('branch', id),
+      state: mine ? 'active' : holds ? 'path' : '',
+      defaultOpen: mine || undefined,
+      split: true,
       hasChildren: rows.length > 0,
       children: () => inner,
     };
@@ -304,7 +324,8 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = 
         count: all.length,
         countUnit: 'Prozesse',
         href: hash({ q: '', sort: '', group: [], status: [], page: 1 }),
-        state: !activeId && !selGroups.length ? 'active' : '',
+        state: !activeId && !activeDef && !selGroups.length && !scopeOf('branch')
+          && !scopeOf('org') && !scopeOf('area') && !scopeOf('group') ? 'active' : '',
       }],
       [
         branchNode('fachlich', byBranch.get('fachlich') || []),
@@ -327,10 +348,39 @@ function list(ctx) {
   // Prozessbereich und keine TQ-Nummer, und in derselben Tabelle
   // nebeneinandergestellt behaupten die Spalten etwas Falsches ueber ihn. Er
   // hat seine eigene Stufe im Baum und seine eigenen drei Sichten.
-  const all = everything.filter((p) => p.branch !== 'portal');
+  // JEDE Stufe ist ein Umfang, nicht nur die Gruppe: Ast, Organisation,
+  // Prozessbereich, Prozessgruppe. Wer «Fachliche Prozesse» anklickt, will
+  // sehen, wie sich das teilt — und von dort weiter hinein. Das Diagramm und
+  // die Tabelle sind das Werkzeug dafuer, der Baum zeigt nur, wo man ist.
+  //
+  // Der engste gewaehlte Umfang gewinnt.
+  const SCOPES = [
+    { key: 'group', param: 'group', of: (r) => r.group, label: (r) => r.groupLabel },
+    { key: 'area', param: 'area', of: (r) => r.area, label: (r) => r.areaLabel },
+    { key: 'org', param: 'org', of: (r) => (r.org || [])[0], label: (r) => (r.org || [])[0] },
+    { key: 'branch', param: 'branch', of: (r) => r.branch, label: (r) => r.branchLabel },
+  ];
+  const scope = (() => {
+    for (const s0 of SCOPES) {
+      const v = query.get(s0.param);
+      if (!v) continue;
+      const rows = everything.filter((r) => String(s0.of(r)) === v);
+      if (rows.length) return { ...s0, value: v, rows, label: s0.label(rows[0]) || v };
+    }
+    return null;
+  })();
+
+  // Was in der Flaeche liegt. Ohne Umfang: die fachlichen Prozesse — der
+  // Portal-Ast hat weder Prozessbereich noch TQ-Nummer, und in derselben
+  // Tabelle behaupteten die Spalten etwas Falsches ueber ihn.
+  const all = scope ? scope.rows : everything.filter((p) => p.branch !== 'portal');
+  // Der Nenner der Zaehlung: der ganze Bestand DERSELBEN Art. «3 von 3» sagt
+  // nichts — «3 von 18» sagt, wie eng man steht.
+  const universe = everything.filter((p) => p.branch === (scope ? (scope.rows[0] || {}).branch : 'fachlich'));
   // Derive L1/L2 ordering from first appearance in the process inventory.
-  const areas = [...new Map(all.map((p) => [p.area, { key: p.area, code: p.areaCode, label: p.areaLabel }])).values()];
-  const groups = [...new Map(all.map((p) => [p.group, { key: p.group, label: p.groupLabel }])).values()];
+  const areas = [...new Map(everything.filter((p) => p.area)
+    .map((p) => [p.area, { key: p.area, code: p.areaCode, label: p.areaLabel }])).values()];
+  const groups = [...new Map(everything.map((p) => [p.group, { key: p.group, label: p.groupLabel }])).values()];
 
   const SORTS = [
     { value: 'nr', label: 'Nummer', cmp: (a, b) => a.processId.localeCompare(b.processId, undefined, { numeric: true }) },
@@ -397,7 +447,20 @@ function list(ctx) {
   // Kaesten der Landschaft: Prozessgruppen, Kacheln sind die Prozesse. Die
   // Gruppe ist die Achse, die diese Anwendung ohnehin fuehrt — sie steht im
   // Baum, im Filter und in der Tabellenspalte.
-  const axis = AXES.find((x) => x.value === query.get('axis')) || AXES[0];
+  // Die Achse haengt an der Stufe: ein Umfang wird nach der NAECHSTEN darunter
+  // geteilt. Sonst zeigte das Diagramm auf «Fachliche Prozesse» einen einzigen
+  // Kasten mit achtzehn Kacheln — richtig, aber ohne Aussage. So teilt sich der
+  // Ast in Prozessbereiche, der Bereich in Gruppen, und die Gruppe zeigt ihre
+  // Prozesse.
+  const DEFAULT_AXIS = { group: 'keine', area: 'gruppe', org: 'bereich', branch: 'bereich' };
+  const defaultAxis = scope
+    // Der Portal-Ast hat keinen Prozessbereich; seine naechste Stufe ist die
+    // Gruppe (die Domaene der Dienstleistung).
+    ? (scope.key === 'branch' && scope.value === 'portal' ? 'gruppe' : DEFAULT_AXIS[scope.key])
+    : 'bereich';
+  const axis = AXES.find((x) => x.value === query.get('axis'))
+    || AXES.find((x) => x.value === defaultAxis)
+    || AXES[0];
   // Die Achse reist mit. Ohne das verloere sie jeder Verweis, den der Baum
   // baut: man waehlt «Status», klickt eine Gruppe an, und ist wieder bei
   // «Prozessgruppe» — ohne dass man es angefasst haette.
@@ -467,7 +530,7 @@ function list(ctx) {
   // «Wurzel» heisst: nichts eingeschraenkt. Sobald eine Gruppe, ein Status oder
   // eine Suche im Spiel ist, sieht der Leser einen Umfang an und will ihn
   // ansehen koennen — dann treten die drei Sichten an.
-  const atRoot = !selGroups.length && !selStatus.length && !rawQ;
+  const atRoot = !scope && !selGroups.length && !selStatus.length && !rawQ;
 
   // Die Wurzel ist kein Umfang, sondern der Weg hinein — genau wie im Katalog.
   // Darum keine Ansichtswahl und keine Metadatenliste, sondern drei Fragen, mit
@@ -616,9 +679,41 @@ function list(ctx) {
   // Prozesse (L3) stehen in der Liste daneben. Beide Stufen ohne Symbol — die
   // Einrueckung sagt bereits, was wozu gehoert, und ein Symbol, das auf jeder
   // Zeile dasselbe zeigt, unterscheidet nichts.
+  // Eine Adresse je Stufe. Der Umfang steht in EINEM Parameter — der engste
+  // gewinnt —, damit ein Verweis genau einen Umfang meint und nicht eine
+  // Kombination, die niemand gewaehlt hat.
+  const scopeHref = (kind, value) => {
+    const qs = new URLSearchParams();
+    qs.set(kind, value);
+    // Die Achse reist nur mit, wenn sie von der Voreinstellung der ZIELstufe
+    // abweicht — sonst schleppte jeder Verweis eine Wahl mit, die dort ohnehin
+    // gilt.
+    const tgt = kind === 'branch' && value === 'portal' ? 'gruppe' : (DEFAULT_AXIS[kind] || 'bereich');
+    if (axis.value !== tgt && query.get('axis')) qs.set('axis', axis.value);
+    if (view && view !== 'diagramm') qs.set('view', view);
+    return `${BASE}?${qs}`;
+  };
   const treeConfig = () => buildTree({
     all: everything, areas, groups, hash: hashA, selGroups, activeId: null,
     activeDef: query.get('def') || null,
+    scopeOf: (kind) => (scope && scope.key === kind ? scope.value : ''),
+    // Auf dem WEG liegt eine Stufe, wenn der gewaehlte Umfang TIEFER liegt und
+    // ganz in ihr steckt. Ohne das blieben die Aeste zu, und die gewaehlte
+    // Zeile waere gar nicht gezeichnet.
+    pathOf: (kind, value) => {
+      if (!scope || scope.key === kind) return false;
+      const here = SCOPES.findIndex((x) => x.key === kind);
+      const there = SCOPES.findIndex((x) => x.key === scope.key);
+      // NUR nach oben. SCOPES laeuft von eng nach weit, also liegt eine Stufe
+      // ueber der Auswahl, wenn ihr Index groesser ist. Ohne diese Schranke galt
+      // auch jede Stufe DARUNTER als «auf dem Weg» — ein gewaehlter
+      // Prozessbereich riss damit alle fuenf Gruppen und ihre achtzehn Prozesse
+      // auf, obwohl niemand danach gefragt hatte.
+      if (here <= there) return false;
+      const dim = SCOPES[here];
+      return scope.rows.some((r) => String(dim.of(r)) === String(value));
+    },
+    href: scopeHref,
   });
 
   mount.innerHTML = `
@@ -643,7 +738,7 @@ function list(ctx) {
       // Der Zaehler bleibt im Dokument, nur unsichtbar: die Vorlesesoftware und
       // die Live-Meldung brauchen ihn weiterhin. Weg ist er von der ZEILE.
       countId: 'pd-count', showCount: false,
-      count: `<strong>${sorted.length}</strong> von ${all.length} ${esc(unit.dat)}`,
+      count: `<strong>${sorted.length}</strong> von ${universe.length} ${esc(unit.dat)}`,
       view,
       extra: `<span id="pd-tools">${toolsHtml()}</span>`,
       // Auf der Wurzel gibt es nichts zu wechseln: sie ist der Weg hinein, kein
@@ -661,7 +756,7 @@ function list(ctx) {
     </div>
   </div>`;
 
-  C.announceCatalogue({ count: sorted.length, total: all.length, unit, view });
+  C.announceCatalogue({ count: sorted.length, total: universe.length, unit, view });
   C.wireCatalogue(mount, { formId: 'pd-search', inputId: 'pd-q', hash });
   ctx.onUnmount(C.wireTableRows(mount));
 
@@ -1012,6 +1107,8 @@ async function detail(ctx, rawId, { portal = false } = {}) {
     all: allProcs, areas, groups, selGroups: [], activeId: p.processId,
     hash: () => hashFor(p),
     activeDef: portal ? p.processId : null,
+    scopeOf: () => '',
+    href: (kind, value) => `${BASE}?${new URLSearchParams({ [kind]: value })}`,
   })));
 
   if (active === 'diagram') startViewer();
