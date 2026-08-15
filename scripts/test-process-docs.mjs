@@ -61,11 +61,25 @@ const expectedSteps = (file) => {
     })`));
     check(o.h1 === 'Prozessdokumentation Bauten', 'page title', o.h1);
     check(/18 von 18 Prozessen/.test(o.count), 'result count is 18', o.count);
-    check(o.orgChain.join(' > ') === 'Fachliche Prozesse > BBL Bauten > Immobilienmanagement (K0)',
+    // Die Hierarchie zeigt sich erst am geoeffneten Weg: der Baum steht seit
+    // 2026-08-15 zugeklappt da und oeffnet nur, was zur Auswahl fuehrt.
+    const tree = JSON.parse(await p.evaluate(`(async () => {
+      location.hash = '/app/process-docs?group=bewirtschaftung';
+      await new Promise(r => setTimeout(r, 900));
+      const chain = [...document.querySelectorAll('.pf-tree__section:last-child .pf-tree__label')]
+        .slice(0, 3).map(x => x.textContent.trim());
+      const deep = '.pf-tree__children .pf-tree__children .pf-tree__children ';
+      return JSON.stringify({
+        chain,
+        leaves: [...document.querySelectorAll(deep + '.pf-tree__label')].map(x => x.textContent),
+        leafCounts: [...document.querySelectorAll(deep + '.pf-tree__n')].map(x => Number(x.textContent)),
+      });
+    })()`));
+    check(tree.chain.join(' > ') === 'Fachliche Prozesse > BBL Bauten > Immobilienmanagement (K0)',
       'the business branch hangs off the organisation, then the process area',
-      o.orgChain.join(' > '));
-    check(o.leaves.length === 5, 'five process groups (L2)', o.leaves.join(', '));
-    check(o.leafCounts.reduce((a, b) => a + b, 0) === 18, 'group counts sum to 18', o.leafCounts.join('+'));
+      tree.chain.join(' > '));
+    check(tree.leaves.length === 5, 'five process groups (L2)', tree.leaves.join(', '));
+    check(tree.leafCounts.reduce((a, b) => a + b, 0) === 18, 'group counts sum to 18', tree.leafCounts.join('+'));
     // Die Wurzel ist kein Umfang, sondern der Weg hinein — wie im Katalog auf
     // Stufe 0: keine Ansichtswahl, sondern eine Einstiegsseite.
     check(o.views === '', 'the root offers no view switch: it is the way in, not a scope', o.views || '(keine)');
