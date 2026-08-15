@@ -273,6 +273,9 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, org = [], br
         id: 'root',
         // Nicht noch einmal «Prozesshierarchie»: so heisst die Spalte schon.
         label: 'Übersicht',
+        // Stufe 1 fuehrt Symbole, seit es zwei Aeste gibt — ohne eines stuende
+        // hier eine leere Spalte neben zwei gefuellten.
+        icon: 'tree/library',
         count: all.length,
         countUnit: 'Prozesse',
         href: hash({ q: '', sort: '', group: [], status: [], page: 1 }),
@@ -418,15 +421,6 @@ function list(ctx) {
     ...selGroups.map((x) => ({ label: (groups.find((g) => g.key === x) || {}).label || x, href: hash({ group: selGroups.filter((y) => y !== x), page: 1 }) })),
     ...selStatus.map((x) => ({ label: statusOf(core, x).label, href: hash({ status: selStatus.filter((y) => y !== x), page: 1 }) })),
   ];
-
-  const card = (p) => C.card({
-    title: p.name,
-    idLine: p.processId,
-    desc: truncateText(p.description),
-    href: processHref(p.processId),
-    badges: [badge(p.groupLabel, 'blue')],
-    footerInfo: esc(p.areaLabel), footerAction: C.cardAction(),
-  });
 
   const listView = (rows) => C.table({
     caption: 'Prozesse', zebra: true, rowsClickable: true,
@@ -667,12 +661,6 @@ function list(ctx) {
     defs, activeDef: query.get('def') || null,
     services: core.services ? core.services() : [], domains: refList(core, 'domains'),
   });
-
-  const filterCount = selGroups.length + selStatus.length;
-  const panel = `
-    ${C.filterGroup({ dim: 'group', legend: 'Prozessgruppe', selected: selGroups, idPrefix: 'pd', options: groups.map((g) => ({ value: g.key, label: g.label })) })}
-    ${C.filterGroup({ dim: 'status', legend: 'Status', selected: selStatus, idPrefix: 'pd', options: refList(core, 'objectStatuses').map((s) => ({ value: s.id, label: s.label })) })}
-    ${C.panelReset({ href: hash({ group: [], status: [], page: 1 }) })}`;
 
   mount.innerHTML = `
   <div class="container section">
