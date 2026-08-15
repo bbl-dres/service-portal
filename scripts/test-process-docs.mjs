@@ -37,7 +37,9 @@ const expectedSteps = (file) => {
       count: document.getElementById('pd-count').textContent.replace(/[\\s\\u00a0]+/g, ' ').trim(),
       // Seit dem Umzug auf das Seitenbaum-Bauteil (2026-08-14): Aeste sind die
       // Eintraege des Abschnitts, Blaetter stehen in .pf-tree__children.
-      branches: document.querySelectorAll('.pf-tree__section > li').length,
+      // Zwei Abschnitte seit 2026-08-15: die Wurzel «Übersicht» und die
+      // Bereiche. Gezaehlt werden die Bereiche.
+      branches: document.querySelectorAll('.pf-tree__section:last-child > li').length,
       leaves: [...document.querySelectorAll('.pf-tree__children .pf-tree__label')].map(x => x.textContent),
       leafCounts: [...document.querySelectorAll('.pf-tree__children .pf-tree__n')].map(x => Number(x.textContent)),
       rows: document.querySelectorAll('.pf-main tbody tr:not(.table__group):not(.table__subhead)').length,

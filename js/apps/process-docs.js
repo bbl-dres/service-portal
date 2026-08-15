@@ -12,6 +12,21 @@ import { safeAssetUrl } from '../security/urls.js';
 import * as links from '../links.js';
 // Reuse escape and badge directly from components.js, as metadata-catalog does.
 import { escape as esc, badge } from '../components.js';
+import { runTableExport, slug } from '../ui/export-table.js';
+
+// Die Achse, an der die Landschaft ihre Kaesten teilt. Prozessgruppe ist die
+// Achse dieser Anwendung — sie steht im Baum, im Filter und in der Tabelle —,
+// aber «Status» beantwortet eine andere, ebenso gueltige Frage: wie weit ist
+// die Dokumentation. «keine» ist eine echte Wahl und kein Fehlen einer: sie
+// legt alle Prozesse in ein Feld.
+const AXES = [
+  { value: 'gruppe', label: 'Prozessgruppe', of: (p) => p.groupLabel },
+  { value: 'status', label: 'Status', of: (p, core) => statusOf(core, p.status).label },
+  { value: 'keine', label: '(keine)', of: null },
+];
+// Aufgeklappte Kaesten, ueber das Neuzeichnen hinweg — wie im Katalog.
+const BOXES = new Map();
+const boxOpen = (key) => (BOXES.has(key) ? BOXES.get(key) : true);
 
 export const needs = ['processes', 'contacts'];
 
@@ -342,19 +357,59 @@ function list(ctx) {
   // Kaesten der Landschaft: Prozessgruppen, Kacheln sind die Prozesse. Die
   // Gruppe ist die Achse, die diese Anwendung ohnehin fuehrt — sie steht im
   // Baum, im Filter und in der Tabellenspalte.
+  const axis = AXES.find((x) => x.value === query.get('axis')) || AXES[0];
+  // Die Achse reist mit. Ohne das verloere sie jeder Verweis, den der Baum
+  // baut: man waehlt «Status», klickt eine Gruppe an, und ist wieder bei
+  // «Prozessgruppe» — ohne dass man es angefasst haette.
+  const hashA = (patch = {}) => hash({
+    axis: axis.value === AXES[0].value ? '' : axis.value, ...patch });
   const boxes = () => {
+    const tile = (p) => ({ label: p.name, href: processHref(p.processId) });
+    if (!axis.of) return [{ key: 'alle', label: 'Alle Prozesse', count: sorted.length, tiles: sorted.map(tile) }];
     const by = new Map();
     for (const p of sorted) {
-      if (!by.has(p.groupLabel)) by.set(p.groupLabel, []);
-      by.get(p.groupLabel).push(p);
+      const k = axis.of(p, core) || '—';
+      if (!by.has(k)) by.set(k, []);
+      by.get(k).push(p);
     }
     // Groesstes Feld zuerst: die Karte liest sich vom groessten Gebiet abwaerts.
     return [...by].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'de'))
-      .map(([label, mine]) => ({
-        key: label, label, count: mine.length,
-        tiles: mine.map((p) => ({ label: p.name, href: processHref(p.processId) })),
-      }));
+      .map(([label, mine]) => ({ key: label, label, count: mine.length, tiles: mine.map(tile) }));
   };
+
+  // Reihenfolge wie im Katalog: erst zuklappen, dann was die Flaeche ORDNET,
+  // dann was auf sie WIRKT.
+  const toolsHtml = () => {
+    const anyOpen = view === 'diagramm' && boxes().some((b) => boxOpen(`box:${b.key}`));
+    // Die Beschriftung sagt, was der Druck TUN wird, nicht wie der Zustand heisst.
+    const fold = view !== 'diagramm' ? '' : `
+      <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-lscape-all="${anyOpen ? 'shut' : 'open'}">
+        ${C.icon(anyOpen ? 'Minus' : 'Plus', 'btn__icon')}
+        <span class="btn__text">Alle ${anyOpen ? 'zuklappen' : 'aufklappen'}</span></button>`;
+    // Gruppieren ordnet viele Prozesse; in der Übersicht steht keiner zur Wahl.
+    const group = view === 'uebersicht' ? '' : C.menu({
+      menuId: 'pd-group', label: 'Gruppieren', triggerLabel: `Gruppieren: ${axis.label}`,
+      items: AXES.map((x) => ({ action: `axis:${x.value}`, label: x.label })),
+    });
+    const actions = C.menu({
+      menuId: 'pd-actions', label: 'Aktionen', triggerLabel: 'Aktionen',
+      items: [
+        { action: 'csv', label: 'CSV herunterladen' },
+        { action: 'excel', label: 'Excel herunterladen' },
+        { action: 'pdf', label: 'Drucken' },
+      ],
+    });
+    return `<span class="mc-tools">${fold}${group}${actions}</span>`;
+  };
+
+  // Was mitgenommen wird, ist was auf dem Schirm steht — nicht der ganze
+  // Bestand. Wer gefiltert hat, hat damit gesagt, was ihn angeht.
+  const exportTable = () => ({
+    name: selGroups.length === 1
+      ? (groups.find((g) => g.key === selGroups[0]) || {}).label || TITLE : TITLE,
+    head: ['Nr.', 'Prozess', 'Prozessgruppe', 'Status', 'Beschreibung'],
+    rows: sorted.map((p) => [p.processId, p.name, p.groupLabel, statusOf(core, p.status).label, p.description || '']),
+  });
 
   // Was der gewaehlte Umfang IST — nicht was darin liegt. Auf der Wurzel der
   // Bereich, sonst die Gruppe.
@@ -387,7 +442,7 @@ function list(ctx) {
       // EINE Kachel je Reihe: Prozessnamen sind Saetze, keine Begriffe.
       // Zweispaltig blieb von «Objektuebergabe an LB, Mieter» ein
       // «Objektuebergabe an L» uebrig.
-      return C.landscape({ boxes: boxes(), isOpen: () => true, cols: 1,
+      return C.landscape({ boxes: boxes(), isOpen: (key) => boxOpen(`box:${key}`), cols: 1,
         emptyText: 'In diesem Umfang ist kein Prozess erfasst.' });
     }
     // Tabelle: nach Prozessgruppe geteilt, wie im Katalog — die Achse, an der
@@ -402,7 +457,7 @@ function list(ctx) {
   // Prozesse (L3) stehen in der Liste daneben. Beide Stufen ohne Symbol — die
   // Einrueckung sagt bereits, was wozu gehoert, und ein Symbol, das auf jeder
   // Zeile dasselbe zeigt, unterscheidet nichts.
-  const treeConfig = () => buildTree({ all, areas, groups, hash, selGroups, activeId: null });
+  const treeConfig = () => buildTree({ all, areas, groups, hash: hashA, selGroups, activeId: null });
 
   const filterCount = selGroups.length + selStatus.length;
   const panel = `
@@ -424,6 +479,7 @@ function list(ctx) {
       filterId: 'pd-filter', filterLabel: 'Filter', filterCount,
       panelId: 'pd-filters', panel,
       view,
+      extra: `<span id="pd-tools">${toolsHtml()}</span>`,
       views: [['uebersicht', 'Übersicht', 'InfoCircle'], ['diagramm', 'Diagramm', 'Apps'],
         ['tabelle', 'Tabelle', 'List']],
     })}
@@ -431,7 +487,7 @@ function list(ctx) {
     <div class="pf-layout">
       <aside class="pf-sidebar" id="pd-tree" aria-label="Prozesshierarchie"></aside>
       <div class="pf-main">
-        ${paneHtml()}
+        <div id="pd-panel" class="mc-pane">${paneHtml()}</div>
       </div>
     </div>
   </div>`;
@@ -448,6 +504,47 @@ function list(ctx) {
   // derselbe Knopf beides, je nachdem, wo man gerade stand — «navigiert, ausser
   // wenn schon dort, dann klappt es» ist eine Regel, die man nicht sieht.
   ctx.onUnmount(C.sidebarTree(mount.querySelector('#pd-tree'), treeConfig()));
+
+  // Die Flaeche allein neu zeichnen, wenn sich nur an ihr etwas aendert. Ein
+  // Faltzustand ist keine Adresse — er soll den Verlauf nicht fuellen.
+  const paneEl = mount.querySelector('#pd-panel');
+  const tools = mount.querySelector('#pd-tools');
+  const redraw = () => {
+    if (paneEl) paneEl.innerHTML = paneHtml();
+    if (tools) { tools.innerHTML = toolsHtml(); C.wireMenu(tools, onMenuAction); }
+  };
+
+  function onMenuAction(action) {
+    // Die Achse NAVIGIERT: sie legt beide Sichten neu aus und ist eine seltene,
+    // bewusste Wahl — anders als ein Faltzustand.
+    if (action.startsWith('axis:')) {
+      const v = action.slice(5);
+      location.hash = hash({ axis: v === AXES[0].value ? '' : v }).slice(1);
+      return;
+    }
+    runTableExport(action, exportTable(), `prozessdokumentation_${slug(exportTable().name, 'prozesse')}`);
+  }
+
+  if (tools) {
+    C.wireMenu(tools, onMenuAction);
+    tools.addEventListener('click', (e) => {
+      const all = e.target.closest('[data-lscape-all]');
+      if (!all) return;
+      const open = all.dataset.lscapeAll === 'open';
+      boxes().forEach((b) => BOXES.set(`box:${b.key}`, open));
+      redraw();
+    });
+  }
+  // Ein einzelner Kasten: derselbe Zustand, nur eine Zeile davon.
+  if (paneEl) {
+    paneEl.addEventListener('click', (e) => {
+      const t = e.target.closest('.lscape__toggle');
+      if (!t) return;
+      const key = `box:${t.dataset.box}`;
+      BOXES.set(key, !boxOpen(key));
+      redraw();
+    });
+  }
 }
 
 // Process detail: overview, diagram, and steps.
