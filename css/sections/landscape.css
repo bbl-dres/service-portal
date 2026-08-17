@@ -1,28 +1,6 @@
-/* Landscape view for the metadata catalogue's «Diagramm» tab.
-   ---------------------------------------------------------------------------
-   The same scope the table lists, drawn as territory instead of as a sequence.
-   A table answers «what are the values»; this answers «how much is there, and
-   how is it divided» — a question a reader answers by looking rather than by
-   reading, which is why the tiles carry a name and one number and nothing else.
-
-   A TILE is always one record — on every level, under every grouping. The BOXES
-   come from «Gruppieren», so the same landscape is simply re-laid along whichever
-   axis is chosen, and «keine» is one box holding everything. Keeping the unit of
-   the picture fixed is what makes two landscapes comparable.
-
-   There is deliberately no colour-by dimension (Nutzerentscheid, 2026-08-13):
-   a legend that has to be consulted defeats the point of looking. */
-
-/* The boxes flow as a MAP, not as a stack: fixed width, wrapping row, height set
-   by how many tiles a box holds. That height is the whole message — one look
-   says that «Bauwerk und Liegenschaft» holds four times what «Finanzen» does,
-   with no number read. Full-width stacked boxes throw exactly that away and
-   leave a list with frames around it. */
+/* Each tile is one record; box grouping changes without changing that unit. */
 .lscape { display:flex; flex-wrap:wrap; align-items:flex-start; gap:var(--sp-4); }
 
-/* A box is a container of things, so it is drawn as one: a hairline and a tinted
-   head, the same pair the portal's .box uses. Never a shadow — a landscape of
-   twenty lifted cards reads as twenty separate documents. */
 .lscape__group { flex:0 0 auto; width:21rem; max-width:100%;
   border:var(--stroke-1) solid var(--color-border); border-radius:var(--radius-sm);
   background:var(--surface-bg); overflow:hidden; }
@@ -35,105 +13,104 @@
   outline-offset:calc(-1 * var(--stroke-2)); }
 .lscape__chev { flex:none; transition:transform var(--duration-fast); color:var(--color-text-light); }
 .lscape__toggle[aria-expanded="true"] .lscape__chev { transform:rotate(90deg); }
-/* The count is context, not the name of the box — same treatment as the tree. */
 .lscape__n { font-weight:var(--fw-regular); color:var(--color-text-light); }
 .lscape__n::before { content:"("; }
 .lscape__n::after { content:")"; }
-/* Pushed to the far end: it labels the box, it does not continue its name. */
 .lscape__note { margin-left:auto; font-weight:var(--fw-regular); color:var(--color-text-light); }
 
-/* Feste Spaltenzahl, damit die Zahl der REIHEN der Anzahl entspricht und zwei
-   Kaesten sich allein an der Hoehe vergleichen lassen. Wie viele Spalten, sagt
-   der Aufrufer (--lscape-cols): zwei fuer kurze Namen wie «Areal», eine fuer
-   Prozessnamen, die sonst nach zwei Wörtern abgeschnitten waeren. */
+/* The caller selects a fixed column count so box height remains comparable. */
 .lscape__tiles { display:grid; grid-template-columns:repeat(var(--lscape-cols, 2), minmax(0, 1fr));
   gap:var(--sp-2); list-style:none; margin:0; padding:var(--sp-3); }
-/* Filled, and carrying the NAME alone. A tile is one record; the count lives on
-   the box. Anything more turns each tile into a row and the map back into a
-   list. secondary-500 is the design system's filled-control ground; white on it
-   measures 7.2:1. */
 .lscape__tile { display:flex; align-items:center; min-height:var(--target-min);
   padding:var(--sp-2) var(--sp-2-5); border:var(--stroke-1) solid transparent;
   border-radius:var(--radius-sm); background:var(--color-secondary-500);
-  font-size:var(--fs-sm); color:#fff; text-decoration:none;
+  font-size:var(--fs-sm); color:var(--color-text-negative); text-decoration:none;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .lscape__tile:hover { background:var(--color-secondary-600);
-  color:#fff; text-decoration:none; }
+  color:var(--color-text-negative); text-decoration:none; }
 .lscape__tile:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
-/* The selected tile is marked by an outline as well as its fill, so the mark
-   never rests on colour alone — the same rule the tree follows. */
+/* Keep selection distinguishable without relying on colour alone. */
 .lscape__tile.is-active { border-color:var(--color-primary-600);
   box-shadow:inset 0 0 0 var(--stroke-1) var(--color-primary-600); }
 .lscape__empty { padding:var(--sp-3); margin:0; color:var(--color-text-light); font-size:var(--fs-sm); }
 
-/* Below the two-column layout a fixed-width box would overflow, so it gives up
-   its width and keeps its two tile columns. */
 @media (max-width:40rem) {
   .lscape__group { width:100%; }
+  .lscape__tiles { grid-template-columns:minmax(0,1fr); }
+  .lscape__tile { white-space:normal; overflow-wrap:anywhere; }
 }
 
-/* --- Die Bedienelemente des Katalogs -----------------------------------------
-   Sie sitzen jetzt in der GETEILTEN Leiste (.catbar) des Portals, als `extra`
-   zwischen Sortierung und Ansichtswechsel — dieselbe Zeile wie im
-   Liegenschaften Inventar. Die eigene Zeile, die der Katalog dafuer hatte, gab
-   es nur, weil «Diagramm» und «Tabelle» ARIA-Reiter waren und ein Reiter nicht
-   in seiner eigenen Flaeche stehen darf. Als Ansichtswechsel entfaellt der
-   Zwang. */
-/* Die Katalog-Bedienelemente als EINE Gruppe in der Leiste.
-   Innerhalb der Gruppe keine Trennlinie: es sind lauter gerahmte Schalter, und
-   ein Strich zwischen Dingen, die schon Kanten haben, ist eine dritte Marke
-   unter dreien. */
 .mc-tools { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2);
   min-height:var(--target-min); }
 .mc-tools > .action-menu { border-left:0; padding-left:0; margin-left:0; }
 
-/* Printing the catalogue means printing what is IN the pane. The tree chooses
-   the scope and the controls arrange it — neither is part of the answer, and on
-   paper neither can be used. The portal's own print cascade (utilities.css)
-   already removes the surrounding chrome. */
 @media print {
   .pf-sidebar, .active-filters, .catbar,
   .lscape__toggle .lscape__chev, .table__group-chev { display:none !important; }
   .pf-layout { display:block !important; }
-  /* A landscape on paper has no folding, so every box is laid flat and allowed
-     to break across pages rather than being clipped at the margin. */
+  /* Print every box open because fold controls are unavailable on paper. */
   .lscape { display:block !important; }
   .lscape__group { width:auto !important; break-inside:avoid; margin-bottom:var(--sp-3); }
-  .lscape__tile { background:transparent !important; color:#000 !important;
-    border-color:#999 !important; }
+  .lscape__tile { background:transparent !important; color:var(--color-print) !important;
+    border-color:var(--color-gray-400) !important; }
 }
 
-/* Die Fundstelle in der Beschreibung. Das Standardgelb der Browser gehoert
-   keiner Palette an und schlaegt in einer Tabelle voller ruhiger Zeilen ein Loch;
-   ein leicht getoenter Grund in der Sekundaerfarbe reicht, um die Stelle zu
-   finden, ohne die Zeile zu uebertoenen. Fettung traegt die Unterscheidung
-   mit, damit sie nicht allein auf Farbe beruht. */
+/* Weight supplements the search highlight colour. */
 .mc-pane mark {
   background:var(--color-secondary-100); color:inherit;
   font-weight:var(--fw-bold); border-radius:var(--radius-xs); padding:0 .1em;
 }
 
-/* --- The catalogue's own density --------------------------------------------
-   A reference tool is read by scanning, and its tables already say so
-   (.table--compact). The panes around them were still at page scale, which read
-   as three chapters rather than three fields of one record: section headings at
-   32px/40px with 48px between them, and 258px-tall figure cards. The numbers
-   here are the wireframe's, and they are the same step down the tables took.
-   Scoped to the pane, so no other surface in the portal moves. */
-.mc-pane .detail-section { margin-top:var(--sp-5); }
-.mc-pane .detail-section:first-child { margin-top:0; }
-/* A section label, not a chapter title — it names a field of three lines. */
-.mc-pane .detail-section__title { margin-bottom:var(--sp-2);
+/* Shared full-width detail anatomy for catalogue-style record pages. */
+.mc-detail { display:grid; width:100%; min-width:0; gap:var(--sp-6); }
+.mc-detail__description > p { max-width:75ch; }
+.mc-detail__facts { display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr));
+  gap:var(--sp-6) var(--sp-8); align-items:start; }
+.mc-detail > .detail-section,
+.mc-detail__facts > .detail-section { min-width:0; margin-top:0; }
+.mc-detail__facts > .detail-section { container-type:inline-size; }
+.mc-detail__wide { min-width:0; }
+.mc-detail .detail-section__title { margin-bottom:var(--sp-2);
   font-size:var(--fs-base); line-height:var(--lh-tight); }
-.mc-pane .kv { font-size:var(--fs-sm); }
-.mc-pane .kv dt, .mc-pane .kv dd { padding-block:var(--sp-1-5); }
-.mc-pane .detail-section > p { font-size:var(--fs-sm); }
+.mc-detail .kv { font-size:var(--fs-sm); }
+.mc-detail .kv dt, .mc-detail .kv dd { padding-block:var(--sp-1-5); }
+.mc-detail .detail-section > p { font-size:var(--fs-sm); }
 
-/* The figure cards. The number stays the largest thing on the page — it is the
-   point of the card — but everything around it stops holding it at arm's
-   length. */
+/* Metadata follows the federal information-block anatomy: sections form one
+   reading stream, while each semantic term/value pair owns the responsive grid. */
+.mc-detail--metadata .mc-detail__facts { grid-template-columns:minmax(0,1fr); gap:var(--sp-6); }
+.mc-detail--metadata .mc-detail__facts > .detail-section {
+  width:100%; container-type:normal;
+}
+.mc-detail--metadata .mc-detail__list { display:block; margin:0; }
+.mc-detail--metadata .mc-detail__fact { display:grid; grid-template-columns:minmax(0,1fr);
+  gap:var(--sp-4); min-width:0; padding-block:var(--sp-4);
+  border-top:var(--stroke-1) solid var(--color-secondary-200); }
+.mc-detail--metadata .mc-detail__fact > dt,
+.mc-detail--metadata .mc-detail__fact > dd { min-width:0; margin:0; padding:0; border:0; overflow-wrap:break-word; }
+.mc-detail--metadata .mc-detail__fact > dt { color:var(--color-text); font-weight:var(--fw-bold); }
+.mc-detail--metadata .mc-detail__fact code,
+.mc-detail--metadata .mc-detail__fact a { overflow-wrap:anywhere; }
+
+/* Metadata detail DOM is main-first. Grid areas put the same nodes beside a
+   left-hand rail on desktop without changing accessibility or focus order. */
+.mc-layout--detail { grid-template-areas:"main" "sidebar"; }
+.mc-layout--detail > .pf-main { grid-area:main; order:initial; }
+.mc-layout--detail > .pf-sidebar { grid-area:sidebar; }
+
+@media (min-width:768px){
+  .mc-detail--metadata .mc-detail__fact {
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:var(--sp-4); row-gap:0;
+  }
+}
+@media (min-width:1024px){
+  .mc-detail--metadata .mc-detail__fact {
+    grid-template-columns:minmax(0,1fr) minmax(0,2fr); padding-block:var(--sp-6);
+  }
+  .mc-layout--detail { grid-template-areas:"sidebar main"; }
+}
+
 .mc-pane .stats { gap:var(--sp-4); }
 .mc-pane .stats .card__body { padding:var(--sp-4); }
-.mc-pane .stats .stat__num { font-size:var(--text-2xl); margin-bottom:var(--sp-1); }
-.mc-pane .stats .stat__label { margin:0 0 var(--sp-2); font-size:var(--fs-sm); }
-.mc-pane .stats .card__text { margin:0; font-size:var(--fs-sm); }
+.mc-pane .stats .card__description { margin-bottom:0; font-size:var(--fs-sm); }

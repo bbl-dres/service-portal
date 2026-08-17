@@ -25,7 +25,9 @@ export const caseDetails = (instanceId) => `#/my-cases/${q(instanceId)}`;
 export const news = (id) => `#/news/${q(id)}`;
 /** The archive filters through `?q=`; documents do not have individual routes. */
 export const documentSearch = (title) => `#/app/document-archive?q=${q(title)}`;
-export const processDocumentation = (processId) => `#/app/process-docs?id=${q(processId)}`;
+/** Business processes use `id`; executable portal workflows use `def`. */
+export const processDocumentation = (processId, branch = 'fachlich') =>
+  `#/app/process-docs?${branch === 'portal' ? 'def' : 'id'}=${q(processId)}`;
 /** Room booking, preselecting one bookable room (js/apps/room-booking.js `?room=`). */
 export const roomBooking = (spaceId = '') => `#/app/room-booking${spaceId ? `?room=${q(spaceId)}` : ''}`;
 export const shop = () => '#/app/shop';

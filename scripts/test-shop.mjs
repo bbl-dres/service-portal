@@ -116,8 +116,7 @@ try {
         && sidebar.getBoundingClientRect().bottom <= main.getBoundingClientRect().top + 1),
       // …and it exists exactly once: two copies meant two aria-current rows.
       trees: document.querySelectorAll('.shop-layout .pf-tree, #shop-filters .pf-tree').length,
-      // Seit dem Umzug auf das Seitenbaum-Bauteil (2026-08-14) heisst die Zeile
-      // .pf-tree__row; ein Kategorieverweis ist eine mit href.
+      // Category links are tree rows with an href.
       categoryLinks: sidebar?.querySelectorAll('.pf-tree__row[href]').length || 0,
       initiallyHidden,
       expanded: toggle?.getAttribute('aria-expanded'),
@@ -214,6 +213,8 @@ try {
     const submit = () => document.querySelector('#shop-checkout')
       ?.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
     localStorage.setItem('bbl_shop_cart_v1', JSON.stringify([{ id: 3, qty: 1 }]));
+    const beforeOrders = JSON.parse(localStorage.getItem('bbl_vorgaenge_v1') || '[]')
+      .filter(item => item.defId === 'bestellung').length;
     location.hash = '#/app/shop';
     await sleep(150);
     location.hash = '#/app/shop/checkout';
@@ -232,16 +233,34 @@ try {
     submit();
     await sleep(200);
     Storage.prototype.removeItem = original;
-    return JSON.stringify({
+    const failed = {
       done: document.querySelector('#main-content')?.textContent.includes('Bestellung eingereicht') || false,
       cart: localStorage.getItem('bbl_shop_cart_v1'),
       error: document.querySelector('#main-content .notification--error')?.textContent.trim() || '',
+    };
+    localStorage.setItem('bbl_shop_cart_v1', JSON.stringify([{ id: 3, qty: 1 }, { id: 1, qty: 2 }]));
+    submit();
+    await sleep(300);
+    const afterOrders = JSON.parse(localStorage.getItem('bbl_vorgaenge_v1') || '[]')
+      .filter(item => item.defId === 'bestellung').length;
+    return JSON.stringify({
+      failed,
+      retryDone: document.querySelector('#main-content')?.textContent.includes('Bestellung eingereicht') || false,
+      retryCart: JSON.parse(localStorage.getItem('bbl_shop_cart_v1') || '[]'),
+      ordersCreated: afterOrders - beforeOrders,
     });
   })()`));
-  if (failedCheckoutCleanup.done || failedCheckoutCleanup.cart === null || !/nicht geleert/.test(failedCheckoutCleanup.error)) {
+  if (failedCheckoutCleanup.failed.done || failedCheckoutCleanup.failed.cart === null
+    || !/nicht geleert/.test(failedCheckoutCleanup.failed.error)) {
     fails.push(`Checkout: failed cart cleanup was treated as success (${JSON.stringify(failedCheckoutCleanup)})`);
   }
-  console.log('  ok  checkout confirms only after the cleared cart is persisted');
+  if (!failedCheckoutCleanup.retryDone || failedCheckoutCleanup.ordersCreated !== 1
+    || failedCheckoutCleanup.retryCart.length !== 1
+    || failedCheckoutCleanup.retryCart[0].id !== 1
+    || failedCheckoutCleanup.retryCart[0].qty !== 2) {
+    fails.push(`Checkout: retry erased a concurrent cart change or duplicated the order (${JSON.stringify(failedCheckoutCleanup)})`);
+  }
+  console.log('  ok  checkout confirms only after ordered items are removed and preserves later additions');
 
   await page.evaluate(`location.hash = '#/app/shop'; localStorage.removeItem('bbl_shop_cart_v1')`);
   await sleep(300);

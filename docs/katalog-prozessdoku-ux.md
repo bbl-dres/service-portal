@@ -5,6 +5,16 @@ Umfang, drei Sichten zeigen ihn, eine Leiste trägt Suche und Bedienelemente. We
 eine kennt, soll die andere nicht neu lernen müssen. Dieses Dokument prüft, ob
 das stimmt — Stufe für Stufe, gemessen an der laufenden Anwendung.
 
+> **Fortschreibung 2026-08-17:** Der fokussierte
+> [Design-Review](design-review-metadata-process-docs-2026-08-17.md) ersetzt vier
+> damalige Detailregeln. Ein Geschäftsobjekt oder eine Datentabelle startet jetzt
+> in der Übersicht, Inhalte eines Datensatzes werden als Textregister statt als
+> Ansichtsschalter dargestellt, und die Wahl eines anderen Datensatzes startet
+> wieder informationsorientiert in der Übersicht. Hierarchie ist keine aktive
+> Filtermarke mehr; Baum, Krume, H1 und Zurück-Link zeigen den Umfang. Die
+> Prozesswurzel durchsucht nun beide Zweige. Die Messungen und Begründungen unten
+> bleiben als Entscheidungsverlauf erhalten, nicht als aktuelle Spezifikation.
+
 ---
 
 ## 1 — Der Vergleich, gemessen

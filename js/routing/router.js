@@ -153,15 +153,17 @@ function setActiveSubNav() {
 //  · CD's script sets no aria-expanded, has no Escape and no keyboard path at
 //    all. This portal owes WCAG 2.1 AA, so the button carries the state and
 //    wireCrumbDropdowns() below carries the rest.
+let currentCrumbs = [];
 function renderCrumbs(crumbs) {
+  currentCrumbs = Array.isArray(crumbs) ? crumbs.map((crumb) => ({ ...crumb })) : [];
   const ul = document.getElementById('breadcrumb-list');
   const wrap = document.getElementById('breadcrumb');
   if (!ul || !wrap) return;
-  if (!crumbs || !crumbs.length) { wrap.hidden = true; ul.innerHTML = ''; return; }
+  if (!currentCrumbs.length) { wrap.hidden = true; ul.innerHTML = ''; return; }
   wrap.hidden = false;
   const here = location.hash || '#/';
-  ul.innerHTML = crumbs.map((c, i) => {
-    const last = i === crumbs.length - 1;
+  ul.innerHTML = currentCrumbs.map((c, i) => {
+    const last = i === currentCrumbs.length - 1;
     const sep = i > 0 ? C.icon('ChevronRight', 'breadcrumb__include-icon') : '';
     const href = safeLinkUrl(c.href);
     // The trail's last item deliberately carries no href (crumbs.js) — it IS the
@@ -194,20 +196,32 @@ function renderCrumbs(crumbs) {
   }).join('');
 }
 
-// One delegated wiring for every dropdown the breadcrumb will ever render.
-// renderCrumbs() replaces the list on each navigation, so per-button listeners
-// would have to be re-attached every time; the container outlives all of them.
+/** Reapply non-content route state after the shell replaces the header. */
+export function restoreRouteChrome() {
+  const { segs } = parseHash();
+  const key = segs[0] === 'app' ? segs[1] : (segs[0] || '');
+  setActiveNav(SECTION_OF[key] || (segs[0] === 'app' ? '' : key));
+  renderCrumbs(currentCrumbs);
+}
+
+// One document-level delegate survives both breadcrumb-list and header refreshes.
 function wireCrumbDropdowns() {
-  const wrap = document.getElementById('breadcrumb');
-  if (!wrap) return;
+  // Header refreshes replace #breadcrumb itself, so delegation must live on a
+  // stable ancestor rather than the first breadcrumb element seen at startup.
   const close = (button) => {
     button.setAttribute('aria-expanded', 'false');
     button.nextElementSibling?.setAttribute('hidden', '');
   };
-  const closeAll = () => wrap.querySelectorAll('.breadcrumb__dropdown[aria-expanded="true"]').forEach(close);
-  wrap.addEventListener('click', (event) => {
-    const button = event.target.closest('.breadcrumb__dropdown');
-    if (!button) return;
+  const closeAll = () => document.querySelectorAll(
+    '#breadcrumb .breadcrumb__dropdown[aria-expanded="true"]',
+  ).forEach(close);
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest?.('#breadcrumb .breadcrumb__dropdown');
+    if (!button) {
+      if (!event.target.closest?.('#breadcrumb')
+        || event.target.closest?.('#breadcrumb a[href]')) closeAll();
+      return;
+    }
     const open = button.getAttribute('aria-expanded') === 'true';
     closeAll();   // CD keeps at most one open (BreadcrumbNav.js:28-30).
     if (open) return;
@@ -221,15 +235,12 @@ function wireCrumbDropdowns() {
   // rows are `<li>` inside the panel's `<ul>`, itself inside the segment's
   // `<li>`, so `closest('li')` from a focused row returns the row — which has no
   // button, and Escape silently did nothing.
-  wrap.addEventListener('keydown', (event) => {
+  document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
-    const button = wrap.querySelector('.breadcrumb__dropdown[aria-expanded="true"]');
+    const button = document.querySelector('#breadcrumb .breadcrumb__dropdown[aria-expanded="true"]');
     if (!button) return;
     close(button);
     button.focus();
-  });
-  document.addEventListener('click', (event) => {
-    if (!event.target.closest('#breadcrumb')) closeAll();
   });
   // Following a row navigates, and the panel must not survive into the next page.
   window.addEventListener('hashchange', closeAll);
@@ -299,7 +310,11 @@ function stampHistoryEntry() {
   let idx;
   if (known) { idx = history.state.bblIdx; }
   else {
-    const highestIdx = Number(sessionStorage.getItem(SCROLL_KEY + '_n') || 0);
+    let highestIdx = 0;
+    try {
+      const storedHighest = Number(sessionStorage.getItem(SCROLL_KEY + '_n') || 0);
+      if (Number.isFinite(storedHighest)) highestIdx = storedHighest;
+    } catch { /* Blocked storage: keep the in-memory navigation index. */ }
     // A new navigation after Back prunes the forward branch. Reuse the next
     // positional index instead of the global high-water mark so bblIdx remains
     // a real history offset and rejected multi-entry jumps can be restored in
@@ -316,7 +331,8 @@ function stampHistoryEntry() {
       }
       sessionStorage.setItem(SCROLL_KEY, JSON.stringify(positions));
       sessionStorage.setItem(SCROLL_KEY + '_n', String(Math.max(highestIdx || 0, idx)));
-      history.replaceState({ bblIdx: idx }, '');
+      const priorState = history.state && typeof history.state === 'object' ? history.state : {};
+      history.replaceState({ ...priorState, bblIdx: idx }, '');
     } catch { /* Without a stamp, retain the scroll-to-top default. */ }
   }
   lastEntryIdx = idx;
@@ -473,7 +489,7 @@ async function dispatch() {
   }
 
   setActiveNav(navBase);
-  document.getElementById('breadcrumb').hidden = true;
+  renderCrumbs([]);
 
   // --- Domain-app login gate (user decision 2026-08-06) ---------------------
   // A domain app is a system with real operational data, not catalogue content;
@@ -557,8 +573,7 @@ async function dispatch() {
 }
 
 export function initRouter() {
-  // Delegated ONCE on the breadcrumb container, which outlives every list
-  // renderCrumbs() puts inside it.
+  // Delegated once on document so it survives header and breadcrumb replacement.
   wireCrumbDropdowns();
   // Only `#/…` is a route. Bare `#` and in-page fragments (e.g. the skip link's
   // `#main-content`) must not dispatch — that used to render a 404 over the page.

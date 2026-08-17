@@ -1,4 +1,4 @@
-// Personal bookmarks — ONE store behind every «merken» control in the portal.
+// Personal bookmarks use one typed-reference store behind every save control.
 //
 // A bookmark is a TYPED REFERENCE, `{ kind, id, addedAt }`, never a copy of the
 // thing referred to. Titles and links are resolved at render time from the
@@ -13,11 +13,11 @@
 // from then on — otherwise removing a seeded bookmark would undo itself on the
 // next load.
 //
-// SCOPED TO THE SIGNED-IN PERSON. Favourites used to be device-local and
-// anonymous (`bbl_favorites_v1`, kind → ids). They are filed under `userId` now,
-// which is what makes «meine Favoriten» true rather than «this browser's».
+// Favourites used to be device-local and anonymous (`bbl_favorites_v1`, kind →
+// ids). Entries are now filed under `userId` so they belong to a person rather
+// than a browser.
 
-import { readJSON, writeJSON, remove } from './storage.js';
+import { readJSON, writeJSON, remove, withStorageLock } from './storage.js';
 import { session } from './session.js';
 import { core } from './index.js';
 
@@ -44,21 +44,29 @@ const isEntry = (value) => isRecord(value)
   && KINDS.includes(value.kind)
   && typeof value.id === 'string' && value.id.trim() !== '';
 
-const clean = (list) => (Array.isArray(list) ? list : [])
-  .filter(isEntry)
-  .map((entry) => ({
-    kind: entry.kind,
-    id: entry.id,
-    addedAt: isDate(entry.addedAt) ? entry.addedAt : '',
-  }));
+function clean(list) {
+  const cleaned = [];
+  const seen = new Set();
+  for (const entry of Array.isArray(list) ? list : []) {
+    if (!isEntry(entry)) continue;
+    const key = JSON.stringify([entry.kind, entry.id]);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    cleaned.push({
+      kind: entry.kind,
+      id: entry.id,
+      addedAt: isDate(entry.addedAt) ? entry.addedAt : '',
+    });
+  }
+  return cleaned;
+}
 
 // `store[userId] = { seeded, items }`. `seeded` is remembered separately from
-// «has items»: somebody who removes every seeded bookmark must not have them
+// "has items": somebody who removes every seeded bookmark must not have them
 // handed back on the next visit.
 let store = null;
 
-function read() {
-  if (store) return store;
+function reload() {
   const raw = readJSON(LS_KEY, {}, isRecord) || {};
   store = Object.create(null);
   for (const [userId, entry] of Object.entries(raw)) {
@@ -66,6 +74,10 @@ function read() {
     store[userId] = { seeded: entry.seeded === true, items: clean(entry.items) };
   }
   return store;
+}
+
+function read() {
+  return store || reload();
 }
 
 function bucket(userId) {
@@ -79,7 +91,7 @@ function bucket(userId) {
 // into a second person's list.
 function absorbLegacy(target) {
   const legacy = readJSON(LEGACY_KEY, null, isRecord);
-  if (!legacy) return false;
+  if (!legacy) return { found: false, changed: false };
   let changed = false;
   for (const [kind, ids] of Object.entries(legacy)) {
     if (!KINDS.includes(kind) || !Array.isArray(ids)) continue;
@@ -90,8 +102,7 @@ function absorbLegacy(target) {
       changed = true;
     }
   }
-  remove(LEGACY_KEY);
-  return changed;
+  return { found: true, changed };
 }
 
 // Local date, as the workspace app formats it (js/apps/workspace.js): the data
@@ -119,7 +130,7 @@ function seedOnce(userId, target) {
 }
 
 function persist() {
-  writeJSON(LS_KEY, store);
+  return writeJSON(LS_KEY, store);
 }
 
 function currentId() {
@@ -127,15 +138,30 @@ function currentId() {
   return user && user.userId ? user.userId : '';
 }
 
+function prepare(userId) {
+  const target = bucket(userId);
+  const legacy = absorbLegacy(target);
+  return { target, legacy, changed: legacy.changed || seedOnce(userId, target) };
+}
+
 // Every read runs the seed and the legacy fold first, so no caller has to know
 // they exist or care in which order pages happen to be visited.
 function entries() {
   const userId = currentId();
   if (!userId) return null;
-  const target = bucket(userId);
-  const changed = [absorbLegacy(target), seedOnce(userId, target)].some(Boolean);
-  if (changed) persist();
-  return target;
+  let prepared = prepare(userId);
+  if (!prepared.changed && !prepared.legacy.found) return prepared.target;
+
+  const locked = withStorageLock(LS_KEY, (owns) => {
+    reload();
+    prepared = prepare(userId);
+    if (!prepared.changed && !prepared.legacy.found) return prepared.target;
+    // The legacy key is the only durable copy until the consolidated write
+    // succeeds. Keep it for a later retry when storage is temporarily blocked.
+    if (owns() && persist() && prepared.legacy.found) remove(LEGACY_KEY);
+    return prepared.target;
+  });
+  return locked.ok ? locked.value : prepared.target;
 }
 
 /** Bookmarks of the signed-in person, oldest first. Empty when signed out. */
@@ -144,7 +170,7 @@ function list() {
   return target ? target.items.map((entry) => ({ ...entry })) : [];
 }
 
-/** Bookmarks of one kind, as bare ids — the shape js/core/favorites.js exposed. */
+// Return one bookmark kind as bare identifiers for compact membership indexes.
 function listKind(kind) {
   return list().filter((entry) => entry.kind === kind).map((entry) => entry.id);
 }
@@ -156,25 +182,48 @@ function has(kind, id) {
 }
 
 /**
- * Save or remove, returning the NEW state (true = saved). Signed out there is
- * nobody to save for, so this is a no-op rather than a write into a shared
- * bucket; the controls are hidden in that state anyway.
+ * Save or remove, returning the new state (true = saved), or null when the
+ * durable write fails. Signed out there is nobody to save for, so this is a
+ * no-op rather than a write into a shared bucket; controls are hidden then.
  */
 function toggle(kind, id) {
   const key = String(id ?? '');
   if (!key || !KINDS.includes(kind)) return false;
-  const target = entries();
-  if (!target) return false;
-  const at = target.items.findIndex((entry) => entry.kind === kind && entry.id === key);
-  if (at >= 0) target.items.splice(at, 1);
-  else target.items.push({ kind, id: key, addedAt: today() });
-  persist();
-  return at < 0;
+  const userId = currentId();
+  if (!userId) return false;
+  const locked = withStorageLock(LS_KEY, (owns) => {
+    // Another tab may have written since this module populated its cache.
+    // Reload under the lease so this mutation cannot erase that work.
+    reload();
+    const { target, legacy } = prepare(userId);
+    const at = target.items.findIndex((entry) => entry.kind === kind && entry.id === key);
+    if (at >= 0) target.items.splice(at, 1);
+    else target.items.push({ kind, id: key, addedAt: today() });
+    if (!owns() || !persist()) {
+      reload();
+      return null;
+    }
+    if (legacy.found) remove(LEGACY_KEY);
+    return at < 0;
+  });
+  if (!locked.ok) {
+    store = null;
+    return null;
+  }
+  return locked.value;
 }
 
 /** Test seam: drop the cached read so a changed session or storage is re-read. */
 function reset() {
   store = null;
+}
+
+// Browser tabs receive storage events for writes made by their peers. Clear the
+// read cache so passive views also observe the next durable snapshot.
+if (typeof globalThis.addEventListener === 'function') {
+  globalThis.addEventListener('storage', (event) => {
+    if (event.key === LS_KEY || event.key === LEGACY_KEY) store = null;
+  });
 }
 
 export const bookmarks = { list, listKind, has, toggle, reset, KINDS };

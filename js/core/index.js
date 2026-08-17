@@ -134,6 +134,7 @@ const RECORD_IDS = {
   buildingContacts: 'contactId', tenancies: 'tenancyId', floors: 'floorId', spaces: 'spaceId',
   workspacePlanning: 'buildingId', businessObjects: 'objectId', dataTables: 'tableId',
   processes: 'processId', shopProducts: 'id', shopCategories: 'id',
+  users: 'userId',
 };
 
 // Buildings come from the SAP RE-FX Golden Record (data/buildings.geojson): the
@@ -198,11 +199,19 @@ function normalizeLandcover(feature) {
   };
 }
 
+function validateUniqueField(records, field, url, subject = 'record') {
+  const invalid = records.findIndex((record) => !isRecord(record)
+    || record[field] == null || String(record[field]).trim() === '');
+  if (invalid >= 0) throw new Error(`invalid ${subject} ${invalid}: ${url}`);
+  const ids = records.map((record) => String(record[field]).trim());
+  if (new Set(ids).size !== ids.length) throw new Error(`duplicate ${field}: ${url}`);
+}
+
 function validateRecords(records, url, key) {
   const idField = RECORD_IDS[key];
-  const invalid = records.findIndex((record) => !isRecord(record)
-    || (idField && (record[idField] == null || String(record[idField]).trim() === '')));
+  const invalid = records.findIndex((record) => !isRecord(record));
   if (invalid >= 0) throw new Error(`invalid record ${invalid}: ${url}`);
+  if (idField) validateUniqueField(records, idField, url);
   if (key === 'businessObjects') {
     const nested = records.findIndex((record) => !Array.isArray(record.attributes)
       || record.attributes.some((attribute) => !isRecord(attribute)
@@ -231,11 +240,42 @@ function validateRecords(records, url, key) {
       && Array.isArray(record.children) && record.children.every(validCategory);
     const nested = records.findIndex((record) => !validCategory(record));
     if (nested >= 0) throw new Error(`invalid shop category ${nested}: ${url}`);
+    const all = [];
+    const collect = (categories) => categories.forEach((category) => {
+      all.push(category);
+      collect(category.children);
+    });
+    collect(records);
+    validateUniqueField(all, 'id', url, 'shop category');
+  }
+  if (key === 'processes') {
+    const invalidProcess = records.findIndex((record) => typeof record.processId !== 'string'
+      || !record.processId || record.processId.trim() !== record.processId
+      || !['fachlich', 'portal'].includes(record.branch)
+      || typeof record.name !== 'string' || !record.name.trim()
+      || (record.branch === 'portal' && (!Array.isArray(record.steps) || !record.steps.length
+        || record.steps.some((step) => !isRecord(step)
+          || typeof step.status !== 'string' || !step.status.trim()
+          || typeof step.label !== 'string' || !step.label.trim()))));
+    if (invalidProcess >= 0) throw new Error(`invalid process structure ${invalidProcess}: ${url}`);
   }
   return records;
 }
 
-function validateFeatureCollection(collection, url) {
+function validateObjectFile(value, url, key) {
+  if (key === 'multispaceModules') {
+    if (!Array.isArray(value.modules)) throw new Error(`invalid module list: ${url}`);
+    validateUniqueField(value.modules, 'nr', url, 'module');
+  }
+  if (key === 'workspaceExamples') {
+    if (!Array.isArray(value.examples)) throw new Error(`invalid workspace example list: ${url}`);
+    validateUniqueField(value.examples, 'exampleId', url, 'workspace example');
+    validateUniqueField(value.examples, 'slug', url, 'workspace example');
+  }
+  return value;
+}
+
+function validateFeatureCollection(collection, url, { uniqueProperty = 'bbl_id' } = {}) {
   if (collection.type !== 'FeatureCollection' || !Array.isArray(collection.features)) {
     throw new Error(`expected a GeoJSON FeatureCollection: ${url}`);
   }
@@ -247,6 +287,10 @@ function validateFeatureCollection(collection, url) {
     || String(feature.properties[requiredProperty]).trim() === ''
     || (feature.geometry !== null && !isRecord(feature.geometry)));
   if (invalid >= 0) throw new Error(`invalid GeoJSON feature ${invalid}: ${url}`);
+  if (uniqueProperty) {
+    const ids = collection.features.map((feature) => String(feature.properties[uniqueProperty]).trim());
+    if (new Set(ids).size !== ids.length) throw new Error(`duplicate GeoJSON ${uniqueProperty}: ${url}`);
+  }
   return collection;
 }
 
@@ -311,14 +355,18 @@ async function loadDeferred(key) {
     const NORMALIZERS = { buildings: normalizeBuilding, parcels: normalizeParcel, landcovers: normalizeLandcover };
     const ID_FIELDS = { buildings: 'bbl_id', parcels: 'bbl_id', landcovers: 'parcelId' };
     if (NORMALIZERS[key]) {
-      const featureCollection = validateFeatureCollection(await fetchJSON(url, { shape: 'object' }), url);
+      const featureCollection = validateFeatureCollection(await fetchJSON(url, { shape: 'object' }), url, {
+        // A parcel has several legitimate land-cover polygons with the same
+        // bbl_id; buildings and parcels themselves remain uniquely addressed.
+        uniqueProperty: key === 'landcovers' ? null : 'bbl_id',
+      });
       DATA[key] = (featureCollection.features || []).map(NORMALIZERS[key]).filter((item) => item[ID_FIELDS[key]]);
       // Main image and attribution live on the objects. Relink after either
       // dataset because buildings and parcels can arrive independently.
       if (key === 'buildings' || key === 'parcels') linkMedia();
     } else {
       let value = await fetchJSON(url, { shape: isObject ? 'object' : 'array' });
-      if (isObject) value = safeDictionary(value);
+      if (isObject) value = safeDictionary(validateObjectFile(value, url, key));
       else value = validateRecords(value, url, key);
       DATA[key] = value;
       // The reverse mapping index may have been built while the dataset was
@@ -398,12 +446,14 @@ export const core = {
   building: (id) => find(DATA.buildings, 'bbl_id', id),
   parcels: () => DATA.parcels || [],
   parcel: (id) => find(DATA.parcels, 'bbl_id', id),
+  landcovers: () => DATA.landcovers || [],
   // Parcels for a building (or vice versa) through the business-entity segment of bbl_id.
   parcelsForBuilding: (bid) => { const we = String(bid || '').split('/')[1]; return (DATA.parcels || []).filter(p => String(p.bbl_id).split('/')[1] === we); },
   projects: () => DATA.projects || [],
   project: (id) => find(DATA.projects, 'projectId', id),
   // Property-inventory detail registers per building via buildingId (= bbl_id).
   assetsForBuilding: (bid) => (DATA.assets || []).filter(a => a.buildingId === bid),
+  contracts: () => DATA.contracts || [],
   contractsForBuilding: (bid) => (DATA.contracts || []).filter(c => c.buildingId === bid),
   costsForBuilding: (bid) => (DATA.costs || []).filter(c => c.buildingId === bid),
   areasForBuilding: (bid) => (DATA.areas || []).filter(a => a.buildingId === bid),
@@ -423,10 +473,9 @@ export const core = {
   // Building process documentation: flat list, detail lookup by processId.
   processes: () => DATA.processes || [],
   processDoc: (id) => find(DATA.processes, 'processId', id),
-  // Die Ablaeufe des Portals stehen im selben Bestand, unterschieden durch
-  // ihren Ast. Eine Quelle, zwei Sichten darauf.
+  // Raw portal-workflow records. The engine derives its `defId` compatibility
+  // shape from `processId`; catalogue consumers keep the source schema.
   processDefinitions: () => (DATA.processes || []).filter((r) => r.branch === 'portal'),
-  processDefinition: (id) => find(DATA.processes, 'processId', id),
   // The Multispace standard: one document carrying the edition and its modules, so the
   // two cannot be read apart. `multispaceModule` looks one up by its handbook number.
   multispaceModules: () => DATA.multispaceModules || Object.create(null),

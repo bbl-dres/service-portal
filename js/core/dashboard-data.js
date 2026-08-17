@@ -44,7 +44,12 @@ function validatePayload(json) {
     if (columns.some((column) => typeof column.name !== 'string' || !column.name.trim())) {
       throw new Error(`invalid column: dashboards.datasets.${id}.columns`);
     }
-    if (!Array.isArray(dataset.rows) || dataset.rows.some((row) => !Array.isArray(row))) {
+    const columnNames = columns.map((column) => column.name);
+    if (new Set(columnNames).size !== columnNames.length) {
+      throw new Error(`duplicate column: dashboards.datasets.${id}.columns`);
+    }
+    if (!Array.isArray(dataset.rows) || dataset.rows.some((row) => !Array.isArray(row)
+      || row.length !== columns.length)) {
       throw new Error(`expected row arrays: dashboards.datasets.${id}.rows`);
     }
   }

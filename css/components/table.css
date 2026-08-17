@@ -98,28 +98,16 @@
    fresh start rather than a continuation. */
 .table--zebra tbody > .table__group ~ tr:nth-child(even) { background:transparent; }
 .table--zebra tbody > .table__group ~ tr:nth-child(odd) { background:var(--color-secondary-50); }
-/* Wiederholte Spaltenkoepfe verschieben die Zaehlung noch einmal um eins — ein
-   Abschnitt mit Kopfzeile faenge sonst auf getoenter Zeile an, einer ohne auf
-   weisser, und dieselbe Tabelle haette zwei Rhythmen. Also dort umdrehen, wo die
-   Wiederholung steht, und sie selbst aus dem Streifenmuster nehmen. */
+/* A repeated subhead shifts row parity once more; invert striping in that body. */
 .table--zebra tbody:has(.table__subhead) > .table__group ~ tr:nth-child(odd) { background:transparent; }
 .table--zebra tbody:has(.table__subhead) > .table__group ~ tr:nth-child(even) { background:var(--color-secondary-50); }
 .table--zebra tbody > .table__subhead { background:transparent; }
-/* Gruppierte Tabelle: der echte Kopf tritt SICHTBAR zurueck, bleibt aber im
-   Dokument — er ist es, der jede Zelle ihrer Spalte zuordnet, und das gilt fuer
-   die ganze Tabelle. Sichtbar fuehrt stattdessen jede Gruppe ihre eigenen
-   Koepfe, unmittelbar ueber ihren Zeilen. Vorher stand der echte Kopf oben und
-   die Wiederholungen ab der zweiten Gruppe: der erste Abschnitt las sich
-   «Spalten, Gruppe, Zeilen», jeder weitere «Gruppe, Spalten, Zeilen» — zwei
-   Leserichtungen in einer Tabelle (Nutzerfund).
-
-   Aus dem Fluss genommen, nicht auf display:none: display:none nimmt die Zellen
-   aus der Breitenrechnung UND aus dem Baum der Vorlesesoftware. */
+/* Keep the canonical head available to layout and assistive technology while
+   repeated group-local heads provide the visible reading order. */
 .table--grouped > thead { position:absolute; width:1px; height:1px;
   margin:-1px; padding:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
 
-/* Wie der echte Kopf, nur leiser: er ordnet ein, er kuendigt nichts Neues an.
-   Die Linie darunter trennt ihn von seinen Zeilen, so wie oben auch. */
+/* Group-local column labels are intentionally quieter than the canonical head. */
 .table__subhead > td { padding-top:var(--sp-2); padding-bottom:var(--sp-2);
   font-size:var(--fs-sm); font-weight:var(--fw-bold); color:var(--color-text-muted);
   text-transform:uppercase; letter-spacing:.02em;

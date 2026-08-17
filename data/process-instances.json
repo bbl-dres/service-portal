@@ -2,7 +2,7 @@
   { "instanceId": "seed-1", "defId": "raumbedarf", "defName": "Raumbedarf-Antrag", "reference": "BBL-2026-1042",
     "title": "Zusätzliche 12 Arbeitsplätze, Campus Guisanplatz", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
     "audience": "external", "status": "in_pruefung_pfm", "stepIndex": 2, "createdAt": "2026-05-18", "updatedAt": "2026-06-03",
-    "linkedEntities": { "buildingId": "BLD-06" },
+    "linkedEntities": { "buildingId": "1080/4850/AG" },
     "data": {
       "costCenter": "810.140",
       "persons": "12",
@@ -23,7 +23,7 @@
   { "instanceId": "seed-2", "defId": "stoerung", "defName": "Störungsmeldung", "reference": "BBL-2026-0931",
     "title": "Lüftung 4. OG defekt", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
     "audience": "both", "status": "in_arbeit", "stepIndex": 2, "createdAt": "2026-06-09", "updatedAt": "2026-06-11",
-    "linkedEntities": { "buildingId": "BLD-05" },
+    "linkedEntities": {},
     "data": {
       "kategorie": "HLK / Lüftung",
       "prioritaet": "Hoch",
@@ -73,7 +73,7 @@
   { "instanceId": "seed-5", "defId": "raumbedarf", "defName": "Raumbedarf-Antrag", "reference": "BBL-2025-2210",
     "title": "Umnutzung Lager zu Sitzungszone", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
     "audience": "external", "status": "abgeschlossen", "stepIndex": 5, "createdAt": "2025-09-02", "updatedAt": "2026-02-20",
-    "linkedEntities": { "buildingId": "BLD-07", "projectId": "PRJ-02" },
+    "linkedEntities": { "buildingId": "1080/2800/AD", "projectId": "PRJ-02" },
     "data": {
       "costCenter": "810.140",
       "persons": "—",

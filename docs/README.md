@@ -24,6 +24,8 @@ Konzept- und Review-Dokumente des Service-Portal-Prototyps. Leseordnung:
 
 13. **[code-review.md](code-review.md)** — technischer Review (Lade-/Fehlerpfade, Router-Verträge).
 14. **[design-review.md](design-review.md)** — die AKTUELLE Design-Review (August 2026): Konsistenz, Komplexität, Sprache — Kanon, 130 Befunde, Umsetzungsstand, bewusste Abweichungen.
+15. **[code-review-2026-08-16.md](code-review-2026-08-16.md)** — aktueller JavaScript-Review: Bugs, Nebenläufigkeit, Sicherheit, Performance, Vereinfachung und umgesetzte Korrekturen.
+16. **[design-review-metadata-process-docs-2026-08-17.md](design-review-metadata-process-docs-2026-08-17.md)** — fokussierter UX-Review für Metadatenkatalog und Prozessdokumentation: informationsorientierte Details, konsistente Tabs und responsive Einspalten-Anatomie.
 
 ## Status
 

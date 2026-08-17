@@ -13,6 +13,7 @@ import { countryName } from '../domain.js';
 import { APPLICATIONS, trail } from '../crumbs.js';
 import { floorplanEditor, planCheck } from '../links.js';
 import { exitFullscreen, requestFullscreen } from '../ui/fullscreen.js';
+import { createPrintMode } from '../ui/print-mode.js';
 import { download, fileSlug, rowsToCsv } from '../export.js';
 
 export const needs = ['buildings', 'floors', 'spaces', 'workspacePlanning'];
@@ -241,8 +242,7 @@ function catalogue(ctx, objects) {
       { type: 'FeatureCollection', features: [] }, state.sel.id || null));
   }
 
-  // Was der Baum zeigt: was Suche und Filter uebrig lassen — aber OHNE die
-  // Auswahl selbst, sonst schrumpfte er auf das gerade Angeklickte zusammen.
+  // Tree facets honor search and filters but ignore their own selection.
   const inTree = () => objects.filter((item) => inSearch(item) && inFilters(item));
 
   function renderMain() {
@@ -357,10 +357,9 @@ function catalogue(ctx, objects) {
       id: 'workspace-tree',
       mode: 'select',
       ariaLabel: 'Standorte',
-      // Symbole nur auf der obersten Stufe: die Symbolspalte IST die
-      // Einrueckung der zweiten, ab da traegt der Schritt die Tiefe.
+      // Only the top level uses icons; indentation communicates deeper levels.
       levels: [{ icons: true }, { icons: false }, { icons: false }],
-      // Diese App nennt das gewaehlte Objekt `id`, der Adapter `obj`.
+      // Translate the view's `id` key to the tree adapter's `obj` key here.
       sections: [objectsToNodes(inTree(), TREE, { ...state.sel, obj: state.sel.id })],
       onSelect: (node) => {
         const { obj, ...rest } = node.sel || {};
@@ -707,23 +706,7 @@ function detail(ctx, id) {
   };
 
   let detachFloorplan = null;
-  let printTimer = null;
-  let printCleanup = null;
-  function beginPlanPrint() {
-    if (printCleanup) printCleanup();
-    document.body.classList.add('print--plan');
-    const cleanup = () => {
-      document.body.classList.remove('print--plan');
-      window.removeEventListener('afterprint', cleanup);
-      if (printTimer) clearTimeout(printTimer);
-      printTimer = null;
-      if (printCleanup === cleanup) printCleanup = null;
-    };
-    printCleanup = cleanup;
-    window.addEventListener('afterprint', cleanup);
-    window.print();
-    printTimer = setTimeout(cleanup, 1000);
-  }
+  const planPrint = createPrintMode();
 
   function wireFloorArea({ mountAllTables = false } = {}) {
     if (detachFloorplan) { detachFloorplan(); detachFloorplan = null; }
@@ -783,7 +766,7 @@ function detail(ctx, id) {
         onRejected: () => !stale() && C.toast('Vollbild konnte nicht geöffnet werden.', 'error', 'WarningCircle'),
       });
     });
-    mount.querySelector('#workspace-floorplan-print')?.addEventListener('click', beginPlanPrint);
+    mount.querySelector('#workspace-floorplan-print')?.addEventListener('click', planPrint.print);
   }
 
   function redrawFloorArea() {
@@ -805,7 +788,7 @@ function detail(ctx, id) {
 
   onUnmount(() => {
     if (detachFloorplan) detachFloorplan();
-    if (printCleanup) printCleanup();
+    planPrint.destroy();
     workspaceMap.free();
     detachTables.forEach((detachTable) => { try { detachTable(); } catch { /* already detached */ } });
     detachTables.clear();

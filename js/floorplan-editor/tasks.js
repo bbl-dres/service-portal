@@ -31,6 +31,19 @@ export function planEditorLayer(id) {
   return PLAN_EDITOR_LAYERS.find((layer) => layer.id === id) || PLAN_EDITOR_LAYERS[0];
 }
 
+function utcPlanDate(year, month, day, hour = 0, minute = 0) {
+  if (!Number.isInteger(year) || year < 1000 || year > 9999
+    || !Number.isInteger(month) || !Number.isInteger(day)
+    || !Number.isInteger(hour) || !Number.isInteger(minute)
+    || month < 1 || month > 12 || day < 1 || hour < 0 || hour > 23
+    || minute < 0 || minute > 59) return null;
+  const time = Date.UTC(year, month - 1, day, hour, minute);
+  const date = new Date(time);
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day && date.getUTCHours() === hour
+    && date.getUTCMinutes() === minute ? time : null;
+}
+
 // Fixture dates are Swiss-formatted («28.03.2026, 14:12»); ISO dates appear on
 // planning and tenancy records. Both are compared as time values so sorting and
 // deadline maths do not depend on which shape a record happens to use.
@@ -40,12 +53,11 @@ export function parsePlanDate(value) {
   const swiss = /^(\d{2})\.(\d{2})\.(\d{4})(?:,\s*(\d{2}):(\d{2}))?$/.exec(raw);
   if (swiss) {
     const [, day, month, year, hour = '00', minute = '00'] = swiss;
-    const time = Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
-    return Number.isFinite(time) ? time : null;
+    return utcPlanDate(Number(year), Number(month), Number(day), Number(hour), Number(minute));
   }
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-    const time = Date.parse(`${raw}T00:00:00Z`);
-    return Number.isFinite(time) ? time : null;
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (iso) {
+    return utcPlanDate(Number(iso[1]), Number(iso[2]), Number(iso[3]));
   }
   const parsed = Date.parse(raw);
   return Number.isFinite(parsed) ? parsed : null;

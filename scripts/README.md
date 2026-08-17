@@ -6,8 +6,8 @@ Protocol** from Node (using the global `WebSocket`, Node ≥ 22) — no puppetee
 Each test opens the real app, runs an in-page probe, and asserts on the result,
 exiting non-zero on failure.
 
-There are currently **54 supported `test-*.mjs` suites: 33 browser suites and
-21 pure-Node suites**, plus **22 retained `check-*.mjs` diagnostics**. Browser
+There are currently **61 supported `test-*.mjs` suites: 37 browser suites and
+24 pure-Node suites**, plus **25 retained `check-*.mjs` diagnostics**. Browser
 suites use `APP_BASE` to select the running app and exit non-zero on failure.
 The always-run `test-plan-check-parser.mjs` starts its own ephemeral loopback
 server, verifies the exact bundled runtime and artifact provenance, and parses
@@ -118,13 +118,16 @@ inventory is `scripts/test-*.mjs`.
 | `test-content.mjs` | D4 download-item + contact-box unification: the pages rendering `C.downloadItem` (grundlagen, anleitungen, digitalisierung, application entries, my-cases attachments) and `C.contactBox` (application, services detail) render with the expected items / mailto links and no exceptions. |
 | `test-combobox.mjs` | Shared `createListboxController`: Arrow keys, active descendant, selection, Escape/Tab close behavior and cleanup for global suggestions and address search. |
 | `test-collections.mjs` · `test-format.mjs` · `test-fullscreen.mjs` · `test-map-cluster-navigation.mjs` | Pure helper contracts: immutable collection preparation, locale/date formatting and final-sink escaping, fullscreen success/failure feedback, and async cluster navigation errors. |
+| `test-catalogue-state.mjs` · `test-print-mode.mjs` · `test-shop-cart.mjs` | Pure lifecycle contracts for catalogue fold state, replaceable print ownership, and cross-tab-safe cart normalization/mutation. |
 | `test-search.mjs` · `test-search-log-security.mjs` | Pure search ranking/tokenisation plus quarantine of malformed or hostile locally stored diagnostic records. |
 | `test-data-integrity.mjs` · `test-data-resilience.mjs` | Cross-file references, strict data shapes, retry behavior, storage failures, duplicate identifiers, and safe fallback states. |
 | `test-security-urls.mjs` · `test-security-url-sinks.mjs` · `test-html-contracts.mjs` | URL/resource allowlists, inert rejected URLs at real browser sinks, text-by-default templates, explicit trusted-HTML slots, and hostile SVG/tab payloads. |
 | `test-external-assets.mjs` · `test-export-security.mjs` · `test-calendar-security.mjs` | Authenticated HTTPS asset-loader sequencing/retry, spreadsheet-formula neutralisation, and CR/LF-safe iCalendar output. |
 | `test-dev-server-security.mjs` | Pure HTTP-boundary probe for methods, Host validation, hidden/traversal/malformed paths, compression negotiation, `HEAD`, and security headers. |
 | `test-apidocs.mjs` | Swagger adapter semantics, H2 hierarchy, stable accessible names/language, target sizes and focus styling. |
-| `test-process-docs.mjs` | Process detail tabs plus the full-width BPMN viewer, vertical overlay controls, reset action and disabled/focus states. |
+| `test-metadata-catalog.mjs` | Unified architecture catalogue across root, branch, group, record and field/attribute scopes: overview-first entity links, aggregate view controls versus APG detail tabs, URL-state isolation, lazy split-tree disclosures, complete exports, error states, keyboard behavior and 320 px reflow. |
+| `test-process-docs.mjs` | Shared process catalogue and both detail branches: scoped overview/diagram/table views, non-redundant filters, overview-first APG tabs, deferred BPMN/step loading and export, viewer controls and failure recovery, search handoff, keyboard behavior and 320 px reflow. |
+| `test-sidebar-tree.mjs` | Shared split-disclosure accessibility contract: navigation-mode disclosure tab order and Enter/Space folding, lazy children, focus restoration, no accidental navigation, plus select-mode single-tab-stop behavior without unintended selection. |
 | `test-shop.mjs` | Shop catalogue, product/cart/checkout flows, global top-header cart and responsive category disclosure. |
 | `test-race.mjs` | A2 router render-race: rapid navigation between an awaiting page (application detail) and another must always land on the last-requested page (the `ctx.stale()` guard drops stale renders), across several timings and both directions. |
 | `test-dashboard.mjs` | Datenportal redesign and renderer boundary: exact seven-card routing, smoke coverage for all six generic dashboards, the specialized four-tab Immobilien route, Superset-style framing, dashboard/chart menus, fullscreen, and CSV/PNG export. Saves a screenshot to `$SHOT`. |
@@ -180,7 +183,7 @@ authoritative regression inventory. New long-lived coverage belongs in a
 
 | Status | Scripts | Contract |
 |---|---|---|
-| Asserted diagnostic | `check-404`, `check-banner`, `check-consistency`, `check-css-tokens`, `check-detail-layout`, `check-done`, `check-english-code`, `check-fixes`, `check-floorplan-section`, `check-focus`, `check-kv`, `check-pfcard`, `check-ramps`, `check-services`, `check-tenancy-aside`, `check-tree` | Focused assertion; exits non-zero on a detected mismatch. |
+| Asserted diagnostic | `check-404`, `check-banner`, `check-cd-contracts`, `check-consistency`, `check-css-tokens`, `check-detail-layout`, `check-done`, `check-english-code`, `check-fixes`, `check-floorplan-section`, `check-focus`, `check-kv`, `check-multispace-modules`, `check-pfcard`, `check-ramps`, `check-services`, `check-tenancy-aside`, `check-tree`, `check-workspace-branch` | Focused assertion; exits non-zero on a detected mismatch. |
 | Observation-only diagnostic | `check-layout`, `check-payload`, `check-pjcards`, `check-pj-gallery`, `check-projects`, `check-suggest` | Prints measurements or browser problems for manual interpretation; exit code is not a result. |
 | Retained one-off assertion | `probe-portfolio-images.mjs` | Historical portfolio image/default-filter probe. It overlaps `test-portfolio.mjs` and is not part of the supported suite glob. |
 

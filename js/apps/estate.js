@@ -1,6 +1,5 @@
 // Property dashboard with runtime aggregation, global filters and map output.
 
-import { fetchJSON } from '../core/fetch-json.js';
 import { dashData } from '../core/dashboard-data.js';
 import { chart, wireCharts, wireChartMenus, paintCharts } from '../ui/charts.js';
 import { initEstateMap } from '../map/buildings-map.js';
@@ -23,6 +22,8 @@ const SOURCE = {
 };
 
 const INVENTORY = '#/app/portfolio';
+const ESTATE_NEEDS = ['buildings', 'parcels', 'landcovers', 'contracts'];
+const REQUIRED_DATA = ESTATE_NEEDS.slice(0, 3);
 // German tab/query values remain stable public-link compatibility literals.
 const TAB_BY_LEGACY_VALUE = { 'gebaeude': 'buildings', 'grundstuecke': 'parcels', 'bodenbedeckung': 'landcover', 'entwicklung': 'development' };
 const LEGACY_VALUE_BY_TAB = Object.fromEntries(Object.entries(TAB_BY_LEGACY_VALUE).map(([legacy, tab]) => [tab, legacy]));
@@ -33,7 +34,6 @@ const TABS = [
 
   { id: 'development', label: 'Entwicklung' },
 ];
-const ownership = (v) => (v === 'Eigentum Bund' ? 'Im Eigentum' : v === 'Miete' ? 'Anmieter' : 'Sonderfall');
 const OWNERSHIP_ORDER = ['Im Eigentum', 'Anmieter', 'Sonderfall'];
 const STATUS_ORDER = ['Aktiv', 'Abgang', 'Löschvermerk'];
 const LANDCOVER_LABEL = { 'Gebaeude': 'Gebäude', 'befestigt': 'Befestigt', 'humusiert': 'Humusiert (grün)', 'Gewaesser': 'Gewässer' };
@@ -42,57 +42,51 @@ const FIELD = { country: 'country', region: 'region', buildingType: 'buildingTyp
 const FILTER_KEYS = ['country', 'region', 'buildingType', 'ownership', 'status'];
 const FILTER_QUERY_KEYS = { country: 'land', region: 'region', buildingType: 'typ', ownership: 'eigentum', status: 'status' };
 
-const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
-function requireFeatureCollection(value, source) {
-  if (!isRecord(value) || value.type !== 'FeatureCollection' || !Array.isArray(value.features)
-    || value.features.some((feature) => !isRecord(feature) || feature.type !== 'Feature'
-      || !isRecord(feature.properties) || feature.properties['bbl_id'] == null
-      || String(feature.properties['bbl_id']).trim() === ''
-      || (feature.geometry !== null && !isRecord(feature.geometry)))) {
-    throw new Error(`Ungültige GeoJSON FeatureCollection: ${source}`);
-  }
-  return value;
-}
+const objectAddress = (item) => [item.street, [item.zip, item.city].filter(Boolean).join(' ')]
+  .filter(Boolean).join(', ');
 
-let CACHE = null;
-let PENDING = null;
-async function fetchData() {
-  const [b, p, l] = await Promise.all([
-    fetchJSON('data/buildings.geojson', { shape: 'object' }),
-    fetchJSON('data/parcels.geojson', { shape: 'object' }),
-    fetchJSON('data/landcovers.geojson', { shape: 'object' }),
-  ]);
-  requireFeatureCollection(b, 'buildings.geojson');
-  requireFeatureCollection(p, 'parcels.geojson');
-  requireFeatureCollection(l, 'landcovers.geojson');
-  const props = (g) => (g.features || []).map((f) => f.properties || {});
-  const buildings = props(b).map((x) => ({
-    country: x['adr_land'], region: x['adr_reg'], location: x['adr_ort'], ownership: ownership(x['bbl_eigen']),
-    portfolio: x['bbl_port'], buildingType: x['bbl_gbda1'], status: x['bbl_stat'], gf: Number(x['garea_gf']) || 0,
-    lat: Number(x['wgs84_lat']), lon: Number(x['wgs84_lon']), label: x['bbl_bez'], sub: x['adr_conct'], id: x['bbl_id'],
+// The core owns fetching, validation, caching and failure reporting. This view
+// only adapts its canonical records to the compact names used by the charts.
+function dashboardRecords(core) {
+  const buildings = core.buildings().map((item) => ({
+    country: item.country,
+    region: item.canton,
+    location: item.city,
+    ownership: item.ownership,
+    portfolio: item.portfolioCategory,
+    buildingType: item.buildingType,
+    status: item.status,
+    gf: Number(item.gf) || 0,
+    lat: Number(item.lat),
+    lon: Number(item.lng),
+    label: item.name,
+    sub: objectAddress(item),
+    id: item.bbl_id,
   }));
-  const parcels = (p.features || []).map((f) => { const x = f.properties || {}; return {
-    country: x['adr_land'], region: x['adr_reg'], ownership: ownership(x['bbl_eigen']), portfolio: x['bbl_port'],
-    status: x['bbl_stat'], gsf: Number(x['larea_gsf']) || 0, id: x['bbl_id'], label: x['bbl_bez'],
-    sub: x['adr_conct'], geom: f.geometry,
-  }; });
-  const landcovers = props(l).map((x) => ({
-    type: x['av_type'], label: LANDCOVER_LABEL[x['av_type']] || x['av_type'], area: Number(x['lc_area']) || 0, parcelId: x['bbl_id'],
+  const parcels = core.parcels().map((item) => ({
+    country: item.country,
+    region: item.canton,
+    ownership: item.ownership,
+    portfolio: item.portfolio,
+    status: item.status,
+    gsf: Number(item.gsf) || 0,
+    id: item.bbl_id,
+    label: item.name,
+    sub: objectAddress(item),
+    geom: item.geom,
   }));
-
-  let contracts = [];
-  try {
-    contracts = (await fetchJSON('data/contracts.json', { shape: 'array' }))
-      .map((x) => ({ validUntil: x.validUntil || '', type: x.type || '', status: x.status || '' }));
-  } catch {  }
-  CACHE = { buildings, parcels, landcovers, contracts };
-  return CACHE;
-}
-
-function loadData() {
-  if (CACHE) return Promise.resolve(CACHE);
-  if (!PENDING) PENDING = fetchData().finally(() => { PENDING = null; });
-  return PENDING;
+  const landcovers = core.landcovers().map((item) => ({
+    type: item.type,
+    label: LANDCOVER_LABEL[item.type] || item.type,
+    area: Number(item.area) || 0,
+    parcelId: item.parcelId,
+  }));
+  const contracts = core.contracts().map((item) => ({
+    validUntil: item.validUntil || '',
+    type: item.type || '',
+    status: item.status || '',
+  }));
+  return { buildings, parcels, landcovers, contracts };
 }
 
 const formatRoundedNumber = (n) => formatNumber(Math.round(n));
@@ -116,14 +110,19 @@ const GF_BINS = [{ label: '< 2 500', lo: 0, hi: 2500 }, { label: '2 500–5 000'
 const GSF_BINS = [{ label: '< 1 000', lo: 0, hi: 1000 }, { label: '1 000–3 000', lo: 1000, hi: 3000 }, { label: '3 000–5 000', lo: 3000, hi: 5000 }, { label: '≥ 5 000', lo: 5000, hi: Infinity }];
 
 export default async function render(ctx) {
-  const { mount, C, setTitle, setCrumbs, query } = ctx;
+  const { mount, core, C, setTitle, setCrumbs, query } = ctx;
   setTitle(META.title);
   setCrumbs([...DATA, { label: 'Datenportal', href: '#/app/dataportal' }, { label: META.title }]);
 
   let data;
   try {
-    data = await loadData();
-
+    await core.ensure(ESTATE_NEEDS);
+    if (ctx.stale && ctx.stale()) return;
+    const unavailable = REQUIRED_DATA.filter((key) => !core.available(key));
+    if (unavailable.length) {
+      throw new Error(`Nicht verfügbare Datenbestände: ${unavailable.join(', ')}`);
+    }
+    data = dashboardRecords(core);
     if (!dashData.ok()) await dashData.load();
     if (ctx.stale && ctx.stale()) return;
   } catch (e) {
@@ -429,8 +428,6 @@ export default async function render(ctx) {
       extraHtml: `<p class="small muted lead-hint">Detaillierte Objektinformationen und Bewirtschaftung im <a href="${INVENTORY}" target="_blank" rel="noopener noreferrer">Liegenschaften Inventar</a>.</p>`,
     })}
     <div class="dashboard-layout" id="dashboard">
-      ${''
-}
       ${filterPanelShell(C, '')}
       <div class="dashboard-main">
         ${C.tabBar({ items: TABS, active: state.tab, idPrefix: 'estate-tab', panelId: 'dpanel', ariaLabel: 'Stammdaten-Ansichten' })}

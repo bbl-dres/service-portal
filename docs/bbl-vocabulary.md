@@ -124,7 +124,7 @@ Kostengenauigkeit je Phase — mit den vom BBL geforderten Graden:
 Aus `K1P70_C20d`. Das BBL schreibt selbst: *«Das BBL arbeitet
 prozessorientiert.»* Zwei Bahnen (**Planung**, **Ausführung**), 18 Schritte,
 fünf Rollenspuren. **Das ist die realitätsnächste Vorlage für die
-Prozessdefinitionen dieses Portals** (`data/process-definitions.json`).
+Prozessdefinitionen dieses Portals** (Portal-Ast in `data/processes.json`).
 
 | Nr. | Schritt | Spur |
 |---|---|---|

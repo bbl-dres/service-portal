@@ -1,7 +1,7 @@
 // Portal-native first version of the BBL intranet shop.
 // Data and imagery come from the workspace-management prototype. The UI uses
 // the portal's CD Bund catalogue, tree, cart, wizard, and process components.
-import { readJSON, writeJSON, remove } from '../core/storage.js';
+import { addToCart, readCart, removeCartItems, setCartQty } from '../core/shop-cart.js';
 import { formatCurrency } from '../format.js';
 import * as links from '../links.js';
 import { APPLICATIONS, trail } from '../crumbs.js';
@@ -13,7 +13,6 @@ export const needs = ['shopProducts', 'shopCategories'];
 // Application-specific copy shown by the router's authentication gate.
 export const loginText = "Der Intranetshop bestellt auf Rechnung Ihrer Verwaltungseinheit. Bitte melden Sie sich mit AGOV / FedLogin an, um Sortiment und Preise zu sehen und zu bestellen.";
 
-const CART_KEY = 'bbl_shop_cart_v1';
 const PER_PAGE = 12;
 const SORT_OPTS = [
   ['name-asc', 'Bezeichnung (A-Z)'],
@@ -32,36 +31,6 @@ const productPhotos = (p) => {
     .map((x) => safeAssetUrl(`assets/images/shop/${String(x).replace(/^images\//, '')}`, 'assets/images/shop/'))
     .filter(Boolean);
 };
-const asId = (id) => Number(id);
-
-function readCart() {
-  const rows = readJSON(CART_KEY, [], Array.isArray);
-  return rows
-    .map((r) => ({ id: asId(r.id), qty: Math.max(1, Math.min(99, Number.parseInt(r.qty, 10) || 1)) }))
-    .filter((r) => Number.isFinite(r.id));
-}
-function writeCart(rows) {
-  const cleaned = rows.filter((r) => r.qty > 0);
-  const ok = cleaned.length ? writeJSON(CART_KEY, cleaned) : remove(CART_KEY);
-  if (ok) window.dispatchEvent(new CustomEvent('shop:cartchange'));
-  return ok;
-}
-function addToCart(productId, qty = 1) {
-  const id = asId(productId);
-  const rows = readCart();
-  const row = rows.find((r) => r.id === id);
-  if (row) row.qty = Math.min(99, row.qty + qty);
-  else rows.push({ id, qty });
-  return writeCart(rows);
-}
-function setCartQty(productId, qty) {
-  const id = asId(productId);
-  const rows = readCart();
-  const row = rows.find((r) => r.id === id);
-  if (row) row.qty = Math.max(0, Math.min(99, Number.parseInt(qty, 10) || 0));
-  return writeCart(rows);
-}
-
 function flattenCategories(categories, parent = null, depth = 0, out = []) {
   for (const c of categories || []) {
     out.push({ ...c, parent, depth });
@@ -169,12 +138,8 @@ function catalogue(ctx) {
     id: 'shop-tree',
     title: 'Kategorien',
     mode: 'nav',
-    // Vier Stufen tief, keine mit Symbol: die Kategorien unterscheiden sich
-    // durch ihre Namen, und ein Symbol je Zweig waere hier erfunden.
+    // Category names distinguish all four levels without decorative icons.
     levels: [{ icons: false }, { icons: false }, { icons: false }, { icons: false }],
-    // EIN Abschnitt, also keine Trennlinie. Vorher trug jede Zeile eine — bei
-    // sechzehn Kategorien fuenfzehn Striche, die alle dasselbe sagten: «hier
-    // hoert eine Zeile auf». Das sieht man auch ohne Strich.
     sections: [categoryNodes(C, categories.filter((c) => c.id !== 'alle'), categoryOptions)],
   });
 
@@ -286,10 +251,6 @@ function productCard(C, p) {
 // it — and the state is shareable and survives reload like every other filter in
 // this app. The chevron is therefore an indicator, not a control, and is hidden
 // from assistive technology; `aria-expanded` on the link carries the state.
-// Die Ausrichtung der Zeilen ist nicht mehr unsere Sorge: das Bauteil legt das
-// Chevron neben die Spalte statt hinein, also faengt jede Beschriftung ihrer
-// Stufe am selben x an — ob die Zeile Kinder hat oder nicht. Der leere
-// Chevron-Platzhalter, den diese Datei dafuer hielt, ist damit weg.
 function categoryNodes(C, categories, opts) {
   return (categories || []).map((cat) => {
     const kids = Array.isArray(cat.children) ? cat.children : [];
@@ -302,10 +263,7 @@ function categoryNodes(C, categories, opts) {
       countUnit: 'Produkte',
       href: opts.href(cat.id),
       state: active ? 'active' : path ? 'path' : '',
-      // Eine Kategorie zu waehlen IST, sie aufzuklappen — der Shop hat dafuer
-      // bewusst keinen zweiten Knopf, und der Zustand steht in der Adresse
-      // statt im Gedaechtnis des Bauteils. Deshalb `open` (besteht darauf) und
-      // keine geteilte Zeile: das Chevron zeigt an, es bedient nicht.
+      // The selected hash path owns disclosure; the chevron is only an indicator.
       open: active || path,
       hasChildren: kids.length > 0,
       children: () => categoryNodes(C, kids, opts),
@@ -608,8 +566,10 @@ function checkout(ctx) {
       if (!validate()) { draw(); C.wireErrorSummary(mount); return; }
       if (state.step < 3) { state.step += 1; draw(); C.focusWizardStep(mount, STEP_LABELS, state.step); return; }
       const lines = currentLines();
-      if (!lines.length) { cart(ctx); return; }
-      const created = state.pendingCreated || engine.start('bestellung', {
+      if (!state.pendingCreated && !lines.length) { cart(ctx); return; }
+      const orderedItems = state.pendingCreated?.orderedItems
+        || lines.map((line) => ({ id: line.id, qty: line.qty }));
+      const created = state.pendingCreated?.record || engine.start('bestellung', {
         title: `Bestellung ${cartCount(lines)} Artikel`,
         requester: state.name,
         organization: state.org,
@@ -625,12 +585,11 @@ function checkout(ctx) {
         C.flashError(mount, 'Die Bestellung konnte nicht gespeichert werden — bitte erneut versuchen.');
         return;
       }
-      // Show confirmation only after the emptied cart persists. On storage
-      // failure keep its items visible so submission can be retried.
-      if (!writeCart([])) {
-        // The case already persisted; remember it within this view so another
-        // click cannot create a duplicate order.
-        state.pendingCreated = created;
+      // Remove only the ordered snapshot so concurrent additions survive.
+      if (!removeCartItems(orderedItems)) {
+        // The case already persisted; retain it and its snapshot so a retry
+        // cannot create a duplicate order or consume a changed cart.
+        state.pendingCreated = { record: created, orderedItems };
         C.flashError(mount, 'Der Warenkorb konnte nach dem Speichern nicht geleert werden. Bitte erneut versuchen.');
         return;
       }

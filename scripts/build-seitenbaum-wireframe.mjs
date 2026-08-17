@@ -7,30 +7,32 @@
 //     layout survives by accident;
 //   · nothing else — the template is the artefact and stays editable.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { Script } from 'node:vm';
 
-const SP = 'c:/Users/david/Documents/GitHub/service-portal/';
+const SP = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PICK = {
-  // Fall: Weg von der Wurzel bis zur gewählten Zeile.
+  // One root-to-selection path per example.
   portfolio: ['Schweiz', 'BE', 'Bern', 'WE 4840'],
   shop: ['Stühle', 'Fauteuil'],
-  katalog: null,   // eigener Weg unten, weil der Katalog Abschnitte hat
   planeditor: ['Schweiz', 'Bern'],
-  prozess: ['Bewirtschaftung'],
+  process: ['Bewirtschaftung'],
 };
-const DS = 'C:/Users/david/Documents/GitHub/designsystem/';
-const SRC = SP + 'docs/wireframes/260813 - Katalog mit Reitern_CD-kompakt.html';
-const TPL = SP + 'scripts/seitenbaum-wireframe.src.html';
-const OUT = SP + 'docs/wireframes/260814 - Seitenbaum als Bauteil.html';
+// Override when the design-system checkout is not a sibling of this repository.
+const DS = resolve(process.env.BBL_DESIGN_SYSTEM_ROOT || join(SP, '..', 'designsystem'));
+const SRC = join(SP, 'docs', 'wireframes', '260813 - Katalog mit Reitern_CD-kompakt.html');
+const TPL = join(SP, 'scripts', 'seitenbaum-wireframe.src.html');
+const OUT = join(SP, 'docs', 'wireframes', '260814 - Seitenbaum als Bauteil.html');
 
-const json = (f) => JSON.parse(readFileSync(SP + 'data/' + f, 'utf8'));
+const json = (file) => JSON.parse(readFileSync(join(SP, 'data', file), 'utf8'));
 const list = (v) => (Array.isArray(v) ? v : Object.values(v)[0]);
 const de = (a, b) => String(a).localeCompare(String(b), 'de');
 
-// --- 1. Liegenschaften: flach, nach vier Achsen gruppiert -------------------
-// Land → Region → Ort → Wirtschaftseinheit → Objekt. Symbole auf jeder Stufe.
+// --- 1. Properties: flat records grouped along four spatial axes ------------
 function portfolio() {
   const rows = json('buildings.geojson').features.map((f) => f.properties);
-  const LAND = { CH: 'Schweiz', DE: 'Deutschland', US: 'USA', JP: 'Japan', BR: 'Brasilien', AU: 'Australien' };
+  const COUNTRY_NAMES = { CH: 'Schweiz', DE: 'Deutschland', US: 'USA', JP: 'Japan', BR: 'Brasilien', AU: 'Australien' };
   const by = (items, key) => items.reduce((m, x) => {
     (m[x[key]] = m[x[key]] || []).push(x); return m;
   }, {});
@@ -46,7 +48,7 @@ function portfolio() {
     const groups = by(items, key);
     return Object.keys(groups).sort(de).map((k) => ({
       id: path + '-' + k, icon,
-      label: key === 'adr_land' ? (LAND[k] || k) : key === 'bbl_we' ? 'WE ' + k : k,
+      label: key === 'adr_land' ? (COUNTRY_NAMES[k] || k) : key === 'bbl_we' ? 'WE ' + k : k,
       count: groups[k].length,
       children: nest(groups[k], rest, restIcons, path + '-' + k),
     }));
@@ -55,19 +57,17 @@ function portfolio() {
     ['globe', 'pin', 'house', 'stack'], 'pf');
 }
 
-// --- 2. Shop: rekursiv, beliebig tief, ohne Symbole ------------------------
+// --- 2. Shop: recursive, arbitrary depth -----------------------------------
 function shop() {
   const cats = list(json('shop-categories.json'));
   const products = list(json('shop-products.json'));
   const countIn = (id) => products.filter((p) => (p.categories || [p.category]).includes(id)).length;
-  // `children` sind verschachtelte OBJEKTE, keine Verweise auf ids — ein
-  // erster Anlauf las sie als ids, fand nichts und warf jedes Kind weg.
+  // Category children are nested records, not identifier references.
   const build = (c) => {
     const kids = (c.children || []).map(build);
     return {
       id: 'shop-' + c.id, label: c.label,
-      // Ein Zaehler sagt «hier ist noch etwas drin». Auf einem Blatt ist er eine
-      // Luege, also traegt ihn nur, was Kinder hat.
+      // Counts indicate undisclosed content and therefore belong on branches only.
       count: kids.length ? (countIn(c.id) || kids.length) : null,
       children: kids.length ? kids : undefined,
     };
@@ -75,8 +75,8 @@ function shop() {
   return cats.map(build);
 }
 
-// --- 3. Metadaten-Katalog: echte Hierarchie, geteilte Zeile, spaete Kinder --
-function katalog() {
+// --- 3. Metadata catalogue: hierarchy with lazily shown record fields -------
+function catalog() {
   const objects = list(json('business-objects.json'));
   const tables = list(json('data-tables.json'));
   const domains = list(json('reference-data.json').dataDomains || []);
@@ -134,7 +134,7 @@ function katalog() {
   ];
 }
 
-// --- 4. Plan-Editor: eine Stufe UNTER dem Blatt ----------------------------
+// --- 4. Plan Editor: floors extend one level below each building ------------
 function planeditor() {
   const rows = json('buildings.geojson').features.map((f) => f.properties)
     .filter((b) => b.adr_land === 'CH');
@@ -163,10 +163,10 @@ function planeditor() {
   }];
 }
 
-// --- 5. Prozessdokumentation: zwei Stufen, keine Symbole ------------------
-function prozess() {
+// --- 5. Process documentation: two levels ----------------------------------
+function processTree() {
   const procs = list(json('processes.json'));
-  // Es gibt nur EINEN areaLabel; die wirkliche zweite Stufe ist groupLabel.
+  // groupLabel is the real grouping axis; areaLabel has only one value.
   const by = procs.reduce((m, p) => {
     (m[p.groupLabel] = m[p.groupLabel] || []).push(p); return m;
   }, {});
@@ -176,11 +176,8 @@ function prozess() {
   }));
 }
 
-// Eine Auswahl je Fall, damit jeder Baum beim Öffnen Tiefe zeigt. Markiert wird
-// der WEG dorthin (`path`) und das Ziel (`active`) — und ausdrücklich NICHT die
-// Bestandteile eines Datensatzes: eine Datentabelle trägt bis zu 75 Felder, und
-// sie auszuwählen darf nicht heissen, sie alle in die Leiste zu kippen. Genau
-// das ist die Regel, die der Fall vorführen soll.
+// Mark one path and its target per example. Selecting a table must not expand
+// all of its potentially dozens of fields into the surrounding filter bar.
 function mark(nodes, path) {
   if (!path.length) return false;
   for (const node of nodes) {
@@ -198,25 +195,25 @@ function mark(nodes, path) {
 const DATA = {
   portfolio: portfolio(),
   shop: shop(),
-  katalog: katalog(),
+  // Quoted keys are the wireframe template's persisted case contract.
+  'katalog': catalog(),
   planeditor: planeditor(),
-  prozess: prozess(),
+  'prozess': processTree(),
 };
 
 mark(DATA.portfolio, PICK.portfolio);
 mark(DATA.shop, PICK.shop);
 mark(DATA.planeditor, PICK.planeditor);
-mark(DATA.prozess, PICK.prozess);
-// Im Katalog steht die Auswahl auf einer DATENTABELLE — dem Fall, um den es
-// geht. Der Weg dorthin klappt auf, ihre Felder nicht.
-mark(DATA.katalog[1], ['Systeme', 'GIS IMMO', 'Gebäude']);
+mark(DATA['prozess'], PICK.process);
+// Select a catalogue table while leaving its field list collapsed.
+mark(DATA['katalog'][1], ['Systeme', 'GIS IMMO', 'Gebäude']);
 
-// --- Zusammensetzen --------------------------------------------------------
+// --- Compose the standalone wireframe --------------------------------------
 const src = readFileSync(SRC, 'utf8');
 const tokens = src.slice(src.indexOf(':root{'), src.indexOf('*{box-sizing:border-box}'));
 const face = (file, weight) => '@font-face{font-family:"Noto Sans";font-style:normal;'
   + 'font-weight:' + weight + ';font-display:swap;src:url(data:font/ttf;base64,'
-  + readFileSync(DS + 'dist/fonts/' + file, 'base64') + ') format("truetype")}';
+  + readFileSync(join(DS, 'dist', 'fonts', file), 'base64') + ') format("truetype")}';
 const fonts = face('NotoSans-Regular.ttf', 400) + face('NotoSans-Bold.ttf', 700);
 
 const html = readFileSync(TPL, 'utf8')
@@ -227,13 +224,13 @@ const html = readFileSync(TPL, 'utf8')
 // The embedded script must parse, or the page renders as a static skeleton with
 // no hint why — the failure mode that cost an afternoon on an earlier wireframe.
 const script = html.slice(html.indexOf('<script>') + 8, html.indexOf('</script>'));
-writeFileSync(SP + 'scripts/.tmp-tree-wf-check.mjs', script);
+new Script(script, { filename: 'seitenbaum-wireframe.inline.js' });
 
 writeFileSync(OUT, html);
 const n = (t) => (Array.isArray(t) ? t : []).length;
-console.log('geschrieben: ' + OUT);
-console.log('  ' + Math.round(html.length / 1024) + ' KB, davon Schrift '
+console.log('written: ' + OUT);
+console.log('  ' + Math.round(html.length / 1024) + ' KB, including fonts '
   + Math.round(fonts.length / 1024) + ' KB');
-console.log('  echte Daten: Liegenschaften ' + n(DATA.portfolio) + ' Länder · Shop '
-  + n(DATA.shop) + ' Wurzeln · Katalog ' + DATA.katalog.length + ' Abschnitte · Plan-Editor '
-  + n(DATA.planeditor) + ' · Prozesse ' + n(DATA.prozess) + ' Bereiche');
+console.log('  real data: properties ' + n(DATA.portfolio) + ' countries · shop '
+  + n(DATA.shop) + ' roots · catalogue ' + DATA['katalog'].length + ' sections · Plan Editor '
+  + n(DATA.planeditor) + ' · processes ' + n(DATA['prozess']) + ' groups');

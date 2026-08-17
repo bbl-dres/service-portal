@@ -205,7 +205,12 @@ body.body--standalone-app:has(.plan-check) > .site-main { height:auto; min-heigh
    column containing the header now controls measure alone (CD does the same:
    no max-width on text classes, but container__center--* around content). */
 .page-header { padding:var(--sp-1) 0 var(--sp-6); }
-.page-header h1 { margin-bottom:var(--sp-1); }
+.page-header h1 {
+  margin-bottom:var(--sp-1);
+  font-size:clamp(var(--text-2xl),7.5vw,var(--text-3xl));
+  overflow-wrap:break-word;
+  hyphens:auto;
+}
 /* ONE unscoped lead recipe, instead of one copy per context. */
 .lead { font-size:var(--text-lg); color:var(--color-text-muted); }
 /* No more max-width caps on lead, page header or lead notice: they wrapped text

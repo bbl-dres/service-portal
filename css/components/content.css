@@ -143,11 +143,8 @@
 .body--mobile-menu-is-open .back-to-top-rail,
 body.body--overlay-open .back-to-top-rail { display:none; }
 
-/* Die Trennlinie gehoert zum Ansichtswechsel (border-left), und die Luft dahinter
-   auch (padding-left). Davor lag aber nur der Abstand der Leiste selbst — vier
-   Pixel gegen siebzehn, gemessen: die Linie klebte am letzten Knopf links und
-   hatte rechts Platz. Der eigene Abstand der Zeile traegt die fehlenden vier,
-   darum sp-3 und nicht sp-4: zusammen stehen links wie rechts sechzehn. */
+/* Balance the divider spacing: the row gap plus sp-3 margin equals the sp-4
+   padding on its far side. */
 .view-switch { display:flex; align-items:center; gap:var(--sp-1);
   border-left:var(--stroke-1) solid var(--color-secondary-300);
   margin-left:var(--sp-3); padding-left:var(--sp-4); }
@@ -165,12 +162,7 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 /* Do not convey state by color alone (WCAG 1.4.1, P2-10): the surface alone did
    exactly that, and forced-colors removes it without replacement. The underline
    now conveys state through shape (Item 2.6). */
-/* Der Strich BLEIBT — er ist der Grund, warum der Zustand auch dann noch
-   ankommt, wenn forced-colors Hintergrund und Textfarbe wegnimmt (Punkt 2.6
-   oben). Aber nicht mehr in Rot: er war die lauteste Marke auf dem Schirm, und
-   er sagt dem Leser, welchen Knopf er gerade selbst gedrueckt hat. Dieselbe
-   Entscheidung wie beim Balken des Seitenbaums, aus demselben Grund. Grau misst
-   gegen den getoenten Grund 3.4:1 und bleibt damit als Anzeige lesbar. */
+/* Retain an underline so pressed state survives forced-colors mode. */
 .view-switch__btn[aria-pressed="true"] { color:var(--color-text); background:var(--color-secondary-100);
   box-shadow:inset 0 calc(-1 * var(--stroke-3)) 0 var(--color-text-light); }
 

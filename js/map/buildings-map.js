@@ -9,7 +9,9 @@ import { escape as esc, loading, toast } from '../components.js';
 import { loadExternalAssets } from '../core/external-assets.js';
 import { formatArea } from '../format.js';
 import { safeLinkUrl } from '../security/urls.js';
-import { navigateCluster } from './cluster-navigation.js';
+import { createLatestNavigationGuard, navigateCluster } from './cluster-navigation.js';
+import { shouldSuppressMapError } from './error-policy.js';
+import { createBaseMapStyle } from './map-style.js';
 
 const MAPLIBRE_VERSION = '4.7.1';
 const MAPLIBRE_ASSETS = {
@@ -54,30 +56,33 @@ function pointPopupHTML(p) {
 // review B23). components.js and format.js have no imports themselves, so the
 // lazy map module does not pull in a dependency chain.
 
-// CARTO Positron grey (worldwide) — calm ground for a global portfolio.
-// `glyphs` (Noto Sans font PBFs) are needed for the cluster counts + id labels.
-// Served from MapLibre's demotiles host: fonts.openmaptiles.org started returning
-// an HTML landing page (HTTP 200) instead of PBF, which MapLibre parses as protobuf
-// and throws «Unimplemented type: 4» — aborting the whole estate tile (clusters
-// included). demotiles.maplibre.org returns real PBFs for Noto Sans Regular/Bold.
-const CARTO_STYLE = {
-  version: 8,
-  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
-  sources: {
-    carto: {
-      type: 'raster',
-      tiles: [
-        'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-        'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-        'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-        'https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-      ],
-      tileSize: 256,
-      attribution: '© OpenStreetMap-Mitwirkende © CARTO',
-    },
-  },
-  layers: [{ id: 'carto', type: 'raster', source: 'carto' }],
-};
+function showMapDegraded(container, message, kind = 'unknown') {
+  if (!container || !container.isConnected) return;
+  container.querySelector(':scope > .map-spinner')?.remove();
+  container.dataset.mapState = 'degraded';
+  container.dataset.mapErrorKind = kind;
+  let notice = container.querySelector(':scope > .map-degraded');
+  if (!notice) {
+    notice = document.createElement('div');
+    notice.className = 'map-degraded';
+    notice.setAttribute('role', 'status');
+    container.appendChild(notice);
+  }
+  notice.textContent = message;
+}
+
+function degradedMapMessage(event) {
+  if (event && event.sourceId === 'estate-labels') {
+    return ['labels', 'Die Karte ist teilweise verfügbar. Beschriftungen konnten nicht geladen werden; Punkte und Gruppen bleiben bedienbar.'];
+  }
+  if (event && event.sourceId === 'carto') {
+    return ['basemap', 'Die Karte ist teilweise verfügbar. Die Hintergrundkarte konnte nicht vollständig geladen werden.'];
+  }
+  if (event && event.sourceId === 'estate') {
+    return ['data', 'Die Karte ist unvollständig. Einige Objektdaten konnten nicht geladen werden.'];
+  }
+  return ['unknown', 'Die Karte ist wegen eines Ladefehlers nur teilweise verfügbar.'];
+}
 
 // Centred loading notice until the map is genuinely ready. The markup placeholder
 // covers only the period UNTIL MapLibre loads; network and cluster calculation
@@ -85,6 +90,7 @@ const CARTO_STYLE = {
 // once tiles AND cluster layers have rendered.
 function showMapSpinner(container, map) {
   if (!container) return;
+  container.dataset.mapState = 'loading';
   const spinner = document.createElement('div');
   spinner.className = 'map-spinner';
   // C.loading already supplies role="status"; this element only adds the overlay.
@@ -97,12 +103,20 @@ function showMapSpinner(container, map) {
     done = true;
     if (fallbackTimer) clearTimeout(fallbackTimer);
     spinner.remove();
+    if (container.dataset.mapState !== 'degraded') container.dataset.mapState = 'ready';
   };
   map.once('idle', clear);
   map.once('remove', clear);
-  // Safety net: if `idle` never fires because a tile source is blocked, the
-  // notice must not remain forever.
-  fallbackTimer = setTimeout(clear, 12000);
+  // A map that never becomes idle is degraded, not silently ready. Keep the
+  // geometry visible and report the terminal loading state to both users and
+  // diagnostics.
+  fallbackTimer = setTimeout(() => {
+    if (done || !spinner.isConnected) return;
+    showMapDegraded(container,
+      'Die Karte ist noch nicht vollständig geladen. Verfügbare Objekte bleiben bedienbar.', 'timeout');
+    console.error('[map]', new Error('Map did not reach idle within 12 seconds'));
+    clear();
+  }, 12000);
 }
 
 // Worldwide estate buildings on CARTO grey — CLUSTERED so dense areas don't
@@ -174,7 +188,7 @@ export async function initEstateMap(container, points, parcels, focus, options =
     camera = { center: [c[0].lon, c[0].lat], zoom: 9 };
   }
 
-  map = new maplibregl.Map({ container, style: CARTO_STYLE, attributionControl: { compact: true }, preserveDrawingBuffer: true,
+  map = new maplibregl.Map({ container, style: createBaseMapStyle(), attributionControl: { compact: true }, preserveDrawingBuffer: true,
     // See above (item 6.5).
     cooperativeGestures: true,
     locale: {
@@ -183,20 +197,24 @@ export async function initEstateMap(container, points, parcels, focus, options =
       'CooperativeGesturesHandler.MobileHelpText': 'Mit zwei Fingern verschieben',
     },
     ...camera });
-  // Abgebrochene Anfragen sind kein Fehler. Wird die Karte waehrend des Ladens
-  // abgebaut — jeder Routenwechsel tut das —, brechen ihre laufenden Kachel- und
-  // Stilanfragen ab, maplibre feuert ein `error`-Ereignis mit «Failed to fetch»,
-  // und weil niemand zuhoert, schreibt es maplibre selbst in die Konsole. Das
-  // sah in den Pruefungen wie ein Fehler aus, kam und ging aber mit dem Zufall
-  // des Zeitpunkts (nachgestellt: Kartenansicht oeffnen, sofort wegnavigieren).
-  //
-  // Nur DIESEN Fall schlucken. Alles andere geht weiter an die Konsole — eine
-  // Karte, die ihren Stil nicht laden kann, muss das weiterhin sagen duerfen.
-  const ABGEBROCHEN = /failed to fetch|aborted|abgebrochen|networkerror|load failed/i;
+  // Route teardown cancels outstanding style and tile requests. Suppress only
+  // those stale-map errors; failures from the active map remain observable.
+  let mapRemoved = false;
+  container._map = map;
+  map.once('remove', () => {
+    mapRemoved = true;
+    if (container._map === map) container._map = null;
+  });
   map.on('error', (e) => {
     const err = e && e.error;
-    if (err && ABGEBROCHEN.test(String(err.message || ''))) return;
-    console.error('[Karte]', err || e);
+    if (shouldSuppressMapError(err, {
+      removed: mapRemoved,
+      connected: container.isConnected,
+      current: container._map === map,
+    })) return;
+    const [kind, message] = degradedMapMessage(e);
+    showMapDegraded(container, message, kind);
+    console.error('[map]', err || e);
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: false }), 'top-right');
   map.addControl(new maplibregl.FullscreenControl({ container }), 'top-right');
@@ -204,18 +222,23 @@ export async function initEstateMap(container, points, parcels, focus, options =
 
   map.on('load', () => {
     if (!map.getSource('estate')) {
-      map.addSource('estate', { type: 'geojson', data: fc, cluster: true, clusterMaxZoom: 10, clusterRadius: 46 });
+      const clusteredSource = () => ({ type: 'geojson', data: fc, cluster: true, clusterMaxZoom: 10, clusterRadius: 46 });
+      // Keep hit-tested geometry independent from optional symbol buckets. A
+      // font failure may empty `estate-labels`, but cannot remove circle points,
+      // clusters or their navigation source.
+      map.addSource('estate', clusteredSource());
+      map.addSource('estate-labels', clusteredSource());
       map.addLayer({ id: 'clusters', type: 'circle', source: 'estate', filter: ['has', 'point_count'],
         paint: { 'circle-color': MARKER, 'circle-opacity': 0.85, 'circle-stroke-color': '#fff', 'circle-stroke-width': 2,
           'circle-radius': ['step', ['get', 'point_count'], 16, 3, 20, 6, 26, 10, 32] } });
       // text-size 12 = --fs-xs, the smallest CD type-scale step (11/13 were off-scale).
-      map.addLayer({ id: 'cluster-count', type: 'symbol', source: 'estate', filter: ['has', 'point_count'],
+      map.addLayer({ id: 'cluster-count', type: 'symbol', source: 'estate-labels', filter: ['has', 'point_count'],
         layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 12 },
         paint: { 'text-color': '#fff' } });
       map.addLayer({ id: 'points', type: 'circle', source: 'estate', filter: ['!', ['has', 'point_count']],
         paint: { 'circle-color': MARKER, 'circle-opacity': 0.85, 'circle-stroke-color': '#fff', 'circle-stroke-width': 2, 'circle-radius': 7 } });
       // bbl_id above the marker, only from a closer zoom so the overview stays calm
-      map.addLayer({ id: 'point-labels', type: 'symbol', source: 'estate', filter: ['!', ['has', 'point_count']], minzoom: 8.5,
+      map.addLayer({ id: 'point-labels', type: 'symbol', source: 'estate-labels', filter: ['!', ['has', 'point_count']], minzoom: 8.5,
         layout: { 'text-field': ['get', 'bbl_id'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-offset': [0, -1.2], 'text-anchor': 'bottom' },
         paint: { 'text-color': LABEL_INK, 'text-halo-color': LABEL_HALO, 'text-halo-width': 1.4 } });
       // Parcel polygons — only from a close zoom (plot-sized), like the id labels.
@@ -254,9 +277,11 @@ export async function initEstateMap(container, points, parcels, focus, options =
   });
 
   const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '260px' });
+  const clusterNavigation = createLatestNavigationGuard();
   map.on('click', 'clusters', (e) => {
     const f = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })[0];
     if (!f) return;
+    const isLatestNavigation = clusterNavigation.begin();
     const src = map.getSource('estate');
     const id = f.properties.cluster_id;
     // Zoom to the actual extent of contained objects instead of the «expansion
@@ -266,7 +291,8 @@ export async function initEstateMap(container, points, parcels, focus, options =
     // click. fitBounds over the leaves always shows exactly the clustered objects.
     void navigateCluster({
       source: src, clusterId: id, feature: f, map, LngLatBounds: maplibregl.LngLatBounds,
-      isCurrent: () => container.isConnected && container._map === map,
+      isCurrent: () => container.isConnected && container._map === map
+        && isLatestNavigation(),
       onFailure: (details) => {
         console.warn('MapLibre cluster navigation failed', details);
         toast('Die Kartengruppe konnte nicht geöffnet werden.', 'warning', 'WarningCircle');
@@ -290,7 +316,7 @@ export async function initEstateMap(container, points, parcels, focus, options =
     map.on('mouseenter', lyr, () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', lyr, () => { map.getCanvas().style.cursor = ''; });
   }
-  container._map = map;   // handle for debugging / headless tests (drive camera, query layers)
+  container._map = map;   // Handle for debugging and headless camera tests.
   return map;
   } catch (error) {
     if (map) { try { map.remove(); } catch { /* partially constructed */ } }
@@ -311,18 +337,22 @@ export async function initEstateMap(container, points, parcels, focus, options =
 // CARTO grey base (as in portfolio maps): a calm surface without restricting
 // the viewport to Switzerland.
 export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } = {}) {
+  // Resolve the map-only target before the asynchronous loader. The address
+  // combobox is a sibling inside `container` and must survive a blocked CDN.
+  const holder = container.querySelector('.map-picker__canvas') || container;
   let maplibregl;
   try {
     maplibregl = await loadMapLibre();
   } catch (e) {
-    container.innerHTML = `<div class="empty empty--unavailable h-full">
-      <span>Die Karte konnte nicht geladen werden (${esc(e.message)}). Im Bundesnetz ist der Kartendienst ggf. gesperrt.</span></div>`;
+    if (holder.isConnected) {
+      holder.innerHTML = `<div class="empty empty--unavailable h-full">
+        <span>Die Karte konnte nicht geladen werden (${esc(e.message)}). Im Bundesnetz ist der Kartendienst ggf. gesperrt.</span></div>`;
+    }
     return null;
   }
   if (!container.isConnected) return null;
   // Remove the loading placeholder BEFORE MapLibre attaches, but remove ONLY the
   // map; the search overlay is its sibling in the wrapper.
-  const holder = container.querySelector('.map-picker__canvas') || container;
   holder.textContent = '';
   let map = null;
   try {
@@ -331,7 +361,7 @@ export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } =
   map = new maplibregl.Map({
     // Do NOT add attribution automatically: at bottom right it collided with the
     // centred search overlay. Add it at bottom left instead (see below).
-    container: holder, style: CARTO_STYLE, attributionControl: false,
+    container: holder, style: createBaseMapStyle(), attributionControl: false,
     cooperativeGestures: true,
     locale: {
       'CooperativeGesturesHandler.WindowsHelpText': 'Strg + Scrollen zum Zoomen',

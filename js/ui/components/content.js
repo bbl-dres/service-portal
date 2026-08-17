@@ -192,15 +192,8 @@ export function table({ columns, rows, groups, zebra, caption, showCaption, foot
   const body = (rows || []).map(dataRow).join('');
   // A collapsed section keeps its header — that is the whole point of collapsing,
   // and it is also what stays as the control to open it again.
-  // Die Spaltenkoepfe wiederholen sich je Abschnitt. Bei acht Zeilen in
-  // «Bauwerk und Liegenschaft» steht die echte Kopfzeile beim zweiten Abschnitt
-  // laengst ausserhalb des Bildes, und «4» in einer Spalte ohne Kopf ist eine
-  // Zahl ohne Frage.
-  //
-  // Rein sichtbar: <td> statt <th> und aria-hidden. Die Zuordnung Zelle→Spalte
-  // macht der echte <thead>, und die gilt fuer die ganze Tabelle. Ein zweiter
-  // Satz <th scope="col"> wuerde sie nicht verbessern, sondern der Vorlese-
-  // software dieselben Spalten ein zweites Mal ansagen.
+  // Repeat visible labels in each group, while the real thead retains semantic
+  // column ownership and prevents duplicate screen-reader announcements.
   const subHead = `<tr class="table__subhead" aria-hidden="true">${columns.map((c) => (
     `<td${al(c)}>${c.labelHidden ? '' : escape(c.label)}</td>`)).join('')}</tr>`;
   const sections = (groups || []).map((g) => `<tbody>
@@ -209,13 +202,7 @@ export function table({ columns, rows, groups, zebra, caption, showCaption, foot
         aria-expanded="${g.open !== false}">${icon('ChevronRight', 'table__group-chev')}
         <span>${escape(g.label)}</span>${g.count == null ? ''
     : ` <span class="table__group-n">${escape(String(g.count))}</span>`}</button></th></tr>
-    ${/* In JEDEM offenen Abschnitt, auch im ersten. Zuerst hatte ich ihn dort
-          weggelassen, weil er unmittelbar unter dem Original staende — das
-          erzeugte aber zwei Leserichtungen in einer Tabelle: der erste
-          Abschnitt las sich «Spalten, Gruppe, Zeilen», jeder weitere «Gruppe,
-          Spalten, Zeilen». Stattdessen tritt jetzt der echte <thead> zurueck
-          (siehe .table--grouped in table.css): er bleibt fuer die
-          Vorlesesoftware, sichtbar fuehrt jede Gruppe ihre eigenen Koepfe. */''}
+    ${/* Every open group uses the same visible group-label-row order. */''}
     ${g.open === false ? '' : subHead}
     ${g.open === false ? '' : (g.rows || []).map(dataRow).join('')}</tbody>`).join('');
   // `rowsClickable`: the entire row follows its FIRST link. This is purely a
@@ -224,8 +211,7 @@ export function table({ columns, rows, groups, zebra, caption, showCaption, foot
   // a link target would be unreachable to both.
   const cls = ['table', zebra ? 'table--zebra' : '', showCaption ? 'table--caption' : '',
     compact ? 'table--compact' : '',
-    // Gruppiert: der echte <thead> tritt sichtbar zurueck, jede Gruppe fuehrt
-    // ihre eigenen Spaltenkoepfe. Sonst haette die Tabelle zwei Leserichtungen.
+    // Grouped tables repeat visible column labels while retaining the semantic thead.
     groups ? 'table--grouped' : '',
     rowsClickable ? 'table--rows-clickable' : ''].filter(Boolean).join(' ');
   // Only a named table becomes a named region. `aria-label="Tabelle"` named 11 of
@@ -663,25 +649,11 @@ export function downloadLink(url, label, iconName = 'Download') {
     : `<span class="btn btn--link btn--icon-left" aria-disabled="true" title="Im Prototyp nicht verfügbar">${icon(iconName, 'btn__icon')}<span class="btn__text">${escape(label)}<span class="sr-only"> (im Prototyp nicht verfügbar)</span></span></span>`;
 }
 
-// --- Landschaft --------------------------------------------------------------
-// Derselbe Umfang, den eine Tabelle auflistet, als GEBIET statt als Reihenfolge.
-// Eine Tabelle beantwortet «welche Werte»; das hier beantwortet «wie viel ist da
-// und wie teilt es sich» — eine Frage, die man durch Hinsehen beantwortet, nicht
-// durch Lesen. Darum traegt eine Kachel einen Namen und sonst nichts, und die
-// Hoehe eines Kastens IST die Aussage: ein Blick sagt, dass «Bauwerk und
-// Liegenschaft» viermal so viel haelt wie «Finanzen», ohne eine Zahl zu lesen.
-//
-//   boxes    [{ key, label, count, tiles: [{ label, href, on }] }]
-//   isOpen   (key) => boolean — das Gedaechtnis gehoert dem Aufrufer, weil es
-//            seine Route ueberleben muss
-//
-// Die Gestalt steckt in css/sections/landscape.css und gilt fuer alle Aufrufer.
-//   cols     Kacheln je Reihe (Vorgabe 2). Die Hoehe eines Kastens soll seine
-//            Anzahl zeigen, also muessen alle Kaesten dieselbe Zahl haben — aber
-//            WELCHE Zahl haengt an der Laenge der Namen. «Areal» und «Gebaeude»
-//            stehen zu zweit nebeneinander; «Bewirtschaftung Anmiet-, Pacht-
-//            vertraege» wird dabei bis zur Unkenntlichkeit abgeschnitten, und
-//            eine Kachel, deren Name man nicht lesen kann, traegt nichts mehr.
+// --- Landscape ---------------------------------------------------------------
+// Render catalogue counts as proportional group area rather than row order.
+// `isOpen` remains caller-owned so disclosure survives route redraws.
+//   boxes  [{ key, label, count, tiles: [{ label, href, on }] }]
+//   cols   fixed tiles per row; callers choose a value that keeps labels readable
 export function landscape({ boxes, isOpen, emptyText = 'Hier ist nichts erfasst.', cols = 2 }) {
   if (!boxes || !boxes.length) return `<p class="lscape__empty">${escape(emptyText)}</p>`;
   const chev = icon('ChevronRight', 'lscape__chev');

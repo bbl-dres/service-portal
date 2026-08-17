@@ -9,6 +9,7 @@ import { fetchJSON } from './core/fetch-json.js';
 const LS_KEY = 'bbl_vorgaenge_v1';
 let DEFS = [];
 let SEEDED = [];
+let LOADING = null;
 
 // Failure register: the same principle as core/index.js. Without it, a 404 for
 // the definition source remained invisible: DEFS = [], no message, and
@@ -31,6 +32,7 @@ const hasSafeInstanceShape = (value) => isInstance(value)
 function normalizeInstance(value) {
   return {
     ...value,
+    instanceId: value.instanceId.trim(),
     history: Array.isArray(value.history) ? value.history.filter(isRecord) : [],
     attachments: Array.isArray(value.attachments) ? value.attachments.filter(isRecord) : [],
     data: isRecord(value.data) ? value.data : {},
@@ -47,17 +49,28 @@ function cleanInstances(value, source, { strict = false } = {}) {
   if (strict && malformed.length) {
     throw new Error(`malformed ${source} instance(s): ${malformed.length}`);
   }
-  const records = value.filter(isInstance).map(normalizeInstance);
+  const records = [];
+  const ids = new Set();
+  let duplicates = 0;
+  for (const candidate of value.filter(isInstance)) {
+    const record = normalizeInstance(candidate);
+    if (ids.has(record.instanceId)) { duplicates++; continue; }
+    ids.add(record.instanceId);
+    records.push(record);
+  }
+  if (strict && duplicates) throw new Error(`duplicate ${source} instance ID(s): ${duplicates}`);
   if (malformed.length) {
     console.warn(`[engine] repaired or ignored ${malformed.length} malformed ${source} instance(s)`);
   }
+  if (duplicates) console.warn(`[engine] ignored ${duplicates} duplicate ${source} instance ID(s)`);
   return records;
 }
 
 function cleanDefinitions(value) {
-  if (!Array.isArray(value)) throw new Error('expected definition list');
+  if (!Array.isArray(value) || !value.length) throw new Error('expected non-empty definition list');
   const malformed = value.filter((record) => !isRecord(record)
     || typeof record.defId !== 'string' || !record.defId.trim()
+    || typeof record.name !== 'string' || !record.name.trim()
     || !Array.isArray(record.steps) || !record.steps.length
     || record.steps.some((step) => !isRecord(step)
       || typeof step.status !== 'string' || !step.status.trim()
@@ -65,12 +78,19 @@ function cleanDefinitions(value) {
   if (malformed.length) {
     throw new Error(`malformed process definition(s): ${malformed.length}`);
   }
+  const ids = value.map((record) => record.defId.trim());
+  if (new Set(ids).size !== ids.length) throw new Error('duplicate process definition ID(s)');
   return value;
+}
+
+function withoutSeededShadows(records) {
+  const seededIds = new Set(SEEDED.map((record) => record.instanceId));
+  return records.filter((record) => !seededIds.has(record.instanceId));
 }
 
 function loadLS() {
   const a = readJSON(LS_KEY, []);
-  return cleanInstances(a, 'local');
+  return withoutSeededShadows(cleanInstances(a, 'local'));
 }
 function saveLS(records) { return writeJSON(LS_KEY, records); } // → bool so callers detect silent loss (C1)
 
@@ -82,7 +102,9 @@ function mutateLS(change) {
   const locked = withStorageLock(LS_KEY, (owns) => {
     const stored = readJSONResult(LS_KEY, [], Array.isArray);
     if (!stored.ok) return { ok: false, value: false };
-    const records = cleanInstances(stored.value, 'local');
+    // Seed data is canonical and immutable in this demo. A corrupt local
+    // record must never make a seeded case mutable through advance/cancel.
+    const records = withoutSeededShadows(cleanInstances(stored.value, 'local'));
     const result = change(records);
     if (!result || result.changed === false) {
       return { ok: true, value: result ? result.value : null };
@@ -94,20 +116,30 @@ function mutateLS(change) {
   return locked.value;
 }
 
-async function load() {
+async function processRecords(source) {
+  if (!source) return fetchJSON('data/processes.json', { shape: 'array' });
+  if (typeof source.ensure !== 'function' || typeof source.processes !== 'function'
+    || typeof source.available !== 'function') {
+    throw new TypeError('invalid process data source');
+  }
+  await source.ensure(['processes']);
+  if (!source.available('processes')) throw new Error('process dataset unavailable');
+  return source.processes();
+}
+
+async function loadData(source) {
   FAILED.clear();
   const [definitions, instances] = await Promise.allSettled([
-    // Die Ablaufdefinitionen stehen seit 2026-08-15 in processes.json, zusammen
-    // mit den fachlichen Prozessen: eine Quelle fuer alles, was ein Prozess ist.
-    // Der Motor nimmt sich daraus die Datensaetze des Portal-Astes — sie tragen
-    // dieselben Felder wie zuvor (defId hiess dort processId).
-    fetchJSON('data/processes.json', { shape: 'array' }),
+    // Portal workflows and business processes share one dataset. In the app,
+    // core owns and caches that request; the optional direct path keeps the
+    // engine usable as a standalone module in browser-free tests.
+    processRecords(source),
     fetchJSON('data/process-instances.json', { shape: 'array' }),
   ]);
   try {
     if (definitions.status !== 'fulfilled') throw definitions.reason;
     DEFS = cleanDefinitions((definitions.value || [])
-      .filter((r) => r && r.branch === 'portal' && Array.isArray(r.steps) && r.steps.length)
+      .filter((record) => isRecord(record) && record.branch === 'portal')
       .map((r) => ({ ...r, defId: r.processId })));
   } catch (error) {
     console.warn('[engine] definitions', error?.message);
@@ -122,6 +154,15 @@ async function load() {
     SEEDED = [];
     FAILED.add('instances');
   }
+}
+
+function load(source = null) {
+  if (LOADING) return LOADING;
+  const pending = loadData(source).finally(() => {
+    if (LOADING === pending) LOADING = null;
+  });
+  LOADING = pending;
+  return pending;
 }
 
 const definition = (id) => DEFS.find(d => d && d.defId === id);
@@ -152,6 +193,7 @@ function start(defId, payload = {}) {
     console.error(`[engine] unknown process definition «${defId}»; no case created`);
     return null;
   }
+  const input = isRecord(payload) ? payload : {};
   const steps = def.steps;
   const first = steps[0];
   const now = new Date();
@@ -161,16 +203,16 @@ function start(defId, payload = {}) {
     defId,
     defName: def.name,
     reference: generateReference(now),
-    title: payload.title || def.name,
-    requester: payload.requester || 'Andrea Muster',
-    organization: payload.organization || 'Bundesamt (Demo)',
+    title: input.title || def.name,
+    requester: input.requester || 'Andrea Muster',
+    organization: input.organization || 'Bundesamt (Demo)',
     audience: def.audience,
     status: first.status,
     stepIndex: 0,
     createdAt: stamp,
     updatedAt: stamp,
-    data: payload.data || {},
-    linkedEntities: payload.linkedEntities || {},
+    data: isRecord(input.data) ? input.data : {},
+    linkedEntities: isRecord(input.linkedEntities) ? input.linkedEntities : {},
     createdLocally: true,
     history: [{ when: stamp, status: first.label, note: 'Vorgang erstellt' }],
   };

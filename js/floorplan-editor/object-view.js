@@ -31,7 +31,6 @@ const list = (value) => Array.isArray(value) ? value : [];
 const number = (value) => formatNumber(value);
 const area = (value) => formatArea(value, { maximumFractionDigits: 1 });
 
-export const OBJECT_TABS = Object.freeze(['overview', 'plans', 'modules', 'equipment']);
 export const PLAN_VIEWS = Object.freeze(['list', 'cards']);
 // The list is the default: a floor is chosen by its facts — area, rooms, plan
 // state — and a wall of thumbnails answers none of those.

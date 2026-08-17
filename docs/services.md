@@ -162,7 +162,7 @@ Drei Beobachtungen, die über die einzelne Zeile hinausgehen:
 
 | Prozess-ID | Name | Status |
 |---|---|---|
-| PRC-RAUM | Raumbedarf-Antrag | umgesetzt — 6 Schritte, [`process-definitions.json`](../data/process-definitions.json) |
+| PRC-RAUM | Raumbedarf-Antrag | umgesetzt — 6 Schritte, [Portal-Ast in `processes.json`](../data/processes.json) |
 | PRC-STOER | Störungsmeldung | umgesetzt — 4 Schritte |
 | PRC-SEC | Sicherheits- und Datenschutzvorfall | umgesetzt — 3 Schritte |
 | PRC-BEST | Bestellung | umgesetzt — 4 Schritte |
@@ -243,6 +243,6 @@ Drei Entscheide, die dabei gefallen sind:
 | `beschaffung-einstieg` | News und Wissen | Einstiegs- und Vorlagenseite; die eigentliche Leistung ist SVC-E-001 |
 | `leistungsverrechnung` | News und Wissen | Preis- und Verrechnungsinformation, kein auslösbarer Vorgang |
 
-**Offene Migrationsschritte** (bewusst noch nicht ausgeführt): `serviceId` in [`data/services.json`](../data/services.json) auf die neuen IDs umstellen, `processDefId` auf die `PRC-*`-Schlüssel angleichen, [`data/process-definitions.json`](../data/process-definitions.json) umbenennen, und die drei ausgeschiedenen Einträge in Anwendungen bzw. Wissen überführen. Die Routen (`#/services/<id>`) und die Deep-Links in [`js/pages/services.js`](../js/pages/services.js) hängen an diesen IDs — deshalb tragen auch die 17 neuen Einträge weiterhin sprechende Slugs statt `SVC-*`; die Umstellung ist ein Schritt für alle 37 Einträge gemeinsam, nicht für die neuen allein.
+**Offene Migrationsschritte** (bewusst noch nicht ausgeführt): `serviceId` in [`data/services.json`](../data/services.json) auf die neuen IDs umstellen, `processDefId` auf die `PRC-*`-Schlüssel angleichen und die drei ausgeschiedenen Einträge in Anwendungen bzw. Wissen überführen. Die Ablaufdefinitionen selbst sind inzwischen als Portal-Ast in [`data/processes.json`](../data/processes.json) konsolidiert. Die Routen (`#/services/<id>`) und die Deep-Links in [`js/pages/services.js`](../js/pages/services.js) hängen an diesen IDs — deshalb tragen auch die 17 neuen Einträge weiterhin sprechende Slugs statt `SVC-*`; die Umstellung ist ein Schritt für alle 37 Einträge gemeinsam, nicht für die neuen allein.
 
 **Was als Nächstes ansteht:** die 49 offenen Zeilen sind kein gleichförmiger Rest. `PRC-AUFT` (11 Zeilen Objektbetrieb) ist der grösste zusammenhängende Block und hängt an den fünf fehlenden PDFs aus [§4](#4-lücken-und-blinde-flecken); `PRC-DRUCK` (8 Zeilen Produktion) ist nach den AVOR-Formularen dagegen gut belegt und wäre als Nächstes entwerfbar.

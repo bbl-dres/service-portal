@@ -5,6 +5,8 @@
 /* Mobile first: below lg, place the tree above the map instead of squeezing
    content beside a fixed-width sidebar. */
 .pf-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-5); align-items:start; margin-top:var(--sp-4); }
+/* In a stacked detail layout, show the selected entity before its long navigation rail. */
+.pf-layout--detail .pf-main { order:-1; }
 /* ONE inset, on the panel. The head used to add its own inline padding on top of
    the panel's, so its title started 16px from the edge while the row dividers —
    which span the panel's content box — started at 8px, and the header floated
@@ -17,6 +19,7 @@
   border-radius:var(--surface-radius); box-shadow:var(--surface-elevation); }
 @media (min-width:1024px){
   .pf-layout  { grid-template-columns:minmax(15rem,18rem) minmax(0,1fr); }
+  .pf-layout--detail .pf-main { order:initial; }
   .pf-sidebar { position:sticky; top:var(--sp-4); max-height:calc(100vh - var(--sp-28)); }
 }
 /* No inline padding of its own — see .pf-sidebar. Only the gap to the first row
@@ -155,13 +158,7 @@
 /* The key column: monospace, tabular, measured in `ch` so the segments of one
    level line up exactly and the labels all start at the same x. A width in rem
    left slack that read as a gap between the key and the name. */
-/* Der Ordnungsbegriff steht VOR dem Namen und liest sich als Teil davon: «AF
-   Bundeshaus West». Keine eigene Schrift mehr, keine eigene Groesse, keine
-   eigene Farbe — er war in Consolas 12px grau gesetzt und damit als etwas
-   Technisches markiert, das man ueberliest. Die Leute haben diese Kuerzel aber
-   im Kopf und suchen danach; sie gehoeren zum Namen, nicht in eine Fussnote.
-   Die Mindestbreite bleibt, damit die Namen einer Stufe an derselben Kante
-   beginnen. */
+/* Treat the ordering code as part of the name; retain only its alignment width. */
 .pf-tree__id { flex:none; min-width:2ch; }
 :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub).is-active .pf-tree__id { color:var(--color-text-700); }
 .pf-tree__label { flex:0 1 auto; min-width:4ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

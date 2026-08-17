@@ -1,34 +1,19 @@
 import { APPLICATIONS, trail } from '../crumbs.js';
 import { formatDate } from '../format.js';
-// Data-governance catalogue for the real-estate domain.
-//
-// The tree decides the SCOPE, the tabs decide the PRESENTATION, and the two are
-// orthogonal: a click in the tree never changes the tab, and a tab never
-// changes what is in scope. Both live in the query string, so every view is
-// linkable. Levels are the model, not a layout:
-//
-//   0  Katalog        Startseite — keine Reiter, sie ist kein Umfang
-//   1  Ast            Geschäftsobjekte · Systeme · Referenzdaten
-//   2  Domäne/System  die Gruppe innerhalb des Astes
-//   3  Datensatz      früher eine eigene Seite, jetzt «Übersicht auf Stufe 3»
-//   4  Attribut/Feld  nur Übersicht — darunter liegt nichts mehr
-//
-// ?id= and ?table= keep their meaning as the level-3 selector, so every link
-// already shared from the search index (js/links.js) still resolves.
+// Scope (tree) and presentation (tabs) are independent URL state. Levels 0–4
+// represent root, branch, group, record, and record part. The legacy `id` and
+// `table` selectors remain stable search-index links for level 3.
 import * as links from '../links.js';
-// Reuse one module-level escape helper and badge factory across all views.
 import { escape as esc, badge } from '../components.js';
 import { runTableExport, slug } from '../ui/export-table.js';
-import { landscapeState } from '../ui/landscape-state.js';
+import {
+  landscapeKey, landscapeState, wireLandscape,
+} from '../ui/landscape-state.js';
 import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
 
-// contacts supplies stewardship for both layers.
 export const needs = ['businessObjects', 'dataTables', 'contacts'];
 
 const BASE = '#/app/metadata-catalog';
-// Eine Quelle für Dokumenttitel, Brotkrume, Überschrift und Rücklinks.
-// Der Name ist auch der des Wegweisers (#/data/architecture) und der Menüzeile:
-// derselbe Gegenstand, an drei Stellen benannt.
 const TITLE = 'Dokumentation der Geschäftsarchitektur';
 
 // Type labels describe storage forms, so keep them here rather than in the domain code lists.
@@ -45,7 +30,6 @@ const VALUE_TYPE = {
   date: 'Datum', uri: 'URI', code: 'Codeliste',
 };
 
-// Truncate sentence-length definitions in table cells; the overview keeps the full text.
 const truncateText = (s, n = 110) => {
   const t = String(s || '').trim();
   if (t.length <= n) return t;
@@ -53,21 +37,12 @@ const truncateText = (s, n = 110) => {
   return cut.slice(0, Math.max(cut.lastIndexOf(' '), n - 20)).trimEnd() + '…';
 };
 
-// Bei einer Anfrage zeigt die Zelle den AUSSCHNITT um den Treffer statt des
-// Anfangs — sonst steht eine Zeile ohne sichtbaren Grund in der Liste.
-// Gemessen an «Gebäude»: von neun Treffern trug genau EINER das Wort im Namen,
-// sieben in der Beschreibung, und bei «Wirtschaftseinheit» lag die Stelle
-// hinter dem Schnitt bei 58 Zeichen — die Zelle kuerzte genau das weg, was den
-// Treffer begruendete.
-//
-// Gibt HTML zurueck (wegen <mark>), maskiert die Textteile also selbst.
+// Return escaped HTML with the matching excerpt marked; a leading excerpt can
+// hide the reason a row matched when the hit occurs late in a definition.
 const snippet = (text, q, n) => {
   const t = String(text || '').trim();
   const i = q ? t.toLowerCase().indexOf(q.toLowerCase()) : -1;
-  // Kein Treffer IN diesem Feld: der Grund steht anderswo (Name, Gruppe,
-  // Verantwortung), und dort ist er sichtbar. Dann der gewohnte Anfang.
   if (i < 0) return esc(truncateText(t, n));
-  // Fenster um den Treffer, vorne an einer Wortgrenze abgesetzt.
   const want = Math.max(0, i - Math.floor((n - q.length) / 2));
   const space = want === 0 ? -1 : t.indexOf(' ', want);
   const start = want === 0 ? 0 : (space >= 0 && space < i ? space + 1 : want);
@@ -81,33 +56,41 @@ const snippet = (text, q, n) => {
     + (start + n < t.length ? '…' : '');
 };
 
-// Shared lookups.
 const refList = (core, key) => core.ref()[key] || [];
 const domainOf = (core, key) => core.dataDomains().find((d) => d.key === key) || {};
 const domainLabel = (core, key) => domainOf(core, key).label || key;
 const statusOf = (core, id) => refList(core, 'objectStatuses').find((s) => s.id === id) || { label: id, variant: 'gray' };
-// Both halves of this app are directory entries over something else — a business
-// object over the architecture repository, a table over its source system — so
-// both get the same box, resolved through the same reference list.
-const sourceBoxFor = (core, C, record) =>
-  C.sourceBox(record.source, refList(core, 'sourceRoles').find((r) => r.key === (record.source || {}).role));
-// Stewardship is stored as a contact id; every surface that shows it shows the
-// name. One resolver, so the table, the overview and the landscape agree.
 const stewardName = (core, id) =>
   (core.contacts().find((c) => c.contactId === id) || {}).name || '';
 const matchOf = (core, id) => refList(core, 'mappingMatches').find((m) => m.id === id) || { label: id, variant: 'gray' };
-// Return a source URL's hostname, or the original malformed value so bad raw data remains visible.
 const hostOf = (url) => { try { return new URL(url).host; } catch { return String(url || ''); } };
-// Hält die zugeklappten Kästen der Landschaft. Der Baum bringt sein eigenes Auf
-// und Zu mit (C.sidebarTree), seit er das gemeinsame Bauteil ist.
-// exportTable needs the data at level 0, where it has no scope to read it from.
-// Set on every render; the module outlives the page but never predates it.
-let core0 = null;
-// Aufgeklappte Kaesten der Landschaft — dasselbe Gedaechtnis wie in der
-// Prozessdokumentation, unter eigener Kennung.
+const newWindowLink = (href, label) => `<a href="${esc(href)}"${newWindowAttrs(href, {
+  external: classifyUrl(href) === 'external',
+})}>${esc(label)}<span class="sr-only"> (öffnet in neuem Fenster)</span></a>`;
+const semanticDate = (value) => {
+  const raw = String(value || '');
+  const formatted = formatDate(raw);
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) && formatted !== raw
+    ? `<time datetime="${esc(raw)}">${esc(formatted)}</time>`
+    : esc(formatted);
+};
+const provenanceRows = (core, record, { includeSystem = true } = {}) => {
+  const source = record.source;
+  if (!source) return [];
+  const role = refList(core, 'sourceRoles').find((r) => r.key === source.role) || {};
+  const href = safeLinkUrl(source.url);
+  const product = includeSystem && role.product
+    ? `<br><span class="small muted">${esc(role.product)}</span>` : '';
+  return [
+    includeSystem ? ['Führendes System', `${esc(role.label || source.role || '—')}${product}`] : null,
+    source.ref ? ['Referenz', `<code>${esc(source.ref)}</code>`] : null,
+    source.reconciled ? ['Abgeglichen', semanticDate(source.reconciled)] : null,
+    href ? ['Repository', newWindowLink(href, 'Im Repository öffnen')] : null,
+  ].filter(Boolean);
+};
 const BOXES = landscapeState('metadata-catalog');
+export const catalogueNodeId = (type, kind, ...parts) => landscapeKey(type, kind, ...parts);
 
-// Put exact/near/partial explanations on each value instead of a distant shared legend.
 const MATCH_HINT = {
   exact: 'Exakt — Feldinhalt und Begriff sind deckungsgleich.',
   close: 'Nahe — inhaltlich dasselbe, aber mit abweichender Kodierung oder Einheit.',
@@ -115,91 +98,53 @@ const MATCH_HINT = {
 };
 const matchBadge = (core, id) => {
   const m = matchOf(core, id);
-  return `<span title="${esc(MATCH_HINT[id] || m.label)}">${badge(m.label, m.variant, 'sm')}</span>`;
+  const hint = MATCH_HINT[id] || m.label;
+  return `<span title="${esc(hint)}">${badge(m.label, m.variant, 'sm')}<span class="sr-only">: ${esc(hint)}</span></span>`;
 };
 
-// --- The model ---------------------------------------------------------------
-
-const TAB_LABEL = { uebersicht: 'Übersicht', diagramm: 'Diagramm', tabelle: 'Tabelle' };
-// Der Ansichtswechsel traegt Zeichen statt Woerter, wie ueberall im Portal:
-// «Übersicht» beschreibt den Umfang, «Diagramm» zeigt ihn als Feld von Kacheln,
-// «Tabelle» als Liste.
-const VIEW_ICON = { uebersicht: 'InfoCircle', diagramm: 'Apps', tabelle: 'List' };
+const TAB_LABEL = { 'uebersicht': 'Übersicht', 'diagramm': 'Diagramm', 'tabelle': 'Tabelle' };
+const VIEW_ICON = { 'uebersicht': 'InfoCircle', 'diagramm': 'Apps', 'tabelle': 'List' };
 // Not every level offers every tab. A record has no landscape of its own — its
 // parts are a list, not a territory — and an attribute has nothing below it at all.
 const TABS_AT = (lvl) => (lvl === 0 ? [] : lvl >= 4 ? ['uebersicht']
   : lvl === 3 ? ['uebersicht', 'tabelle'] : ['uebersicht', 'diagramm', 'tabelle']);
-// Each level opens on the tab that answers its own question. A default only
-// holds until the reader picks a tab; from then on their choice travels with
-// them through the whole tree.
-// A branch and a domain both open on their landscape: the question at both is
-// «what is in here and how big is each piece», which is a looking question —
-// and arriving from the menu is exactly that moment (Nutzerentscheid,
-// 2026-08-14: «most people want to see the diagram when being forwarded from the
-// nav dropdown»). A record opens on its parts, which is a reading question, and
-// an attribute has only the one tab.
-const DEFAULT_TAB = { 1: 'diagramm', 2: 'diagramm', 3: 'tabelle', 4: 'uebersicht' };
+// Aggregate scopes open as landscapes; a selected entity opens with its facts.
+const DEFAULT_TAB = { 1: 'diagramm', 2: 'diagramm', 3: 'uebersicht', 4: 'uebersicht' };
 
 const BRANCHES = ['objekt', 'tabelle', 'referenz'];
-const BRANCH_LABEL = { objekt: 'Geschäftsobjekte', tabelle: 'Systeme', referenz: 'Referenzdaten' };
-// Symbols on the branch rows and nowhere else: at level 1 they distinguish three
-// things that are read as one list, further down they would only add noise to
-// rows that already sit under a labelled parent.
-const BRANCH_ICON = { objekt: 'Apps', tabelle: 'Database', referenz: 'List' };
-// nom/dat feed the data table's own counting wording; kid names the level below;
-// axis names the grouping level, which is a different thing in each branch.
+const BRANCH_LABEL = { 'objekt': 'Geschäftsobjekte', 'tabelle': 'Datentabellen', 'referenz': 'Referenzdaten' };
+const BRANCH_SOURCE = { 'objekt': 'businessObjects', 'tabelle': 'dataTables' };
 const BRANCH_UNIT = {
-  objekt: { nom: 'Geschäftsobjekte', dat: 'Geschäftsobjekten', kid: 'Attribute', axis: 'Domäne', axisPl: 'Domänen' },
-  tabelle: { nom: 'Datentabellen', dat: 'Datentabellen', kid: 'Felder', axis: 'System', axisPl: 'Systemen' },
-  referenz: { nom: 'Wertelisten', dat: 'Wertelisten', kid: 'Werte', axis: 'Thema', axisPl: 'Themen' },
+  'objekt': { one: 'Geschäftsobjekt', nom: 'Geschäftsobjekte', dat: 'Geschäftsobjekten',
+    kid: 'Attribute', kidOne: 'Attribut', axis: 'Domäne', axisPl: 'Domänen' },
+  'tabelle': { one: 'Datentabelle', nom: 'Datentabellen', dat: 'Datentabellen',
+    kid: 'Felder', kidOne: 'Feld', axis: 'System', axisPl: 'Systemen' },
+  'referenz': { one: 'Werteliste', nom: 'Wertelisten', dat: 'Wertelisten',
+    kid: 'Werte', kidOne: 'Wert', axis: 'Thema', axisPl: 'Themen' },
 };
+const DEFAULT_UNIT = BRANCH_UNIT[BRANCHES[0]];
+const branchAvailable = (core, kind) => !BRANCH_SOURCE[kind]
+  || typeof core.available !== 'function' || core.available(BRANCH_SOURCE[kind]);
 
-// A query narrows the scope the same way the tree does, so it belongs in the URL
-// beside it — and it applies to every tab, because it is not a property of any
-// one of them. It is deliberately NOT carried along a tree click: choosing a new
-// scope starts unfiltered, or a reader would wonder where the records went.
+// Search applies to every presentation but intentionally clears on a tree scope
+// change, so a newly selected branch never appears inexplicably empty.
 const matches = (q, ...fields) => {
   if (!q) return true;
   const needle = q.toLowerCase();
   return fields.some((f) => String(f == null ? '' : f).toLowerCase().includes(needle));
 };
-// EINE Definition davon, worin gesucht wird. Es waren drei: die Tabelle innerhalb
-// eines Astes nahm den Status mit, die drei uebrigen Stellen nicht. Bei «gueltig»
-// zeigte die Tabelle darum 17 Zeilen, waehrend der Baum daneben leer blieb —
-// dieselbe Anfrage, zwei Antworten auf einem Schirm.
-//
-// Der Status faellt dabei weg, und zwar absichtlich: er ist eine Eigenschaft zum
-// FILTERN, kein Suchbegriff. «gueltig» traf jeden gueltigen Datensatz und sagte
-// damit nichts — ein Treffer, der alles trifft, trennt nichts.
+// One predicate keeps tree counts and panes consistent. Status remains a filter,
+// not a free-text field that would make common statuses match almost everything.
 const recordMatches = (q, r) => matches(q, r.name, r.def, r.group, r.steward);
 const scopeRows = (s) => s.rows.filter((r) => (!s.leaf || r.group === s.leaf)
   && recordMatches(s.q, r));
 const scopeKids = (s) => (s.rec ? s.rec.kids : [])
   .filter((k) => matches(s.q, k.name, k.def, k.type));
 
-// What the field says depends on what it would narrow, because «Suchen…» over a
-// tree of five thousand records tells a reader nothing about what they are about
-// to search.
-function searchScope(s) {
-  // Ein Text fuer alle Stufen. Frueher nannte das Feld den Umfang, in dem man
-  // gerade stand («In Geschaeftsobjekte suchen») — das stimmt nicht mehr, seit
-  // die Suche im Seitenbaum steht und ALLE Aeste einschraenkt, nicht nur den
-  // offenen. Ein Feld, das einen zu kleinen Umfang verspricht, ist schlechter
-  // als eines, das gar keinen nennt.
-  if (s.lvl >= 4) return { label: 'Auf dieser Stufe gibt es nichts zu durchsuchen', dead: true };
-  return { label: 'Im Katalog suchen', dead: false };
-}
+const SEARCH_LABEL = 'Im Katalog suchen';
 
-// Grouping is a property of the PRESENTATION, and both presentations share it:
-// it draws the boxes in the landscape and the sections in the table. One choice,
-// two views, which is what makes the two comparable at a glance.
-//
-// «keine» is a real option, not the absence of one: on a branch it collapses the
-// landscape into a single field of every record, and it hands the table back to
-// paging.
-// Sortierung als Menue statt als Auswahlliste in der Tabellenleiste — dieselbe
-// Form wie «Gruppieren» und «Aktionen» daneben, und damit eine Zeile statt zwei.
-// Sie steht in der URL, weil sie zur Darstellung gehoert und mitreisen soll.
+// Grouping is shared URL state for landscape boxes and table sections. The
+// compatibility query value: `keine` explicitly requests no grouping.
 const SORTS = (lvl, unit) => (lvl >= 3
   ? [
     { value: 'ord', label: 'Reihenfolge', cmp: () => 0 },
@@ -210,18 +155,15 @@ const SORTS = (lvl, unit) => (lvl >= 3
     { value: 'n', label: `${unit.kid} (meiste zuerst)`, cmp: (a, b) => b.n - a.n },
   ]);
 const DEFAULT_SORT = (lvl) => (lvl >= 3 ? 'ord' : 'name');
-// Fertig sortiert an die Tabelle: sie fuehrt keine Leiste mehr, in der die Wahl
-// stuende, also faellt die Wahl hier und das Ergebnis geht hinueber.
 const sortRows = (rows, s) => {
-  const def = SORTS(s.lvl, BRANCH_UNIT[s.kind] || BRANCH_UNIT.objekt)
+  const def = SORTS(s.lvl, BRANCH_UNIT[s.kind] || DEFAULT_UNIT)
     .find((x) => x.value === s.sort);
   return def && def.cmp ? rows.slice().sort(def.cmp) : rows;
 };
 
 const GROUP_DIMS = (kind) => {
   const dims = [{ value: 'achse', label: BRANCH_UNIT[kind].axis, of: (r) => r.group }];
-  // Reference lists carry neither stewardship nor status yet (docs/data-model.md),
-  // so offering to group by them would offer a single «noch nicht erfasst» box.
+  // Reference lists do not yet carry stewardship or status.
   if (kind !== 'referenz') {
     dims.push({ value: 'verantwortung', label: 'Verantwortung', of: (r) => r.steward || 'noch nicht erfasst' });
     dims.push({ value: 'status', label: 'Status', of: (r) => r.status || 'noch nicht erfasst' });
@@ -229,12 +171,10 @@ const GROUP_DIMS = (kind) => {
   dims.push({ value: 'keine', label: 'keine', of: null });
   return dims;
 };
-// On a branch the axis is the only division there is, so it is the opening one.
-// Inside one axis value it would produce a single box, so there it starts at none.
+// A branch opens grouped by its axis; inside one axis value that grouping would
+// produce one redundant box.
 const DEFAULT_GROUP = (lvl) => (lvl === 1 ? 'achse' : 'keine');
 
-// The value lists the portal actually keeps, grouped by subject so the third
-// branch has the same three levels as the other two.
 const REF_THEMES = [
   ['Katalog und Metadaten', ['objectStatuses', 'classificationTiers', 'mappingMatches', 'dataDomains', 'sourceRoles']],
   ['Bauwerk und Liegenschaft', ['gebaeudearten', 'buildingStatuses', 'teilportfolios', 'nawClasses']],
@@ -250,26 +190,29 @@ const REF_LABEL = {
   domains: 'Service-Domänen', audiences: 'Zielgruppen', statusModel: 'Status-Modell',
 };
 
-// One shape for every record, whatever branch it came from, so the tree, the
-// tables and the overview do not each need three code paths.
+// Normalize all three branches once for the shared tree and pane renderers.
 function records(core, kind) {
+  let result;
   if (kind === 'objekt') {
-    return core.businessObjects().map((o) => ({
-      kind: 'objekt', id: o.objectId, name: o.name, group: domainLabel(core, o.domain),
-      def: o.definition || '', status: statusOf(core, o.status).label,
-      steward: stewardName(core, o.steward), persons: o.responsiblePersons || [],
-      n: (o.attributes || []).length, updated: o.updated || '',
-      raw: o, href: links.businessObject(o.objectId),
-      kids: (o.attributes || []).map((a) => ({
-        name: a.name, def: a.definition || '', type: VALUE_TYPE[a.type] || a.type,
-        key: a.keyRole || '', required: !!a.required, std: a.standardRef || '', raw: a,
-      })),
-    }));
-  }
-  if (kind === 'tabelle') {
-    return core.dataTables().map((t) => ({
+    result = core.businessObjects().map((o) => {
+      const status = statusOf(core, o.status);
+      return {
+        kind: 'objekt', id: o.objectId, name: o.name, group: domainLabel(core, o.domain),
+        def: o.definition || '', status: status.label, statusVariant: status.variant,
+        steward: stewardName(core, o.steward), persons: o.responsiblePersons || [],
+        n: (o.attributes || []).length, updated: o.updated || '',
+        raw: o, href: links.businessObject(o.objectId),
+        kids: (o.attributes || []).map((a) => ({
+          name: a.name, def: a.definition || '', type: VALUE_TYPE[a.type] || a.type,
+          key: a.keyRole || '', required: !!a.required, std: a.standardRef || '', raw: a,
+        })),
+      };
+    });
+  } else if (kind === 'tabelle') {
+    result = core.dataTables().map((t) => ({
       kind: 'tabelle', id: t.tableId, name: t.displayName || t.name, group: t.systemName || '—',
       def: t.description || '', status: t.certified ? 'Zertifiziert' : 'Nicht zertifiziert',
+      statusVariant: t.certified ? 'success' : 'gray',
       steward: stewardName(core, t.steward), persons: t.responsiblePersons || [],
       n: (t.fields || []).length, updated: t.updated || '',
       raw: t, href: links.dataTable(t.tableId),
@@ -278,55 +221,54 @@ function records(core, kind) {
         key: f.primaryKey ? 'PK' : f.foreignKey ? 'FK' : '', required: !f.nullable, std: '', raw: f,
       })),
     }));
+  } else {
+    result = REF_THEMES.flatMap(([theme, keys]) => keys.map((k) => {
+      const vals = refList(core, k);
+      return {
+        kind: 'referenz', id: k, name: REF_LABEL[k] || k, group: theme,
+        // Keep unsupported governance fields visibly empty rather than inventing
+        // searchable metadata that the reference-list model does not contain.
+        def: '',
+        status: '', statusVariant: '', steward: '', persons: [],
+        n: vals.length, updated: '',
+        raw: { key: k, values: vals }, href: `${BASE}?list=${encodeURIComponent(k)}`,
+        kids: vals.map((v) => ({
+          name: String(v.label || v.name || v.id || v.key || v),
+          def: v.definition || v.description || v.consequence || '',
+          type: String(v.id || v.key || ''), key: '', required: false, std: '', raw: v,
+        })),
+      };
+    }));
   }
-  return REF_THEMES.flatMap(([theme, keys]) => keys.map((k) => {
-    const vals = refList(core, k);
-    return {
-      kind: 'referenz', id: k, name: REF_LABEL[k] || k, group: theme,
-      // Beschreibung, Verantwortung, Status und Freigabe gehören hierher. Das
-      // Datenmodell führt sie noch nicht (docs/data-model.md), deshalb bleiben die
-      // Felder sichtbar leer statt weggelassen — die Lücke soll auffallen, nicht
-      // verschwinden, und erfundener Fülltext hätte die Suche belogen.
-      def: '',
-      status: '', steward: '', persons: [],
-      n: vals.length, updated: '',
-      raw: { key: k, values: vals }, href: `${BASE}?list=${encodeURIComponent(k)}`,
-      kids: vals.map((v) => ({
-        name: String(v.label || v.name || v.id || v.key || v),
-        def: v.definition || v.description || v.consequence || '',
-        type: String(v.id || v.key || ''), key: '', required: false, std: '', raw: v,
-      })),
-    };
-  }));
+  return result;
 }
 
-// Each branch resolves an id through core's own accessor. A value list has no
-// accessor of its own — its key IS the reference-list key — so membership in the
-// curated themes above is what makes it exist.
+// Core accessors remain the existence boundary for record deep links.
 const RESOLVE = {
-  objekt: (core, id) => core.businessObject(id),
-  tabelle: (core, id) => core.dataTable(id),
-  referenz: (core, id) => (REF_LABEL[id] && refList(core, id) ? { key: id } : null),
+  'objekt': (core, id) => core.businessObject(id),
+  'tabelle': (core, id) => core.dataTable(id),
+  'referenz': (core, id) => (REF_LABEL[id] && refList(core, id) ? { key: id } : null),
 };
 
-// Everything the views need, derived once from the query string. Every part of
-// the path is checked against the data: a query naming a record or an attribute
-// that does not exist must never reach the renderer.
-function readState(ctx) {
+// Validate every URL-selected path segment before it reaches a renderer.
+export function readState(ctx) {
   const { query: qs, core } = ctx;
   const kindParam = qs.get('kind');
-  // The record selector doubles as the branch: an ?id= link from the search
-  // index carries no kind, and inferring it beats asking every caller to add one.
+  // Legacy record selectors imply their branch.
   const picked = qs.get('id') ? ['objekt', qs.get('id')]
     : qs.get('table') ? ['tabelle', qs.get('table')]
       : qs.get('list') ? ['referenz', qs.get('list')] : null;
   const kind = picked ? picked[0] : (BRANCHES.includes(kindParam) ? kindParam : '');
-  const rows = kind ? records(core, kind) : [];
-  // Existence goes through core's own id accessors: they are the single
-  // definition of «does this record exist», and routing them through the query
-  // value keeps the once-decoded guarantee (test-router-lifecycle) enforced by a
-  // real call rather than by inspection. records() above is only a view model.
-  const raw = picked ? RESOLVE[kind](core, picked[1]) : null;
+  const rowsByKind = new Map();
+  const availableFor = (branch) => branchAvailable(core, branch);
+  const rowsFor = (branch) => {
+    if (!rowsByKind.has(branch)) rowsByKind.set(branch, availableFor(branch) ? records(core, branch) : []);
+    return rowsByKind.get(branch);
+  };
+  const rows = kind ? rowsFor(kind) : [];
+  // URLSearchParams has already decoded the identifier exactly once.
+  const available = kind ? availableFor(kind) : true;
+  const raw = picked && available ? RESOLVE[kind](core, picked[1]) : null;
   const rec = raw ? rows.find((r) => r.id === picked[1]) || null : null;
   const leafParam = qs.get('leaf') || '';
   const leaf = rec ? rec.group : (rows.some((r) => r.group === leafParam) ? leafParam : '');
@@ -337,30 +279,20 @@ function readState(ctx) {
   const pick = TAB_LABEL[qs.get('tab')] ? qs.get('tab') : '';
   const tab = avail.includes(pick) ? pick
     : (avail.includes(DEFAULT_TAB[lvl]) ? DEFAULT_TAB[lvl] : avail[0] || '');
-  // Same shape as the tab: an explicit choice wins and travels, a default only
-  // holds until one is made.
   const q = (qs.get('q') || '').trim();
   const sortPick = qs.get('sort') || '';
   const dims = kind ? GROUP_DIMS(kind) : [];
   const groupPick = dims.some((d) => d.value === qs.get('group')) ? qs.get('group') : '';
   const group = groupPick || DEFAULT_GROUP(lvl);
-  const unitOf = BRANCH_UNIT[kind] || BRANCH_UNIT.objekt;
+  const unitOf = BRANCH_UNIT[kind] || DEFAULT_UNIT;
   const sorts = SORTS(lvl, unitOf);
   const sort = sorts.some((x) => x.value === sortPick) ? sortPick : DEFAULT_SORT(lvl);
-  return { kind, rows, leaf, rec, attr, lvl, tab, pick, avail, group, groupPick, q,
+  return { kind, rows, rowsFor, available, availableFor, leaf, rec, attr, lvl, tab, pick, avail, group, groupPick, q,
     sort, sortPick: sort === DEFAULT_SORT(lvl) ? '' : sort,
-    missing: !!picked && !rec };
+    missing: !!picked && available && !rec };
 }
 
-// A link that changes one part of the scope and leaves the rest — in particular
-// the chosen tab — exactly where it was.
-// Zurueck heisst hier: eine Stufe hinauf, nicht «zur Anwendungsliste». Innerhalb
-// des Katalogs ist die Stufe darueber der Ort, an dem man war — auf einem
-// Attribut der Datensatz, auf einem Datensatz seine Gruppe, und so fort. Erst an
-// der Wurzel verlaesst «zurueck» die Anwendung.
-//
-// Der Baum kann das nicht ersetzen: er zeigt, WO man ist, aber die Bewegung
-// hinauf verlangt dort, die richtige Zeile zu finden. Ein Knopf ist ein Knopf.
+// Back moves up exactly one catalogue level; other view state remains stable.
 function backTo(s) {
   if (s.attr && s.rec) return { backHref: hrefFor(s, { attr: '' }), backLabel: s.rec.name };
   if (s.rec) {
@@ -377,6 +309,9 @@ function backTo(s) {
 function hrefFor(s, patch) {
   const n = { kind: s.kind, leaf: s.leaf, rec: s.rec, attr: s.attr, pick: s.pick,
     groupPick: s.groupPick, sortPick: s.sortPick, ...patch };
+  const changesRecord = n.rec && (!s.rec || n.rec.kind !== s.rec.kind || n.rec.id !== s.rec.id);
+  const changesPart = Object.prototype.hasOwnProperty.call(patch, 'attr') && n.attr !== s.attr;
+  if (changesRecord || changesPart) n.pick = '';
   const p = new URLSearchParams();
   if (n.rec) {
     p.set(n.rec.kind === 'objekt' ? 'id' : n.rec.kind === 'tabelle' ? 'table' : 'list', n.rec.id);
@@ -392,11 +327,41 @@ function hrefFor(s, patch) {
   return s2 ? `${BASE}?${s2}` : BASE;
 }
 
-// --- Route -------------------------------------------------------------------
+const tabLabel = (s, unit, tab) => (tab === 'tabelle' && s.lvl === 3 ? unit.kid : TAB_LABEL[tab]);
+const tabItems = (s, unit) => s.avail.map((id) => ({ id, label: tabLabel(s, unit, id) }));
 
-export default async function render(ctx) {
+function pageHeading(s, unit) {
+  if (s.attr) return { title: s.attr, lead: `${unit.kidOne} von «${s.rec.name}»` };
+  if (s.rec) return { title: s.rec.name, lead: `${unit.one} · ${unit.axis}: ${s.rec.group}` };
+  if (s.leaf) return { title: s.leaf, lead: `${unit.axis} · ${scopeRows(s).length} ${unit.nom}` };
+  if (s.kind) return { title: BRANCH_LABEL[s.kind], lead: `${unit.nom}, gegliedert nach ${unit.axisPl}` };
+  return {
+    title: TITLE,
+    lead: 'Fachbegriffe des BBL, ihre Realisierung in den Führungssystemen, und die Wertelisten, auf die beide verweisen.',
+  };
+}
+
+function breadcrumbTrail(s) {
+  const items = [{ label: TITLE, href: BASE }];
+  if (s.kind) items.push({
+    label: BRANCH_LABEL[s.kind],
+    href: hrefFor(s, { kind: s.kind, leaf: '', rec: null, attr: '', pick: '' }),
+  });
+  if (s.leaf) items.push({
+    label: s.leaf,
+    href: hrefFor(s, { kind: s.kind, leaf: s.leaf, rec: null, attr: '', pick: '' }),
+  });
+  if (s.rec) items.push({
+    label: s.rec.name,
+    href: hrefFor(s, { kind: s.kind, leaf: s.rec.group, rec: s.rec, attr: '', pick: '' }),
+  });
+  if (s.attr) items.push({ label: s.attr });
+  delete items[items.length - 1].href;
+  return trail(APPLICATIONS, ...items);
+}
+
+export default function render(ctx) {
   const { mount, C, setTitle, setCrumbs } = ctx;
-  core0 = ctx.core;
   const s = readState(ctx);
 
   // A named record that does not resolve is a broken link, not an empty page.
@@ -408,68 +373,51 @@ export default async function render(ctx) {
     });
   }
 
-  const unit = BRANCH_UNIT[s.kind] || BRANCH_UNIT.objekt;
+  const unit = BRANCH_UNIT[s.kind] || DEFAULT_UNIT;
   const here = s.attr || (s.rec && s.rec.name) || s.leaf || (s.kind && BRANCH_LABEL[s.kind]) || '';
   setTitle(here ? `${here} — ${TITLE}` : TITLE);
-  // Only the current scope goes into the trail; the tree carries the path.
-  setCrumbs(trail(APPLICATIONS, { label: TITLE, href: BASE }, ...(here ? [{ label: here }] : [])));
+  setCrumbs(breadcrumbTrail(s));
+  const heading = pageHeading(s, unit);
+  const detailTabs = s.lvl === 3
+    ? C.tabBar({ items: tabItems(s, unit), active: s.tab, idPrefix: 'mc-tab',
+      panelId: 'mc-panel', ariaLabel: `Details zu ${s.rec.name}` })
+    : '';
+  const panelAttrs = s.lvl === 3
+    ? ` role="tabpanel" tabindex="0" aria-labelledby="mc-tab-${s.tab}"`
+    : '';
+  const treePane = '<aside class="pf-sidebar" id="mc-tree" aria-label="Katalog"></aside>';
+  const mainPane = `<div class="pf-main">
+        ${detailTabs}
+        <div id="mc-panel" class="mc-pane${detailTabs ? ' tab__container' : ''}"${panelAttrs}>${paneHtml(ctx, s, unit)}</div>
+      </div>`;
+  const detailLayout = s.lvl >= 3;
 
   mount.innerHTML = `
   <div class="container section">
-    ${/* Zurueck, Teilen, Drucken — dieselbe Zeile wie auf jeder Detailseite des
-          Portals und des Bundes-CD. Drucken hat hier eine genaue Bedeutung: das
-          Stylesheet druckt die FLAECHE, ohne Baum und Bedienelemente (siehe
-          landscape.css), also genau das, was man ansieht. */''}
     ${C.detailBar(backTo(s))}
-    ${C.pageHeader({ title: TITLE,
-    lead: 'Fachbegriffe des BBL, ihre Realisierung in den Führungssystemen, und die Wertelisten, auf die beide verweisen.' })}
-    ${/* Dieselbe Anordnung wie im Liegenschaften Inventar: eine Leiste mit Suche
-          links und Bedienelementen rechts, darunter die aktiven Einschraenkungen,
-          darunter Baum und Flaeche.
-
-          Der Katalog hatte dafuer eine eigene Zeile erfunden — nicht aus Not,
-          sondern weil «Diagramm» und «Tabelle» als ARIA-REITER gebaut waren: ein
-          Reiter darf nicht in seiner eigenen Reiterflaeche stehen, also konnten
-          die Bedienelemente nicht in die Leiste hinunter und brauchten eine
-          Zeile fuer sich. Als Ansichtswechsel faellt der Zwang weg, und es ist
-          ohnehin die ehrlichere Beschreibung: drei Sichten auf denselben
-          Umfang, was der Ansichtswechsel im ganzen Portal bedeutet. */''}
-    ${/* Auch auf der Einstiegsseite: die Suche gilt dort fuer den ganzen Katalog
-          — genau der Ort, an dem man sie am ehesten braucht —, und eine Leiste,
-          die auf einer Seite fehlt und auf der naechsten erscheint, laesst die
-          Seite springen. */''}
+    ${C.pageHeader(heading)}
     ${C.catalogueBar({
     formId: 'mc-search', inputId: 'mc-q',
-    searchLabel: searchScope(s).label,
-    placeholder: `${searchScope(s).label}${searchScope(s).dead ? '' : '…'}`,
+    searchLabel: SEARCH_LABEL,
+    placeholder: `${SEARCH_LABEL}…`,
     q: s.q,
-    searchDisabled: searchScope(s).dead,
-    // Der Zaehler steht im Baum, an jedem Ast — dort sagt er zusaetzlich, WO die
-    // Treffer liegen. Zweimal dieselbe Zahl waere einmal zu viel.
+    showSearch: s.lvl < 4 && s.available,
     showCount: false,
     extra: `<span id="mc-tools">${toolsHtml(ctx, s)}</span>`,
     view: s.tab,
-    // Auf der Wurzel gibt es nichts zu wechseln: sie ist der Weg hinein, kein
-    // Umfang. `views` entfaellt dort, die Suche bleibt.
-    views: s.avail.length ? s.avail.map((k) => [k, TAB_LABEL[k], VIEW_ICON[k]]) : null,
+    // Detail modes are text tabs in the main pane; aggregate modes remain view controls.
+    views: s.available && s.lvl > 0 && s.lvl < 3
+      ? s.avail.map((k) => [k, tabLabel(s, unit, k), VIEW_ICON[k]]) : null,
   })}
-    <div id="mc-activefilters">${s.lvl === 0 ? '' : activeFiltersHtml(ctx, s)}</div>
-    <div class="pf-layout">
-      <aside class="pf-sidebar" id="mc-tree" aria-label="Katalog"></aside>
-      <div class="pf-main">
-        ${/* .mc-pane traegt die Dichte des Katalogs (css/sections/landscape.css).
-              Keine Reiterflaeche mehr: der Ansichtswechsel ist eine Gruppe von
-              Schaltern, kein Reiterband — also auch kein role="tabpanel". */''}
-        <div id="mc-panel" class="mc-pane">${paneHtml(ctx, s, unit)}</div>
-      </div>
+    <div id="mc-activefilters">${activeFiltersHtml(ctx, s)}</div>
+    <div class="pf-layout${detailLayout ? ' pf-layout--detail mc-layout--detail' : ''}">
+      ${detailLayout ? `${mainPane}${treePane}` : `${treePane}${mainPane}`}
     </div>
   </div>`;
 
-  mountPane(ctx, s, unit);
-  // Der Baum wird neu gezeichnet, wenn die Anfrage sich aendert — er zeigt ja
-  // jetzt die Treffer. Der aufgeklappte Zustand ueberlebt das: das Bauteil legt
-  // ihn unter seiner Kennung ab, und die bleibt «mc-tree». Das Suchfeld steht
-  // ausserhalb, der Schreibfluss wird also nicht unterbrochen.
+  let disposePane = mountPane(ctx, s, unit);
+  ctx.onUnmount(() => disposePane());
+  // Tree folds survive query redraws because the host and tree id remain stable.
   const treeHost = mount.querySelector('#mc-tree');
   let dropTree = C.sidebarTree(treeHost, treeConfig(ctx, s));
   ctx.onUnmount(() => dropTree());
@@ -481,10 +429,6 @@ export default async function render(ctx) {
   let cur = s;
   const panel = mount.querySelector('#mc-panel');
   const tools = mount.querySelector('#mc-tools');
-  // Die Bedienelemente stehen in der Reiterzeile, also AUSSERHALB der Flaeche.
-  // Sie werden mit ihr neu gezeichnet, weil «Alle zuklappen» seinen Zustand
-  // nennt und «Sortieren»/«Gruppieren» die gewaehlte Achse — alle drei aendern
-  // sich mit dem, was die Flaeche zeigt.
   const paintTools = () => {
     if (!tools) return;
     tools.innerHTML = toolsHtml(ctx, cur);
@@ -492,15 +436,26 @@ export default async function render(ctx) {
   };
   const pills = mount.querySelector('#mc-activefilters');
   const redraw = () => {
+    disposePane();
     panel.innerHTML = paneHtml(ctx, cur, unit);
-    mountPane(ctx, cur, unit);
+    disposePane = mountPane(ctx, cur, unit);
     paintTools();
     paintTree();
     if (pills) pills.innerHTML = activeFiltersHtml(ctx, cur);
   };
 
-  // Typing rewrites the URL in place rather than pushing history: a query is a
-  // refinement of where the reader already is, not a new destination.
+  const selectPresentation = (tab) => {
+    if (tab === cur.tab || !cur.avail.includes(tab)) return;
+    const p = new URLSearchParams(location.hash.split('?')[1] || '');
+    if (tab === DEFAULT_TAB[cur.lvl]) p.delete('tab'); else p.set('tab', tab);
+    const str = p.toString();
+    history.replaceState(history.state, '', str ? `${BASE}?${str}` : BASE);
+    cur = { ...cur, tab, pick: tab === DEFAULT_TAB[cur.lvl] ? '' : tab };
+    redraw();
+  };
+
+  // Live search replaces the current history entry and cancels its pending tick
+  // when the route unmounts.
   const input = mount.querySelector('#mc-q');
   if (input) {
     let timer = null;
@@ -519,34 +474,13 @@ export default async function render(ctx) {
 
   if (tools) C.wireMenu(tools, (a) => onMenuAction(a, cur, unit));
 
-  // «Alle zuklappen» steht in der Reiterzeile, die Kaesten in der Flaeche — also
-  // zwei Zuhoerer, je einer dort, wo sein Bedienelement sitzt.
-  if (tools) {
-    tools.addEventListener('click', (e) => {
-      const all = e.target.closest('[data-lscape-all]');
-      if (!all) return;
-      const shut = all.dataset.lscapeAll === 'shut';
-      BOXES.setAll(landscapeBoxes(cur).map((b) => b.key), !shut);
-      redraw();
-      const again = tools.querySelector('[data-lscape-all]');
-      if (again) again.focus();
-    });
-  }
+  ctx.onUnmount(wireLandscape({
+    panel, tools, state: BOXES,
+    keys: () => landscapeBoxes(cur).map((box) => box.key),
+    redraw,
+  }));
 
-  // Folding stays out of the URL — a view preference, not a scope change, the
-  // same reasoning as the tree's chevrons.
-  panel.addEventListener('click', (e) => {
-    const box = e.target.closest('[data-box]');
-    if (!box) return;
-    BOXES.toggle(box.dataset.box);
-    redraw();
-    const again = panel.querySelector(`[data-box="${CSS.escape(box.dataset.box)}"]`);
-    if (again) again.focus();
-  });
-
-  // Der Ansichtswechsel aendert nur die Darstellung, also wird die Flaeche an
-  // Ort und Stelle getauscht statt die Route neu zu fahren: der Baum behaelt
-  // seine Rollhoehe und seinen Fokus.
+  // Local view switching preserves the tree's scroll position and focus.
   const bar = mount.querySelector('.catbar');
   if (bar) {
     bar.addEventListener('click', (e) => {
@@ -554,24 +488,16 @@ export default async function render(ctx) {
       if (!b) return;
       const tab = b.dataset.view;
       if (tab === cur.tab) return;
-      const p = new URLSearchParams(location.hash.split('?')[1] || '');
-      if (tab === DEFAULT_TAB[cur.lvl]) p.delete('tab'); else p.set('tab', tab);
-      const str = p.toString();
-      history.replaceState(history.state, '', str ? `${BASE}?${str}` : BASE);
-      cur = { ...cur, tab, pick: tab === DEFAULT_TAB[cur.lvl] ? '' : tab };
       bar.querySelectorAll('.view-switch__btn').forEach((x) => {
         x.setAttribute('aria-pressed', String(x.dataset.view === tab));
       });
-      redraw();
+      selectPresentation(tab);
     });
-    // Eine Marke abwaehlen: die Anfrage loeschen oder den Umfang auf die Wurzel
-    // zuruecksetzen. Beides sind Adressen, also faehrt der Router.
     if (pills) {
       pills.addEventListener('click', (e) => {
         const rm = e.target.closest('[data-remove]');
-        if (!rm) return;
+        if (!rm || rm.dataset.remove !== 'q') return;
         e.preventDefault();
-        if (rm.dataset.remove !== 'q') { location.hash = BASE.replace(/^#/, ''); return; }
         const p = new URLSearchParams(location.hash.split('?')[1] || '');
         p.delete('q');
         const str = p.toString();
@@ -583,43 +509,33 @@ export default async function render(ctx) {
       });
     }
   }
+
+  if (s.lvl === 3) C.wireTabs(mount, { onSelect: selectPresentation });
 }
 
-// The count is the field's feedback, and it has to be there on every tab —
-// «Übersicht» lists nothing, so without it a reader typing there gets no sign
-// that anything happened at all.
-// Was gerade einschraenkt, als abwaehlbare Marken — dieselbe Zeile wie im
-// Liegenschaften Inventar. Der Umfang kommt aus dem Baum, die Anfrage aus dem
-// Feld; beides sind Einschraenkungen, und beide gehoeren dorthin, wo man sie
-// wieder los wird. Vorher liess sich der Umfang nur ueber den Baum
-// zuruecknehmen — man musste wissen, dass die Wurzel «alles» bedeutet.
+// Hierarchy is navigation; only the free-text constraint belongs in this row.
 function activeFiltersHtml(ctx, s) {
   const { C } = ctx;
-  const filters = [];
-  if (s.q) filters.push({ label: `Suche: ${s.q}`, remove: 'q' });
-  if (s.rec) filters.push({ label: s.rec.name, remove: 'scope' });
-  else if (s.leaf) filters.push({ label: s.leaf, remove: 'scope' });
-  else if (s.lvl > 0) filters.push({ label: BRANCH_LABEL[s.kind], remove: 'scope' });
-  return filters.length ? C.activeFilters({ filters, resetHref: BASE }) : '';
+  return s.q ? C.activeFilters({
+    filters: [{ label: `Suche: ${s.q}`, remove: 'q' }], resetHref: BASE,
+  }) : '';
 }
 
-// --- Export ------------------------------------------------------------------
-// What leaves is exactly what the reader can see: the current scope AFTER the
-// tree, the search and the grouping. Exporting the whole catalogue from a screen
-// showing nine records would be a different thing than the one they asked for.
+// Export the complete filtered scope, not merely the current table page.
 function exportTable(s, unit) {
   if (s.lvl >= 3) {
     const isRef = s.rec.kind === 'referenz';
+    const kids = s.lvl === 4 ? scopeKids(s).filter((k) => k.name === s.attr) : scopeKids(s);
     return {
-      name: `${s.rec.name} — ${unit.kid}`,
+      name: s.lvl === 4 ? `${s.rec.name} — ${s.attr}` : `${s.rec.name} — ${unit.kid}`,
       head: [isRef ? 'Bezeichnung' : s.rec.kind === 'objekt' ? 'Attribut' : 'Feld',
         'Beschreibung', isRef ? 'Schlüssel' : 'Typ', 'Schlüsselrolle', 'Pflichtangabe'],
-      rows: scopeKids(s).map((k) => [k.name, k.def, k.type, k.key,
+      rows: kids.map((k) => [k.name, k.def, k.type, k.key,
         isRef ? '' : k.required ? 'Pflicht' : 'optional']),
     };
   }
   if (s.lvl === 0) {
-    const hits = BRANCHES.flatMap((k) => records(core0, k).map((r) => ({ ...r, kind: k })))
+    const hits = BRANCHES.flatMap((k) => s.rowsFor(k).map((r) => ({ ...r, kind: k })))
       .filter((r) => recordMatches(s.q, r));
     return { name: s.q ? `Treffer für ${s.q}` : 'Katalog',
       head: ['Bereich', 'Name', 'Gruppe', 'Beschreibung', 'Verantwortung', 'Bestandteile', 'Status'],
@@ -632,10 +548,6 @@ function exportTable(s, unit) {
   };
 }
 
-// A field is quoted only when it has to be (RFC 4180), and the file opens with a
-// Everything in the bar is a menu now, and both report here. A grouping choice
-// NAVIGATES rather than redrawing in place: it re-lays both views and every link
-// in the tree, and unlike a tab switch it is a rare, deliberate act.
 function onMenuAction(action, s, unit) {
   if (action.startsWith('group:')) {
     const value = action.slice('group:'.length);
@@ -659,91 +571,56 @@ function runExport(action, s, unit) {
   runTableExport(action, t, `geschaeftsarchitektur_${slug(t.name, 'katalog')}`);
 }
 
-// Grouping belongs to the table and the landscape, not to the tree — so it sits
-// in the tab row rather than in the sidebar. On level 3 it disappears: ordering
-// many records is what it does, and only one record is in scope there.
 function toolsHtml(ctx, s) {
   const { C } = ctx;
   if (s.lvl < 1) return '';
-  const anyOpen = s.tab === 'diagramm'
-    && BOXES.anyOpen(landscapeBoxes(s).map((b) => b.key));
-  // The label states what pressing it WILL do, not what the state is called.
-  const fold = s.tab !== 'diagramm' ? '' : `
+  if (!s.available) return `<span class="mc-tools">
+    <button type="button" class="btn btn--outline btn--sm" disabled>Export nicht verfügbar</button>
+  </span>`;
+  const boxes = s.tab === 'diagramm' ? landscapeBoxes(s) : [];
+  const anyOpen = boxes.length > 0 && BOXES.anyOpen(boxes.map((b) => b.key));
+  const fold = s.tab !== 'diagramm' || !boxes.length ? '' : `
     <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-lscape-all="${anyOpen ? 'shut' : 'open'}">
       ${C.icon(anyOpen ? 'Minus' : 'Plus', 'btn__icon')}
       <span class="btn__text">Alle ${anyOpen ? 'zuklappen' : 'aufklappen'}</span></button>`;
-  // Grouping orders many records; on a record there is only one, so it goes.
-  //
-  // A button menu, not a <select> — the same control as «Aktionen» beside it, so
-  // the row is one kind of thing rather than two. It also settles two problems
-  // the <select> had here: it measured itself against its WIDEST option, so the
-  // chosen value drifted away from its own chevron, and it needed a separate
-  // word in front of it to say what it was for. The trigger states both at once,
-  // which is also how the wireframe reads it.
-  const sorts = SORTS(s.lvl, BRANCH_UNIT[s.kind] || BRANCH_UNIT.objekt);
+  const sorts = SORTS(s.lvl, BRANCH_UNIT[s.kind] || DEFAULT_UNIT);
   const chosenSort = sorts.find((x) => x.value === s.sort) || sorts[0];
-  // Nicht im Diagramm: die Landschaft ordnet ihre Kaesten nach Groesse und ihre
-  // Kacheln nach der Reihenfolge der Daten. Eine Sortierwahl, die man druecken
-  // kann und an der sich nichts aendert, ist schlimmer als keine.
-  const sortMenu = s.tab === 'diagramm' ? '' : C.menu({
+  const sortMenu = s.tab !== 'tabelle' ? '' : C.menu({
     menuId: 'mc-sort', label: 'Sortieren', triggerLabel: `Sortieren: ${chosenSort.label}`,
     items: sorts.map((x) => ({ action: `sort:${x.value}`, label: x.label })),
   });
 
   const dims = GROUP_DIMS(s.kind);
   const chosen = dims.find((d) => d.value === s.group) || dims[0];
-  const group = s.lvl > 2 ? '' : C.menu({
+  const group = s.lvl > 2 || s.tab === 'uebersicht' ? '' : C.menu({
     menuId: 'mc-group', label: 'Gruppieren', triggerLabel: `Gruppieren: ${chosen.label}`,
     items: dims.map((d) => ({ action: `group:${d.value}`, label: d.label })),
   });
-  // Order as in the wireframe — fold, then what ARRANGES the pane, then what
-  // ACTS on it. On the Tabelle tab the table's own Sortieren and Filter come
-  // first in the same row, which puts all the arranging together.
-  //
-  // No icons on the action rows: three entries that all mean «take this away»
-  // would carry two identical download symbols and one printer, which sorts them
-  // by nothing. The words already say it.
+  const exportSubject = s.lvl === 4 ? (BRANCH_UNIT[s.kind] || DEFAULT_UNIT).kidOne
+    : s.lvl === 3 ? (BRANCH_UNIT[s.kind] || DEFAULT_UNIT).kid
+      : (BRANCH_UNIT[s.kind] || DEFAULT_UNIT).nom;
   const actions = C.menu({
     menuId: 'mc-actions', label: 'Aktionen', triggerLabel: 'Aktionen',
     items: [
-      { action: 'csv', label: 'CSV herunterladen' },
-      { action: 'excel', label: 'Excel herunterladen' },
-      { action: 'pdf', label: 'Als PDF drucken' },
+      { action: 'csv', label: `${exportSubject} als CSV herunterladen` },
+      { action: 'excel', label: `${exportSubject} als Excel herunterladen` },
+      { action: 'pdf', label: `${exportSubject} als PDF drucken` },
     ],
   });
-  // Wrapped as one group. The bar draws a divider before every bare
-  // .action-menu that is a direct child of .catbar__controls; these are all
-  // bordered buttons, so each already reads as its own control and the lines
-  // were a third mark among three boxes. The wrapper keeps the SEPARATION that
-  // rule exists for (catbar.css: an export dropdown four pixels from the sort
-  // select reads as part of sorting) and drops only the stroke.
   return `<span class="mc-tools">${fold}${sortMenu}${group}${actions}</span>`;
 }
 
-// --- Tree --------------------------------------------------------------------
-
-// Der Baum ist jetzt das gemeinsame Bauteil (C.sidebarTree). Hier bleibt nur,
-// was der Katalog über seine eigenen Daten weiss: welche Knoten es gibt, welcher
-// gewählt ist, und wohin jeder zeigt. Leiter, Chevron, Abschnitte und Tastatur
-// gehören dem Bauteil — und damit allen acht Oberflächen gleichermassen.
-// Lucide statt CD (assets/icons/tree/): im Baum stehen bis zu vierzig Zeilen
-// untereinander, und die gefuellten CD-Symbole tragen dort mehr Gewicht als die
-// Beschriftung daneben. Strichsymbole ordnen sich unter. Alles Uebrige im Portal
-// bleibt beim CD.
 const BRANCH_ICON_OF = {
-  objekt: 'tree/boxes', tabelle: 'tree/database', referenz: 'tree/list',
+  'objekt': 'tree/boxes', 'tabelle': 'tree/database', 'referenz': 'tree/list',
 };
 
 function treeConfig(ctx, s) {
   const { core } = ctx;
 
-  // Stufe 1 führt Symbole, die übrigen nicht. Damit steht Stufe 2 bündig unter
-  // Stufe 1 — die Symbolspalte IST ihre Einrückung —, und ab da läuft ein
-  // gleichmässiger Schritt.
   const levels = [{ icons: true }, { icons: false }, { icons: false }, { icons: false }];
 
   const attrNodes = (r, kind, group) => r.kids.map((k) => ({
-    id: `attr:${r.id}:${k.name}`,
+    id: catalogueNodeId('attr', kind, r.id, k.name),
     label: k.name,
     href: hrefFor(s, { rec: r, attr: k.name, kind, leaf: group }),
     state: s.rec && s.rec.id === r.id && s.attr === k.name ? 'active' : '',
@@ -752,55 +629,43 @@ function treeConfig(ctx, s) {
   const recNode = (r, kind, group) => {
     const on = s.rec && s.rec.id === r.id;
     return {
-      id: `rec:${r.id}`,
+      id: catalogueNodeId('record', kind, r.id),
       label: r.name,
       count: r.n,
       countUnit: BRANCH_UNIT[kind].kid,
       href: hrefFor(s, { rec: r, attr: '', kind, leaf: group }),
       state: on && !s.attr ? 'active' : on ? 'path' : '',
-      // Wählen und Aufklappen sind zwei Absichten, also zwei Bedienelemente: eine
-      // Datentabelle trägt bis zu fünfundsiebzig Felder, und sie zu wählen darf
-      // nicht heissen, sie alle in die Leiste zu kippen.
+      // Selection and folding remain separate for records with many parts.
       split: true,
-      // Ein Attribut im Umfang zwingt seinen Datensatz auf: die Auswahl muss
-      // sichtbar sein. Ihn selbst zu wählen tut das nicht.
       open: !!(on && s.attr),
       hasChildren: r.kids.length > 0,
-      // Erst beim Aufklappen gebaut. Hunderte verborgener Zeilen im Voraus
-      // anzulegen kostet jeden Leser etwas, den die meisten nie ansehen.
+      // Build potentially large part lists only when expanded.
       children: () => attrNodes(r, kind, group),
     };
   };
 
-  // Die Suche schraenkt den Baum ein, nicht nur die Flaeche — dieselbe Prüfung
-  // wie dort (scopeRows), sonst zaehlt der Ast anders als die Tabelle darunter.
-  // Ohne Anfrage ist es die volle Liste, der Normalfall kostet also nichts.
+  // The tree and pane share the same search predicate and counts.
   const rowsOf = (kind) => {
-    const all = records(core, kind);
+    const all = s.rowsFor(kind);
     return s.q ? all.filter((r) => recordMatches(s.q, r)) : all;
   };
 
   const branchNode = (kind) => {
+    const available = s.availableFor(kind);
     const rows = rowsOf(kind);
-    // Ein Ast ohne Treffer verschwindet, statt mit einer Null dazustehen: die
-    // Frage ist «wo steckt das», und ein leerer Ast ist keine Antwort darauf.
-    if (s.q && !rows.length) return null;
-    // Bei einer Anfrage steht alles offen — die Treffer zu suchen, die die
-    // Suche gefunden hat, waere die Arbeit zweimal.
+    if (s.q && available && !rows.length) return null;
     const open = s.q ? true : s.kind === kind;
     const groups = [...new Set(rows.map((r) => r.group))].sort((a, b) => a.localeCompare(b, 'de'));
     return {
       id: `kind:${kind}`,
-      label: BRANCH_LABEL[kind],
-      count: rows.length,
+      label: available ? BRANCH_LABEL[kind] : `${BRANCH_LABEL[kind]} — nicht verfügbar`,
+      count: available ? rows.length : null,
       countUnit: BRANCH_UNIT[kind].nom,
       icon: BRANCH_ICON_OF[kind],
       href: hrefFor(s, { kind, leaf: '', rec: null, attr: '' }),
       state: open && !s.leaf ? 'active' : open ? 'path' : '',
-      // Einen Ast zu wählen heisst, seine Gruppen zu zeigen — anders als bei
-      // einem Datensatz, dessen Bestandteile das Chevron verlangen.
       open,
-      hasChildren: groups.length > 0,
+      hasChildren: available && groups.length > 0,
       children: () => groups.map((g) => {
         const mine = rows.filter((r) => r.group === g);
         const here = s.leaf === g;
@@ -824,13 +689,9 @@ function treeConfig(ctx, s) {
     title: 'Katalog',
     mode: 'nav',
     levels,
-    // Zwei Abschnitte, also genau eine Linie: die Wurzel ist etwas anderes als
-    // die drei Äste darunter. Sonst zieht der Baum keine.
     sections: [
       [{
         id: 'root',
-        // Nicht noch einmal «Katalog»: so heisst die Spalte schon
-        // (.pf-sidebar__title). Die Zeile ist der Weg zur Einstiegsseite.
         label: 'Übersicht',
         count: BRANCHES.reduce((a, k) => a + rowsOf(k).length, 0),
         countUnit: 'Einträge',
@@ -843,30 +704,38 @@ function treeConfig(ctx, s) {
   };
 }
 
-// --- Panes -------------------------------------------------------------------
-
-// Übersicht is the same three sections at every level — Definition,
-// Verantwortlich, Metadaten — so a reader who has understood one has understood
-// all of them. Nothing else joins that list (Produktentscheid).
 const TODO = badge('noch nicht erfasst', 'warning', 'sm');
 const section = (title, body) =>
   `<section class="detail-section"><h2 class="detail-section__title">${esc(title)}</h2>${body}</section>`;
-const kv = (rows) => `<dl class="kv kv--ruled">${rows.filter(Boolean)
-  .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
-// Responsible people are individual AdminDir entries; the steward is a mailbox.
-const personRows = (persons) => (persons || []).map((p) => [esc(p.role),
+const kv = (rows) => `<dl class="kv kv--ruled mc-detail__list">${rows.filter(Boolean)
+  .map(([k, v]) => `<div class="mc-detail__fact"><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
+const personRows = (persons) => (persons || []).map((p) => [p.role,
   `<a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(p.admindirId)}"
      target="_blank" rel="noopener noreferrer external">AdminDir ${esc(p.admindirId)}</a>`]);
+const detailOverview = ({ description, facts }) => `<div class="mc-detail mc-detail--metadata">
+  <section class="detail-section mc-detail__description">
+    <h2 class="detail-section__title">Beschreibung</h2>
+    <p class="m-0">${description ? esc(description) : TODO}</p>
+  </section>
+  <div class="mc-detail__facts">
+    ${facts.map(([title, rows]) => section(title, kv(rows))).join('')}
+  </div>
+</div>`;
 
 function paneHtml(ctx, s, unit) {
   const { core, C } = ctx;
   if (s.lvl === 0) return homeHtml(ctx, s);
-  // The table's own bar carries the controls on that tab (see mountPane), so the
-  // pane must not put a second one above it.
+  if (!s.available) return C.empty(`${unit.nom} konnten nicht geladen werden (Ladefehler).`, { available: false });
+  if (s.lvl <= 2 && s.q && scopeRows(s).length === 0 && s.tab !== 'tabelle') {
+    return C.empty(`Kein Eintrag für «${s.q}» gefunden.`, {
+      hint: 'Passen Sie Ihre Suche an.',
+      action: { label: 'Suche zurücksetzen', href: hrefFor(s, {}) },
+    });
+  }
   if (s.tab === 'tabelle') return '<div id="mc-table"></div>';
   if (s.tab === 'diagramm') return landscapeHtml(ctx, s);
   if (s.lvl === 4) return attrOverview(core, s, unit);
-  if (s.lvl === 3) return recordOverview(core, C, s, unit);
+  if (s.lvl === 3) return recordOverview(core, s, unit);
   return scopeOverview(s, unit);
 }
 
@@ -874,8 +743,7 @@ function attrOverview(core, s, unit) {
   const r = s.rec;
   const k = r.kids.find((x) => x.name === s.attr);
   const isRef = r.kind === 'referenz';
-  // Both directions of the same edge: an attribute names where it is realised,
-  // a field names the term it carries.
+  // Show both directions of the attribute-to-field mapping edge.
   const edges = r.kind === 'objekt'
     ? (k.raw.mappings || []).map((m) => {
       const t = core.dataTable(m.tableId) || {};
@@ -886,92 +754,100 @@ function attrOverview(core, s, unit) {
       ? core.realisationsForTable(r.id).filter((x) => x.field === k.name)
         .map((x) => `${esc(x.objectName || x.objectId || '')} · <code>${esc(x.attribute)}</code> ${matchBadge(core, x.match)}`)
       : [];
-  return section('Definition', `<p class="m-0">${k.def ? esc(k.def) : TODO}</p>`)
-    + section('Verantwortlich', kv([
-      ['Verantwortung', r.steward ? esc(r.steward) : TODO],
-      ...personRows(r.persons),
-      ['Geerbt von', `<a href="${esc(hrefFor(s, { attr: '' }))}">${esc(r.name)}</a>`],
-    ]))
-    + section('Metadaten', kv([
-      [isRef ? 'Schlüssel' : 'Typ', k.type ? `<code>${esc(k.type)}</code>` : '—'],
-      isRef ? null : ['Schlüsselrolle', k.key ? badge(k.key, k.key === 'PK' ? 'info' : 'gray', 'sm') : '—'],
-      isRef ? null : ['Pflichtangabe', k.required ? 'Pflicht' : 'optional'],
-      k.std ? ['Norm-Referenz', esc(k.std)] : null,
-      edges.length ? [r.kind === 'objekt' ? 'Realisiert in' : 'Trägt Attribut', edges.join('<br>')] : null,
-      [unit.axis, esc(r.group)],
-    ]));
+  const linksRows = edges.length
+    ? [[r.kind === 'objekt' ? 'Realisiert in' : 'Trägt Attribut', edges.join('<br>')]]
+    : [];
+  return detailOverview({
+    description: k.def,
+    facts: [
+      ['Kerndaten', [
+        [isRef ? 'Schlüssel' : 'Typ', k.type ? `<code>${esc(k.type)}</code>` : '—'],
+        isRef ? null : ['Schlüsselrolle', k.key ? badge(k.key, k.key === 'PK' ? 'info' : 'gray', 'sm') : '—'],
+        isRef ? null : ['Pflichtangabe', k.required ? 'Pflicht' : 'optional'],
+        k.std ? ['Norm-Referenz', esc(k.std)] : null,
+        [unit.axis, esc(r.group)],
+      ]],
+      ['Verantwortung', [
+        ['Verantwortung', r.steward ? esc(r.steward) : TODO],
+        ...personRows(r.persons),
+        ['Geerbt von', `<a href="${esc(hrefFor(s, { attr: '' }))}">${esc(r.name)}</a>`],
+      ]],
+      ...(linksRows.length ? [['Verknüpfungen', linksRows]] : []),
+    ],
+  });
 }
 
-function recordOverview(core, C, s, unit) {
+function recordOverview(core, s, unit) {
   const r = s.rec;
   const t = r.raw;
   const dataset = r.kind === 'tabelle' && t.datasetId ? core.dataset(t.datasetId) : null;
   const sourceHref = r.kind === 'tabelle' ? safeLinkUrl(t.sourceUrl) : '';
-  return section('Definition', `<p class="m-0">${r.def ? esc(r.def) : TODO}</p>`)
-    + section('Verantwortlich', kv([
-      ['Verantwortung', r.steward ? esc(r.steward) : TODO],
-      ...personRows(r.persons),
-    ]))
-    + section('Metadaten', kv([
-      [unit.axis, esc(r.group)],
-      r.kind === 'tabelle' && t.schemaLabel ? ['Schema',
-        `${esc(t.schemaLabel)}<br><span class="small muted"><code>${esc(t.schema)}</code> · ${esc(SCHEMA_TYPE[t.schemaType] || t.schemaType)}</span>`] : null,
-      r.kind === 'tabelle' ? ['Technischer Name', `<code>${esc(t.name)}</code>`] : null,
-      r.kind === 'tabelle' ? ['Art', esc(TABLE_TYPE[t.type] || t.type)] : null,
-      ['Status', r.status ? esc(r.status) : TODO],
-      r.kind === 'objekt' && t.standardRef ? ['Norm-Referenz', esc(t.standardRef)] : null,
-      [unit.kid, String(r.n)],
-      dataset ? ['Publiziert als', `<a href="${esc(links.dataset(dataset.id))}">${esc(core.t(dataset.title))}</a>`] : null,
-      sourceHref ? ['Quellsystem',
-        `<a href="${esc(sourceHref)}"${newWindowAttrs(sourceHref, { external: classifyUrl(sourceHref) === 'external' })}>${esc(hostOf(sourceHref))}</a>`] : null,
-      t.updated ? ['Stand', esc(formatDate(t.updated))] : null,
-      ['ID', `<code>${esc(r.id)}</code>`],
-    ]))
-    + (t.source ? `<div class="detail-section">${sourceBoxFor(core, C, t)}</div>` : '');
+  const technical = r.kind === 'tabelle' ? [
+    ['Führendes System', esc(t.systemName || r.group || '—')],
+    t.schemaLabel ? ['Schema',
+      `${esc(t.schemaLabel)}<br><span class="small muted"><code>${esc(t.schema)}</code> · ${esc(SCHEMA_TYPE[t.schemaType] || t.schemaType)}</span>`] : null,
+    ['Technischer Name', `<code>${esc(t.name)}</code>`],
+    ['Art', esc(TABLE_TYPE[t.type] || t.type)],
+    dataset ? ['Publiziert als', `<a href="${esc(links.dataset(dataset.id))}">${esc(core.t(dataset.title))}</a>`] : null,
+    sourceHref ? ['Systemzugang', newWindowLink(sourceHref, `${t.systemName || hostOf(sourceHref)} öffnen`)] : null,
+    ...provenanceRows(core, t, { includeSystem: false }),
+  ] : [];
+  return detailOverview({
+    description: r.def,
+    facts: [
+      ['Kerndaten', [
+        r.kind === 'tabelle' ? null : [unit.axis, esc(r.group)],
+        ['Status', r.status ? badge(r.status, r.statusVariant || 'gray', 'sm') : TODO],
+        [unit.kid, String(r.n)],
+        r.kind === 'objekt' && t.standardRef ? ['Norm-Referenz', esc(t.standardRef)] : null,
+        t.updated ? ['Stand', esc(formatDate(t.updated))] : null,
+        ['ID', `<code>${esc(r.id)}</code>`],
+        ...(r.kind === 'objekt' ? provenanceRows(core, t) : []),
+      ]],
+      ['Verantwortung', [
+        ['Verantwortung', r.steward ? esc(r.steward) : TODO],
+        ...personRows(r.persons),
+      ]],
+      ...(technical.length ? [['Technische Angaben', technical]] : []),
+    ],
+  });
 }
 
-// Levels 1 and 2 describe a scope rather than a record, so «Definition» states
-// what the scope contains and «Metadaten» counts it.
 function scopeOverview(s, unit) {
   const rows = scopeRows(s);
   const groups = new Set(rows.map((r) => r.group));
-  return section('Definition', `<p class="m-0">${esc(s.leaf
-    ? `Alle ${unit.nom}, die dem ${unit.axis} «${s.leaf}» zugeordnet sind.`
-    : `Alle ${unit.nom} des Katalogs, gegliedert nach ${unit.axisPl}.`)}</p>`)
-    + section('Verantwortlich', kv([['Verantwortung', TODO]]))
-    + section('Metadaten', kv([
-      s.leaf ? [unit.axis, esc(s.leaf)] : null,
-      ['Inhalt', `${rows.length} ${esc(unit.nom)}${s.leaf ? '' : ` in ${groups.size} ${esc(unit.axisPl)}`}`],
-      ['Bestandteile', `${rows.reduce((a, r) => a + r.n, 0)} ${esc(unit.kid)}`],
-    ]));
+  return detailOverview({
+    description: s.leaf
+      ? `Alle ${unit.nom}, die dem ${unit.axis} «${s.leaf}» zugeordnet sind.`
+      : `Alle ${unit.nom} des Katalogs, gegliedert nach ${unit.axisPl}.`,
+    facts: [
+      ['Kerndaten', [
+        s.leaf ? [unit.axis, esc(s.leaf)] : null,
+        ['Inhalt', `${rows.length} ${esc(unit.nom)}${s.leaf ? '' : ` in ${groups.size} ${esc(unit.axisPl)}`}`],
+        ['Bestandteile', `${rows.reduce((a, r) => a + r.n, 0)} ${esc(unit.kid)}`],
+      ]],
+      ['Verantwortung', [['Verantwortung', TODO]]],
+    ],
+  });
 }
 
-// --- Diagramm tab ------------------------------------------------------------
-
-// The same scope the table lists, drawn as territory instead of as a sequence.
-// Always one level below the scope as BOXES and two levels below as TILES — on a
-// branch that is domains holding records, inside a domain it is records holding
-// their parts. The picture therefore means the same thing wherever the reader
-// is standing, which is what lets them compare two of them.
-// A tile is ALWAYS one record — on every level, under every grouping. That is
-// what lets a reader compare two landscapes: the unit of the picture never
-// changes, only how the field is divided. The boxes come from the grouping, and
-// «keine» is one box holding everything.
+// Tiles always represent records; only the box grouping changes by scope/axis.
 function landscapeBoxes(s) {
   const rows = scopeRows(s);
   const dim = (GROUP_DIMS(s.kind).find((d) => d.value === s.group) || {}).of;
+  const scope = s.rec ? `record:${s.rec.id}` : s.leaf ? `leaf:${s.leaf}` : `branch:${s.kind}`;
+  const key = (value) => landscapeKey(scope, s.group, value);
   const tile = (r) => ({ label: r.name, href: hrefFor(s, { rec: r, attr: '', leaf: r.group }),
     on: !!(s.rec && s.rec.id === r.id) });
-  if (!dim) return [{ key: 'alle', label: 'Alle', count: rows.length, tiles: rows.map(tile) }];
+  if (!dim) return [{ key: key('all'), label: 'Alle', count: rows.length, tiles: rows.map(tile) }];
   const by = new Map();
   rows.forEach((r) => {
     const k = String(dim(r) == null ? '' : dim(r)) || '—';
     if (!by.has(k)) by.set(k, []);
     by.get(k).push(r);
   });
-  // Biggest field first: the map reads from the largest territory down.
   return [...by].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'de'))
-    .map(([k, mine]) => ({ key: `grp:${k}`, label: k, count: mine.length, tiles: mine.map(tile) }));
+    .map(([k, mine]) => ({ key: key(k), label: k, count: mine.length, tiles: mine.map(tile) }));
 }
 
 function landscapeHtml(ctx, s) {
@@ -982,43 +858,39 @@ function landscapeHtml(ctx, s) {
   });
 }
 
-// The catalogue root has no tabs, because it is not a scope: it is the way in.
-// Three figures to say how big the thing is, then the two questions a reader
-// actually arrives with: what changed lately, and how is the estate divided.
 function homeHtml(ctx, s) {
   const { core, C } = ctx;
-  // A query at the root has the whole catalogue as its scope, so it answers with
-  // records from all three branches rather than with the way-in page.
+  // Root search spans all branches instead of searching entry-point cards.
   if (s.q) return '<div id="mc-table"></div>';
 
   const cards = BRANCHES.map((kind) => {
-    const rows = records(core, kind);
+    const rows = s.rowsFor(kind);
     const u = BRANCH_UNIT[kind];
-    // Tally the statuses rather than naming them: which ones exist is data, and
-    // hard-coding «Gültig · Entwurf» here would go stale the first time the
-    // reference list gains a value.
+    if (!s.availableFor(kind)) return C.card({
+      title: BRANCH_LABEL[kind], titleTag: 'h2',
+      badges: [badge('nicht verfügbar', 'warning', 'sm')],
+      desc: `${u.nom} konnten nicht geladen werden (Ladefehler).`,
+    });
     const tally = new Map();
     rows.forEach((r) => { const k = r.status || 'noch nicht erfasst';
       tally.set(k, (tally.get(k) || 0) + 1); });
     const detail = [`${rows.reduce((a, r) => a + r.n, 0)} ${u.kid}`,
       ...[...tally].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${k}`)].join(' · ');
-    return `<a class="card card--default card--clickable" href="${BASE}?kind=${kind}">
-      <div class="card__body">
-        <p class="stat__num">${rows.length}</p>
-        <h2 class="stat__label">${esc(BRANCH_LABEL[kind])}</h2>
-        <p class="card__text">${esc(detail)}</p>
-      </div></a>`;
+    return C.card({
+      title: BRANCH_LABEL[kind], titleTag: 'h2', href: `${BASE}?kind=${kind}`,
+      desc: detail,
+      footerInfo: `<strong>${rows.length}</strong> ${esc(u.nom)}`,
+      footerAction: C.cardAction(),
+    });
   }).join('');
 
-  // Newest first, across all three branches — «what moved» is a question about
-  // the catalogue, not about one of its parts.
-  const recent = BRANCHES.flatMap((kind) => records(core, kind).map((r) => ({ ...r, kind })))
+  const recent = BRANCHES.flatMap((kind) => s.rowsFor(kind).map((r) => ({ ...r, kind })))
     .filter((r) => r.updated)
     .sort((a, b) => String(b.updated).localeCompare(String(a.updated)))
     .slice(0, 8);
 
   const domains = (() => {
-    const rows = records(core, 'objekt');
+    const rows = s.rowsFor('objekt');
     return [...new Set(rows.map((r) => r.group))].sort((a, b) => a.localeCompare(b, 'de'))
       .map((g) => {
         const mine = rows.filter((r) => r.group === g);
@@ -1026,6 +898,7 @@ function homeHtml(ctx, s) {
           href: `${BASE}?kind=objekt&leaf=${encodeURIComponent(g)}` };
       });
   })();
+  const domainsAvailable = s.availableFor('objekt');
 
   return `<div class="stats">${cards}</div>
 
@@ -1046,7 +919,7 @@ function homeHtml(ctx, s) {
 
     <section class="detail-section">
       <h2 class="detail-section__title">Domänen</h2>
-      ${C.table({ zebra: true, compact: true, caption: 'Domänen der Geschäftsobjekte', rows: domains,
+      ${domainsAvailable ? C.table({ zebra: true, compact: true, caption: 'Domänen der Geschäftsobjekte', rows: domains,
     columns: [
       { key: 'name', label: 'Domäne',
         render: (d) => `<a href="${esc(d.href)}">${esc(d.name)}</a>` },
@@ -1054,30 +927,23 @@ function homeHtml(ctx, s) {
         render: (d) => `${d.n} Geschäftsobjekte` },
       { key: 'kids', label: 'Bestandteile', width: '14rem',
         render: (d) => `${d.kids} Attribute` },
-    ] })}
+    ] }) : C.empty('Geschäftsobjekte konnten nicht geladen werden (Ladefehler).', { available: false })}
     </section>`;
 }
 
-// --- Tabelle tab -------------------------------------------------------------
-
-// mountDataTable brings the portal's own search, sorting, facets and pagination,
-// so none of that is rebuilt here. Levels 1 and 2 list records; level 3 lists the
-// record's own parts, where paging matters most — a table can carry 75 fields.
 function mountPane(ctx, s, unit) {
   const { mount, core, C } = ctx;
   const host = mount.querySelector('#mc-table');
-  if (!host) return;
+  if (!host) return () => {};
 
   if (s.lvl === 0) {
-    const hits = BRANCHES.flatMap((k) => records(core, k).map((r) => ({ ...r, kind: k })))
+    const hits = BRANCHES.flatMap((k) => s.rowsFor(k).map((r) => ({ ...r, kind: k })))
       .filter((r) => recordMatches(s.q, r));
-    ctx.onUnmount(C.mountDataTable(host, {
+    return C.mountDataTable(host, {
       id: 'mc-all', unit: { nom: 'Einträge', dat: 'Einträgen' }, perPage: 25, compact: true, flush: true,
       showSearch: false, showCount: false,
       caption: `Treffer für «${s.q}» im ganzen Katalog`, rows: hits,
       emptyMsg: `Kein Treffer für «${s.q}».`,
-      // Grouped by branch: a hit list spanning three kinds of thing is unreadable
-      // until it says which kind each row is.
       groupBy: (r) => BRANCH_LABEL[r.kind],
       columns: [
         { key: 'name', label: 'Name', width: '14rem',
@@ -1087,19 +953,15 @@ function mountPane(ctx, s, unit) {
           render: (r) => (r.def ? snippet(r.def, s.q, 58) : '<span class="muted">—</span>') },
         { key: 'n', label: 'Bestandteile', width: '9rem', render: (r) => String(r.n) },
       ],
-    }));
-    return;
+    });
   }
 
   if (s.lvl >= 3) {
     const r = s.rec;
     const isRef = r.kind === 'referenz';
-    ctx.onUnmount(C.mountDataTable(host, {
+    return C.mountDataTable(host, {
       id: 'mc-kids', unit: { nom: unit.kid, dat: unit.kid }, perPage: 25, compact: true, flush: true,
       caption: `${unit.kid} von ${r.name}`,
-      // Fertig sortiert übergeben: die Sortierung ist ein Menü in der Reiterzeile
-      // geworden, damit dort EINE Zeile steht statt zweier. Die Tabelle zeichnet
-      // deshalb gar keine Leiste mehr.
       rows: sortRows(scopeKids(s), s),
       bar: false,
       emptyMsg: s.q ? `Kein Treffer für «${s.q}».` : `Für «${r.name}» ist noch nichts erfasst.`,
@@ -1109,9 +971,6 @@ function mountPane(ctx, s, unit) {
       ],
       columns: [
         { key: 'name', label: isRef ? 'Bezeichnung' : r.kind === 'objekt' ? 'Attribut' : 'Feld', width: '14rem',
-          // Clicking a part selects it, and because ?attr forces its parent open
-          // (see treeHtml), the tree follows — which is how a reader reaches
-          // level 4 without having to find the chevron first.
           render: (k) => `<a href="${esc(hrefFor(s, { attr: k.name }))}">${esc(k.name)}</a>` },
         { key: 'def', label: 'Beschreibung',
           render: (k) => (k.def ? esc(truncateText(k.def)) : '<span class="muted">—</span>') },
@@ -1121,29 +980,21 @@ function mountPane(ctx, s, unit) {
           render: (k) => (k.key ? badge(k.key, k.key === 'PK' ? 'info' : 'gray', 'sm')
             : k.required ? '<span class="muted">—</span>' : '<span class="small muted">optional</span>') }]),
       ],
-    }));
-    return;
+    });
   }
 
   const rows = scopeRows(s);
-  ctx.onUnmount(C.mountDataTable(host, {
+  return C.mountDataTable(host, {
     id: 'mc-rows', unit: { nom: unit.nom, dat: unit.dat }, perPage: 25, compact: true,
     bar: false,
     caption: s.leaf ? `${unit.nom} · ${s.leaf}` : `${unit.nom} · alle ${unit.axisPl}`,
-    // A whole branch listed flat is a wall — nineteen business objects across
-    // five domains read as nineteen unrelated rows. Sectioning by the axis is
-    // the same grouping the tree draws, so the two views agree. Inside ONE group
-    // there is nothing left to section by, so level 2 goes back to plain pages.
+    // Use the same grouping as the landscape; inside one group, paginate rows.
     groupBy: (GROUP_DIMS(s.kind).find((d) => d.value === s.group) || {}).of || null,
     rows: sortRows(rows, s),
     emptyMsg: s.q ? `Kein Treffer für «${s.q}».` : 'In diesem Umfang ist kein Eintrag erfasst.',
-    // Kein Achsen-Filter mehr: er wählte genau das aus, was der Baum links schon
-    // wählt und «Gruppieren» schon gliedert — dieselbe Frage, drei Antworten.
     columns: [
       { key: 'name', label: 'Name', width: '11rem',
         render: (r) => `<a href="${esc(hrefFor(s, { rec: r, attr: '', leaf: r.group }))}">${esc(r.name)}</a>` },
-      // The axis column earns its place only when the sections are not already
-      // carrying it and more than one value is in scope.
       ...(s.group === 'achse' || s.leaf ? []
         : [{ key: 'group', label: unit.axis, width: '10rem', render: (r) => esc(r.group) }]),
       { key: 'steward', label: 'Verantwortung', width: '11rem',
@@ -1154,5 +1005,5 @@ function mountPane(ctx, s, unit) {
       { key: 'status', label: 'Status', width: '8rem',
         render: (r) => (r.status ? esc(r.status) : TODO) },
     ],
-  }));
+  });
 }

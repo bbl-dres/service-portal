@@ -103,12 +103,7 @@ export default async function render(ctx) {
       { key: 'region', icon: 'tree/map' },
       { key: 'city', icon: 'tree/map-pin' },
 
-      // «WE 4840», nicht die Nummer plus den Namen ihres ersten Gebaeudes. Die
-      // Wirtschaftseinheit trug bisher einen geliehenen Namen, und weil ihr
-      // einziges Kind meist dasselbe Gebaeude ist, stand derselbe Name zweimal
-      // untereinander: «5620 Schweizerische Botschaft Canberra» ueber «AA
-      // Schweizerische Botschaft Canberra». Eine Wirtschaftseinheit ist kein
-      // Gebaeude; sie hat eine Nummer, und die haben die Leute im Kopf.
+      // A business entity uses its stable unit number, not a child building's name.
       { key: 'businessEntity', attr: 'business-entity', icon: 'tree/folder',
         word: 'Wirtschaftseinheit',
         label: (v) => `WE ${v}`,
@@ -163,9 +158,7 @@ export default async function render(ctx) {
     await pfMap.mount(el, (node) => initEstateMap(node, points, parcels, focus));
   }
 
-  // Was der Baum zeigt: alles, was Suche und Filter uebrig lassen — aber OHNE
-  // die Auswahl selbst. Sonst schrumpfte der Baum auf das, was man gerade
-  // angeklickt hat, und man kaeme nie wieder heraus.
+  // Tree facets honor search and filters but ignore their own selection.
   const inTree = () => objects.filter((o) => inSearch(o) && inFilters(o));
 
   const syncHash = () => {
@@ -289,12 +282,7 @@ export default async function render(ctx) {
     </div>
   </div>`;
 
-  // Der Baum wird aus den SICHTBAREN Objekten gebaut, nicht aus allen. Damit
-  // erledigen sich drei Funktionen auf einmal: syncTreeCounts (die Zahlen sind
-  // die Gruppengroessen), das Verstecken leerer Aeste (ein Ast ohne Objekte
-  // entsteht gar nicht erst) und restoreTreeSelection (die Markierung faellt aus
-  // `state.sel` ab). Auswaehlen, Filtern und Wiederherstellen sind jetzt
-  // dieselbe Sache: mit dem aktuellen Zustand zeichnen.
+  // Rebuild from filtered nodes so counts and empty branches stay synchronized.
   const treeHost = mount.querySelector('#pf-tree');
   let dropTree = null;
   const paintTree = () => {
@@ -303,17 +291,9 @@ export default async function render(ctx) {
       id: 'pf-tree',
       mode: 'select',
       ariaLabel: 'Standorte',
-      // Land, Region, Ort tragen Symbole, Wirtschaftseinheit und Objekt nicht.
-      //
-      // Der Einwand gegen Symbole auf jeder Zeile bleibt richtig — aber er traf
-      // den Fall, in dem alle dasselbe zeigen. Hier zeigt jede der drei Stufen
-      // ein ANDERES Zeichen (Globus, Karte, Nadel), und das unterscheidet
-      // genau das, was man beim Rollen verliert: auf welcher Stufe man ist.
-      // Ab der Wirtschaftseinheit hoert die Ortsachse auf, also auch die Reihe.
+      // Icons distinguish geographic levels; later levels rely on indentation.
       levels: [{ icons: true }, { icons: true }, { icons: true }, { icons: false }],
-      // Diese App nennt das gewaehlte Objekt `id`, der Adapter nennt es `obj`
-      // (so hiess es im data-Attribut). Uebersetzt wird an der Grenze, damit
-      // weder der Zustand dieser App noch der Adapter der anderen nachgeben muss.
+      // Translate the view's `id` key to the tree adapter's `obj` key here.
       sections: [objectsToNodes(inTree(), TREE, { ...state.sel, obj: state.sel.id })],
       onSelect: (node) => {
         const { obj, ...rest } = node.sel || {};

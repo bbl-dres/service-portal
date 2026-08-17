@@ -31,7 +31,9 @@ const CRUMBS = [
 // The collections the layer table counts. Loaded through the parent contract in
 // data.js, so this module declares no `needs` of its own.
 export function layers(core) {
-  const processes = core.processes();
+  // Executable portal workflows share the source file but are not part of the
+  // business-architecture process layer represented on this page.
+  const processes = core.processes().filter((process) => process.branch === 'fachlich');
   const objects = core.businessObjects();
   const tables = core.dataTables();
   const datasets = core.datasets();

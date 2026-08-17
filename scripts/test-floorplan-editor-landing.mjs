@@ -45,6 +45,11 @@ assert.ok(objects.every((entry) => entry.floors.length > 0));
 // Fixtures mix Swiss timestamps with ISO dates; both must compare and format.
 assert.equal(parsePlanDate('30.09.2025, 09:40'), Date.UTC(2025, 8, 30, 9, 40));
 assert.equal(parsePlanDate('2026-03-31'), Date.UTC(2026, 2, 31));
+assert.equal(parsePlanDate('31.02.2026'), null);
+assert.equal(parsePlanDate('2026-02-29'), null);
+assert.equal(parsePlanDate('29.02.2028'), Date.UTC(2028, 1, 29));
+assert.equal(parsePlanDate('01.01.2026, 24:00'), null);
+assert.equal(parsePlanDate('01.01.2026, 23:60'), null);
 assert.equal(parsePlanDate(''), null);
 assert.equal(parsePlanDate('kein Datum'), null);
 assert.equal(formatPlanDate('2026-03-31'), '31.03.2026');

@@ -1,34 +1,24 @@
-// Aus dem Portal-Ast von data/processes.json grobe BPMN-Dateien bauen.
-//
-// Die Ablaeufe des Portals sind als Schrittketten erfasst — Status, Bezeichnung,
-// Rolle, Art. Das ist genug fuer ein lesbares Diagramm: Startereignis, je Schritt
-// eine Aufgabe in der Bahn ihrer Rolle, Endereignis, und die Kette dazwischen.
-//
-// GROB heisst grob: keine Gateways, keine Schleifen, keine Ausnahmen. Was hier
-// entsteht, ist die Hauptstrasse — und genau die soll ein Leser sehen, um zu
-// sagen «hier fehlt ein Schritt» oder «diese Rolle ist falsch». Verzweigungen
-// kaeme man nur mit erfundenen Daten hinein, und erfundene Daten in einer
-// Prozessdokumentation sind schlimmer als fehlende.
+// Generate deliberately coarse BPMN files from the portal branch in processes.json.
+// The source describes a linear status/label/role/type chain, which is enough
+// for a readable start-task-end diagram. Gateways and exception paths would
+// require inventing behavior that the source data does not express.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const ROOT = 'c:/Users/david/Documents/GitHub/service-portal/';
 const OUT = ROOT + 'assets/bpmn/';
-// Seit 2026-08-15 stehen die Ablaeufe in processes.json, unterschieden durch
-// ihren Ast. `defId` heisst dort `processId`.
+// Portal workflows now share processes.json with business documentation.
 const defs = JSON.parse(readFileSync(ROOT + 'data/processes.json', 'utf8'))
   .filter((r) => r.branch === 'portal' && Array.isArray(r.steps) && r.steps.length)
   .map((r) => ({ ...r, defId: r.processId }));
 
 const esc = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-// Kennungen muessen XML-NCName sein: Buchstabe oder _ am Anfang, danach nur
-// Buchstaben, Ziffern, - und _.
+// Prefix normalized identifiers so every result is a valid XML NCName.
 const id = (s) => 'x' + String(s).toLowerCase()
   .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
   .replace(/[^a-z0-9]+/g, '_').replace(/_+$/g, '');
 
-// Art des Schritts → BPMN-Aufgabentyp. «auto» und «system» laufen ohne Zutun
-// eines Menschen, das ist eine Service-Aufgabe; «user» ist eine Benutzeraufgabe.
+// Automated/system steps become service tasks; human steps become user tasks.
 const TASK_TAG = { user: 'userTask', auto: 'serviceTask', system: 'serviceTask' };
 
 const W = 150, H = 80, GAP = 60, LANE_H = 140, LANE_X = 180, LEFT = 240;
@@ -39,7 +29,7 @@ function buildOne(def) {
   if (!roles.length) roles.push('Portal');
   const laneOf = (role) => Math.max(0, roles.indexOf(role || roles[0]));
 
-  // Knoten der Reihe nach: Start, Schritte, Ende.
+  // Nodes remain in source order: start, steps, end.
   const nodes = [
     { nid: id(def.defId + '_start'), tag: 'startEvent', name: 'Antrag ausgeloest', lane: 0, w: 36, h: 36 },
     ...steps.map((s, i) => ({
@@ -126,7 +116,7 @@ mkdirSync(OUT, { recursive: true });
 for (const def of defs) {
   const name = `portal-${def.defId}.bpmn`;
   writeFileSync(OUT + name, buildOne(def), 'utf8');
-  console.log(name.padEnd(34) + `${(def.steps || []).length} Schritte · `
-    + `${new Set((def.steps || []).map((s) => s.role)).size} Rollen`);
+  console.log(name.padEnd(34) + `${(def.steps || []).length} steps · `
+    + `${new Set((def.steps || []).map((s) => s.role)).size} roles`);
 }
-console.log(`\n${defs.length} Dateien in assets/bpmn/`);
+console.log(`\n${defs.length} files in assets/bpmn/`);

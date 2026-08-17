@@ -131,8 +131,7 @@ function overview(ctx) {
     await pjMap.mount(el, (node) => initEstateMap(node, points, { type: 'FeatureCollection', features: [] }, focus));
   }
 
-  // Was der Baum zeigt: was Suche und Filter uebrig lassen — aber OHNE die
-  // Auswahl selbst, sonst schrumpfte er auf das gerade Angeklickte zusammen.
+  // Tree facets honor search and filters but ignore their own selection.
   const inTree = () => objects.filter((o) => inSearch(o) && inFilters(o));
 
   function renderMain() {
@@ -241,10 +240,9 @@ function overview(ctx) {
       id: 'pj-tree',
       mode: 'select',
       ariaLabel: 'Projektstruktur',
-      // Symbole nur auf der obersten Stufe: die Symbolspalte IST die
-      // Einrueckung der zweiten, ab da traegt der Schritt die Tiefe.
+      // Only the top level uses icons; indentation communicates deeper levels.
       levels: [{ icons: true }, { icons: false }, { icons: false }, { icons: false }],
-      // Diese App nennt das gewaehlte Objekt `id`, der Adapter `obj`.
+      // Translate the view's `id` key to the tree adapter's `obj` key here.
       sections: [objectsToNodes(inTree(), TREE, { ...state.sel, obj: state.sel.id })],
       onSelect: (node) => {
         const { obj, ...rest } = node.sel || {};

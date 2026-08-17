@@ -68,13 +68,15 @@ check(sessionDead.length === 0, 'session has no unobserved listener API', sessio
 
 const coreDead = lacks(coreModule.core, [
   'projectsForBuilding', 'servicesByDomain', 'applicationsByGroup',
-  'mediaForObject', 'mediaForBuilding', 'failed',
+  'mediaForObject', 'mediaForBuilding', 'processDefinition', 'failed',
 ]);
 check(coreDead.length === 0, 'core contains no unused convenience accessors', coreDead.join(', '));
 check(typeof coreModule.core.data === 'object' && typeof coreModule.core.available === 'function'
   && typeof coreModule.core.failedAreas === 'function', 'used core diagnostics remain available');
 check(typeof coreModule.core.floorsForBuilding === 'function',
   'core provides canonical building floors to property views');
+check(typeof coreModule.core.landcovers === 'function' && typeof coreModule.core.contracts === 'function',
+  'estate dashboards use narrow core collection accessors');
 
 const componentDead = lacks(components.default, [
   'FOCUSABLE', 'notFound', 'stepIndicator', 'loginButton', 'mountBanner', 'wireShare', 'wireLogin',
@@ -157,6 +159,8 @@ check(['available', 'definitions', 'reset'].every((name) => typeof engineModule.
 check(links.service('a/b') === '#/services/a%2Fb'
   && links.application('a/b') === '#/applications/a%2Fb'
   && links.documentSearch('A & B') === '#/app/document-archive?q=A%20%26%20B'
+  && links.processDocumentation('TQ/1') === '#/app/process-docs?id=TQ%2F1'
+  && links.processDocumentation('workflow/1', 'portal') === '#/app/process-docs?def=workflow%2F1'
   && links.floorplanEditor('1080/6650/AA', '1080-6650-AA-2og')
     === '#/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og'
   && links.planCheck('1080/6650/AA', '1080-6650-AA-2og')

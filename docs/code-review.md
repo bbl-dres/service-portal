@@ -1,5 +1,8 @@
 # Senior JavaScript code review
 
+> Superseded by the implemented follow-up review dated 16 August 2026:
+> [code-review-2026-08-16.md](code-review-2026-08-16.md).
+
 **Review date:** 8 August 2026
 
 **Current implementation:** Planprüfung feature work based on `f79d72b`
@@ -64,7 +67,7 @@ js/
     session.js                   prototype session state
     dashboard-data.js            dashboard validation and query operations
     external-assets.js           authenticated CDN asset loader
-    favorites.js                 persisted favourites
+    bookmarks.js                 persisted typed favourites
 
   security/
     urls.js                      link, resource, asset, mail and phone policy

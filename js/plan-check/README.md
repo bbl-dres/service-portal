@@ -92,7 +92,7 @@ without colour.
 ## Step 3: Freigabe
 
 Submitting opens a real process instance through the portal's engine
-(`planfreigabe` in `data/process-definitions.json`), the same path every other
+(`planfreigabe` in the portal branch of `data/processes.json`), the same path every other
 wizard uses, so the reference shown is the one that appears in the personal case
 list. The summary restates only values the visitor entered or the checker
 measured; nothing new is introduced on the last step. In this prototype the case

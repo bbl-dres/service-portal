@@ -17,14 +17,16 @@ const head = (title) => console.log(`\n■ ${title}`);
 
 // Count listeners the honest way: through the debugger, not by guessing from
 // behaviour. A stacked row handler fires the row's link once per copy.
-async function clickListenerCount(cdp, page, selector) {
+async function eventListenerCount(cdp, page, expression, type) {
   const { result } = await cdp.send('Runtime.evaluate',
-    { expression: `document.querySelector(${JSON.stringify(selector)})`, objectGroup: 'probe' }, page.sessionId);
+    { expression, objectGroup: 'probe' }, page.sessionId);
   if (!result.objectId) return -1;
   const { listeners = [] } = await cdp.send('DOMDebugger.getEventListeners',
     { objectId: result.objectId, depth: 0 }, page.sessionId);
-  return listeners.filter((l) => l.type === 'click').length;
+  return listeners.filter((listener) => listener.type === type).length;
 }
+const clickListenerCount = (cdp, page, selector) => eventListenerCount(
+  cdp, page, `document.querySelector(${JSON.stringify(selector)})`, 'click');
 
 const cdp = await launch();
 let page;
@@ -131,6 +133,49 @@ try {
     return document.querySelectorAll('.listbox--suggest .listbox__option').length;
   })()`);
   check(cleared === 0, 'clearing the field closes the list and keeps it closed', `${cleared} option(s)`);
+
+  head('Header rerender releases transient search state');
+  const headerState = await page.evaluate(`(async () => {
+    const { shell } = await import(new URL('js/ui/shell/index.js', location.href.split('#')[0]).href);
+    const oldInput = document.querySelector('#global-search');
+    let staleFocusCalls = 0;
+    oldInput.focus = () => { staleFocusCalls++; };
+    document.querySelector('#search-toggle').click();
+    const opened = document.body.classList.contains('body--search-is-open');
+    shell.renderHeader(document.querySelector('#main-header'));
+    await new Promise(resolve => setTimeout(resolve, 120));
+    localStorage.setItem('bbl_shop_cart_v1', JSON.stringify([{ id: 1, qty: 7 }]));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'bbl_shop_cart_v1' }));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    return {
+      opened,
+      bodyOpen: document.body.classList.contains('body--search-is-open'),
+      replacementOpen: document.querySelector('#header-search')?.classList.contains('open'),
+      staleFocusCalls,
+      cartCounts: [...document.querySelectorAll('#main-header [data-cart-count]')]
+        .map((node) => node.textContent.trim()),
+    };
+  })()`);
+  check(headerState.opened && !headerState.bodyOpen && !headerState.replacementOpen,
+    'rerender closes the global search state');
+  check(headerState.staleFocusCalls === 0,
+    'rerender cancels focus work owned by the replaced input', `${headerState.staleFocusCalls} call(s)`);
+  check(headerState.cartCounts.length > 0 && headerState.cartCounts.every((count) => count === '7'),
+    'a cross-tab cart storage event refreshes the replacement header', headerState.cartCounts.join('|'));
+  await page.closeTarget();
+
+  head('Building wizard redraw replaces its document listener');
+  page = await openPage(cdp, `${APP_BASE}/app/building-create`, { login: true });
+  await sleep(1800);
+  const documentClicksBefore = await eventListenerCount(cdp, page, 'document', 'click');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.evaluate(`document.querySelector('#bc-form')?.requestSubmit()`);
+    await sleep(150);
+  }
+  const documentClicksAfter = await eventListenerCount(cdp, page, 'document', 'click');
+  check(documentClicksAfter <= documentClicksBefore,
+    'three validation redraws add no document click handlers',
+    `${documentClicksBefore} → ${documentClicksAfter}`);
   await page.closeTarget();
 } finally {
   await cdp.close();

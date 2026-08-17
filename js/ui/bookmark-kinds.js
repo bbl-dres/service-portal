@@ -88,7 +88,7 @@ export const KIND_META = {
     resolve: (core, id) => {
       const record = core.processDoc(id);
       return record && { title: record.name, desc: record.groupLabel || record.areaLabel || '',
-        href: links.processDocumentation(id) };
+        href: links.processDocumentation(id, record.branch) };
     },
   },
   room: {

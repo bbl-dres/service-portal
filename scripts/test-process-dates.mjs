@@ -1,10 +1,10 @@
-// W-21: process dates and reference years must use one local calendar date.
+// Process dates and reference years must use one local calendar date.
 // The frozen instant is already 1 January in Zurich but still 31 December UTC.
 import { readFile } from 'node:fs/promises';
 
 process.env.TZ = 'Europe/Zurich';
 
-const definitions = JSON.parse(await readFile(new URL('../data/process-definitions.json', import.meta.url), 'utf8'));
+const processes = JSON.parse(await readFile(new URL('../data/processes.json', import.meta.url), 'utf8'));
 const storage = new Map();
 globalThis.localStorage = {
   getItem: key => storage.has(key) ? storage.get(key) : null,
@@ -23,7 +23,12 @@ globalThis.fetch = async (url) => {
   return {
     ok: true,
     status: 200,
-    json: async () => String(url).includes('process-definitions') ? definitions : [],
+    json: async () => {
+      const path = String(url);
+      if (path.includes('processes.json')) return processes;
+      if (path.includes('reference-data.json')) return {};
+      return [];
+    },
   };
 };
 
@@ -42,10 +47,20 @@ const check = (condition, label, actual = '') => {
 };
 
 try {
+  const { core } = await import('../js/core/index.js');
   const { engine } = await import('../js/process-engine.js');
-  await engine.load();
-  check(initialRequests.length === 2 && maxActiveFetches === 2,
-    'independent process files load concurrently', `${initialRequests.length} requests, max ${maxActiveFetches}`);
+  const firstEngineLoad = engine.load(core);
+  const concurrentEngineLoad = engine.load(core);
+  check(firstEngineLoad === concurrentEngineLoad,
+    'concurrent engine loads share one in-flight operation');
+  await Promise.all([core.load(), firstEngineLoad, concurrentEngineLoad]);
+  check(initialRequests.length === 4 && maxActiveFetches === 4
+      && initialRequests.filter((url) => url.includes('processes.json')).length === 1,
+    'startup loads shell data, shared processes, and instances concurrently without a duplicate process request',
+    `${initialRequests.length} requests, max ${maxActiveFetches}`);
+  await core.ensure('processes');
+  check(initialRequests.filter((url) => url.includes('processes.json')).length === 1,
+    'later process consumers reuse the startup cache');
 
   const created = engine.start('raumbedarf');
   check(!!created, 'process starts from the fixture definition');
@@ -65,11 +80,14 @@ try {
   }
 
   engine.reset();
-  const defFixture = [{ defId: 'test-def', name: 'Test', steps: [{ status: 'neu', label: 'Neu' }] }];
+  const defFixture = [{
+    processId: 'test-def', branch: 'portal', name: 'Test',
+    steps: [{ status: 'neu', label: 'Neu' }],
+  }];
   const instanceFixture = [{ instanceId: 'seed-test', defId: 'test-def', data: {} }];
   const useFetchScenario = ({ defs = defFixture, seeded = instanceFixture, failDefs = false, failSeeded = false }) => {
     globalThis.fetch = async (url) => {
-      const isDefinitions = String(url).includes('process-definitions');
+      const isDefinitions = String(url).includes('processes.json');
       const failed = isDefinitions ? failDefs : failSeeded;
       return {
         ok: !failed,
@@ -101,7 +119,7 @@ try {
     'two failures clear both stale process arrays');
   check(engine.failedAreas().length === 2, 'two failures report both process areas', engine.failedAreas().join(', '));
 
-  const retryDefs = [{ ...defFixture[0], defId: 'retry-def' }];
+  const retryDefs = [{ ...defFixture[0], processId: 'retry-def' }];
   const retryInstances = [{ ...instanceFixture[0], instanceId: 'retry-instance' }];
   useFetchScenario({ defs: retryDefs, seeded: retryInstances });
   await engine.load();

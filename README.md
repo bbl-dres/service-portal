@@ -13,7 +13,7 @@
 
 > [!CAUTION]
 > **This is an unofficial prototype for demonstration purposes only.**
-> The repository is intended to contain only fictional or publicly releasable data, and not every function is fully implemented. The current [technical review](docs/code-review.md) lists data and media whose publication or redistribution status still requires owner confirmation. The prototype is not intended for production use.
+> The repository is intended to contain only fictional or publicly releasable data, and not every function is fully implemented. The current [technical review](docs/code-review-2026-08-16.md) records implemented findings and remaining production risks. The prototype is not intended for production use.
 
 The BBL Kundenportal is a process-oriented prototype for the [Federal Office for Buildings and Logistics (BBL)](https://www.bbl.admin.ch). It brings services, cases, specialist applications, property information, documents, and data access together in one interface based on the Swiss Confederation design system.
 
@@ -63,10 +63,12 @@ over the grouped `ui/components/` implementation.
 
 Map tiles, geocoding, address search, and some stylesheet-owned fonts remain
 dynamic third-party resources and cannot be covered by the top-level SRI
-hashes. Map views and those searches therefore require network access and can
-be affected by provider availability or policy changes. The app reports these
-failures, but a production deployment should review the residual risks and
-self-host where appropriate; see the [technical review](docs/code-review.md).
+hashes. Map glyphs are pinned and self-hosted so label-provider failures cannot
+remove clustered geometry. Basemap views and live searches still require
+network access and can be affected by provider availability or policy changes.
+The app reports these failures; a production deployment should review the
+residual risks and self-host where appropriate; see the
+[technical review](docs/code-review-2026-08-16.md).
 
 The Planprüfung route runs in three steps — Standort und Datei, Datenqualität,
 Freigabe — and accepts local binary DWG files for viewing, parser compatibility
@@ -133,6 +135,7 @@ brand elements.
 | [Noto Sans](https://github.com/notofonts/latin-greek-cyrillic) | `2.015` | [SIL Open Font License 1.1](https://github.com/notofonts/latin-greek-cyrillic/blob/main/OFL.txt) | Self-hosted variable WOFF2 typeface used by the portal interface. |
 | [Three.js](https://github.com/mrdoob/three.js/tree/r184) | `0.184.0` / r184 | [MIT](js/vendor/three.LICENSE.txt) | Locally vendored 3D and walk-view renderer for the floor-plan editor. |
 | [MapLibre GL JS](https://github.com/maplibre/maplibre-gl-js/tree/v4.7.1) | `4.7.1` | [BSD-3-Clause and bundled notices](https://github.com/maplibre/maplibre-gl-js/blob/v4.7.1/LICENSE.txt) | SRI-pinned, lazily loaded renderer for interactive maps. |
+| [MapLibre demo glyphs](https://github.com/maplibre/demotiles/tree/ef4389e954d46e97cd9d3b0130881d9fb789ae2e/font) / [OpenMapTiles fonts](https://github.com/openmaptiles/fonts/tree/d48c5fce2fc58b55c98d353558d807cac45e7262) | Commits `ef4389e954d46e97cd9d3b0130881d9fb789ae2e` / `d48c5fce2fc58b55c98d353558d807cac45e7262` | [BSD-3-Clause](assets/map-glyphs/LICENSE-maplibre-demotiles.txt) and [SIL OFL 1.1](assets/map-glyphs/LICENSE-Noto-Sans.txt) | Pinned, same-origin Noto Sans Regular/Bold `0-255.pbf` glyph ranges for MapLibre labels; provenance and SHA-256 hashes are recorded in [the asset manifest](assets/map-glyphs/README.md). |
 | [Swagger UI](https://github.com/swagger-api/swagger-ui/tree/v5.17.14) | `5.17.14` | [Apache-2.0](https://github.com/swagger-api/swagger-ui/blob/v5.17.14/LICENSE); upstream NOTICE applies | SRI-pinned, lazily loaded renderer for the OpenAPI documentation. |
 | [bpmn-js](https://github.com/bpmn-io/bpmn-js/tree/v17.11.1) | `17.11.1` | [bpmn.io License](https://bpmn.io/license/) | SRI-pinned BPMN viewer; its built-in bpmn.io watermark and link must remain visible and unchanged. |
 | [OpenAPI Specification](https://spec.openapis.org/oas/v3.0.3) | `3.0.3` | [Apache-2.0 specification](https://github.com/OAI/OpenAPI-Specification/blob/3.0.3/LICENSE) | Machine-readable API contracts displayed through Swagger UI. |
@@ -142,7 +145,7 @@ brand elements.
 | [Node.js](https://nodejs.org/) | `>=22` | [MIT and bundled third-party notices](https://github.com/nodejs/node/blob/main/LICENSE) | Local development server, maintenance scripts, and dependency-free verification suites; not a browser runtime dependency. |
 | [Microsoft Edge and Chrome DevTools Protocol](https://learn.microsoft.com/en-us/microsoft-edge/devtools-protocol/) | System-installed; unpinned | Microsoft software terms; [CDP is BSD-3-Clause](https://github.com/ChromeDevTools/devtools-protocol/blob/master/LICENSE) | Headless regression, accessibility, and interaction testing without Puppeteer. |
 | [unpkg](https://unpkg.com/) | Managed service; package versions pinned above | Delivery-service terms; each delivered package retains its own license | HTTPS delivery for MapLibre GL JS, Swagger UI, bpmn-js, jsPDF and SheetJS, with SHA-384 Subresource Integrity. |
-| [CARTO Positron](https://carto.com/basemaps/), [OpenStreetMap](https://www.openstreetmap.org/copyright), and [MapLibre demo tiles](https://demotiles.maplibre.org/) | Managed services and continuously updated data | [CARTO terms](https://carto.com/legal/); OSM data under ODbL 1.0; provider terms apply | Runtime raster basemap, OpenStreetMap data, and map glyphs; rendered maps retain provider attribution. |
+| [CARTO Positron](https://carto.com/basemaps/) and [OpenStreetMap](https://www.openstreetmap.org/copyright) | Managed services and continuously updated data | [CARTO terms](https://carto.com/legal/); OSM data under ODbL 1.0; provider terms apply | Runtime raster basemap and OpenStreetMap data; rendered maps retain provider attribution. |
 | [swisstopo / geo.admin.ch API](https://docs.geo.admin.ch/) | Managed service; API version not pinned | [Federal Spatial Data Infrastructure terms](https://www.geo.admin.ch/en/general-terms-of-use-fsdi) | Live Swiss address and geodata search used by location workflows. |
 | [GitHub Pages](https://pages.github.com/) | Managed service | [GitHub Terms of Service](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service); repository content retains its own licenses | Static hosting for the public prototype demonstration. |
 | [bbl-dres/plan-check](https://github.com/bbl-dres/plan-check/tree/7320840a53dcd71859700fe4c90256cbdb6b01f3) | Commit `7320840a53dcd71859700fe4c90256cbdb6b01f3` | [MIT](js/plan-check/PLAN_CHECK_REFERENCE_LICENSE) | Reference implementation whose checker concepts and official BBL test fixture were adapted for Planprüfung. |

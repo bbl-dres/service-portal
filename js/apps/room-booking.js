@@ -7,7 +7,7 @@ import { APPLICATIONS, trail } from '../crumbs.js';
 import { initEstateMap } from '../map/buildings-map.js';
 import { createMapSlot } from '../map/map-slot.js';
 import { floorplanSvg, wireFloorplan } from '../ui/floorplan.js';
-import { favorites } from '../core/favorites.js';
+import { bookmarks } from '../core/bookmarks.js';
 import { formatDate, formatArea, formatNumber } from '../format.js';
 import {
   PREFERRED_BUILDING,
@@ -78,7 +78,7 @@ export default async function render(ctx) {
 
   const requestedRoom = meetingRooms.find((room) => room.spaceId === query.get('room')) || null;
   // Location precedence: deep link, favourite, prototype default, then first available.
-  const favouriteBuilding = favorites.list('building').find((id) => buildings.some((item) => item.bbl_id === id));
+  const favouriteBuilding = bookmarks.listKind('building').find((id) => buildings.some((item) => item.bbl_id === id));
   const initialBuilding = buildings.find((item) => item.bbl_id === (requestedRoom?.buildingId || query.get('building')))
     || buildings.find((item) => item.bbl_id === favouriteBuilding)
     || buildings.find((item) => item.bbl_id === PREFERRED_BUILDING)
@@ -174,7 +174,7 @@ export default async function render(ctx) {
   // action. A later action gets fresh context to observe intervening reservations.
   function prepareBookingContext(instances = engine.instances()) {
     const rooms = buildingRooms();
-    const favoriteRoomIds = new Set(favorites.list('room'));
+    const favoriteRoomIds = new Set(bookmarks.listKind('room'));
     const profiles = new Map(rooms.map((room) => [room.spaceId, roomProfile(room, favoriteRoomIds)]));
     const rangesByRoom = new Map(rooms.map((room) => [room.spaceId, []]));
 
@@ -276,7 +276,7 @@ export default async function render(ctx) {
 
   // Search bar.
   function locationSelect() {
-    const favIds = favorites.list('building');
+    const favIds = bookmarks.listKind('building');
     const fav = buildings.filter((item) => favIds.includes(item.bbl_id));
     const rest = buildings.filter((item) => !favIds.includes(item.bbl_id));
     const option = (item) => `<option value="${C.escape(item.bbl_id)}"${item.bbl_id === state.buildingId ? ' selected' : ''}>${
@@ -296,7 +296,7 @@ export default async function render(ctx) {
 
   // One favourite toggle appears in two places. aria-pressed communicates its state.
   function favoriteButton(kind, id, name, { size = '' } = {}) {
-    const on = favorites.has(kind, id);
+    const on = bookmarks.has(kind, id);
     const what = kind === 'building' ? 'Standort' : 'Raum';
     return `<button type="button" class="btn btn--outline btn--icon-only booking-fav${size ? ` ${size}` : ''}"
       id="${domId(`booking-fav-${kind}`, id)}" data-fav-kind="${kind}" data-fav-id="${C.escape(id)}"
@@ -791,7 +791,7 @@ export default async function render(ctx) {
 
   // Favourite locations belong to the maintained list here, not the active search controls.
   function favouriteLocations() {
-    const ids = favorites.list('building');
+    const ids = bookmarks.listKind('building');
     const rows = ids.map((id) => buildings.find((item) => item.bbl_id === id)).filter(Boolean);
     return `<section class="booking-favs" aria-labelledby="booking-favs-title">
       <h3 id="booking-favs-title">Meine Standorte</h3>
@@ -968,7 +968,11 @@ export default async function render(ctx) {
     // Favourites affect defaults, ordering, and badges, so redraw fully while
     // preserveFocus keeps the toggle focused.
     mount.querySelectorAll('[data-fav-kind]').forEach((button) => button.addEventListener('click', () => {
-      const on = favorites.toggle(button.dataset.favKind, button.dataset.favId);
+      const on = bookmarks.toggle(button.dataset.favKind, button.dataset.favId);
+      if (on === null) {
+        C.toast('Der Favorit konnte nicht gespeichert werden.', 'error', 'WarningCircle');
+        return;
+      }
       C.announce(on ? 'Als Favorit gemerkt.' : 'Favorit entfernt.');
       draw();
     }));

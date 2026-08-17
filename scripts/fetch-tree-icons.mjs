@@ -1,27 +1,22 @@
-// Holt genau die Lucide-Symbole, die die Seitenbaeume benutzen — nicht den Satz.
-// Sie werden mitgeliefert (nicht von einem CDN geladen): das Portal muss ohne
-// Netz laufen, und ein Symbol, das nachgeladen wird, fehlt genau dann, wenn es
-// gebraucht wird.
+// Fetch only the Lucide icons used by sidebar trees. They are checked in so the
+// portal remains usable offline and does not depend on a runtime icon CDN.
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const OUT = 'c:/Users/david/Documents/GitHub/service-portal/assets/icons/tree/';
 const VERSION = '1.31.0';
 const BASE = `https://cdn.jsdelivr.net/npm/lucide-static@${VERSION}/icons/`;
 
-// Ein Satz fuer ALLE acht Baeume. Vorher trugen der Katalog Lucide-Zeichen und
-// die fuenf raeumlichen Baeume die des Bundes-CD — zwei Herkuenfte, zwei
-// Strichstaerken, in derselben Spalte am selben Bildschirm.
+// One icon set keeps stroke weight consistent across every tree surface.
 const WANTED = {
   'chevron-right': 'Aufklapp-Zeichen jeder Zeile mit Kindern',
 
-  // Katalog
+  // Catalogue.
   library: 'Katalog — die Wurzel',
   boxes: 'Geschaeftsobjekte',
   database: 'Systeme',
   list: 'Referenzdaten',
 
-  // Die raeumlichen Baeume: Liegenschaften, Bauprojekte, Mietendenportal,
-  // Workspace, Plan-Editor. Land ▸ Kanton ▸ Ort ist ihre gemeinsame Achse.
+  // Spatial trees share the country, region, and city axis.
   globe: 'Land',
   map: 'Kanton/Region',
   'map-pin': 'Ort',
@@ -32,7 +27,7 @@ const WANTED = {
   house: 'Mietobjekt',
   layers: 'Geschoss',
 
-  // Prozessdokumentation: die beiden Aeste.
+  // Process documentation branches.
   workflow: 'Fachliche Prozesse',
   'app-window': 'Kundenportal — die Ablaeufe des Portals selbst',
 };
@@ -42,10 +37,9 @@ mkdirSync(OUT, { recursive: true });
 let missing = 0;
 for (const [name, why] of Object.entries(WANTED)) {
   const res = await fetch(BASE + name + '.svg');
-  if (!res.ok) { console.log('FEHLT ' + name + ': ' + res.status); missing++; continue; }
+  if (!res.ok) { console.log('MISSING ' + name + ': ' + res.status); missing++; continue; }
   let svg = await res.text();
-  // Aufraeumen: der Lizenzkommentar steht gesammelt in der README daneben, und
-  // die Klassennamen von Lucide braucht eine Maske nicht.
+  // The adjacent README owns licensing; masks do not need Lucide class names.
   svg = svg.replace(/<!--[\s\S]*?-->\s*/g, '')
     .replace(/\s*class="[^"]*"/g, '')
     .replace(/\n\s+/g, ' ')
@@ -68,4 +62,4 @@ writeFileSync(OUT + 'README.md',
   + '| Datei | wofuer |\n|---|---|\n'
   + Object.entries(WANTED).map(([n, w]) => '| `' + n + '.svg` | ' + w + ' |').join('\n')
   + '\n\nNachziehen: scripts/fetch-tree-icons.mjs\n', 'utf8');
-console.log('\nREADME + ' + (Object.keys(WANTED).length - missing) + ' Symbole in assets/icons/tree/');
+console.log('\nREADME + ' + (Object.keys(WANTED).length - missing) + ' icons in assets/icons/tree/');

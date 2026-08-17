@@ -31,7 +31,7 @@ Fläche der ganzen Anwendung.
   ein fehlender Videodienst steht als Warnung («Kein Teams») an der Karte.
 - **Freies Fenster** («Frei 08:00–17:00») nur, wenn der Raum am gewählten Tag
   wirklich anderweitig belegt ist — an jeder Karte wäre die Angabe Rauschen.
-- **Merkliste** (`js/favorites.js`, localStorage): Sterne an Standort und Raum.
+- **Merkliste** (`js/core/bookmarks.js`, localStorage): Sterne an Standort und Raum.
   Gemerkte Standorte belegen die nächste Suche vor und stehen als eigene
   Optionsgruppe im Standortfeld; gemerkte Räume sortieren zuoberst.
 - **Meine Buchungen** trägt zusätzlich die gemerkten Standorte und den Zugang
@@ -64,7 +64,7 @@ er zeigt nicht dieselbe Liste anders, sondern denselben Bestand im Raum.
 
 ## Geteilte Bausteine
 
-- **Neu:** `js/favorites.js` — Merkliste je Art (`building`, `room`).
+- **Geteilt:** `js/core/bookmarks.js` — typisierte Merkliste, auch für `building` und `room`.
 - **Erweitert:** `C.catalogueBar({ extra })` — RAW-HTML am Ende der
   Steuergruppe für eine leistenweite Nebenaktion, abgesetzt wie der
   Ansichtswechsel (`.catbar__aside`). Standard leer; die vier Katalogleisten

@@ -1,13 +1,3 @@
-// Welche Kästen der Landschaft offen stehen.
-//
-// Der Zustand gehoert der Anwendung, nicht dem Bauteil: er muss ein
-// Neuzeichnen ueberleben, aber er gehoert nicht in die Adresse — ein
-// Faltzustand ist kein Ort, an den man jemanden schickt. Beide Anwendungen
-// hatten dafuer dieselbe Map mit anderen Namen (OPEN/isOpen bzw.
-// BOXES/boxOpen), samt derselben Voreinstellung «offen».
-//
-// Je Kennung ein eigenes Gedaechtnis, damit sich zwei Anwendungen nicht in die
-// Quere kommen.
 const MEMORY = new Map();
 
 const memoryFor = (id) => {
@@ -15,20 +5,55 @@ const memoryFor = (id) => {
   return MEMORY.get(id);
 };
 
+// Box keys must include the view axis and scope. Labels alone can collide when
+// two scopes contain the same group name or when the reader changes grouping.
+export const landscapeKey = (...parts) => parts
+  .map((part) => encodeURIComponent(String(part == null ? '' : part)))
+  .join(':');
+
 export function landscapeState(id, { openByDefault = true } = {}) {
-  const mem = memoryFor(id);
+  const memory = memoryFor(id);
+  const state = (key) => (memory.has(key) ? memory.get(key) === true : openByDefault);
   return {
-    // Voreingestellt offen: eine Landschaft, die zugeklappt beginnt, zeigt
-    // beim Aufschlagen nichts als Ueberschriften.
-    isOpen: (key) => (mem.has(key) ? mem.get(key) === true : openByDefault),
+    isOpen: state,
     toggle: (key) => {
-      const now = mem.has(key) ? mem.get(key) === true : openByDefault;
-      mem.set(key, !now);
-      return !now;
+      const next = !state(key);
+      memory.set(key, next);
+      return next;
     },
-    setAll: (keys, open) => { keys.forEach((k) => mem.set(k, open === true)); },
-    // «Alle zuklappen» oder «Alle aufklappen» — die Beschriftung nennt, was der
-    // Druck TUN wird, also braucht der Aufrufer diese Frage.
-    anyOpen: (keys) => keys.some((k) => (mem.has(k) ? mem.get(k) === true : openByDefault)),
+    setAll: (keys, open) => { keys.forEach((key) => memory.set(key, open === true)); },
+    anyOpen: (keys) => keys.some(state),
+  };
+}
+
+// Landscape markup is replaced on every fold. Event delegation stays on the
+// stable hosts and focus is restored to the equivalent new control.
+export function wireLandscape({ panel, tools, state, keys, redraw } = {}) {
+  const findByData = (root, attribute, value) => [...(root?.querySelectorAll(`[${attribute}]`) || [])]
+    .find((element) => element.getAttribute(attribute) === value);
+
+  const onToolsClick = (event) => {
+    const button = event.target.closest('[data-lscape-all]');
+    if (!button || !tools?.contains(button)) return;
+    const open = button.dataset.lscapeAll === 'open';
+    state.setAll(keys(), open);
+    redraw();
+    tools.querySelector('[data-lscape-all]')?.focus();
+  };
+
+  const onPanelClick = (event) => {
+    const button = event.target.closest('.lscape__toggle[data-box]');
+    if (!button || !panel?.contains(button)) return;
+    const key = button.dataset.box;
+    state.toggle(key);
+    redraw();
+    findByData(panel, 'data-box', key)?.focus();
+  };
+
+  tools?.addEventListener('click', onToolsClick);
+  panel?.addEventListener('click', onPanelClick);
+  return () => {
+    tools?.removeEventListener('click', onToolsClick);
+    panel?.removeEventListener('click', onPanelClick);
   };
 }

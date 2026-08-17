@@ -1,10 +1,10 @@
 // Enrich data/projects.json with the read-only reporting fields shown on the
 // construction-project detail tabs (#/app/projects/:id):
-//   gf            Geschossfläche (SIA 416) in m² — basis for the BKP-2 Kennwert
-//   bkp           planned cost by BKP Hauptgruppe; group 2 is the existing bkp2
+//   gf            floor area (SIA 416) in m², used by the BKP-2 benchmark
+//   bkp           planned cost by BKP main group; group 2 is the existing bkp2
 //                 value and the groups always sum exactly to plannedTotalCost
-//   meilensteine  milestone list [{ label, geplant, effektiv }] (effektiv null = open)
-//   risiken       risk register [{ id, thema, einstufung, massnahme }]
+//   meilensteine  milestone list; quoted German keys are the persisted schema
+//   risiken       risk register; quoted German keys are the persisted schema
 //
 // Milestones and risks are hand-authored per project below: their wording is
 // domain content (SIA-phase gates, Verpflichtungskredit, Denkmalpflege …), not
@@ -20,15 +20,15 @@ const ROOT = normalize(join(fileURLToPath(new URL('.', import.meta.url)), '..'))
 const FILE = ROOT + 'data/projects.json';
 const projects = JSON.parse(readFileSync(FILE, 'utf8'));
 
-// Rough planning Kennwerte (BKP 2 per m² GF) by Teilportfolio, CHF/m². Labs and
+// Rough planning benchmarks (BKP 2 per m² floor area) by sub-portfolio, CHF/m². Labs and
 // listed parliament buildings are costlier than standard office space.
 const BKP2_PER_M2 = {
   'Verwaltung': 3100, 'Bildung und Forschung': 3600, 'Parlament und Regierung': 3900,
   'Kultur und Denkmäler': 3400, 'Zoll': 3000, 'Wohnen': 2800,
 };
 
-// Share of the non-building cost (plannedTotalCost − BKP 2) per remaining
-// Hauptgruppe. Group 0 (Grundstück) stays absent: the Bund already owns the land.
+// Share of non-building cost (plannedTotalCost − BKP 2) per remaining main
+// group. Group 0 (land) stays absent because the Confederation already owns it.
 const REMAINDER_SHARES = [['1', 0.16], ['3', 0.22], ['4', 0.16], ['9', 0.18]]; // '5' absorbs the rest
 
 const MILESTONES = {
@@ -106,8 +106,7 @@ const MILESTONES = {
   ],
 };
 
-// The worst Einstufung matches the project's risikoAmpel: grün → only «tief»,
-// gelb → at most «mittel», rot → at least one «hoch».
+// The highest persisted risk rating must agree with the project's traffic light.
 const RISKS = {
   'PRJ-01': [
     { id: 'R-01', thema: 'Schadstofffunde im Bestand (Asbest, PCB)', einstufung: 'mittel', massnahme: 'Laufende Beprobung; Rückstellung im Kostendach eingestellt.' },

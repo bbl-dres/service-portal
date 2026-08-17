@@ -81,6 +81,7 @@ export default async function render(ctx) {
   let searchRequest = null;
   let searchVersion = 0;
   let addressCombobox = null;
+  let outsideClickController = null;
   const cancelAddressSearch = () => {
     clearTimeout(searchTimer);
     searchTimer = null;
@@ -91,6 +92,7 @@ export default async function render(ctx) {
   ctx.onUnmount(() => {
     cancelAddressSearch();
     addressCombobox?.destroy();
+    outsideClickController?.abort();
   });
 
   // The building name is the derived address, preventing it from diverging
@@ -99,6 +101,7 @@ export default async function render(ctx) {
     .filter(Boolean).join(', ');
 
   const freeMap = () => { if (pickerMap) { try { pickerMap.remove(); } catch { /* Already removed. */ } pickerMap = null; } };
+  ctx.onUnmount(freeMap);
 
   const FIELD_LABELS = {
     'bc-address': 'Adresse',
@@ -255,6 +258,8 @@ export default async function render(ctx) {
     cancelAddressSearch();
     addressCombobox?.destroy();
     addressCombobox = null;
+    outsideClickController?.abort();
+    outsideClickController = null;
     freeMap();
     mount.innerHTML = `
     <div class="container section container--grid">
@@ -415,8 +420,6 @@ export default async function render(ctx) {
         C.announce('Standort angepasst.');
       },
     }).then((m) => { pickerMap = m; }).catch(() => { /* The map is optional. */ });
-    ctx.onUnmount(freeMap);
-
     if (clear) clear.addEventListener('click', () => {
       cancelAddressSearch();
       Object.assign(state, {
@@ -470,11 +473,10 @@ export default async function render(ctx) {
 
     // An outside click closes suggestions. A once-only document listener would
     // leak if the route changed before a click, so the route controller always removes it.
-    const outsideAc = new AbortController();
-    ctx.onUnmount(() => outsideAc.abort());
+    outsideClickController = new AbortController();
     document.addEventListener('click', (e) => {
       if (!picker.contains(e.target)) closeList();
-    }, { signal: outsideAc.signal });
+    }, { signal: outsideClickController.signal });
 
     redrawFacts();
   }

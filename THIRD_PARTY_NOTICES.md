@@ -30,6 +30,22 @@ The checker is intended only for local, non-production parser and data-quality
 testing. It does not create an authoritative plan version or professional
 approval and must not be treated as a production records workflow.
 
+## Bundled MapLibre glyphs (Noto Sans)
+
+MapLibre labels use the bundled `Noto Sans Regular` and `Noto Sans Bold`
+`0-255.pbf` ranges below [`assets/map-glyphs/`](assets/map-glyphs/). The files
+were obtained from `maplibre/demotiles` commit
+`ef4389e954d46e97cd9d3b0130881d9fb789ae2e` (BSD-3-Clause); that project records
+the glyphs as generated from `openmaptiles/fonts`, whose Noto Sans source at
+commit `d48c5fce2fc58b55c98d353558d807cac45e7262` is under the SIL Open Font
+License 1.1.
+
+The local asset manifest records the exact upstream links and SHA-256 hashes.
+The directory also contains the complete
+[demotiles BSD notice](assets/map-glyphs/LICENSE-maplibre-demotiles.txt) and
+[Noto Sans OFL text](assets/map-glyphs/LICENSE-Noto-Sans.txt). The portal's root
+MIT license does not replace either license.
+
 ## Report generators (jsPDF, jsPDF-AutoTable, SheetJS)
 
 The Planprüfung PDF and Excel Prüfberichte are generated in the browser by three

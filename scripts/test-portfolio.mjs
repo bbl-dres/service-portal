@@ -32,8 +32,7 @@ console.log(`   (from data/: ${BUILDINGS.length} buildings + ${PARCELS.length} p
       console.error = (...a) => { try { window.__mapErrs.push(a.map(x => typeof x === 'string' ? x : ((x && x.message) || '')).join(' ')); } catch (e) {} oe.apply(console, a); };
       let n = 0; while (!document.querySelector('.pf-tree') && n++ < 150) await s(100);
       const count = () => (document.querySelector('#pf-count') || {}).textContent || '';
-      // Seit dem Umzug auf das Seitenbaum-Bauteil (2026-08-14): ein Abschnitt, die
-      // Laender sind seine direkten Eintraege.
+      // Countries are direct entries in the single tree section.
       const countries = document.querySelectorAll('.pf-tree__section > li').length;
       let m = 0; while (!document.querySelector('.pf-map canvas') && m++ < 100) await s(100);
       const r = { h1: (document.querySelector('h1') || {}).textContent, countries, count0: count(), mapCanvas: !!document.querySelector('.pf-map canvas') };
@@ -89,7 +88,7 @@ console.log(`   (from data/: ${BUILDINGS.length} buildings + ${PARCELS.length} p
       r.headButtons = document.querySelectorAll('.pf-sidebar__head button').length;
       r.selPill = [...document.querySelectorAll('#pf-activefilters .active-filter')]
         .some(p => /^Auswahl:/.test(p.textContent.trim()));
-      r.mapErrs = (window.__mapErrs || []).filter(e => /Unimplemented|glyph|type: 4/i.test(e));
+      r.mapErrs = window.__mapErrs || [];
       return r;
     })()`);
     console.log('■ Shell');
@@ -117,7 +116,7 @@ console.log(`   (from data/: ${BUILDINGS.length} buildings + ${PARCELS.length} p
     check(R.mapCanvas2, 'map re-renders after tree filter');
     check(R.headButtons === 0 && R.selPill,
       'the selection is cleared through its active-filter chip, not a second control in the sidebar head');
-    check(R.mapErrs.length === 0, `no glyph/tile parse errors${R.mapErrs[0] ? ' — ' + R.mapErrs[0] : ''}`);
+    check(R.mapErrs.length === 0, `no active MapLibre errors${R.mapErrs[0] ? ' — ' + R.mapErrs[0] : ''}`);
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, p.sessionId);
     writeFileSync(process.env.SHOT || join(tmpdir(), 'bbl-portfolio.png'), Buffer.from(shot.data, 'base64'));
     await p.closeTarget();
@@ -230,8 +229,9 @@ console.log(`   (from data/: ${BUILDINGS.length} buildings + ${PARCELS.length} p
     check(/Gebäude auf der Parzelle/.test(P.text), 'parcel links to its building');
     check(P.tabs.some(t => /Bodenbedeckung/.test(t)) && P.hasMap, 'The parcel has a land-cover tab and mini-map');
     check(P.landcoverRows >= 1, `Land-cover tab shows records (${P.landcoverRows} rows)`);
-    check([...(await p.problems()), ...(await d.problems()), ...(await pc.problems())].length === 0,
-      `no exceptions / console errors / error banner${[...(await p.problems()), ...(await d.problems()), ...(await pc.problems())][0] ? ': ' + [...(await p.problems()), ...(await d.problems()), ...(await pc.problems())][0] : ''}`);
+    const allProblems = [...(await p.problems()), ...(await d.problems()), ...(await pc.problems())];
+    check(allProblems.length === 0,
+      `no exceptions / console errors / error banner${allProblems[0] ? ': ' + allProblems[0] : ''}`);
     await pc.closeTarget();
   } finally {
     cdp.close();

@@ -1,44 +1,32 @@
 import { APPLICATIONS, trail } from '../crumbs.js';
 import { loadExternalAssets } from '../core/external-assets.js';
 import { formatDate } from '../format.js';
-import { safeAssetUrl, safeMailto } from '../security/urls.js';
-// Real-estate management process catalogue.
-// Route: #/app/process-docs, with ?id=<processId> details and stable ?tab values.
-// It mirrors the metadata catalogue: a process-area/group tree, catalogue bar,
-// list/gallery, and overview, BPMN, and accessible process-step tabs. Processes
-// come from data/processes.json and diagrams from assets/bpmn/<processId>.bpmn.
-// NavigatedViewer loads lazily from a CDN; DOMParser independently derives the
-// ordered accessible step list and degrades failures to messages.
+import {
+  classifyUrl, newWindowAttrs, safeAssetUrl, safeLinkUrl, safeMailto,
+} from '../security/urls.js';
+// Process catalogue with URL-addressable scope and views. BPMN diagrams come
+// from local assets; the authenticated viewer bundle loads only on demand.
 import * as links from '../links.js';
-// Reuse escape and badge directly from components.js, as metadata-catalog does.
 import { escape as esc, badge } from '../components.js';
 import { runTableExport, slug } from '../ui/export-table.js';
-import { landscapeState } from '../ui/landscape-state.js';
+import {
+  landscapeKey, landscapeState, wireLandscape,
+} from '../ui/landscape-state.js';
 
-// Die Achse, an der die Landschaft ihre Kaesten teilt. Prozessgruppe ist die
-// Achse dieser Anwendung — sie steht im Baum, im Filter und in der Tabelle —,
-// aber «Status» beantwortet eine andere, ebenso gueltige Frage: wie weit ist
-// die Dokumentation. «keine» ist eine echte Wahl und kein Fehlen einer: sie
-// legt alle Prozesse in ein Feld.
+// The compatibility query value: `keine` explicitly requests no grouping.
 const AXES = [
   { value: 'bereich', label: 'Prozessbereich', of: (p) => p.areaLabel || p.branchLabel },
   { value: 'gruppe', label: 'Prozessgruppe', of: (p) => p.groupLabel },
   { value: 'status', label: 'Status', of: (p, core) => statusOf(core, p.status).label },
   { value: 'keine', label: '(keine)', of: null },
 ];
-// Aufgeklappte Kaesten, ueber das Neuzeichnen hinweg — dasselbe Gedaechtnis wie
-// im Katalog, nur unter eigener Kennung.
 const BOXES = landscapeState('process-docs');
 
-// EINE Quelle fuer die Prozessdokumentation: processes.json traegt beide Aeste
-// mit allem, was eine Zeile braucht. Dazu die Diagramme unter assets/bpmn/ und
-// die Kontakte fuer die Fachstelle in der Übersicht.
 export const needs = ['processes', 'contacts'];
 
 const BASE = '#/app/process-docs';
 const TITLE = 'Prozessdokumentation Bauten';   // Single source for title, breadcrumb, heading, and back links.
 const PER_PAGE = 12;
-// Generic process contact comes from contacts; responsiblePersons are individual AdminDir entries.
 const CONTACT_ID = 'immobilienmanagement';
 
 // Lazily load the bpmn-js NavigatedViewer bundle and its three stylesheets.
@@ -103,8 +91,14 @@ const STEP_TYPES = [
 ];
 const KIND_LABEL = { task: 'Aufgabe', event: 'Ereignis', gateway: 'Gateway', subprocess: 'Teilprozess' };
 
-function parseBpmnSteps(xmlString) {
+export function parseBpmnSteps(xmlString) {
   const doc = new DOMParser().parseFromString(xmlString, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('Die BPMN-Datei enthält ungültiges XML.');
+  const root = doc.documentElement;
+  if (root?.namespaceURI !== BPMN_NS || root.localName !== 'definitions'
+    || doc.getElementsByTagNameNS(BPMN_NS, 'process').length === 0) {
+    throw new Error('Die Datei enthält kein BPMN-Prozessmodell.');
+  }
   const laneMap = new Map();
   for (const lane of doc.getElementsByTagNameNS(BPMN_NS, 'lane')) {
     const laneName = lane.getAttribute('name') || '';
@@ -133,7 +127,8 @@ function parseBpmnSteps(xmlString) {
     const meta = typeByTag.get(n.localName);
     const id = n.getAttribute('id') || '';
     let documentation = '';
-    for (const d of n.getElementsByTagNameNS(BPMN_NS, 'documentation')) {
+    for (const d of n.children) {
+      if (d.namespaceURI !== BPMN_NS || d.localName !== 'documentation') continue;
       const t = (d.textContent || '').trim();
       if (t) documentation = documentation ? `${documentation}\n${t}` : t;
     }
@@ -150,13 +145,24 @@ function parseBpmnSteps(xmlString) {
   });
 }
 
-// Module-level lookups.
+const BPMN_CACHE = new Map();
+
+async function loadBpmnDocument(path, signal) {
+  if (BPMN_CACHE.has(path)) return BPMN_CACHE.get(path);
+  const response = await fetch(encodeURI(path), { signal });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const xml = await response.text();
+  const value = { xml, steps: parseBpmnSteps(xml) };
+  BPMN_CACHE.set(path, value);
+  return value;
+}
+
 const refList = (core, key) => core.ref()[key] || [];
-// Processes use the catalogue object's DRAFT/VALID/SUPERSEDED/ARCHIVED lifecycle.
 const statusOf = (core, id) => refList(core, 'objectStatuses').find((s) => s.id === id) || { label: id, variant: 'gray' };
 const processHref = (id) => `${BASE}?id=${encodeURIComponent(id)}`;
-// Eine Stufe hinauf heisst hier: zurueck in die Liste, eingeschraenkt auf die
-// Gruppe des Prozesses — der Ort, an dem man ihn gefunden hat.
+const recordHref = (process) => process.branch === 'portal'
+  ? `${BASE}?def=${encodeURIComponent(process.processId)}`
+  : processHref(process.processId);
 const hashFor = (p) => `${BASE}?group=${encodeURIComponent(p.group)}`;
 const truncateText = (s, n = 130) => {
   const t = String(s || '');
@@ -164,34 +170,24 @@ const truncateText = (s, n = 130) => {
   const cut = t.slice(0, n);
   return `${cut.slice(0, cut.lastIndexOf(' '))}…`;
 };
-
-// Den aufgeklappten Zustand merkt sich jetzt das Seitenbaum-Bauteil, unter der
-// Kennung «pd-tree» — dieselbe Mechanik fuer alle Baeume statt einer Map je App.
+const linkHost = (url) => {
+  try { return new URL(url, location.href).hostname || url; } catch { return url; }
+};
 
 export default async function render(ctx) {
   const id = ctx.query.get('id');
   if (id) return detail(ctx, id);
-  // Ein Portal-Ablauf ist derselbe Fall wie ein fachlicher Prozess: eine Stufe
-  // des Baums mit drei Sichten. Nur die Metadaten sind andere, und die Datei
-  // liegt unter einem anderen Namen.
   const def = ctx.query.get('def');
-  if (def) return detail(ctx, def, { portal: true });
+  if (def) return detail(ctx, def);
   return list(ctx);
 }
 
-// Der Baum, geteilt von Liste und Prozessansicht: dieselbe Spalte, dieselben
-// drei Stufen, nur die Markierung unterscheidet sich.
-function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = null,
-  scopeOf = () => '', pathOf = () => false, href = () => BASE, leafTab = '' }) {
-  // EINE Quelle: jeder Datensatz sagt selbst, in welchem Ast er haengt
-  // (branch/branchLabel), unter welcher Organisation (org) und in welcher
-  // Gruppe MIT Bezeichnung (group/groupLabel). Der Baum fuegt nichts mehr
-  // zusammen — er gruppiert nur noch, was auf den Zeilen steht.
+// List and detail routes share the same data-driven hierarchy.
+function buildTree({ all, areas, hash, selGroups, activeId, activeDef = null,
+  scopeOf = () => '', pathOf = () => false, href = () => BASE }) {
   const ICON = { fachlich: 'tree/workflow', portal: 'tree/app-window' };
   const UNIT = { fachlich: 'Prozesse', portal: 'Abläufe' };
 
-  // Die Organisation liegt UNTER dem Ast und kommt vom Datensatz — damit ein
-  // zweiter Prozessbereich unter einer anderen Einheit haengen kann.
   const nest = (rows, inner, onPath) => {
     const chain = (rows[0] || {}).org || [];
     return chain.reduceRight((kids, label) => {
@@ -203,10 +199,7 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = 
         count: rows.length,
         countUnit: 'Prozesse',
         href: href('org', label),
-        // Angeklickt heisst gewaehlt UND aufgeklappt: wer eine Stufe waehlt,
-        // will hineinsehen. Aber `defaultOpen`, nicht `open` — sonst liesse
-        // sich die gewaehlte Zeile nicht mehr zuklappen, und genau das soll das
-        // Chevron koennen: waehlen und aufklappen sind zwei Absichten.
+        // A selected scope opens initially but still yields to an explicit fold.
         state: mine ? 'active' : onWay ? 'path' : '',
         defaultOpen: mine || undefined,
         split: true,
@@ -216,22 +209,16 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = 
     }, inner);
   };
 
-  // Die gewaehlte Sicht reist mit, wenn man von einem Prozess zum naechsten
-  // geht: wer ein Diagramm liest und den Nachbarn aufschlaegt, will das
-  // Diagramm des Nachbarn — nicht wieder dessen Übersicht. Aus der LISTE
-  // heraus reist sie nicht mit; dort heisst «Diagramm» die Landschaft und
-  // meint etwas anderes als das BPMN eines einzelnen Ablaufs.
-  const withTab = (base) => (leafTab ? `${base}&tab=${encodeURIComponent(leafTab)}` : base);
   const leafNode = (r) => ({
     id: `proc:${r.processId}`,
     label: r.name,
-    href: withTab(r.branch === 'portal'
+    href: r.branch === 'portal'
       ? `${BASE}?def=${encodeURIComponent(r.processId)}`
-      : processHref(r.processId)),
+      : processHref(r.processId),
     state: (activeId === r.processId || activeDef === r.processId) ? 'active' : '',
   });
 
-  const groupNodes = (rows, holdsActive) => {
+  const groupNodes = (rows) => {
     const by = new Map();
     for (const r of rows) {
       if (!by.has(r.group)) by.set(r.group, { label: r.groupLabel || r.group, rows: [] });
@@ -255,8 +242,7 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = 
     }));
   };
 
-  // Der fachliche Ast traegt zusaetzlich seinen Prozessbereich; der Portal-Ast
-  // nicht — ein Ablauf haengt am Anliegen, nicht an einer Verwaltungseinheit.
+  // Domain processes have an area level; portal flows go straight to groups.
   const areaNodes = (rows, holdsActive) => areas
     .filter((a) => rows.some((r) => r.area === a.key))
     .map((a) => {
@@ -273,19 +259,16 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = 
         defaultOpen: scopeOf('area') === a.key || undefined,
         split: true,
         hasChildren: true,
-        children: () => groupNodes(mine, holdsActive),
+        children: () => groupNodes(mine),
       };
     });
 
   const branchNode = (id, rows) => {
-    // Auf dem Weg liegt der Ast auch dann, wenn eine seiner GRUPPEN gewaehlt
-    // ist — nicht nur, wenn ein einzelner Datensatz offen steht. Sonst bleibt
-    // er zu, und die gewaehlte Gruppe waere unsichtbar.
     const holds = pathOf('branch', id) || rows.some((r) => r.processId === activeId
       || r.processId === activeDef || (selGroups.length === 1 && r.group === selGroups[0]));
     const inner = id === 'fachlich'
       ? nest(rows, areaNodes(rows, holds), holds)
-      : groupNodes(rows, holds);
+      : groupNodes(rows);
     const mine = scopeOf('branch') === id;
     return {
       id: `branch:${id}`,
@@ -312,21 +295,12 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = 
     id: 'pd-tree',
     title: 'Prozesshierarchie',
     mode: 'nav',
-    // Symbole nur auf Stufe 1 — wie im Katalog. Damit steht Stufe 2 buendig
-    // unter Stufe 1: die Symbolspalte IST ihre Einrueckung.
     levels: [{ icons: true }, { icons: false }, { icons: false }, { icons: false },
       { icons: false }, { icons: false }],
     sections: [
-      // Eigener Abschnitt fuer die Wurzel — wie im Katalog. Sie ist etwas
-      // anderes als die Bereiche darunter (der Weg zurueck zur ganzen Karte,
-      // kein Umfang darin), und weil das Bauteil nur ZWISCHEN Abschnitten eine
-      // Linie zieht, ist sie zugleich die einzige Linie der Spalte.
       [{
         id: 'root',
-        // Nicht noch einmal «Prozesshierarchie»: so heisst die Spalte schon.
         label: 'Übersicht',
-        // Stufe 1 fuehrt Symbole, seit es zwei Aeste gibt — ohne eines stuende
-        // hier eine leere Spalte neben zwei gefuellten.
         icon: 'tree/library',
         count: all.length,
         countUnit: 'Prozesse',
@@ -342,25 +316,14 @@ function buildTree({ all, areas, groups, hash, selGroups, activeId, activeDef = 
   });
 }
 
-// Process map: list and tree.
 function list(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   setTitle(TITLE);
   setCrumbs(trail(APPLICATIONS, { label: TITLE }));
 
-  // Der ganze Bestand — beide Aeste — fuer den Baum und die Einstiegsseite.
   const everything = core.processes();
-  // Die LISTE zeigt die fachlichen Prozesse. Prozessbereich, Prozessgruppe,
-  // Status und Nummer sind ihre Begriffe; ein Portal-Ablauf hat keinen
-  // Prozessbereich und keine TQ-Nummer, und in derselben Tabelle
-  // nebeneinandergestellt behaupten die Spalten etwas Falsches ueber ihn. Er
-  // hat seine eigene Stufe im Baum und seine eigenen drei Sichten.
-  // JEDE Stufe ist ein Umfang, nicht nur die Gruppe: Ast, Organisation,
-  // Prozessbereich, Prozessgruppe. Wer «Fachliche Prozesse» anklickt, will
-  // sehen, wie sich das teilt — und von dort weiter hinein. Das Diagramm und
-  // die Tabelle sind das Werkzeug dafuer, der Baum zeigt nur, wo man ist.
-  //
-  // Der engste gewaehlte Umfang gewinnt.
+  // The narrowest valid scope wins. Portal flows remain a separate branch
+  // because they do not have domain-process numbers or areas.
   const SCOPES = [
     { key: 'group', param: 'group', of: (r) => r.group, label: (r) => r.groupLabel },
     { key: 'area', param: 'area', of: (r) => r.area, label: (r) => r.areaLabel },
@@ -377,13 +340,12 @@ function list(ctx) {
     return null;
   })();
 
-  // Was in der Flaeche liegt. Ohne Umfang: die fachlichen Prozesse — der
-  // Portal-Ast hat weder Prozessbereich noch TQ-Nummer, und in derselben
-  // Tabelle behaupteten die Spalten etwas Falsches ueber ihn.
-  const all = scope ? scope.rows : everything.filter((p) => p.branch !== 'portal');
-  // Der Nenner der Zaehlung: der ganze Bestand DERSELBEN Art. «3 von 3» sagt
-  // nichts — «3 von 18» sagt, wie eng man steht.
-  const universe = everything.filter((p) => p.branch === (scope ? (scope.rows[0] || {}).branch : 'fachlich'));
+  // The root is one catalogue: search, counts and exports cover both branches.
+  // Scoped views retain their branch-sized denominator for useful "x of y" context.
+  const all = scope ? scope.rows : everything;
+  const universe = scope
+    ? everything.filter((p) => p.branch === (scope.rows[0] || {}).branch)
+    : everything;
   // Derive L1/L2 ordering from first appearance in the process inventory.
   const areas = [...new Map(everything.filter((p) => p.area)
     .map((p) => [p.area, { key: p.area, code: p.areaCode, label: p.areaLabel }])).values()];
@@ -397,13 +359,7 @@ function list(ctx) {
   const state = C.catalogueState(query, {
     base: BASE, perPage: PER_PAGE,
     sortOpts: SORTS.map((s) => s.value),
-    // Der Zustand muss die erlaubten Sichten KENNEN, sonst faellt jede
-    // unbekannte auf die Voreinstellung zurueck und der Wechsel tut nichts.
     views: ['uebersicht', 'diagramm', 'tabelle'],
-    // Dieselben drei Sichten wie in der Geschaeftsarchitektur, und dieselbe
-    // Voreinstellung: das Diagramm. Wer eine Prozesslandkarte oeffnet, will
-    // zuerst SEHEN, wie sie sich teilt — das ist eine Frage ans Auge, keine an
-    // die Leseordnung. Die Liste steht einen Klick daneben.
     defaultView: 'diagramm', trimQuery: false,
     filters: {
       group: groups.map((g) => g.key),
@@ -430,93 +386,78 @@ function list(ctx) {
   const { visible, totalPages, page } = state.clamp(sorted);
   const unit = { nom: 'Prozesse', dat: 'Prozessen' };
 
-  // Die Marken zeigen, was WIRKLICH einschraenkt — also auch den Umfang aus der
-  // Adresse. Ast, Organisation und Prozessbereich standen nirgends: man sah am
-  // Baum, wo man war, aber die Zeile darueber behauptete «nichts gefiltert».
-  // Die Gruppe kommt weiterhin ueber selGroups; sie ist Umfang UND Filter.
-  const scopeChip = scope && scope.key !== 'group' ? [{ label: scope.label, href: BASE }] : [];
-  const active = [
-    ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '', page: 1 }) }] : []),
-    ...scopeChip,
-    ...selGroups.map((x) => ({ label: (groups.find((g) => g.key === x) || {}).label || x, href: hash({ group: selGroups.filter((y) => y !== x), page: 1 }) })),
-    ...selStatus.map((x) => ({ label: statusOf(core, x).label, href: hash({ status: selStatus.filter((y) => y !== x), page: 1 }) })),
-  ];
+  // The tree, breadcrumb and heading already communicate hierarchy scope.
+  // Chips are reserved for constraints users can independently remove.
+  let active = [];
 
+  const mixedBranches = new Set(all.map((p) => p.branch)).size > 1;
+  const listColumns = [
+    ...(mixedBranches ? [{ key: 'branch', label: 'Zweig', width: '11rem', render: (p) => esc(p.branchLabel) }] : []),
+    { key: 'number', label: 'Nr.', width: '10rem', render: (p) => `<code>${esc(p.processId)}</code>` },
+    { key: 'name', label: 'Prozess', render: (p) => `<a href="${recordHref(p)}">${esc(p.name)}</a><br><span class="small muted">${esc(truncateText(p.description, 90))}</span>` },
+    { key: 'group', label: 'Prozessgruppe', width: '13rem', render: (p) => esc(p.groupLabel) },
+    { key: 'status', label: 'Status', width: '8rem', render: (p) => { const st = statusOf(core, p.status); return badge(st.label, st.variant); } },
+  ];
   const listView = (rows) => C.table({
     caption: 'Prozesse', zebra: true, rowsClickable: true,
-    columns: [
-      { key: 'number', label: 'Nr.', width: '10rem', render: (p) => `<code>${esc(p.processId)}</code>` },
-      { key: 'name', label: 'Prozess', render: (p) => `<a href="${processHref(p.processId)}">${esc(p.name)}</a><br><span class="small muted">${esc(truncateText(p.description, 90))}</span>` },
-      { key: 'group', label: 'Prozessgruppe', width: '13rem', render: (p) => esc(p.groupLabel) },
-      { key: 'status', label: 'Status', width: '8rem', render: (p) => { const st = statusOf(core, p.status); return badge(st.label, st.variant); } },
-    ],
+    columns: listColumns,
     rows,
   });
 
-  // --- Die drei Flaechen -----------------------------------------------------
-  // Dieselben drei wie in der Geschaeftsarchitektur, damit ein Leser, der eine
-  // der beiden Anwendungen kennt, die andere nicht neu lernen muss.
-
-  // Kaesten der Landschaft: Prozessgruppen, Kacheln sind die Prozesse. Die
-  // Gruppe ist die Achse, die diese Anwendung ohnehin fuehrt — sie steht im
-  // Baum, im Filter und in der Tabellenspalte.
-  // Die Achse haengt an der Stufe: ein Umfang wird nach der NAECHSTEN darunter
-  // geteilt. Sonst zeigte das Diagramm auf «Fachliche Prozesse» einen einzigen
-  // Kasten mit achtzehn Kacheln — richtig, aber ohne Aussage. So teilt sich der
-  // Ast in Prozessbereiche, der Bereich in Gruppen, und die Gruppe zeigt ihre
-  // Prozesse.
+  // Each scope defaults to grouping by the next level below it.
   const DEFAULT_AXIS = { group: 'keine', area: 'gruppe', org: 'bereich', branch: 'bereich' };
   const defaultAxis = scope
-    // Der Portal-Ast hat keinen Prozessbereich; seine naechste Stufe ist die
-    // Gruppe (die Domaene der Dienstleistung).
     ? (scope.key === 'branch' && scope.value === 'portal' ? 'gruppe' : DEFAULT_AXIS[scope.key])
     : 'bereich';
   const axis = AXES.find((x) => x.value === query.get('axis'))
     || AXES.find((x) => x.value === defaultAxis)
     || AXES[0];
-  // Die Achse reist mit. Ohne das verloere sie jeder Verweis, den der Baum
-  // baut: man waehlt «Status», klickt eine Gruppe an, und ist wieder bei
-  // «Prozessgruppe» — ohne dass man es angefasst haette.
-  // Jede Adresse traegt den UMFANG und die ACHSE mit. `catalogueHash` kennt nur
-  // q, page, view, sort und die angemeldeten Filter — von branch/org/area/axis
-  // weiss es nichts, und was es nicht kennt, laesst es weg. Genau daran fiel der
-  // Ansichtswechsel auf «Fachliche Prozesse» zurueck auf die Wurzel: der
-  // Umfang verschwand aus der Adresse (Nutzerfund).
+  // catalogueHash knows catalogue controls, while hashA also preserves the
+  // independently selected hierarchy scope and grouping axis.
   const hashA = (patch = {}) => {
     const base = hash({
       axis: axis.value === defaultAxis ? '' : axis.value, ...patch });
-    // Der Umfang steht in einem eigenen Parameter; er wird nur ersetzt, wenn
-    // der Aufrufer selbst einen setzt.
     if (!scope || SCOPES.some((x) => x.param in patch)) return base;
     const [route, qs] = base.replace(/^#/, '').split('?');
     const q2 = new URLSearchParams(qs || '');
     q2.set(scope.param, scope.value);
     return `#${route}?${q2}`;
   };
+  const emptyResultsHtml = () => C.empty('Kein Prozess gefunden.', {
+    hint: 'Passen Sie Ihre Suche oder die Filter an.',
+    action: {
+      label: 'Suche und Filter zurücksetzen',
+      href: hashA({ q: '', status: [], page: 1 }),
+    },
+  });
+  active = [
+    ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hashA({ q: '', page: 1 }) }] : []),
+    ...selStatus.map((x) => ({
+      label: statusOf(core, x).label,
+      href: hashA({ status: selStatus.filter((y) => y !== x), page: 1 }),
+    })),
+  ];
   const boxes = () => {
-    const tile = (p) => ({ label: p.name, href: processHref(p.processId) });
-    if (!axis.of) return [{ key: 'alle', label: 'Alle Prozesse', count: sorted.length, tiles: sorted.map(tile) }];
+    const scopeKey = scope ? `${scope.key}:${scope.value}` : 'root';
+    const boxKey = (value) => landscapeKey(scopeKey, axis.value, value);
+    const tile = (p) => ({ label: p.name, href: recordHref(p) });
+    if (!axis.of) return [{ key: boxKey('all'), label: 'Alle Prozesse', count: sorted.length, tiles: sorted.map(tile) }];
     const by = new Map();
     for (const p of sorted) {
       const k = axis.of(p, core) || '—';
       if (!by.has(k)) by.set(k, []);
       by.get(k).push(p);
     }
-    // Groesstes Feld zuerst: die Karte liest sich vom groessten Gebiet abwaerts.
     return [...by].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'de'))
-      .map(([label, mine]) => ({ key: label, label, count: mine.length, tiles: mine.map(tile) }));
+      .map(([label, mine]) => ({ key: boxKey(label), label, count: mine.length, tiles: mine.map(tile) }));
   };
 
-  // Reihenfolge wie im Katalog: erst zuklappen, dann was die Flaeche ORDNET,
-  // dann was auf sie WIRKT.
   const toolsHtml = () => {
     const anyOpen = !atRoot && view === 'diagramm' && BOXES.anyOpen(boxes().map((b) => b.key));
-    // Die Beschriftung sagt, was der Druck TUN wird, nicht wie der Zustand heisst.
     const fold = atRoot || view !== 'diagramm' ? '' : `
       <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-lscape-all="${anyOpen ? 'shut' : 'open'}">
         ${C.icon(anyOpen ? 'Minus' : 'Plus', 'btn__icon')}
         <span class="btn__text">Alle ${anyOpen ? 'zuklappen' : 'aufklappen'}</span></button>`;
-    // Gruppieren ordnet viele Prozesse; in der Übersicht steht keiner zur Wahl.
     const group = atRoot || view === 'uebersicht' ? '' : C.menu({
       menuId: 'pd-group', label: 'Gruppieren', triggerLabel: `Gruppieren: ${axis.label}`,
       items: AXES.map((x) => ({ action: `axis:${x.value}`, label: x.label })),
@@ -524,54 +465,33 @@ function list(ctx) {
     const actions = C.menu({
       menuId: 'pd-actions', label: 'Aktionen', triggerLabel: 'Aktionen',
       items: [
-        { action: 'csv', label: 'CSV herunterladen' },
-        { action: 'excel', label: 'Excel herunterladen' },
-        { action: 'pdf', label: 'Drucken' },
+        { action: 'csv', label: 'Prozessliste als CSV herunterladen' },
+        { action: 'excel', label: 'Prozessliste als Excel herunterladen' },
+        { action: 'pdf', label: 'Prozessliste drucken' },
       ],
     });
     return `<span class="mc-tools">${fold}${group}${actions}</span>`;
   };
 
-  // Was mitgenommen wird, ist was auf dem Schirm steht — nicht der ganze
-  // Bestand. Wer gefiltert hat, hat damit gesagt, was ihn angeht.
+  // Export the complete filtered scope, not merely the current page.
   const exportTable = () => ({
     name: selGroups.length === 1
       ? (groups.find((g) => g.key === selGroups[0]) || {}).label || TITLE : TITLE,
-    head: ['Nr.', 'Prozess', 'Prozessgruppe', 'Status', 'Beschreibung'],
-    rows: sorted.map((p) => [p.processId, p.name, p.groupLabel, statusOf(core, p.status).label, p.description || '']),
+    head: [...(mixedBranches ? ['Zweig'] : []), 'Nr.', 'Prozess', 'Prozessgruppe', 'Status', 'Beschreibung'],
+    rows: sorted.map((p) => [
+      ...(mixedBranches ? [p.branchLabel] : []),
+      p.processId, p.name, p.groupLabel, statusOf(core, p.status).label, p.description || '',
+    ]),
   });
 
-  // Was der gewaehlte Umfang IST — nicht was darin liegt. Auf der Wurzel der
-  // Bereich, sonst die Gruppe.
-  // Dieselbe Form wie im Katalog: Definition, Verantwortlich, Metadaten. Vorher
-  // standen hier drei Kennzahlkacheln — «18 Prozesse, 5 Prozessgruppen, 18
-  // freigegeben». Die Zahlen stehen aber schon im Baum an jeder Zeile und in der
-  // Zaehlung der Leiste; als Kacheln sagten sie es ein drittes Mal und liessen
-  // die Fragen unbeantwortet, die eine Übersicht beantworten soll: was IST
-  // dieser Umfang, wer verantwortet ihn, woher kommt er.
   const section = (title, body) =>
     `<section class="detail-section"><h2 class="detail-section__title">${esc(title)}</h2>${body}</section>`;
   const kv = (rows) => `<dl class="kv kv--ruled">${rows.filter(Boolean)
     .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
 
-  // «Wurzel» heisst: nichts eingeschraenkt. Sobald eine Gruppe, ein Status oder
-  // eine Suche im Spiel ist, sieht der Leser einen Umfang an und will ihn
-  // ansehen koennen — dann treten die drei Sichten an.
   const atRoot = !scope && !selGroups.length && !selStatus.length && !rawQ;
 
-  // Die Wurzel ist kein Umfang, sondern der Weg hinein — genau wie im Katalog.
-  // Darum keine Ansichtswahl und keine Metadatenliste, sondern drei Fragen, mit
-  // denen ein Leser tatsaechlich ankommt: wie gross ist das hier, was hat sich
-  // zuletzt bewegt, und wie teilt es sich.
   const homeHtml = () => {
-    // Eine Karte je AST, nicht je Prozessgruppe. Die Gruppen gehoeren zu
-    // «Immobilienmanagement (K0)», und das ist nur EINER von mehreren
-    // Prozessbereichen — in der Produktion kommen weitere dazu, und dann zaehlte
-    // die Einstiegsseite die Gruppen eines beliebigen davon auf. Die Aeste sind
-    // die stabile Teilung: was fachlich dokumentiert ist, und was das Portal
-    // selbst tut.
-    // Eine Karte je Ast, gebildet aus den Datensaetzen selbst: ihr Ast und
-    // dessen Bezeichnung stehen auf jeder Zeile.
     const byBranch = new Map();
     for (const r of everything) {
       if (!byBranch.has(r.branch)) byBranch.set(r.branch, []);
@@ -584,13 +504,14 @@ function list(ctx) {
           + `${new Set(rows.map((r) => r.audience)).size} Zielgruppen`
         : `${new Set(rows.map((r) => r.group)).size} Prozessgruppen · `
           + `${new Set(rows.map((r) => r.area)).size} Prozessbereich`;
-      return `<a class="card card--default card--clickable" href="${esc(isPortal
-        ? `${BASE}?branch=portal` : hashA({ q: '', sort: '', group: [], status: [], page: 1 }))}">
-        <div class="card__body">
-          <p class="stat__num">${rows.length}</p>
-          <h2 class="stat__label">${esc((rows[0] || {}).branchLabel || bid)}</h2>
-          <p class="card__text">${esc(detail)}</p>
-        </div></a>`;
+      return C.card({
+        title: (rows[0] || {}).branchLabel || bid,
+        titleTag: 'h2',
+        href: scopeHref('branch', bid),
+        desc: detail,
+        footerInfo: `<strong>${rows.length}</strong> ${isPortal ? 'Abläufe' : 'Prozesse'}`,
+        footerAction: C.cardAction(),
+      });
     }).join('');
 
     const recent = all.filter((x) => x.updated)
@@ -598,9 +519,8 @@ function list(ctx) {
       .sort((a, b) => String(b.updated).localeCompare(String(a.updated)))
       .slice(0, 8);
 
-    // Wie sich die Karte teilt — und woran jede Gruppe haengt.
     const byGroup = groups.map((g) => {
-      const mine = all.filter((x) => x.group === g.key);
+      const mine = everything.filter((x) => x.group === g.key);
       return {
         name: g.label, n: mine.length,
         systems: [...new Set(mine.flatMap((x) => x.systems || []))].length,
@@ -616,7 +536,7 @@ function list(ctx) {
     emptyText: 'Für keinen Prozess ist ein Änderungsdatum erfasst.',
     columns: [
       { key: 'name', label: 'Prozess',
-        render: (r) => `<a href="${esc(processHref(r.processId))}">${esc(r.name)}</a>` },
+        render: (r) => `<a href="${esc(recordHref(r))}">${esc(r.name)}</a>` },
       { key: 'group', label: 'Prozessgruppe', width: '13rem', render: (r) => esc(r.groupLabel) },
       { key: 'status', label: 'Status', width: '9rem',
         render: (r) => esc(statusOf(core, r.status).label) },
@@ -627,7 +547,7 @@ function list(ctx) {
 
       <section class="detail-section">
         <h2 class="detail-section__title">Prozessgruppen</h2>
-        ${C.table({ zebra: true, compact: true, caption: 'Prozessgruppen des Immobilienmanagements', rows: byGroup,
+        ${C.table({ zebra: true, compact: true, caption: 'Prozessgruppen der Prozessdokumentation', rows: byGroup,
     columns: [
       { key: 'name', label: 'Prozessgruppe',
         render: (r) => `<a href="${esc(r.href)}">${esc(r.name)}</a>` },
@@ -637,45 +557,52 @@ function list(ctx) {
       </section>`;
   };
 
-  // Ein gewaehlter Umfang bekommt seine Metadaten — was er IST, wer ihn
-  // verantwortet, woher er kommt.
   const scopeOverviewHtml = () => {
     const one = selGroups.length === 1 ? groups.find((g) => g.key === selGroups[0]) : null;
-    const area = areas[0] || {};
-    const mine = one ? all.filter((x) => x.group === one.key) : all;
+    // Every aggregate view describes the same filtered records as its diagram,
+    // table, result count and export.
+    const mine = sorted;
+    if (!mine.length) return emptyResultsHtml();
+    const portalScope = mine.every((process) => process.branch === 'portal');
+    const area = areas.find((candidate) => mine.some((process) => process.area === candidate.key)) || {};
     const contact = core.contacts().find((c) => c.contactId === CONTACT_ID);
-    // Stand ist das juengste Datum im Umfang, nicht ein erfundenes Gesamtdatum.
+    // A scope's date is the newest recorded member date.
     const newest = mine.map((x) => x.updated).filter(Boolean).sort().pop();
-    // Die Quelle ist fuer alle Prozesse dieselbe Ablage; ein Beispiel genuegt,
-    // um sie zu benennen und zu verlinken.
     const src = (mine.find((x) => x.source && x.source.url) || {}).source;
-    // Systeme und Normen sind Eigenschaften der Prozesse; im Umfang
-    // zusammengefasst sagen sie, woran dieser Teil der Karte haengt.
+    const sourceHref = safeLinkUrl(src?.url || '');
+    const contactHref = safeMailto(contact?.email || '');
     const uniq = (key) => [...new Set(mine.flatMap((x) => x[key] || []))].sort((a, b) => a.localeCompare(b, 'de'));
     const systems = uniq('systems');
     const standards = uniq('standards');
     const byStatus = [...new Set(mine.map((x) => statusOf(core, x.status).label))];
 
-    return section('Definition', `<p class="m-0">${one
-      ? `Prozessgruppe im Bereich «${esc(area.label || '')}». Sie fasst ${mine.length} Prozesse `
-        + 'zusammen, die derselben Phase des Immobilienlebenszyklus angehoeren.'
-      : 'Die Prozesse des Immobilienmanagements des BBL, gegliedert in Prozessgruppen. '
-        + 'Jeder Prozess ist mit BPMN-Diagramm, Prozessschritten und Verantwortlichkeiten erfasst.'}</p>`)
+    return section('Definition', `<p class="m-0">${portalScope
+      ? (one
+        ? `Gruppe von ${mine.length} Portal-Abläufen für dasselbe Anliegen.`
+        : 'Die im Portal angebotenen Abläufe, gegliedert nach Anliegen.')
+      : one
+        ? `Prozessgruppe im Bereich «${esc(area.label || '')}». Sie fasst ${mine.length} Prozesse `
+          + 'zusammen, die derselben Phase des Immobilienlebenszyklus angehoeren.'
+        : 'Die Prozesse des Immobilienmanagements des BBL, gegliedert in Prozessgruppen. '
+          + 'Jeder Prozess ist mit BPMN-Diagramm, Prozessschritten und Verantwortlichkeiten erfasst.'}</p>`)
       + section('Verantwortlich', kv([
-        ['Prozessbereich', esc(area.label || '—')],
+        portalScope ? null : ['Prozessbereich', esc(area.label || '—')],
         contact ? ['Fachstelle', esc(contact.name || contact.title || CONTACT_ID)] : null,
         contact && contact.email
-          ? ['Kontakt', `<a href="${esc(safeMailto(contact.email))}">${esc(contact.email)}</a>`] : null,
+          ? ['Kontakt', contactHref ? `<a href="${esc(contactHref)}">${esc(contact.email)}</a>` : esc(contact.email)] : null,
       ]))
       + section('Metadaten', kv([
-        one ? ['Prozessgruppe', esc(one.label)] : ['Prozessgruppen', String(groups.length)],
-        ['Prozesse', String(mine.length)],
-        ['Status', byStatus.length === 1 ? esc(byStatus[0]) : esc(byStatus.join(', '))],
+        one ? [portalScope ? 'Gruppe' : 'Prozessgruppe', esc(one.label)]
+          : [portalScope ? 'Gruppen' : 'Prozessgruppen', String(new Set(mine.map((x) => x.group)).size)],
+        [portalScope ? 'Abläufe' : 'Prozesse', String(mine.length)],
+        byStatus.length ? ['Status', byStatus.length === 1 ? esc(byStatus[0]) : esc(byStatus.join(', '))] : null,
         systems.length ? ['Systeme', esc(systems.join(' · '))] : null,
         standards.length ? ['Normen', esc(standards.join(' · '))] : null,
         newest ? ['Stand', esc(formatDate(newest))] : null,
-        src && src.url
-          ? ['Quelle', `<a href="${esc(src.url)}" rel="noopener">${esc(new URL(src.url).hostname)}</a>`]
+        sourceHref
+          ? ['Quelle', `<a href="${esc(sourceHref)}"${newWindowAttrs(sourceHref, {
+            external: classifyUrl(sourceHref) === 'external',
+          })}>${esc(linkHost(sourceHref))}</a>`]
           : null,
       ]));
   };
@@ -684,44 +611,28 @@ function list(ctx) {
     if (!core.available('processes')) {
       return C.empty('Prozesse konnten nicht geladen werden (Ladefehler).', { available: false });
     }
-    // Die Wurzel: kein Umfang gewaehlt, keine Anfrage — der Weg hinein.
     if (atRoot) return homeHtml();
     if (view === 'uebersicht') return scopeOverviewHtml();
     if (view === 'diagramm') {
-      // EINE Kachel je Reihe: Prozessnamen sind Saetze, keine Begriffe.
-      // Zweispaltig blieb von «Objektuebergabe an LB, Mieter» ein
-      // «Objektuebergabe an L» uebrig.
+      if (!sorted.length) return emptyResultsHtml();
+      // Long process names require one tile per row.
       return C.landscape({ boxes: boxes(), isOpen: BOXES.isOpen, cols: 1,
         emptyText: 'In diesem Umfang ist kein Prozess erfasst.' });
     }
-    // Tabelle: nach Prozessgruppe geteilt, wie im Katalog — die Achse, an der
-    // auch der Baum und das Diagramm sie teilen.
-    return sorted.length
-      ? listView(sorted)
-      : C.empty('Kein Prozess gefunden.', { hint: 'Passen Sie Ihre Suche oder die Filter an.',
-        action: { label: 'Suche und Filter zurücksetzen', href: BASE } });
+    return sorted.length ? listView(sorted) : emptyResultsHtml();
   };
 
-  // Der Baum fuehrt Bereiche (L1) und Prozessgruppen (L2); die gefilterten
-  // Prozesse (L3) stehen in der Liste daneben. Beide Stufen ohne Symbol — die
-  // Einrueckung sagt bereits, was wozu gehoert, und ein Symbol, das auf jeder
-  // Zeile dasselbe zeigt, unterscheidet nichts.
-  // Eine Adresse je Stufe. Der Umfang steht in EINEM Parameter — der engste
-  // gewinnt —, damit ein Verweis genau einen Umfang meint und nicht eine
-  // Kombination, die niemand gewaehlt hat.
+  // Each hierarchy link names exactly one scope dimension.
   const scopeHref = (kind, value) => {
     const qs = new URLSearchParams();
     qs.set(kind, value);
-    // Die Achse reist nur mit, wenn sie von der Voreinstellung der ZIELstufe
-    // abweicht — sonst schleppte jeder Verweis eine Wahl mit, die dort ohnehin
-    // gilt.
+    // Carry only an explicitly non-default axis into the target scope.
     const tgt = kind === 'branch' && value === 'portal' ? 'gruppe' : (DEFAULT_AXIS[kind] || 'bereich');
     if (axis.value !== tgt && query.get('axis')) qs.set('axis', axis.value);
     if (view && view !== 'diagramm') qs.set('view', view);
     return `${BASE}?${qs}`;
   };
-  // Der Weg hinauf, Stufe fuer Stufe. SCOPES laeuft von eng nach weit, also ist
-  // die naechste Stufe der naechste Eintrag, dessen Wert es im Umfang gibt.
+  // SCOPES is ordered narrow-to-wide, which also defines one-level Back links.
   const upFrom = () => {
     if (!scope) return { backHref: '#/applications', backLabel: 'Anwendungen' };
     const here = SCOPES.findIndex((x) => x.key === scope.key);
@@ -734,21 +645,14 @@ function list(ctx) {
     return { backHref: BASE, backLabel: TITLE };
   };
   const treeConfig = () => buildTree({
-    all: everything, areas, groups, hash: hashA, selGroups, activeId: null,
+    all: everything, areas, hash: hashA, selGroups, activeId: null,
     activeDef: query.get('def') || null,
     scopeOf: (kind) => (scope && scope.key === kind ? scope.value : ''),
-    // Auf dem WEG liegt eine Stufe, wenn der gewaehlte Umfang TIEFER liegt und
-    // ganz in ihr steckt. Ohne das blieben die Aeste zu, und die gewaehlte
-    // Zeile waere gar nicht gezeichnet.
     pathOf: (kind, value) => {
       if (!scope || scope.key === kind) return false;
       const here = SCOPES.findIndex((x) => x.key === kind);
       const there = SCOPES.findIndex((x) => x.key === scope.key);
-      // NUR nach oben. SCOPES laeuft von eng nach weit, also liegt eine Stufe
-      // ueber der Auswahl, wenn ihr Index groesser ist. Ohne diese Schranke galt
-      // auch jede Stufe DARUNTER als «auf dem Weg» — ein gewaehlter
-      // Prozessbereich riss damit alle fuenf Gruppen und ihre achtzehn Prozesse
-      // auf, obwohl niemand danach gefragt hatte.
+      // Only ancestors are path nodes; descendants must remain folded.
       if (here <= there) return false;
       const dim = SCOPES[here];
       return scope.rows.some((r) => String(dim.of(r)) === String(value));
@@ -758,14 +662,6 @@ function list(ctx) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${/* Zurueck, Teilen, Drucken — dieselbe Zeile wie auf jeder Detailseite des
-          Portals. «Zurueck» heisst eine Stufe hinauf: von einem Umfang zur
-          Wurzel, von der Wurzel aus der Anwendung heraus. */''}
-    ${/* Eine Stufe hinauf, nicht gleich zur Wurzel — wie im Katalog. Von einer
-          Gruppe fuehrt «Zurueck» in ihren Prozessbereich, von dort in die
-          Organisation, dann in den Ast, dann zur Wurzel. Vorher sprang jede
-          Stufe direkt auf die Wurzel und liess die Zwischenstufen aus, die man
-          gerade durchschritten hatte. */''}
     ${C.detailBar(upFrom())}
     ${C.pageHeader({
       title: TITLE,
@@ -773,24 +669,16 @@ function list(ctx) {
     })}
     ${C.catalogueBar({
       formId: 'pd-search', inputId: 'pd-q', searchLabel: 'Prozess suchen', placeholder: 'Prozess suchen…', q: rawQ,
-      // Zaehler, Sortierung und Filter sind vorerst draussen: sie drueckten die
-      // Zeile auseinander, sobald die drei Bedienelemente und der
-      // Ansichtswechsel danebenstanden. Der Umfang steht im Baum an jeder Zeile,
-      // und die Ordnung uebernimmt «Gruppieren». Wenn sie zurueckkommen, dann
-      // mit einer Zeile, die fuer sie gebaut ist.
-      // Der Zaehler bleibt im Dokument, nur unsichtbar: die Vorlesesoftware und
-      // die Live-Meldung brauchen ihn weiterhin. Weg ist er von der ZEILE.
+      // Keep the count in the accessibility tree while tree rows show it visually.
       countId: 'pd-count', showCount: false,
       count: `<strong>${sorted.length}</strong> von ${universe.length} ${esc(unit.dat)}`,
       view,
       extra: `<span id="pd-tools">${toolsHtml()}</span>`,
-      // Auf der Wurzel gibt es nichts zu wechseln: sie ist der Weg hinein, kein
-      // Umfang — dieselbe Regel wie im Katalog auf Stufe 0.
       views: atRoot ? null
         : [['uebersicht', 'Übersicht', 'InfoCircle'], ['diagramm', 'Diagramm', 'Apps'],
           ['tabelle', 'Tabelle', 'List']],
     })}
-    ${C.activeFilters({ filters: active, resetHref: BASE })}
+    ${C.activeFilters({ filters: active, resetHref: hashA({ q: '', status: [], page: 1 }) })}
     <div class="pf-layout">
       <aside class="pf-sidebar" id="pd-tree" aria-label="Prozesshierarchie"></aside>
       <div class="pf-main">
@@ -800,19 +688,12 @@ function list(ctx) {
   </div>`;
 
   C.announceCatalogue({ count: sorted.length, total: universe.length, unit, view });
-  // hashA, nicht hash: der Ansichtswechsel und die Suche laufen hierueber, und
-  // beide muessen den Umfang behalten.
   C.wireCatalogue(mount, { formId: 'pd-search', inputId: 'pd-q', hash: hashA });
   ctx.onUnmount(C.wireTableRows(mount));
 
-  // Waehlen und Aufklappen sind jetzt zwei Bedienelemente statt eines
-  // ueberladenen: das Chevron klappt, die Beschriftung navigiert. Vorher tat
-  // derselbe Knopf beides, je nachdem, wo man gerade stand — «navigiert, ausser
-  // wenn schon dort, dann klappt es» ist eine Regel, die man nicht sieht.
   ctx.onUnmount(C.sidebarTree(mount.querySelector('#pd-tree'), treeConfig()));
 
-  // Die Flaeche allein neu zeichnen, wenn sich nur an ihr etwas aendert. Ein
-  // Faltzustand ist keine Adresse — er soll den Verlauf nicht fuellen.
+  // Folding redraws only the pane and stays out of browser history.
   const paneEl = mount.querySelector('#pd-panel');
   const tools = mount.querySelector('#pd-tools');
   const redraw = () => {
@@ -821,50 +702,26 @@ function list(ctx) {
   };
 
   function onMenuAction(action) {
-    // Die Achse NAVIGIERT: sie legt beide Sichten neu aus und ist eine seltene,
-    // bewusste Wahl — anders als ein Faltzustand.
     if (action.startsWith('axis:')) {
       const v = action.slice(5);
-      location.hash = hash({ axis: v === AXES[0].value ? '' : v }).slice(1);
+      if (!AXES.some((candidate) => candidate.value === v)) return;
+      location.hash = hashA({ axis: v === defaultAxis ? '' : v }).slice(1);
       return;
     }
     runTableExport(action, exportTable(), `prozessdokumentation_${slug(exportTable().name, 'prozesse')}`);
   }
 
-  if (tools) {
-    C.wireMenu(tools, onMenuAction);
-    tools.addEventListener('click', (e) => {
-      const all = e.target.closest('[data-lscape-all]');
-      if (!all) return;
-      const open = all.dataset.lscapeAll === 'open';
-      BOXES.setAll(boxes().map((b) => b.key), open);
-      redraw();
-    });
-  }
-  // Ein einzelner Kasten: derselbe Zustand, nur eine Zeile davon.
-  if (paneEl) {
-    paneEl.addEventListener('click', (e) => {
-      const t = e.target.closest('.lscape__toggle');
-      if (!t) return;
-      BOXES.toggle(t.dataset.box);
-      redraw();
-    });
-  }
+  if (tools) C.wireMenu(tools, onMenuAction);
+  ctx.onUnmount(wireLandscape({
+    panel: paneEl, tools, state: BOXES,
+    keys: () => boxes().map((box) => box.key),
+    redraw,
+  }));
 }
 
-// Process detail: overview, diagram, and steps.
-async function detail(ctx, rawId, { portal = false } = {}) {
+async function detail(ctx, rawId) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   // URLSearchParams already decodes once; decoding again would corrupt literal percent escapes.
-  // Ein Portal-Ablauf wird in die Form eines Prozesses gebracht, damit Ansicht,
-  // Betrachter und Schritt-Tabelle dieselben bleiben. Was er NICHT hat —
-  // Prozessbereich, Version, verantwortliche Personen — bekommt er auch nicht
-  // angedichtet; seine Übersicht ist eine eigene (siehe portalOverviewHTML).
-  // Kein Zusammenfuegen mehr: der Datensatz traegt alles, was die Ansicht
-  // braucht — Ast, Gruppe mit Bezeichnung, Schritte, Zielgruppe, Diagrammpfad.
-  // Vorher wurde ein Portal-Ablauf aus drei Dateien gebaut (Definition, Dienst,
-  // Domaenenliste), und jede Zeile der Ansicht haette an einer davon scheitern
-  // koennen.
   const p = core.processDoc(rawId);
   if (!p) {
     return C.renderNotFound(ctx, {
@@ -873,114 +730,104 @@ async function detail(ctx, rawId, { portal = false } = {}) {
       crumbs: trail(APPLICATIONS, { label: TITLE, href: BASE }),
     });
   }
+  const isPortal = p.branch === 'portal';
   setTitle(p.name);
   setCrumbs(trail(APPLICATIONS, { label: TITLE, href: BASE }, { label: p.name }));
 
   const st = statusOf(core, p.status);
   const contact = core.contacts().find((c) => c.contactId === CONTACT_ID);
 
-  // Fetch BPMN XML before rendering because step count and diagram share it.
-  // On failure, each tab degrades independently to a message.
-  let xml = '', xmlError = '';
-  try {
-    const bpmnUrl = safeAssetUrl(p.bpmn, 'assets/bpmn/');
-    if (!bpmnUrl || !bpmnUrl.toLowerCase().endsWith('.bpmn')) throw new Error('Ungültiger BPMN-Dateipfad');
-    const res = await fetch(encodeURI(bpmnUrl), { signal: ctx.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    xml = await res.text();
-  } catch (e) { xmlError = e.message; }
-  if (ctx.stale()) return;
-  const steps = xml ? parseBpmnSteps(xml) : [];
+  // Overview renders without waiting for BPMN. Diagram, steps and exports share
+  // the first deferred load; successful parsing also remains cached per page.
+  let xml = '', xmlError = '', steps = [];
+  let documentLoaded = false, documentPromise = null;
 
   const tabByLegacyValue = { 'uebersicht': 'overview', 'diagramm': 'diagram', 'schritte': 'steps' };
   const legacyValueByTab = Object.fromEntries(Object.entries(tabByLegacyValue).map(([legacy, tab]) => [tab, legacy]));
   const tabs = [
     { id: 'overview', label: 'Übersicht' },
     { id: 'diagram', label: 'Prozessdiagramm' },
-    { id: 'steps', label: `Prozessschritte (${steps.length})` },
+    { id: 'steps', label: 'Prozessschritte' },
   ];
   let active = tabByLegacyValue[query.get('tab')] || tabs[0].id;
   if (!tabs.some((x) => x.id === active)) active = tabs[0].id;
-  const syncHash = (tab) => {
-    // Ein Portal-Ablauf haengt an `def`, ein fachlicher Prozess an `id`. Beide
-    // hier zu schreiben waere falsch: mit `id` sucht der Router einen Prozess,
-    // und der Ablauf «raumbedarf» ist keiner — die Sichtwahl landete auf
-    // «Prozess nicht gefunden».
-    const qs = new URLSearchParams(portal ? { def: p.processId } : { id: p.processId });
+  const detailHref = (tab) => {
+    const qs = new URLSearchParams(isPortal ? { def: p.processId } : { id: p.processId });
     if (tab !== tabs[0].id) qs.set('tab', legacyValueByTab[tab]);
-    history.replaceState(history.state, '', `${BASE}?${qs}`);
+    return `${BASE}?${qs}`;
   };
+  const stepsRecoveryLink = () => steps.length
+    ? ` <a class="link" data-show-steps href="${esc(detailHref('steps'))}">Prozessschritte anzeigen</a>`
+    : '';
 
-  // Responsible people are AdminDir entries; the generic contact remains a side card.
-  const personsSection = (persons) => `
-    <h2 class="detail-section__title">Verantwortliche Personen</h2>
-    <div class="box">${persons && persons.length ? `<dl class="kv kv--ruled">${persons.map((x) => `
-      <dt>${esc(x.role)}</dt>
-      <dd><a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(x.admindirId)}"
-           target="_blank" rel="noopener noreferrer external">AdminDir ${esc(x.admindirId)}</a></dd>`).join('')}
-    </dl>` : '<p class="muted m-0">Für diesen Prozess ist keine verantwortliche Person hinterlegt.</p>'}</div>`;
+  const detailSection = (title, body, className = '') => `<section class="detail-section${className ? ` ${className}` : ''}">
+    <h2 class="detail-section__title">${esc(title)}</h2>${body}</section>`;
+  const detailFacts = (rows) => `<dl class="kv kv--ruled">${rows.filter(Boolean)
+    .map(([label, value]) => `<dt>${esc(label)}</dt><dd>${value}</dd>`).join('')}</dl>`;
+  const audienceLabel = p.audience === 'external' ? 'Kundinnen und Kunden'
+    : p.audience === 'internal' ? 'BBL-intern' : p.audience || '';
+  const portalRoles = [...new Set((p.steps || []).map((step) => step.role).filter(Boolean))];
+  const portalKinds = new Map();
+  (p.steps || []).forEach((step) => portalKinds.set(step.kind, (portalKinds.get(step.kind) || 0) + 1));
+  const kindWord = { user: 'durch Menschen', auto: 'automatisch', system: 'durch ein System' };
+  const contactHref = safeMailto(contact?.email || '');
 
-  // Was ein Portal-Ablauf IST: welches Anliegen ihn ausloest, wer ihn sieht,
-  // wie viele Schritte er hat und welche Rollen daran beteiligt sind. Keine
-  // Prozessbereiche und keine Versionen — die gibt es hier nicht.
-  const portalOverviewHTML = () => {
-    const roles = [...new Set((p.steps || []).map((x) => x.role).filter(Boolean))];
-    const kinds = new Map();
-    (p.steps || []).forEach((x) => kinds.set(x.kind, (kinds.get(x.kind) || 0) + 1));
-    const KIND_WORD = { user: 'durch Menschen', auto: 'automatisch', system: 'durch ein System' };
-    return `<section class="detail-section">
-        <h2 class="detail-section__title">Definition</h2>
-        <p class="m-0">${p.description ? esc(p.description)
-    : 'Ein Ablauf des Portals. Die Schritte unten zeigen, welche Stationen ein Antrag durchläuft.'}</p>
-      </section>
-      <section class="detail-section">
-        <h2 class="detail-section__title">Beteiligte</h2>
-        <dl class="kv kv--ruled">
-          <dt>Rollen</dt><dd>${roles.length ? roles.map((r) => esc(r)).join('<br>') : '—'}</dd>
-          <dt>Zielgruppe</dt><dd>${esc(p.audience === 'external' ? 'Kundinnen und Kunden'
-    : p.audience === 'internal' ? 'BBL-intern' : p.audience || '—')}</dd>
-        </dl>
-      </section>
-      <section class="detail-section">
-        <h2 class="detail-section__title">Metadaten</h2>
-        <dl class="kv kv--ruled">
-          <dt>Gruppe</dt><dd>${esc(p.groupLabel)}</dd>
-          <dt>Schritte</dt><dd>${(p.steps || []).length}</dd>
-          <dt>Art der Schritte</dt><dd>${[...kinds].map(([k, n]) => `${n} ${KIND_WORD[k] || k}`).join(' · ') || '—'}</dd>
-          ${p.serviceId ? `<dt>Dienstleistung</dt><dd><a href="${esc(links.service(p.serviceId))}">${esc(p.serviceId)}</a></dd>` : ''}
-          <dt>ID</dt><dd><code>${esc(p.processId)}</code></dd>
-        </dl>
-      </section>`;
+  const overviewHTML = () => {
+    const responsibility = [
+      ...(p.responsiblePersons || []).map((person) => [person.role,
+        `<a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(person.admindirId)}"
+          target="_blank" rel="noopener noreferrer external">AdminDir ${esc(person.admindirId)}</a>`]),
+      portalRoles.length ? ['Beteiligte Rollen', portalRoles.map(esc).join('<br>')] : null,
+      contact ? ['Fachstelle', `<strong>${esc(contact.name || CONTACT_ID)}</strong>${contact.unit ? `<br>${esc(contact.unit)}` : ''}`] : null,
+      contactHref ? ['Kontakt', `<a href="${esc(contactHref)}">${esc(contact.email)}</a>${contact.phone ? `<br>${esc(contact.phone)}` : ''}`] : null,
+    ].filter(Boolean);
+    const related = (p.related || []).map((id) => {
+      const process = core.processDoc(id);
+      return `<li><a href="${esc(links.processDocumentation(id, process?.branch))}">${esc(process?.name || id)}</a></li>`;
+    });
+    const contextRows = [
+      ['Prozessmodell', p.bpmn ? 'BPMN-Diagramm' : '—'],
+      p.steps?.length ? ['Portal-Stationen', String(p.steps.length)] : null,
+      portalKinds.size ? ['Art der Stationen', [...portalKinds]
+        .map(([kind, count]) => esc(`${count} ${kindWord[kind] || kind}`)).join(' · ')] : null,
+      p.systems?.length ? ['Unterstützende Systeme', `<span class="pill-row">${p.systems
+        .map((system) => badge(system, 'gray', 'sm')).join('')}</span>`] : null,
+      p.serviceId ? ['Dienstleistung', `<a href="${esc(links.service(p.serviceId))}">${esc(p.serviceId)}</a>`] : null,
+    ];
+    const wide = [
+      related.length ? detailSection('Verwandte Prozesse',
+        `<ul class="list--default m-0">${related.join('')}</ul>`) : '',
+      p.tags?.length ? detailSection('Schlagwörter',
+        `<p class="pill-row m-0">${p.tags.map((tag) => badge(tag, 'gray', 'sm')).join('')}</p>`) : '',
+      p.standards?.length ? detailSection('Grundlagen', `<ul class="list--default m-0">${p.standards
+        .map((standard) => `<li>${esc(standard)}</li>`).join('')}</ul>`) : '',
+      C.sourceBox(p.source,
+        (core.ref().sourceRoles || []).find((role) => role.key === (p.source || {}).role),
+        { title: 'Führende Quelle', heading: 'h2' }),
+    ].filter(Boolean).join('');
+
+    return `<div class="mc-detail">
+      ${detailSection('Beschreibung', `<p class="m-0">${esc(p.description
+    || 'Für diesen Prozess ist noch keine Beschreibung hinterlegt.')}</p>`, 'mc-detail__description')}
+      <div class="mc-detail__facts">
+        ${detailSection('Einordnung', detailFacts([
+    ['Zweig', esc(p.branchLabel || (isPortal ? 'Kundenportal' : 'Fachliche Prozesse'))],
+    p.areaLabel ? ['Prozessbereich', `${esc(p.areaLabel)}${p.areaCode ? ` <span class="muted">(${esc(p.areaCode)})</span>` : ''}`] : null,
+    ['Prozessgruppe', `<a href="${esc(C.catalogueHash(BASE, { group: [p.group] }))}">${esc(p.groupLabel || p.group)}</a>`],
+    ['Status', badge(st.label, st.variant)],
+    p.version ? ['Version', esc(p.version)] : null,
+    p.updated ? ['Stand', esc(formatDate(p.updated))] : null,
+    audienceLabel ? ['Zielgruppe', esc(audienceLabel)] : null,
+    ['ID', `<code>${esc(p.processId)}</code>`],
+  ]))}
+        ${detailSection('Verantwortung', responsibility.length
+    ? detailFacts(responsibility)
+        : '<p class="muted m-0">Für diesen Prozess ist keine Verantwortung hinterlegt.</p>')}
+        ${detailSection('Ablauf und Systeme', detailFacts(contextRows))}
+      </div>
+      ${wide ? `<div class="mc-detail__wide vertical-spacing">${wide}</div>` : ''}
+    </div>`;
   };
-
-  const overviewHTML = () => (portal ? portalOverviewHTML() : `<div class="detail-layout"><div>${personsSection(p.responsiblePersons)}
-    <section class="detail-section">
-      <h2 class="detail-section__title">Metadaten</h2>
-      <dl class="kv kv--ruled">
-        <dt>Prozessbereich</dt><dd>${esc(p.areaLabel)} <span class="muted">(${esc(p.areaCode)})</span></dd>
-        <dt>Prozessgruppe</dt><dd><a href="${C.catalogueHash(BASE, { group: [p.group] })}">${esc(p.groupLabel)}</a></dd>
-        <dt>Status</dt><dd>${badge(st.label, st.variant)}</dd>
-        <dt>Version</dt><dd>${esc(p.version || '—')}</dd>
-        ${p.systems && p.systems.length ? `<dt>Unterstützende Systeme</dt><dd>${p.systems.map((s) => badge(s, 'gray', 'sm')).join(' ')}</dd>` : ''}
-        ${p.standards && p.standards.length ? `<dt>Grundlagen</dt><dd>${p.standards.map((s) => esc(s)).join('<br>')}</dd>` : ''}
-        ${p.updated ? `<dt>Stand</dt><dd>${esc(formatDate(p.updated))}</dd>` : ''}
-        <dt>ID</dt><dd><code>${esc(p.processId)}</code></dd>
-      </dl>
-    </section></div>
-    <aside class="detail-layout__aside" aria-label="Verwandte Prozesse und Kontakt">
-      ${p.related && p.related.length ? `<div class="box">
-        <h2>Verwandte Prozesse</h2>
-        <ul class="list--default small m-0">${p.related.map((r) => {
-          const rp = core.processDoc(r);
-          return `<li><a href="${esc(links.processDocumentation(r))}">${esc(rp ? rp.name : r)}</a></li>`;
-        }).join('')}</ul>
-      </div>` : ''}
-      ${/* Above the contact: «where is the original» is the question a reader of a
-            directory entry has next, and it is about the record rather than about
-            whom to ask. */''}
-      ${C.sourceBox(p.source, (core.ref().sourceRoles || []).find((r) => r.key === (p.source || {}).role))}
-      ${C.contactBox(contact, { title: 'Kontakt', heading: 'h2' })}
-    </aside></div>`);
 
   const diagramHTML = () => `
     <section class="detail-section">
@@ -998,73 +845,71 @@ async function detail(ctx, rawId, { portal = false } = {}) {
       </div>
     </section>`;
 
-  // Der Prozess ist eine STUFE des Baums, keine eigene Seite. Also dieselbe
-  // Flaeche wie die Liste daneben: Leiste oben, Baum links, eine Flaeche rechts
-  // — und die drei Schalter, die im ganzen Portal die Darstellung wechseln,
-  // zeigen hier Übersicht, Diagramm und Schritte. Vorher war das ein eigenes
-  // Reiterband auf einer eigenen Seite, und der Baum verschwand beim Anklicken
-  // eines Prozesses: man verlor genau in dem Moment die Übersicht, in dem man
-  // sich fuer einen Punkt darin entschieden hatte.
-  const VIEW_OF_TAB = { overview: 'uebersicht', diagram: 'diagramm', steps: 'tabelle' };
-  const TAB_OF_VIEW = { uebersicht: 'overview', diagramm: 'diagram', tabelle: 'steps' };
-  const view = VIEW_OF_TAB[active];
-  const core2 = core;
-  const allProcs = core2.processes();
+  const allProcs = core.processes();
   const areas = [...new Map(allProcs.map((x) => [x.area, { key: x.area, code: x.areaCode, label: x.areaLabel }])).values()];
-  const groups = [...new Map(allProcs.map((x) => [x.group, { key: x.group, label: x.groupLabel }])).values()];
 
   mount.innerHTML = `
   <div class="container section">
     ${C.detailBar({ backHref: hashFor(p), backLabel: p.groupLabel })}
-    ${C.pageHeader({ title: p.name, lead: p.description || '' })}
+    ${C.pageHeader({ title: p.name,
+    lead: [p.branchLabel, p.groupLabel].filter(Boolean).join(' · ') })}
     ${C.catalogueBar({
     formId: 'pd-search', inputId: 'pd-q', searchLabel: 'Prozess suchen',
     placeholder: 'Prozess suchen…', q: '', showCount: false,
-    view,
-    // «Aktionen» auch hier: dieselbe Stelle, dieselbe Moeglichkeit. Im Katalog
-    // traegt jede Stufe ab 1 ihre Werkzeugzeile; die Prozessansicht hatte als
-    // einzige gar keine. «Alle zuklappen» und «Gruppieren» fehlen bewusst — sie
-    // betreffen die Landschaft, und ein einzelner Ablauf hat keine.
     extra: `<span id="pd-tools">${C.menu({
     menuId: 'pd-actions', label: 'Aktionen', triggerLabel: 'Aktionen',
     items: [
-      { action: 'csv', label: 'CSV herunterladen' },
-      { action: 'excel', label: 'Excel herunterladen' },
-      { action: 'pdf', label: 'Drucken' },
+      { action: 'csv', label: 'Prozessschritte als CSV herunterladen' },
+      { action: 'excel', label: 'Prozessschritte als Excel herunterladen' },
+      { action: 'pdf', label: 'Prozessschritte drucken' },
     ],
-  })}</span>`,
-    views: [['uebersicht', 'Übersicht', 'InfoCircle'], ['diagramm', 'Diagramm', 'Apps'],
-      ['tabelle', `Prozessschritte (${steps.length})`, 'List']],
+    })}</span>`,
   })}
-    ${/* Die Marke nennt, was gewaehlt IST — den Prozess. Vorher stand hier seine
-          Gruppe, und die Zeile behauptete damit einen Umfang, in dem man gar
-          nicht mehr stand. Abwaehlen fuehrt eine Stufe hinauf, in eben diese
-          Gruppe. */''}
-    <div id="pd-activefilters">${C.activeFilters({
-    filters: [{ label: p.name, href: hashFor(p) }], resetHref: BASE })}</div>
-    <div class="pf-layout">
+    <div class="pf-layout pf-layout--detail">
       <aside class="pf-sidebar" id="pd-tree" aria-label="Prozesshierarchie"></aside>
       <div class="pf-main">
-        <div id="pd-panel" class="mc-pane">${
-  active === 'overview' ? overviewHTML()
-    : active === 'diagram' ? diagramHTML()
-      : '<div id="pd-steps"></div>'}</div>
+        <div id="pd-panel" class="mc-pane">
+          <div class="tabs pd-detail-tabs">
+            ${C.tabBar({ items: tabs, active, idPrefix: 'pd-tab', ariaLabel: 'Prozessdetails' })}
+            ${C.tabPanels({ items: tabs, active, idPrefix: 'pd-tab', heading: true,
+    render: (tab) => tab === 'overview' ? overviewHTML()
+      : tab === 'diagram' ? diagramHTML()
+        : `<div id="pd-steps">${C.loading({ label: 'Prozessschritte werden geladen…' })}</div>` })}
+          </div>
+        </div>
       </div>
     </div>
   </div>`;
 
-  // Accessible process-step tab.
-  // Nur die GEWAEHLTE Sicht steht in der Flaeche — anders als beim Reiterband,
-  // das alle drei anlegte und zwei davon versteckte. Die Tabelle wird also nur
-  // aufgebaut, wenn sie auch da ist.
-  const stepsHost = mount.querySelector('#pd-steps');
-  if (!stepsHost) { /* andere Sicht */ } else if (!xml) {
-    stepsHost.innerHTML = C.notificationHtml(
-      `<strong>Die Prozessschritte können nicht gelesen werden.</strong> Das BPMN-Diagramm (${esc(p.bpmn)}) ist nicht erreichbar${xmlError ? ` — ${esc(xmlError)}` : ''}.`,
-      'error', 'WarningCircle');
-  } else {
+  let disposeSteps = () => {};
+  ctx.onUnmount(() => disposeSteps());
+
+  const updateStepLabel = () => {
+    const label = `Prozessschritte (${steps.length})`;
+    const tab = mount.querySelector('[data-tab="steps"]');
+    if (tab) tab.textContent = label;
+    const heading = mount.querySelector('#pd-tab-panel-steps > .sr-only');
+    if (heading) heading.textContent = label;
+  };
+
+  const mountSteps = () => {
+    const stepsHost = mount.querySelector('#pd-steps');
+    if (!stepsHost) return;
+    disposeSteps();
+    disposeSteps = () => {};
+    if (!documentLoaded) {
+      stepsHost.innerHTML = C.loading({ label: 'Prozessschritte werden geladen…' });
+      return;
+    }
+    if (!xml) {
+      stepsHost.innerHTML = C.notificationHtml(
+        `<strong>Die Prozessschritte können nicht gelesen werden.</strong> Das BPMN-Diagramm (${esc(p.bpmn)}) ist nicht erreichbar${xmlError ? ` — ${esc(xmlError)}` : ''}.`,
+        'error', 'WarningCircle');
+      return;
+    }
     const lanes = [...new Set(steps.map((s) => s.lane).filter(Boolean))];
-    ctx.onUnmount(C.mountDataTable(stepsHost, {
+    stepsHost.innerHTML = '';
+    disposeSteps = C.mountDataTable(stepsHost, {
       id: 'pd-st', unit: { nom: 'Schritte', dat: 'Schritten' },
       caption: `Prozessschritte von ${p.name}`, perPage: 15,
       rows: steps,
@@ -1083,8 +928,30 @@ async function detail(ctx, rawId, { portal = false } = {}) {
         { key: 'typeLabel', label: 'Typ', width: '11rem', render: (s) => esc(s.typeLabel) },
         { key: 'lane', label: 'Rolle', width: '14rem', render: (s) => s.lane ? esc(s.lane) : '<span class="muted">—</span>' },
       ],
-    }));
-  }
+    }) || (() => {});
+  };
+
+  const ensureDocument = async () => {
+    if (documentLoaded) return !!xml;
+    if (documentPromise) return documentPromise;
+    documentPromise = (async () => {
+      try {
+        const bpmnUrl = safeAssetUrl(p.bpmn, 'assets/bpmn/');
+        if (!bpmnUrl || !bpmnUrl.toLowerCase().endsWith('.bpmn')) {
+          throw new Error('Ungültiger BPMN-Dateipfad');
+        }
+        ({ xml, steps } = await loadBpmnDocument(bpmnUrl, ctx.signal));
+      } catch (error) {
+        if (error?.name === 'AbortError' && ctx.stale()) return false;
+        xmlError = error instanceof Error ? error.message : String(error);
+      }
+      if (ctx.stale()) return false;
+      documentLoaded = true;
+      updateStepLabel();
+      return !!xml;
+    })().finally(() => { documentPromise = null; });
+    return documentPromise;
+  };
 
   // Initialise the BPMN viewer only after its tab first becomes visible; bpmn-js
   // cannot measure or fit a hidden 0×0 container.
@@ -1101,7 +968,9 @@ async function detail(ctx, rawId, { portal = false } = {}) {
     if (viewerStarted) return;
     viewerStarted = true;
     const host = mount.querySelector('#pd-bpmn-canvas');
-    if (!xml) {
+    const hasDocument = await ensureDocument();
+    if (ctx.stale()) return;
+    if (!hasDocument) {
       host.innerHTML = C.notificationHtml(
         `<strong>Das Prozessdiagramm kann nicht angezeigt werden.</strong> ${esc(xmlError || 'Die BPMN-Datei fehlt.')}`,
         'error', 'WarningCircle');
@@ -1114,7 +983,8 @@ async function detail(ctx, rawId, { portal = false } = {}) {
       if (ctx.stale()) return;
       host.innerHTML = C.notificationHtml(
         `<strong>Der BPMN-Viewer konnte nicht geladen werden.</strong> ${esc(e.message)} — er kommt von unpkg.com und braucht Netzzugang. `
-        + '<button type="button" class="link" data-reload-page>Seite neu laden</button>',
+        + '<button type="button" class="link" data-reload-page>Seite neu laden</button>'
+        + stepsRecoveryLink(),
         'error', 'WarningCircle', { live: true });
       return;
     }
@@ -1125,17 +995,16 @@ async function detail(ctx, rawId, { portal = false } = {}) {
       await viewer.importXML(xml);
       if (ctx.stale()) return;
       fitDiagram();
-      // Enable zoom controls only after a viewer exists.
       mount.querySelectorAll('[data-bpmn]').forEach((b) => { b.disabled = false; });
     } catch (e) {
-      if (viewer) { try { viewer.destroy(); } catch { /* Partially initialised. */ } viewer = null; }
+      if (viewer) { try { viewer.destroy(); } catch {} viewer = null; }
       if (ctx.stale()) return;
       host.innerHTML = C.notificationHtml(
-        `<strong>Das Diagramm konnte nicht gezeichnet werden.</strong> ${esc(e.message)}`,
+        `<strong>Das Diagramm konnte nicht gezeichnet werden.</strong> ${esc(e.message)}${stepsRecoveryLink()}`,
         'error', 'WarningCircle');
     }
   };
-  ctx.onUnmount(() => { if (viewer) { try { viewer.destroy(); } catch { /* Already removed. */ } viewer = null; } });
+  ctx.onUnmount(() => { if (viewer) { try { viewer.destroy(); } catch {} viewer = null; } });
 
   // Delegate zoom controls from the tab subtree, which is replaced on redraw,
   // to avoid accumulating listeners on the router-reused mount.
@@ -1147,44 +1016,53 @@ async function detail(ctx, rawId, { portal = false } = {}) {
     else canvas.zoom(canvas.zoom() * (btn.dataset.bpmn === 'in' ? 1.2 : 1 / 1.2));
   });
 
-  // Der Ansichtswechsel faehrt ueber die Adresse: der Router zeichnet neu, und
-  // die gewaehlte Sicht steht damit im Verlauf und im Link. Die BPMN-Datei ist
-  // eine oertliche Ressource, das Neuzeichnen kostet also nichts, was den
-  // Gewinn — eine Sicht, die man verschicken kann — nicht aufwiegt.
-  const bar = mount.querySelector('.catbar');
-  if (bar) {
-    bar.addEventListener('click', (e) => {
-      const b = e.target.closest('.view-switch__btn');
-      if (!b) return;
-      const next = TAB_OF_VIEW[b.dataset.view];
-      if (!next || next === active) return;
-      syncHash(next);
-      ctx.rerender ? ctx.rerender() : window.dispatchEvent(new HashChangeEvent('hashchange'));
-    });
-  }
+  C.wireCatalogue(mount, {
+    formId: 'pd-search', inputId: 'pd-q',
+    hash: ({ q = '' } = {}) => C.catalogueHash(BASE, { q }),
+  });
+
+  C.wireTabs(mount.querySelector('.pd-detail-tabs'), {
+    onSelect: (tab) => {
+      active = tab;
+      if (tab === 'steps') {
+        if (documentLoaded) mountSteps();
+        else void ensureDocument().then(() => { if (active === 'steps') mountSteps(); });
+      } else if (tab === 'diagram') {
+        if (!viewerStarted) void startViewer();
+        else if (needsFit) requestAnimationFrame(fitDiagram);
+      }
+    },
+    syncHash: (tab) => history.replaceState(history.state, '', detailHref(tab)),
+  });
 
   ctx.onUnmount(C.sidebarTree(mount.querySelector('#pd-tree'), buildTree({
-    all: allProcs, areas, groups, selGroups: [], activeId: p.processId,
+    all: allProcs, areas, selGroups: [], activeId: p.processId,
     hash: () => hashFor(p),
-    activeDef: portal ? p.processId : null,
+    activeDef: isPortal ? p.processId : null,
     scopeOf: () => '',
     href: (kind, value) => `${BASE}?${new URLSearchParams({ [kind]: value })}`,
-    // Nur wenn es nicht ohnehin die Voreinstellung ist — sonst stuende in jeder
-    // Adresse ein Parameter, der nichts aendert.
-    leafTab: active === tabs[0].id ? '' : legacyValueByTab[active],
   })));
 
   const detailTools = mount.querySelector('#pd-tools');
   if (detailTools) {
     C.wireMenu(detailTools, (action) => {
-      // Was mitgenommen wird, ist was hier steht: die Schritte dieses Prozesses.
-      runTableExport(action, {
-        name: p.name,
-        head: ['Nr.', 'Schritt', 'Typ', 'Rolle'],
-        rows: steps.map((x) => [x.number, x.name, x.typeLabel, x.lane || '']),
-      }, `prozess_${slug(p.processId, 'prozess')}`);
+      void ensureDocument().then((hasDocument) => {
+        if (ctx.stale()) return;
+        if (!hasDocument) {
+          mount.querySelector('[data-tab="steps"]')?.click();
+          return;
+        }
+        runTableExport(action, {
+          name: p.name,
+          head: ['Nr.', 'Schritt', 'Typ', 'Rolle'],
+          rows: steps.map((x) => [x.number, x.name, x.typeLabel, x.lane || '']),
+        }, `prozess_${slug(p.processId, 'prozess')}`);
+      });
     });
   }
 
-  if (active === 'diagram') startViewer();
+  if (active === 'diagram') void startViewer();
+  else if (active === 'steps') {
+    void ensureDocument().then(() => { if (active === 'steps') mountSteps(); });
+  }
 }

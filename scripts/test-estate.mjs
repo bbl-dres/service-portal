@@ -27,7 +27,8 @@ const PROBE = `(async () => {
   let m = 0; while (!document.querySelector('.dash-map canvas') && m++ < 100) await s(100);
   R.mapCanvas = !!document.querySelector('.dash-map canvas');
   await s(2500);   // let the basemap tiles + glyph PBFs load so any parse error fires
-  R.mapErrs = (window.__mapErrs || []).filter(e => /Unimplemented|glyph|type: 4/i.test(e));
+  R.allMapErrs = window.__mapErrs || [];
+  R.mapErrs = R.allMapErrs;
 
   // Selecting country CH must reduce the worldwide building count.
   const cb = document.querySelector('input[type=checkbox][data-fdim="country"][value="CH"]');
@@ -59,6 +60,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     console.log('   tabs:', JSON.stringify(r.tabs), '| filter groups:', JSON.stringify(r.filters));
     console.log('   KPIs (all):', JSON.stringify(r.kpisAll), '| map canvas:', r.mapCanvas);
     console.log('   KPIs (country=CH):', JSON.stringify(r.kpisCH));
+    if (r.allMapErrs.length) console.log('   Map errors:', JSON.stringify(r.allMapErrs));
 
     check(JSON.stringify(r.tabs) === JSON.stringify(['Gebäude', 'Grundstücke', 'Bodenbedeckung', 'Entwicklung']), 'All four expected tabs are present');
     check(r.filters.length === 5 && r.filters[0] === 'Land', `five filter groups (${JSON.stringify(r.filters)})`);
@@ -67,12 +69,13 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(r.buildingCharts >= 5, `The buildings tab has a map and charts (${r.buildingCharts} figures)`);
     check(r.hasMapEl, 'The buildings tab contains the map');
     check(r.mapCanvas, 'CARTO map canvas renders (clustered layers)');
-    check((r.mapErrs || []).length === 0, `map renders without glyph/tile parse errors${r.mapErrs && r.mapErrs.length ? ' — ' + r.mapErrs[0] : ''}`);
+    check((r.mapErrs || []).length === 0, `map renders without active MapLibre errors${r.mapErrs && r.mapErrs.length ? ' — ' + r.mapErrs[0] : ''}`);
     check(Number(r.kpisCH[0].replace(/\\D/g, '')) < Number(r.kpisAll[0].replace(/\\D/g, '')), `Country CH reduces the building count (${r.kpisAll[0]} → ${r.kpisCH[0]})`);
     check(r.hashAfterFilter.includes('land=CH'), `The compatibility filter is mirrored to the hash (${r.hashAfterFilter})`);
     check(r.tab2Active === 'parcels', 'The parcels tab can be selected');
     check(r.tab2Charts.some(t => /Grundstücksfläche/.test(t)), `The parcels tab renders its charts (${JSON.stringify(r.tab2Charts)})`);
-    check((await page.problems()).length === 0, `no exceptions / console errors / error banner${(await page.problems())[0] ? ': ' + (await page.problems())[0] : ''}`);
+    const problems = await page.problems();
+    check(problems.length === 0, `no exceptions / console errors / error banner${problems[0] ? ': ' + problems[0] : ''}`);
 
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, page.sessionId);
     writeFileSync(process.env.SHOT || join(tmpdir(), 'bbl-estate.png'), Buffer.from(shot.data, 'base64'));

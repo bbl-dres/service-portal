@@ -23,7 +23,7 @@
 import { bookmarks } from '../core/bookmarks.js';
 import { session } from '../core/session.js';
 import { icon, escape } from './components/primitives.js';
-import { announce } from './components/feedback.js';
+import { announce, toast } from './components/feedback.js';
 import { filterGroup } from './components/catalogue.js';
 
 // `name` is the record's own title; it makes the button's accessible name say
@@ -143,6 +143,10 @@ export function wireBookmarks(root = document) {
     if (!button) return;
     const { bookmarkKind: kind, bookmarkId: id } = button.dataset;
     const on = bookmarks.toggle(kind, id);
+    if (on === null) {
+      toast('Der Favorit konnte nicht gespeichert werden.', 'error', 'WarningCircle');
+      return;
+    }
     syncBookmarkControls(root, kind, id, on);
     announce(on ? 'Zu meinen Favoriten hinzugefügt.' : 'Aus meinen Favoriten entfernt.');
   });

@@ -67,6 +67,13 @@
 
 .map-spinner { position:absolute; inset:0; z-index:var(--z-local-content); display:flex; align-items:center; justify-content:center;
   color:var(--color-text-muted); background:var(--color-secondary-100); pointer-events:none; }
+.map-degraded {
+  position:absolute; z-index:var(--z-local-content); top:var(--sp-3); left:var(--sp-3);
+  max-width:min(28rem, calc(100% - var(--sp-6))); padding:var(--sp-2) var(--sp-3);
+  border:var(--stroke-1) solid var(--color-warning); border-radius:var(--radius);
+  color:var(--color-warning-text); background:var(--color-warning-bg-subtle);
+  box-shadow:var(--shadow-md); font-size:var(--text-sm); pointer-events:none;
+}
 .dash-map, .pf-map { position:relative; }
 
 .dash-map .maplibregl-popup-content, .pf-map .maplibregl-popup-content {

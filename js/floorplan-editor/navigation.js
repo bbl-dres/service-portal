@@ -30,7 +30,7 @@ import {
   REGISTER_BARS, objectPanelHTML, objectRoute, objectTab, placeSteps, planView, renderObjectView,
 } from './object-view.js';
 import {
-  BASE, PLAN_STATUS, breadcrumbBarHTML, breadcrumbStepsHTML, clean, editorHeaderHTML, number,
+  PLAN_STATUS, breadcrumbBarHTML, breadcrumbStepsHTML, clean, editorHeaderHTML, number,
   portfolioRoute, prototypeFooterHTML,
 } from './shared.js';
 
@@ -453,16 +453,13 @@ function wireBrowse(ctx, { allEntries, state }) {
     // whether the scope came from the tree, a pill or a shared link.
     if (crumbs) crumbs.innerHTML = breadcrumbStepsHTML(C, portfolioCrumbs(allEntries, state));
     renderPills();
-    // One options object, not three positional arguments. Called positionally every
-    // parameter was undefined, so each filter change announced «undefined von
-    // undefined undefined» to a screen reader.
+    // Pass the named options object so announcements receive actual values.
     C.announceCatalogue({
       count: shown.length, total: allEntries.length, unit: 'Objekte', view: state.view,
     });
   };
 
-  // Zaehler ignorieren die Baumauswahl selbst — ein Klick liesse sonst einen
-  // einzelnen Ast mit «1» stehen und machte aus der Navigation eine Sackgasse.
+  // Counts ignore tree selection so navigation cannot collapse into one branch.
   const inTree = () => {
     const term = clean(state.q);
     const states = state.filters.state || [];
@@ -480,21 +477,15 @@ function wireBrowse(ctx, { allEntries, state }) {
       id: 'fpe-browse-tree',
       mode: 'select',
       ariaLabel: 'Standorte',
-      // Symbole nur auf der obersten Stufe; darunter traegt der Schritt die
-      // Tiefe — auch fuer die Geschosse, die eine Stufe UNTER dem Objekt liegen.
+      // Only the top level uses icons; indentation communicates deeper levels.
       levels: [{ icons: true }, { icons: false }, { icons: false }, { icons: false }, { icons: false }],
-      // Alle sieben Objekte liegen in der Schweiz, der Baum kaeme also als ein
-      // einziger zugeklappter Knoten daher und verbaerge das ganze Portfolio.
-      // Nur die AEUSSERSTE Stufe steht darum offen — und zwar als Voreinstellung,
-      // die dem ersten Klick weicht.
+      // Open the shared country root initially so the portfolio remains visible.
       sections: [objectsToNodes(inTree(), BROWSE_TREE, { ...state.sel, obj: state.sel.id })
         .map((node) => ({ ...node, defaultOpen: true }))],
       onSelect: (node) => {
         const sel = node.sel || {};
-        // Ein im Baum gewaehltes Geschoss oeffnet das Geschossverzeichnis
-        // seines Gebaeudes mit dieser Zeile markiert. Einen Plan zu FINDEN und
-        // ihn zu OEFFNEN sind zwei Entscheidungen; direkt in die Werkbank zu
-        // fallen naehme die zweite ungefragt vorweg.
+        // A floor selection opens its building directory and marks the row;
+        // opening the workbench remains a separate user action.
         if (sel.sub && sel.obj) {
           navigate(objectRoute(sel.obj, { tab: 'plans', mark: sel.sub }));
           return;

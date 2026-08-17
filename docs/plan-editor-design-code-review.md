@@ -44,11 +44,11 @@ Die Anwendung ist für Desktop-Power-User optimiert. Auf schmalen Viewports blei
 
 ## Codebeurteilung
 
-Positiv sind die klare Trennung von kanonischem Lesebestand und abgelöstem Editor-Dokument, die strikte Repository-Validierung, deterministische Baselines, begrenzter Undo/Redo-Verlauf, URL-reproduzierbarer Zustand und das konsequente Aufräumen von Browser- und Three.js-Ressourcen. `js/floorplan-editor/canvas.js`, `three.js`, `model.js`, `repository.js` und `commands.js` bilden belastbare technische Nähte für die nächste Iteration; der Router-Einstieg unter `js/apps/floorplan-editor.js` bleibt bewusst klein.
+Positiv sind die klare Trennung von kanonischem Lesebestand und abgelöstem Editor-Dokument, die strikte Repository-Validierung, deterministische Baselines, begrenzter Undo/Redo-Verlauf, URL-reproduzierbarer Zustand und das konsequente Aufräumen von Browser- und Three.js-Ressourcen. `js/floorplan-editor/canvas.js`, `three-viewer.js`, `model.js`, `repository.js` und `commands.js` bilden belastbare technische Nähte für die nächste Iteration; der Router-Einstieg unter `js/apps/floorplan-editor.js` bleibt bewusst klein.
 
 Die technische Umsetzungsrunde nach dem Review hat die lokal lösbaren Punkte weiter geschlossen:
 
-1. `dialogs.js` kapselt Aktionsdialoge und `interactions.js` die reinen Pointer-/Tastatur- und Raum-Drag-Regeln. `three.js` ist nur noch die stabile Fassade für den gekapselten `three-viewer.js`; `colors.js` und `geometry.js` sind gemeinsame, rendererunabhängige Quellen. Der Controller bleibt bewusst Besitzer des kurzlebigen Workbench-Zustands, seine wachsenden technischen Subsysteme besitzen aber schmale, testbare Schnittstellen.
+1. `dialogs.js` kapselt Aktionsdialoge und `interactions.js` die reinen Pointer-/Tastatur- und Raum-Drag-Regeln. Der Controller importiert den gekapselten `three-viewer.js` direkt; `colors.js` und `geometry.js` sind gemeinsame, rendererunabhängige Quellen. Der Controller bleibt bewusst Besitzer des kurzlebigen Workbench-Zustands, seine wachsenden technischen Subsysteme besitzen aber schmale, testbare Schnittstellen.
 2. Löschen einer belegten neuen Fläche, Verwerfen der Arbeitskopie und Beenden mit ungespeicherten Änderungen verwenden jetzt die vorhandenen CD-Modals mit Auswirkung, expliziter Bestätigung, Fokusfalle und Fokusrückgabe. Nur der synchrone Browser-/Router-Verlassensschutz verwendet weiterhin `confirm`; `beforeunload` bleibt aus Browsergründen separat.
 3. Die Three.js-Ansicht behält Renderer, Geometrien und Materialien, aktualisiert Auswahl/Farben gezielt und rendert nur bei Bedarf. 2D-Pointerbewegungen werden auf einen Szenenaufbau pro Animation Frame begrenzt; ein View-Snapshot indexiert Platzierungen pro Raum einmal. Kamera-, Farb-, Footprint- und Eingaberegeln besitzen reine Regressionstests.
 4. Dokument- und Befehlsvalidierung verhindern überlappende Räume, inkonsistente abgeleitete Felder und ausserhalb liegende gedrehte Objekt-Footprints. Katalogänderungen werden sicher abgeglichen; ein verlustbehafteter Abgleich archiviert zuerst die exakte Quelle, lässt den aktiven Entwurf unangetastet und verlangt eine ausdrückliche Speicherung. Unverträgliche Entwürfe werden archiviert, lokale Versionsstände basisbezogen erhalten und gleichzeitige Browser-Schreibversuche erkannt.
@@ -67,7 +67,7 @@ Vor dem Produktionsausbau bleiben bewusst Systemgrenzen offen, die dieser Browse
 
 - `node --check js/apps/floorplan-editor.js`
 - `node --check js/floorplan-editor/controller.js`
-- `node --check js/floorplan-editor/three.js`
+- `node --check js/floorplan-editor/three-viewer.js`
 - `node scripts/test-floorplan-editor.mjs`
 - `node scripts/test-floorplan-editor-model.mjs`
 - `node scripts/test-floorplan-editor-rendering.mjs`

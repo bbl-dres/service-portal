@@ -288,10 +288,13 @@ function buildIndex(core) {
   // the model was reachable only by someone who already knew the two apps
   // existed — which is the whole complaint the directory is meant to answer.
   for (const p of core.processes()) {
+    const portalWorkflow = p.branch === 'portal';
     rows.push({
-      kind: 'Prozesse', type: p.groupLabel ? `Prozess · ${p.groupLabel}` : 'Prozess',
+      kind: 'Prozesse', type: portalWorkflow
+        ? (p.groupLabel ? `Portal-Ablauf · ${p.groupLabel}` : 'Portal-Ablauf')
+        : (p.groupLabel ? `Prozess · ${p.groupLabel}` : 'Prozess'),
       title: p.name, desc: p.description,
-      href: links.processDocumentation(p.processId),
+      href: links.processDocumentation(p.processId, p.branch),
       meta: p.areaLabel || '',
       extra: [
         PROCESS_CATEGORY, p.processId, p.areaLabel, p.groupLabel,

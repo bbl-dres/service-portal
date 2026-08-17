@@ -3,8 +3,10 @@ import { core } from './core/index.js';
 import { engine } from './process-engine.js';
 import { session } from './core/session.js';
 import { shell } from './ui/shell/index.js';
-import { initRouter, redraw, requestNavigationPermission } from './routing/router.js';
-import { notification, escape, announce, toast, wireShare, wireLogin, mountBanner } from './components.js';
+import {
+  initRouter, redraw, requestNavigationPermission, restoreRouteChrome,
+} from './routing/router.js';
+import { escape, announce, toast, wireShare, wireLogin, mountBanner } from './components.js';
 import { wireBookmarks } from './ui/bookmark.js';
 import { notificationHtml } from './ui/components/feedback.js';
 
@@ -37,14 +39,23 @@ async function boot() {
   // Under throttling, first content took 7.7 s even on knowledge pages that read
   // no data (docs/code-review.md §1).
   //
-  // The process engine (2 files, 11 KB) remains in startup, but in PARALLEL: it
-  // owns the case list, and the personal-cases page must not see it half-loaded. Four
-  // requests replace thirteen.
-  await Promise.all([core.load(), engine.load()]);
+  // The process engine remains in startup because the personal-cases page must
+  // not see a half-loaded case list. It derives definitions from the core's
+  // cached processes dataset, so later process routes reuse the startup request.
+  await Promise.all([core.load(), engine.load(core)]);
   // Deferred datasets (core.ensure) can fail after the banner was rendered.
   // Without this listener, such a failure would remain invisible.
   window.addEventListener('core:data-failed', renderDataStatus);
-  window.addEventListener('core:data-loaded', renderDataStatus);
+  window.addEventListener('core:data-loaded', (event) => {
+    renderDataStatus();
+    // A deferred retry can recover the shared process registry after startup.
+    // Refresh the engine too; otherwise its failed definition snapshot would
+    // remain stale until a full page reload even though process pages recovered.
+    if (event.detail?.key === 'processes') {
+      void engine.load(core).then(renderDataStatus)
+        .catch((error) => console.error('[app] process recovery failed', error));
+    }
+  });
   const header = document.getElementById('main-header');
   shell.renderHeader(header);
   shell.renderFooter(document.getElementById('main-footer'));
@@ -113,6 +124,16 @@ async function boot() {
   window.addEventListener('session:changed', () => {
     const ownRefresh = ++refreshId;
     shell.renderHeader(header);
+    // Cross-tab authentication changes cannot be revoked locally, so the header
+    // reflects them immediately. Replacing the route is separate: an editor may
+    // still need to protect unsaved work before showing the new access state.
+    if (!requestNavigationPermission(location.hash || '#/', 'session-storage')) {
+      restoreRouteChrome();
+      announce(session.isLoggedIn()
+        ? 'Die Anmeldung aus einem anderen Tab wurde übernommen. Die aktuelle Bearbeitung bleibt geöffnet.'
+        : 'Die Sitzung wurde in einem anderen Tab beendet. Die aktuelle Bearbeitung bleibt geöffnet.');
+      return;
+    }
     void redraw().then(() => {
       if (ownRefresh !== refreshId) return;
       announce(session.isLoggedIn()

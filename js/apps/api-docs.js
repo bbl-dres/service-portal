@@ -183,16 +183,13 @@ export default async function render(ctx) {
 
   let specs = {};
   try { specs = await fetchJSON('data/api-specs.json', { shape: 'object', signal }); } catch (e) { /* Handled below. */ }
-  // Process definitions normally load only through the engine; load them once
-  // here to populate process-definitions examples outside the core inventory.
-  let processDefs = [];
-  // Seit 2026-08-15 stehen die Ablaufdefinitionen in processes.json (Ast
-  // «portal»), zusammen mit den fachlichen Prozessen.
-  try {
-    const all = await fetchJSON('data/processes.json', { shape: 'array', signal });
-    processDefs = (all || []).filter((r) => r && r.branch === 'portal')
-      .map((r) => ({ ...r, defId: r.processId }));
-  } catch (e) { /* Examples remain unavailable. */ }
+  // `needs` has already populated the shared process registry. Reusing it here
+  // avoids a third request after startup and keeps both API resource families
+  // on the same branch semantics.
+  const processDefs = core.processDefinitions().map((record) => ({
+    ...record, defId: record.processId,
+  }));
+  const businessProcesses = core.processes().filter((record) => record.branch === 'fachlich');
   if (stale && stale()) return;
   const spec = specs[specId];
 
@@ -256,8 +253,8 @@ export default async function render(ctx) {
     'reference-data.list': () => ({ lists: Object.keys(core.ref()) }),
     // Return the current canonical audience reference list.
     'reference-data.one': () => ({ list: 'audiences', items: core.ref().audiences || [] }),
-    'processes.list': () => core.processes().slice(0, 3).map((p) => pick(p, ['processId', 'name', 'areaLabel', 'groupLabel', 'status'])),
-    'processes.one': () => pick(core.processes()[0], ['processId', 'name', 'areaLabel', 'groupLabel', 'description', 'version', 'updated', 'systems', 'standards']),
+    'processes.list': () => businessProcesses.slice(0, 3).map((p) => pick(p, ['processId', 'name', 'areaLabel', 'groupLabel', 'status'])),
+    'processes.one': () => pick(businessProcesses[0], ['processId', 'name', 'areaLabel', 'groupLabel', 'description', 'version', 'updated', 'systems', 'standards']),
     'shop-products.list': () => core.shopProducts().slice(0, 3).map((p) => pick(p, ['id', 'name', 'brand', 'category', 'price', 'currency'])),
     'shop-products.one': () => pick(core.shopProducts()[0], ['id', 'name', 'brand', 'category', 'subcategory', 'price', 'currency', 'description']),
     // The tree, one level deep: the full nesting would bury the shape it shows.

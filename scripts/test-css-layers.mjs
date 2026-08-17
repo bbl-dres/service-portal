@@ -12,6 +12,7 @@ const STATIC_SHEETS = [
   'css/navigations/tabs.css', 'css/components/content.css',
   'css/sections/search.css', 'css/sections/filter-panel.css',
   'css/sections/catbar.css', 'css/sections/explorer.css',
+  'css/sections/sidebar-tree.css', 'css/sections/landscape.css',
   'css/components/overlay.css', 'css/utilities.css',
 ];
 

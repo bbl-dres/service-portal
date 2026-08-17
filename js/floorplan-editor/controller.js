@@ -28,7 +28,7 @@ import {
   loadWorkingCopy, saveWorkingCopy, removeWorkingCopy,
   loadRevisionHistory, publishLocalRevision,
 } from './repository.js';
-import { createFloorplanThreeViewer } from './three.js';
+import { createFloorplanThreeViewer } from './three-viewer.js';
 import { createWorkbenchViews } from './views.js';
 import {
   openConfirmationDialog, openPublishConfirmation, openVersionHistoryDialog,

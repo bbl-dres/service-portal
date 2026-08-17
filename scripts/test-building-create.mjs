@@ -269,7 +269,45 @@ const SUBMIT = `document.querySelector('#bc-form').dispatchEvent(new Event('subm
       check(r.hit, 'case appears under “My cases”');
     }
 
-    check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
+    console.log('■ Optional map failure preserves address controls');
+    const offline = await openPage(cdp, 'about:blank', { login: true });
+    await cdp.send('Network.enable', {}, offline.sessionId);
+    await cdp.send('Network.setBlockedURLs', { urls: ['*unpkg.com/maplibre-gl@4.7.1*'] }, offline.sessionId);
+    await cdp.send('Page.navigate', { url: `${APP_BASE}/app/building-create?map=blocked` }, offline.sessionId);
+    await offline.waitFor(`document.querySelector('#bc-picker .map-picker__canvas .empty')`, { timeout: 5000 });
+    const offlineResult = await offline.evaluate(`(async () => {
+      const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+      const input = document.querySelector('#bc-address');
+      const canvas = document.querySelector('#bc-picker .map-picker__canvas');
+      const controlsBefore = {
+        input: !!input,
+        list: !!document.querySelector('#bc-listbox'),
+        clear: !!document.querySelector('#bc-clear'),
+        mapFailure: !!canvas?.querySelector('.empty--unavailable'),
+      };
+      window.fetch = async () => ({ ok: true, json: async () => ({ results: [{ attrs: {
+        label: 'Teststrasse 7 3003 Bern', lat: 46.95, lon: 7.44,
+      } }] }) });
+      input.value = 'Teststrasse 7 Bern';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await wait(500);
+      return {
+        ...controlsBefore,
+        option: document.querySelector('#bc-listbox [role="option"]')?.textContent.trim() || '',
+        expanded: input.getAttribute('aria-expanded'),
+      };
+    })()`);
+    check(offlineResult.mapFailure && offlineResult.input && offlineResult.list && offlineResult.clear,
+      'a blocked MapLibre loader replaces only the canvas, not the required address combobox');
+    check(offlineResult.option.includes('Teststrasse') && offlineResult.expanded === 'true',
+      'address-search listeners remain functional after the optional map fails');
+    const offlineProblems = await offline.problems();
+    check(offlineProblems.length === 0,
+      `blocked optional map has no uncaught application errors${offlineProblems[0] ? ': ' + offlineProblems[0] : ''}`);
+    await offline.closeTarget();
+
+    const problems = await p.problems();
+    check(problems.length === 0, `no exceptions / console errors / error banner${problems[0] ? ": " + problems[0] : ""}`);
   } finally {
     cdp.close();
   }

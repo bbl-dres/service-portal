@@ -103,6 +103,20 @@ try {
     else console.log(`  ok  ${route.padEnd(34)} h1="${got.h1.slice(0, 44)}"`);
   }
 
+  await page.evaluate(`location.hash = '#/search?q=Raumbedarf-Antrag'`);
+  await page.waitFor(`document.querySelector('a[href="#/app/process-docs?def=raumbedarf"]')`);
+  const portalProcessHref = await page.evaluate(
+    `document.querySelector('a[href="#/app/process-docs?def=raumbedarf"]')?.getAttribute('href') || ''`,
+  );
+  if (!portalProcessHref) fails.push('search portal workflow -> missing def= detail link');
+
+  await page.evaluate(`location.hash = '#/search?q=TQ.21.00.00.01'`);
+  await page.waitFor(`document.querySelector('a[href="#/app/process-docs?id=TQ.21.00.00.01"]')`);
+  const businessProcessHref = await page.evaluate(
+    `document.querySelector('a[href="#/app/process-docs?id=TQ.21.00.00.01"]')?.getAttribute('href') || ''`,
+  );
+  if (!businessProcessHref) fails.push('search business process -> missing id= detail link');
+
   for (const [index, [from, want]] of REDIRECTS.entries()) {
     const marker = `redirect-probe-${index}`;
     await page.evaluate(`(() => {

@@ -5,6 +5,13 @@ Umfang, drei Sichten zeigen ihn (Übersicht, Diagramm, Tabelle), eine Leiste
 darüber trägt Suche und Bedienelemente. Sie sind unabhängig gewachsen, und das
 sieht man.
 
+> **Fortschreibung 2026-08-17:** Der
+> [fokussierte Design-Review](design-review-metadata-process-docs-2026-08-17.md)
+> vereinheitlicht die Datensatzdetails, ersetzt die dortigen Ansichtsschalter
+> durch echte Register und lädt BPMN-Dokumente erst bei Bedarf. Dieser Review
+> bleibt die historische Herleitung der geteilten Landschafts- und
+> Navigationsmechanik.
+
 Gemessen wird hier, nicht behauptet: jeder Befund nennt, woran man ihn sieht.
 
 ---

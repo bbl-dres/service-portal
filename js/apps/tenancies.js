@@ -12,6 +12,7 @@ import { APPLICATIONS } from '../crumbs.js';
 import * as links from '../links.js';
 import { preparePage, uniqueOptions } from '../collections.js';
 import { exitFullscreen, requestFullscreen } from '../ui/fullscreen.js';
+import { createPrintMode } from '../ui/print-mode.js';
 
 export const needs = ['tenancies', 'floors', 'spaces', 'contracts'];
 
@@ -157,8 +158,7 @@ function overview(ctx) {
     await mtMap.mount(el, (node) => initEstateMap(node, points, { type: 'FeatureCollection', features: [] }, state.sel.id || null));
   }
 
-  // Was der Baum zeigt: was Suche und Filter uebrig lassen — aber OHNE die
-  // Auswahl selbst, sonst schrumpfte er auf das gerade Angeklickte zusammen.
+  // Tree facets honor search and filters but ignore their own selection.
   const inTree = () => all.filter((t) => inSearch(t) && inFilters(t));
 
   function renderMain() {
@@ -276,10 +276,9 @@ function overview(ctx) {
       id: 'mt-tree',
       mode: 'select',
       ariaLabel: 'Struktur der Mietverhaeltnisse',
-      // Symbole nur auf der obersten Stufe: die Symbolspalte IST die
-      // Einrueckung der zweiten, ab da traegt der Schritt die Tiefe.
+      // Only the top level uses icons; indentation communicates deeper levels.
       levels: [{ icons: true }, { icons: false }, { icons: false }],
-      // Diese App nennt das gewaehlte Mietverhaeltnis `id`, der Adapter `obj`.
+      // Translate the view's `id` key to the tree adapter's `obj` key here.
       sections: [objectsToNodes(inTree(), TREE, { ...state.sel, obj: state.sel.id })],
       onSelect: (node) => {
         const { obj, ...rest } = node.sel || {};
@@ -730,6 +729,7 @@ function detail(ctx, id) {
   }
 
   let detach = null;
+  const planPrint = createPrintMode();
   function wireFloorplanArea({ mountAllTables: allTables = false } = {}) {
     if (detach) { detach(); detach = null; }
 
@@ -789,18 +789,12 @@ function detail(ctx, id) {
       });
     });
 
-    mount.querySelector('#floorplan-print')?.addEventListener('click', () => {
-      document.body.classList.add('print--plan');
-      const cleanupPrintMode = () => { document.body.classList.remove('print--plan'); window.removeEventListener('afterprint', cleanupPrintMode); };
-      window.addEventListener('afterprint', cleanupPrintMode);
-      window.print();
-
-      setTimeout(cleanupPrintMode, 1000);
-    });
+    mount.querySelector('#floorplan-print')?.addEventListener('click', planPrint.print);
   }
 
   onUnmount(() => {
     if (detach) detach();
+    planPrint.destroy();
     heroMap.free();
     detachTables.forEach((f) => { try { f(); } catch {  } });
     detachTables.clear();

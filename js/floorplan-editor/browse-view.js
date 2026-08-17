@@ -273,10 +273,7 @@ export function browseSurfaceHTML(C, entries, mode) {
   </div>`;
 }
 
-// Die Beschreibung der Baumstufen. Sie steht hier, weil sie zu dieser Ansicht
-// gehoert, wird aber in wireBrowse gebraucht: gezeichnet wird der Baum ueber
-// C.sidebarTree, und zwar bei jeder Aenderung neu — er zeigt Auswahl und
-// Zaehler, und beide bewegen sich.
+// Shared by rendering and wiring because selection and counts rebuild the tree.
 export const BROWSE_TREE = {
   levels: [
     { key: 'country', icon: 'tree/globe', label: (value) => countryName(value) },
@@ -330,9 +327,7 @@ export function renderBrowseView(C, {
               removes the selection, and a second affordance does not fit a 15 rem
               column without wrapping into three lines. */''}
         <p class="fpe-overline" id="fpe-browse-tree-head">Standorte</p>
-        ${/* Eigener Behaelter: das Seitenbaum-Bauteil besitzt den Inhalt seines
-              Wirts und schreibt ihn bei jedem Zeichnen neu — die Ueberschrift
-              darueber wuerde es sonst mitnehmen. */''}
+        ${/* The tree owns this host; keep the heading outside its redraw boundary. */''}
         <div id="fpe-browse-tree-host"></div>
       </aside>
       <div class="fpe-browse__surface" id="fpe-browse-surface" data-scroll-region>${browseSurfaceHTML(C, entries, mode)}</div>

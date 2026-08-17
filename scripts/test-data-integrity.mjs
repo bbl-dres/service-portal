@@ -1,7 +1,7 @@
 // Browser-free reference check across data/ and code literals.
 //
-// H11 exposed a duplicated service-to-process relationship that no module read:
-// services.processDefId, process-definitions.serviceId, and app literals could
+// A duplicated service-to-process relationship can drift when no module checks
+// services.processDefId, portal workflow serviceId, and app literals together.
 // drift independently. engine.start() also used to invent a fallback definition,
 // hiding that mismatch.
 //
@@ -18,7 +18,9 @@ let failures = 0;
 const check = (ok, label) => { console.log(`   ${ok ? '✓' : '✗'} ${label}`); if (!ok) failures++; };
 
 const services = json('data/services.json');
-const defs = json('data/process-definitions.json');
+const processes = json('data/processes.json');
+const defs = processes.filter((record) => record.branch === 'portal')
+  .map((record) => ({ ...record, defId: record.processId }));
 const defIds = new Set(defs.map(d => d.defId));
 const serviceIds = new Set(services.map(s => s.serviceId));
 
@@ -35,6 +37,8 @@ check(danglingBack.length === 0,
     danglingBack.length ? `; unresolved: ${danglingBack.map(d => `${d.defId}->${d.serviceId}`).join(', ')}` : ''}`);
 
 console.log('Steps per definition');
+check(processes.every((record) => ['fachlich', 'portal'].includes(record.branch)),
+  'every process belongs to the business or portal branch');
 const noSteps = defs.filter(d => !Array.isArray(d.steps) || !d.steps.length);
 check(noSteps.length === 0,
   `every definition has steps${noSteps.length ? `; empty: ${noSteps.map(d => d.defId).join(', ')}` : ''}`);
@@ -45,7 +49,7 @@ check(defs.every(d => d.name), 'every definition has a name for start() to use a
 console.log('Code literals against definitions');
 // Values passed to engine.start() and defId literals must exist.
 const appDir = join(ROOT, 'js', 'apps');
-const used = new Map();   // defId → Dateien
+const used = new Map();   // defId → files
 for (const f of readdirSync(appDir).filter(n => n.endsWith('.js'))) {
   const src = readFileSync(join(appDir, f), 'utf8');
   for (const m of src.matchAll(/engine\.start\(\s*'([^']+)'/g)) used.set(m[1], [...(used.get(m[1]) || []), f]);
@@ -134,6 +138,26 @@ console.log('Workspace overlay remains free of golden-record duplication');
 const buildingCollection = json('data/buildings.geojson');
 const buildingsById = new Map((buildingCollection.features || [])
   .map((feature) => [feature.properties?.bbl_id, feature.properties]));
+const projectsById = new Map(json('data/projects.json').map((project) => [project.projectId, project]));
+const processInstances = json('data/process-instances.json');
+const brokenCaseBuildings = processInstances.filter((instance) => instance.linkedEntities?.buildingId
+  && !buildingsById.has(instance.linkedEntities.buildingId));
+const brokenCaseProjects = processInstances.filter((instance) => instance.linkedEntities?.projectId
+  && !projectsById.has(instance.linkedEntities.projectId));
+const mismatchedCaseLinks = processInstances.filter((instance) => {
+  const linked = instance.linkedEntities || {};
+  const project = linked.projectId ? projectsById.get(linked.projectId) : null;
+  return project && linked.buildingId && project.buildingId !== linked.buildingId;
+});
+check(brokenCaseBuildings.length === 0,
+  `seeded cases reference canonical buildings${brokenCaseBuildings.length
+    ? `; unresolved: ${brokenCaseBuildings.map((instance) => instance.instanceId).join(', ')}` : ''}`);
+check(brokenCaseProjects.length === 0,
+  `seeded cases reference canonical projects${brokenCaseProjects.length
+    ? `; unresolved: ${brokenCaseProjects.map((instance) => instance.instanceId).join(', ')}` : ''}`);
+check(mismatchedCaseLinks.length === 0,
+  `case building and project links agree${mismatchedCaseLinks.length
+    ? `; mismatched: ${mismatchedCaseLinks.map((instance) => instance.instanceId).join(', ')}` : ''}`);
 const floors = json('data/floors.json');
 const floorById = new Map(floors.map((floor) => [floor.floorId, floor]));
 const spaces = json('data/spaces.json');

@@ -89,8 +89,7 @@ function geom(width, { r = 20, t = 20, b = 40 } = {}) {
 // thin out rather than overlap.
 const labelStride = (count, inner) => Math.max(1, Math.ceil((count * 34) / Math.max(1, inner)));
 
-const esc = (s) => String(s == null ? '' : s)
-  .replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const esc = C.escape;
 
 const fmt = (n, unit) => {
   if (!Number.isFinite(n)) return '—';
@@ -634,9 +633,8 @@ export function wireChartMenus(root) {
         if (!canvas || !canvas.toBlob) { toast('Bild-Export fehlgeschlagen.', 'error', 'WarningCircle'); return; }
         canvas.toBlob((blob) => {
           if (!blob) { toast('Bild-Export fehlgeschlagen.', 'error', 'WarningCircle'); return; }
-          const url = URL.createObjectURL(blob), a = document.createElement('a');
-          a.href = url; a.download = name + '.png'; document.body.appendChild(a); a.click(); a.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 1000); toast('Bild heruntergeladen.');
+          download(blob, `${name}.png`);
+          toast('Bild heruntergeladen.');
         }, 'image/png');
         return;
       }

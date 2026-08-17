@@ -1,55 +1,22 @@
-// The portal's ONE sidebar tree.
-//
-// Eight surfaces carried a sidebar tree built by four different pieces of code,
-// which disagreed with each other: level 1 began at three different x positions,
-// the process documentation put the child LEFT of its parent, and every row on
-// every surface drew a divider. The study behind this file is
-// docs/seitenbaum-analyse.md and docs/wireframes/260814 - Seitenbaum als Bauteil.html.
-//
-// Three rules carry the whole design.
-//
-// 1. THE CHEVRON STANDS OUTSIDE THE FLOW, in a fixed gutter left of the label.
-//    A row with one therefore begins where a row without one begins, and a child
-//    can no longer land left of its parent — the bug that rule exists to kill.
-//
-// 2. THE LADDER IS A RUNNING SUM, and every level contributes what IT occupies:
-//    an icon column when that level declares icons, otherwise a step. Two things
-//    follow, and they are the point. A level without icons sits flush under one
-//    with them, because the icon column IS its indent. And a tree with icons on
-//    every level gets the icon width as an even step instead of counting it
-//    twice. There is no ceiling: a recursive category does not know its depth in
-//    advance, and a ladder that ends yields NaN, an invalid padding, and a row
-//    at x=0 — left of level 1.
-//
-// 3. A DECLARED ICON COLUMN IS ALWAYS RESERVED (variant (c), decision of
-//    2026-08-14, docs/seitenbaum-analyse.md §5). `levels[i].icons` reserves it,
-//    `node.icon` fills it. The rejected alternative — draw the glyph if present,
-//    nothing if absent — is flush only as long as every row of a level happens
-//    to bring one, which nothing enforces; the day one does not, it collapses
-//    into the failure the whole design rejects. A component that is only correct
-//    while everyone honours an unwritten rule is not a component.
-//
-// Dividers separate SECTIONS and nothing else. Hierarchy is carried by the
-// ladder, belonging by the fill of the chosen row, importance by weight.
+// Shared navigation/select tree. Indentation is an unbounded running sum: each
+// level contributes either its reserved icon column or one plain indent step.
+// The chevron sits outside that flow, so children never start left of parents.
 import { escape, icon as iconHTML } from './primitives.js';
 import { safeLinkUrl } from '../../security/urls.js';
 
-// Measured in px and kept here rather than in CSS: the ladder is a sum, and a
-// sum of custom properties cannot be expressed as a rule per level.
-const GUTTER = 20;   // the chevron sits in it, out of flow
-const ICOCOL = 24;   // an icon column, where a level declares one
-const STEP = 16;     // a level that declares no icons
+// CSS cannot express the per-level running sum used for indentation.
+const GUTTER = 20;
+const ICON_COLUMN = 24;
+const STEP = 16;
 
-// Fold state outlives a redraw but not the page. Keyed per instance, because two
-// trees on one page must not share it — and because ids are only unique within
-// the tree that issued them.
-const FOLDS = new Map();
-const foldsFor = (id) => {
-  // Map, nicht Set: ein Set kann nur «aufgeklappt» merken. Ein Ast, der von Haus
-  // aus offen steht (defaultOpen), braucht aber die Gegenrichtung — sonst macht
-  // ein Filterwechsel jedes Zuklappen des Lesers wieder rueckgaengig.
-  if (!FOLDS.has(id)) FOLDS.set(id, new Map());
-  return FOLDS.get(id);
+// Host-keyed state survives redraws without retaining detached pages or sharing
+// folds between unrelated trees that happen to reuse an id.
+const FOLDS = new WeakMap();
+const foldsFor = (host, id) => {
+  if (!FOLDS.has(host)) FOLDS.set(host, new Map());
+  const instances = FOLDS.get(host);
+  if (!instances.has(id)) instances.set(id, new Map());
+  return instances.get(id);
 };
 
 const kidsOf = (node) =>
@@ -93,53 +60,34 @@ export function sidebarTree(host, cfg = {}) {
     id = 'tree', title = '', mode = 'nav', levels = [], sections = [],
     ariaLabel = 'Navigation', onSelect,
   } = cfg;
-  const open = foldsFor(id);
+  const open = foldsFor(host, id);
   const select = mode === 'select';
 
-  // Rule 2. Computed rather than declared, and deliberately unbounded.
   const rung = (depth) => {
     let x = GUTTER;
-    for (let i = 0; i < depth; i++) x += (levels[i] || {}).icons ? ICOCOL : STEP;
+    for (let i = 0; i < depth; i++) x += (levels[i] || {}).icons ? ICON_COLUMN : STEP;
     return x;
   };
 
   const CHEV = iconHTML('tree/chevron-right', 'pf-tree__chev');
-  // Rule 3: the column is reserved by the LEVEL, filled by the node.
+  // A level reserves its icon column even when an individual node has no icon.
   const glyph = (node, depth) => ((levels[depth] || {}).icons
     ? (node.icon ? iconHTML(node.icon, 'pf-tree__ico') : '<span class="pf-tree__ico" aria-hidden="true"></span>')
     : '');
 
   const inner = (node, depth) => glyph(node, depth)
-    // Ein Ordnungsbegriff VOR dem Namen — die BBL-Nummer eines Gebaeudes, die
-    // Nummer einer Wirtschaftseinheit. Er steht in eigener Spalte, weil er
-    // gelesen und verglichen wird, nicht gelesen und verstanden.
     + (node.idText ? `<span class="pf-tree__id">${escape(node.idText)}</span>` : '')
-    // Vorlesesoftware hoert sonst «1080» und weiss nicht, wovon — die Stufe
-    // sagt es, sichtbar durch ihre Lage, hoerbar nur so.
     + (node.srPrefix ? `<span class="sr-only">${escape(node.srPrefix)}: </span>` : '')
     + `<span class="pf-tree__label">${escape(node.label)}</span>`
-    // The count is a BARE NUMBER in the DOM — the parentheses are drawn by CSS,
-    // so scripts and assertions keep reading a number — with a named unit for
-    // assistive technology, which would otherwise hear «Schweiz 7».
+    // CSS draws count punctuation; countUnit supplies the spoken context.
     + (node.count == null ? '' : `<span class="pf-tree__n">${escape(String(node.count))}</span>`
       + (node.countUnit ? `<span class="sr-only"> ${escape(node.countUnit)}</span>` : ''));
 
   const rows = (nodes, depth) => nodes.map((node) => {
     INDEX.set(node.id, node);
     const expandable = canOpen(node);
-    // Drei Wege, offen zu sein, und der dritte ist der wichtige:
-    //   · der Leser hat das Chevron gedrückt (open)
-    //   · der Knoten liegt auf dem WEG zur Auswahl — die Strecke muss zu sehen sein
-    //   · die Anwendung sagt es ausdrücklich (node.open)
-    // Ausdrücklich, weil «gewählt» und «aufgeklappt» nicht dasselbe sind und die
-    // Anwendung das je Stufe verschieden beantwortet: einen Ast zu wählen heisst,
-    // seine Gruppen zu zeigen; einen DATENSATZ zu wählen darf nicht heissen,
-    // seine fünfundsiebzig Bestandteile mitzubringen. Das kann das Bauteil nicht
-    // erraten.
-    // Die Reihenfolge ist die Aussage. Besteht die Anwendung darauf, gewinnt sie:
-    // wer in einen zugeklappten Ast hineinnavigiert, muss seine Auswahl sehen,
-    // sonst zeigt der Baum auf nichts. Sonst entscheidet der Leser. Und erst
-    // wenn der noch nichts gesagt hat, gilt die Voreinstellung.
+    // Required-open paths win over reader state; defaults apply only before the
+    // reader has explicitly folded the node.
     const isOpen = expandable && (
       node.open === true || node.state === 'path'
         ? true
@@ -154,18 +102,15 @@ export function sidebarTree(host, cfg = {}) {
     const exp = expandable ? ` aria-expanded="${isOpen}"` : '';
     const li = ` style="--pf-ind:${rung(depth)}px"`;
 
-    // A chevron may NEVER nest inside an interactive row: a <button> inside a
-    // <button> (or inside an <a>) is invalid, the parser closes the outer one
-    // early, and the label falls out as a sibling — measured once as four
-    // entirely empty rows. Hence three forms, none of which nests.
+    // Keep the fold control beside interactive rows; nested buttons/links are
+    // invalid HTML and browsers re-parent their contents.
     const chevBtn = `<button type="button" class="pf-tree__fold" data-fold="${escape(node.id)}"`
-      + ` tabindex="-1" aria-expanded="${isOpen}"`
+      + `${select ? ' tabindex="-1"' : ''} aria-expanded="${isOpen}"`
       + ` aria-label="${escape(node.label)} ${isOpen ? 'zuklappen' : 'aufklappen'}">${CHEV}</button>`;
     const chevMute = `<span class="pf-tree__chev-slot" aria-hidden="true">${CHEV}</span>`;
 
     let body;
     if (node.split && href && expandable) {
-      // The link chooses, the chevron opens — for a record whose parts are many.
       body = `<span class="pf-tree__split${state}">${chevBtn}`
         + `<a class="pf-tree__row" href="${escape(href)}"${aria}${select ? ' role="treeitem"' + level : ''}`
         + ` data-node="${escape(node.id)}">${inner(node, depth)}</a></span>`;
@@ -188,8 +133,7 @@ export function sidebarTree(host, cfg = {}) {
   }).join('');
 
   const draw = () => {
-    // Vor dem Zeichnen leeren, sonst ueberleben Knoten eines zugeklappten Astes
-    // im Verzeichnis und beantworten Klicks, die es nicht mehr gibt.
+    // Only nodes in the current rendering may answer delegated clicks.
     INDEX = new Map();
     host.innerHTML = (title
       ? `<div class="pf-sidebar__head"><h2 class="pf-sidebar__title">${escape(title)}</h2></div>`
@@ -209,15 +153,14 @@ export function sidebarTree(host, cfg = {}) {
   };
 
   const toggle = (key, focusBack) => {
-    // Gegen den GEZEICHNETEN Zustand kippen, nicht gegen das Gedaechtnis: eine
-    // Zeile kann auch offen stehen, weil sie auf dem Weg zur Auswahl liegt oder
-    // weil die Anwendung sie so voreingestellt hat. Ein Klick auf ein offenes
-    // Chevron muss zuklappen, gleich woher das Offensein kam.
-    const shown = host.querySelector(`[data-fold="${CSS.escape(key)}"]`);
+    // Toggle the rendered state because a required path may override memory.
+    const findFold = () => [...host.querySelectorAll('[data-fold]')]
+      .find((element) => element.dataset.fold === key);
+    const shown = findFold();
     const now = shown ? shown.getAttribute('aria-expanded') === 'true' : open.get(key) === true;
     open.set(key, !now);
     draw();
-    const again = host.querySelector(`[data-fold="${CSS.escape(key)}"]`);
+    const again = findFold();
     if (again && focusBack) again.focus();
   };
 
@@ -229,31 +172,22 @@ export function sidebarTree(host, cfg = {}) {
       const row = e.target.closest('.pf-tree__row');
       if (fold.classList.contains('pf-tree__fold') || row === fold) {
         e.preventDefault();
-        // Erst klappen, DANN melden — und den Knoten vorher festhalten. Die
-        // Reihenfolge ist kein Geschmack: `onSelect` darf die Anwendung dazu
-        // bringen, den Baum neu zu setzen (Zahlen, Markierung). Meldeten wir
-        // zuerst, liefe danach noch das draw() dieses — inzwischen
-        // weggeworfenen — Exemplars und uebermalte das neue mit dem alten Stand.
+        // Capture and fold before selection; onSelect may replace this tree.
         const picked = nodeById(fold.dataset.fold);
         toggle(fold.dataset.fold, true);
-        if (select && row === fold && onSelect) onSelect(picked, e);
+        if (select && row === fold && picked && onSelect) onSelect(picked, e);
         return;
       }
     }
     if (!select) return;
     const row = e.target.closest('[data-node]');
-    if (row && onSelect) onSelect(nodeById(row.dataset.node), e);
+    const picked = row && nodeById(row.dataset.node);
+    if (picked && onSelect) onSelect(picked, e);
   };
 
-  // Nachschlagewerk der GEZEICHNETEN Knoten, gefuellt beim Zeichnen. Vorher lief
-  // hier ein Spaziergang ueber `children`, der nur Arrays kannte — spaet gebaute
-  // Kinder (children als Funktion) waren fuer ihn unsichtbar, und ein Klick auf
-  // eine solche Zeile lieferte statt des Knotens eine leere Huelle `{id}`. Die
-  // Anwendung las darin «nichts gewaehlt» und loeschte die Auswahl, die der
-  // Leser gerade getroffen hatte. Wer gezeichnet ist, steht hier drin — und nur
-  // Gezeichnetes kann angeklickt werden.
+  // This render-time index includes lazy children only after they become visible.
   let INDEX = new Map();
-  const nodeById = (nid) => INDEX.get(nid) || { id: nid };
+  const nodeById = (nid) => INDEX.get(nid) || null;
 
   // Arrow keys, Home/End — required by the tree pattern, and the reason the
   // select surfaces cannot simply become a list of links.
@@ -272,18 +206,11 @@ export function sidebarTree(host, cfg = {}) {
     else if (key === 'ArrowRight' || key === 'ArrowLeft') {
       const nid = document.activeElement.dataset.node;
       const wasOpen = document.activeElement.getAttribute('aria-expanded') === 'true';
-      // focusBack MUSS hier true sein: toggle() zeichnet den Baum neu, womit das
-      // fokussierte Element verschwindet — der Fokus faellt auf <body> und jede
-      // weitere Taste geht ins Leere. Bei der Maus faellt das nicht auf, bei der
-      // Tastatur ist es das Ende der Bedienbarkeit.
+      // Redrawing removes the focused row, so keyboard folds must restore it.
       if (key === 'ArrowRight' && !wasOpen && document.activeElement.getAttribute('aria-expanded')) {
         e.preventDefault(); toggle(nid, true);
       } else if (key === 'ArrowLeft') {
-        // Links heisst zweierlei, je nach Lage — so will es das Baummuster:
-        // steht die Zeile offen, klappt sie zu; ist sie schon zu (oder hat sie
-        // gar keine Kinder), springt der Fokus zum ELTER. Ohne den zweiten Fall
-        // kommt man aus einem Ast nie wieder heraus, ausser mit Pfeil-hoch
-        // durch jede einzelne Zeile darueber.
+        // APG tree behavior: Left closes an open node, then moves to its parent.
         if (wasOpen) { e.preventDefault(); toggle(nid, true); return; }
         const list = document.activeElement.closest('.pf-tree__item')?.parentElement;
         if (!list || !list.classList.contains('pf-tree__children')) return;

@@ -1,24 +1,10 @@
-/* The portal's ONE sidebar tree (js/ui/components/sidebar-tree.js).
-   ---------------------------------------------------------------------------
-   Study: docs/seitenbaum-analyse.md, docs/wireframes/260814 - Seitenbaum als Bauteil.html
-
-   The indent lives in --pf-ind, set per list item by the component, because the
-   ladder is a SUM — each level contributes an icon column or a step — and a sum
-   cannot be written as one rule per level. On the item, not on the row: a split
-   row hangs inside a wrapper and is no longer a direct child, so a rule aimed at
-   the row would miss it there and the level would fall back to the first.
-
-   Nothing here draws a line between rows. Hierarchy is the ladder, belonging is
-   the fill of the chosen row, importance is weight. A divider marks a SECTION,
-   which is a different kind of thing standing next to another. */
+/* The component sets cumulative indentation on each item so split and regular
+   rows share the same hierarchy geometry. */
 
 .pf-tree, .pf-tree__children { list-style:none; margin:0; padding:0; }
-/* One divider, between sections. Sixteen shop categories used to carry fifteen
-   lines for a grouping the indent already shows. */
 .pf-tree__section + .pf-tree__section { margin-top:var(--sp-2); padding-top:var(--sp-2);
   border-top:var(--stroke-1) solid var(--color-border); }
 
-/* --- The row ------------------------------------------------------------- */
 .pf-tree__row { position:relative; display:flex; align-items:center; gap:var(--sp-2);
   width:100%; min-height:var(--control-size-sm);
   padding:var(--sp-1) var(--sp-2) var(--sp-1) var(--pf-ind, var(--sp-5));
@@ -30,28 +16,12 @@
 .pf-tree__row:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring);
   outline-offset:calc(-1 * var(--stroke-2)); }
 
-/* Zweistufige Markierung: der Weg hell, das Ziel dunkler und fett. Der Balken
-   an der Kante bleibt — eine Markierung darf nicht auf Farbe allein beruhen, und
-   die Tönung misst 1.16:1 —, aber er ist GRAU wie die Linien daneben. In Rot war
-   er der lauteste Strich der ganzen Leiste und zog das Auge auf eine Zeile, die
-   der Leser gerade selbst gewählt hat: die weiss er schon. Kein Schatten mehr;
-   der Balken ist ein Rand, kein Objekt über der Fläche. */
-/* Der Weg trägt einen Balken wie das Ziel, nur leiser — und das ist der Punkt:
-   der Weg IST eine Kette von der Wurzel zur Auswahl, und alle Balken stehen auf
-   derselben Senkrechten, gleich wie tief die Zeile liegt. So liest sich die
-   Kette als Spur, die am dunklen Balken der Auswahl endet.
-
-   Nicht über die Tönung: die stand bei 1.10:1 gegen Weiss und war damit
-   praktisch unsichtbar. Sie anzuheben ginge nur bis in die Nähe der Auswahl
-   (1.28:1) — dann wären «Weg» und «Ziel» nicht mehr auseinanderzuhalten. Zwei
-   Zustände auf demselben Kanal drängen sich; also ein zweiter Kanal.
-   Gemessen: Balken 2.86:1 gegen Weiss, der der Auswahl 4.83:1. */
+/* Borders supplement path and selection fills so state is not colour-only. */
 .pf-tree__row.is-path, .pf-tree__split.is-path {
   background:var(--color-gray-100);
   border-left:var(--stroke-3) solid var(--color-secondary-300);
   padding-left:calc(var(--pf-ind, var(--sp-5)) - var(--stroke-3)); }
-/* Wie bei der Auswahl: die geteilte Zeile trägt den Balken selbst, ihre innere
-   Zeile darf ihn nicht doppeln. */
+/* The split wrapper owns state borders; its inner row must not duplicate them. */
 .pf-tree__split.is-path { padding-left:0; }
 .pf-tree__split.is-path > .pf-tree__row { border-left:0; background:none;
   padding-left:var(--pf-ind, var(--sp-5)); }
@@ -59,16 +29,11 @@
   background:var(--color-secondary-100); font-weight:var(--fw-bold);
   border-left:var(--stroke-3) solid var(--color-text-light);
   padding-left:calc(var(--pf-ind, var(--sp-5)) - var(--stroke-3)); }
-/* Die geteilte Zeile trägt den Balken selbst; ihre Zeile darf ihn nicht doppeln
-   und muss ihre Polsterung behalten. */
 .pf-tree__split.is-active { padding-left:0; }
 .pf-tree__split.is-active > .pf-tree__row { border-left:0; font-weight:var(--fw-bold);
   background:none; padding-left:var(--pf-ind, var(--sp-5)); }
 
-/* --- The chevron, outside the flow --------------------------------------- */
-/* It sits in the gutter immediately left of the label, so a row WITH one begins
-   where a row WITHOUT one begins. That is what stops a child landing left of its
-   parent — measured in the process documentation as L2=40 against L1=48. */
+/* Chevrons stay outside the label flow so rows align whether foldable or not. */
 .pf-tree__fold, .pf-tree__chev-slot {
   position:absolute; left:calc(var(--pf-ind, var(--sp-5)) - 20px); top:0; bottom:0;
   width:20px; display:flex; align-items:center; justify-content:center;
@@ -77,17 +42,12 @@
 .pf-tree__fold:hover { color:var(--color-text); background:var(--color-secondary-100); }
 .pf-tree__fold:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring);
   outline-offset:calc(-1 * var(--stroke-2)); }
-/* The slot is decoration: the row it sits in is itself the control. */
 .pf-tree__chev-slot { pointer-events:none; }
-/* The glyph points RIGHT, which is the closed state — so the OPEN one turns.
-   The other way round, closed pointed up and open pointed right, which is the
-   opposite of what each means. */
 .pf-tree__chev { flex:none; transition:transform var(--duration-fast); }
 .pf-tree__fold[aria-expanded="true"] .pf-tree__chev,
 .pf-tree__row[aria-expanded="true"] > .pf-tree__chev-slot .pf-tree__chev { transform:rotate(90deg); }
 @media (prefers-reduced-motion:reduce) { .pf-tree__chev { transition:none; } }
 
-/* --- The split row -------------------------------------------------------- */
 /* Choosing a record and unfolding it are two intentions, so they get two
    controls: a data table carries up to 75 fields, and selecting it must not mean
    tipping all of them into the rail. */
@@ -97,20 +57,11 @@
 .pf-tree__split > .pf-tree__row { flex:1; min-width:0; }
 .pf-tree__split > .pf-tree__row:hover { background:none; }
 
-/* --- Icon, label, count --------------------------------------------------- */
-/* The column is reserved by the LEVEL and filled by the node (decision (c),
-   docs/seitenbaum-analyse.md §5). An empty one is the visible consequence of a
-   level asking for icons and a row not supplying one — which is a thing worth
-   seeing, not hiding. */
-.pf-tree__ico { flex:none; width:1rem; height:1rem; color:var(--color-text-muted); }
+.pf-tree__ico { flex:none; width:var(--sp-4); height:var(--sp-4); color:var(--color-text-muted); }
 .pf-tree__row.is-active .pf-tree__ico { color:var(--color-text-800); }
 .pf-tree__label { flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis;
   white-space:nowrap; }
-/* Keine Klammern: der Wireframe zeigt blosse Zahlen, und eine rechtsbuendige
-   Spalte tabellarischer Ziffern liest sich ohne sie als Zaehler. Im DOM stand
-   die blosse Zahl ohnehin immer — die Klammern waren nur gezeichnet, und zwar
-   von der gemeinsamen explorer.css, die den sieben noch nicht umgezogenen
-   Oberflaechen erhalten bleibt. Hier ausdruecklich abbestellt. */
+/* This component uses a bare, right-aligned count; legacy explorers add brackets. */
 .pf-tree__section .pf-tree__n::before,
 .pf-tree__section .pf-tree__n::after { content:none; }
 .pf-tree__n { flex:none; margin-left:auto; padding-left:var(--sp-2);
@@ -125,25 +76,15 @@
     left:calc(var(--pf-ind, var(--sp-5)) - var(--target-min)); }
 }
 
-/* --- Der Zweigstrich ---------------------------------------------------------
-   Die gemeinsame explorer.css zeichnet ihn noch fuer die sieben Oberflaechen,
-   die noch nicht umgezogen sind — dort aber aus --tree-indent, das die neue
-   Leiter nicht kennt, und fuer die innerste Liste in Primaerfarbe. Beides passt
-   hier nicht: der Strich sass neben der Spur statt darauf, und in Blau war er
-   der lauteste Strich der Leiste — fuer eine Zeile, die der Leser gerade selbst
-   gewaehlt hat und ohnehin kennt.
-   Also hier abbestellen und selbst ziehen: auf der Achse des Chevrons des
-   ELTERNTEILS (dessen --pf-ind die Liste erbt), in einem Grau, eine Staerke,
-   ohne Ausnahme fuer die innerste. */
+/* Draw the selected branch guide on the component's own indentation axis. */
 .pf-tree__section .pf-tree__children { position:relative; }
 .pf-tree__section .pf-tree__children::before { content:none; }
 .pf-tree__section .pf-tree__children:has(.is-active, .is-path)::after {
-  content:""; position:absolute; z-index:0;
+  content:""; position:absolute; z-index:var(--z-local-base);
   top:0; height:calc(100% - var(--control-size-sm) / 2);
   left:calc(var(--pf-ind, var(--sp-5)) - 10px);
   width:var(--stroke-1); background:var(--color-secondary-200); }
-/* Die Zeile liegt ueber dem Strich: dort kommt die Spur an, sie kreuzt ihn nicht. */
-.pf-tree__section .pf-tree__row, .pf-tree__section .pf-tree__split { position:relative; z-index:1; }
-/* …und das Chevron ueber die Zeile: es liegt absolut in ihr, und eine Zeile, die
-   ueber ihm liegt, schluckt den Klick. */
-.pf-tree__section .pf-tree__fold { z-index:2; }
+/* Rows cover the guide; fold controls remain clickable above rows. */
+.pf-tree__section .pf-tree__row, .pf-tree__section .pf-tree__split {
+  position:relative; z-index:var(--z-local-content); }
+.pf-tree__section .pf-tree__fold { z-index:var(--z-local-control); }

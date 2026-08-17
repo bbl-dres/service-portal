@@ -4,10 +4,11 @@
 import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
 const DATA_FILES = ['applications.json', 'datasets.json', 'catalog-labels.json'];
-const ESTATE_FILES = ['buildings.geojson', 'parcels.geojson', 'landcovers.geojson'];
+const ESTATE_FILES = ['buildings.geojson', 'parcels.geojson', 'landcovers.geojson', 'contracts.json'];
 const WORKSPACE_FILES = ['buildings.geojson', 'floors.json', 'spaces.json', 'workspace-planning.json'];
 const EDITOR_FILES = [...WORKSPACE_FILES, 'shop-products.json'];
 const PLAN_CHECK_FILES = EDITOR_FILES;
+const PROCESS_FILES = ['processes.json'];
 const CASES = [
   { route: '/data', tracked: DATA_FILES, want: ['applications.json', 'datasets.json'] },
   { route: '/data/catalog', tracked: DATA_FILES, want: ['catalog-labels.json', 'datasets.json'] },
@@ -24,6 +25,9 @@ const CASES = [
     tracked: EDITOR_FILES, want: EDITOR_FILES },
   { route: '/app/plan-check?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og',
     tracked: PLAN_CHECK_FILES, want: ['buildings.geojson', 'floors.json'] },
+  // The engine primes the shared registry at startup. API docs must reuse that
+  // request rather than fetching the same process source a second time.
+  { route: '/app/api-docs/kundenportal', tracked: PROCESS_FILES, want: PROCESS_FILES },
 ];
 
 let failures = 0;

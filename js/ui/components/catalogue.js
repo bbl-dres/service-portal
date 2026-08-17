@@ -234,10 +234,7 @@ export function catalogueBar({
   sort = null, filterId = '', filterLabel = 'Filter', filterCount = 0,
   panelId = '', panel = '', panelHidden = true,
   view = 'gallery', views, showSearch = true, showCount = true, extra = '', flush = false,
-  // Ein Feld, das nichts einschraenken kann, sagt das und nimmt sich aus der
-  // Tastreihenfolge — besser, als Anschlaege entgegenzunehmen, die nirgends
-  // hinfuehren. Der Katalog braucht das auf der Attributstufe, wo unterhalb
-  // nichts mehr liegt.
+  // Disable search when this level has no searchable descendants.
   searchDisabled = false,
 }) {
   // Once opened, a panel stays open until the user closes it.
@@ -291,13 +288,7 @@ export function catalogueBar({
             this slot it would sit in a second, otherwise empty right-aligned row
             above. Empty by default, so the four catalogue bars see nothing.
             Caller escapes and wires it. */''}
-      ${/* Der Ansichtswechsel steht GANZ rechts, auch wenn ein Aufrufer eigene
-            Bedienelemente mitbringt: er ist die einzige Schaltung in der Zeile,
-            die die Darstellung wechselt statt den Inhalt einzuschraenken, und im
-            ganzen Portal steht er am Ende. `extra` rueckt darum davor. Kein
-            Aufrufer benutzt heute beides zugleich (nur Raumbuchung nutzt
-            `extra`, und die hat keinen Ansichtswechsel), die Reihenfolge aendert
-            also nichts Bestehendes. */''}
+      ${/* Keep the view switch last; `extra` is a content action, not a display mode. */''}
       <div class="catbar__controls">${sortHtml}${filterHtml}${extra}${views ? viewSwitch(view, views) : ''}</div>
     </div>${filterId ? `
     <div class="catbar__panel" id="${escape(panelId)}"${panelHidden ? ' hidden' : ''}>${panel}</div>` : ''}`;
@@ -411,9 +402,7 @@ export function mountDataTable(host, opts = {}) {
 
     const restore = preserveFocus(host);
     const u = unitCase(unit);
-    // `bar: false` — die Tabelle zeichnet gar keine Leiste. Fuer einen Aufrufer,
-    // der seine Bedienelemente anderswo fuehrt: zwei Leisten uebereinander lesen
-    // sich als zwei Saetze Bedienelemente fuer eine Flaeche.
+    // `bar: false` lets callers provide one external control bar without duplication.
     host.innerHTML = `
       ${!bar ? '' : catalogueBar({
         formId: `${id}-form`, inputId: `${id}-q`,

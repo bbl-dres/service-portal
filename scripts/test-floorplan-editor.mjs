@@ -114,11 +114,7 @@ try {
         states: [...document.querySelectorAll('#fpe-browse-stats .fpe-stats__state-count')].map(text),
         detailPanel: document.querySelectorAll('.fpe-browse__detail').length,
       },
-      // Seit dem Umzug auf das Seitenbaum-Bauteil (2026-08-14) entstehen Kinder
-      // erst beim Aufklappen — ein zugeklappter Ast hat im DOM keine. Beim Laden
-      // steht darum nur die aeusserste Stufe offen; dass die Geschosse eine
-      // eigene Stufe bilden, pruefen weiter unten die Tests, die dafuer gezielt
-      // aufklappen (floorPick und «follows a floor from the tree»).
+      // Collapsed branches render children lazily; later checks expand the floor level.
       tree: {
         countries: document.querySelectorAll('.fpe-browse__tree .pf-tree__section > li').length,
         openAtLoad: document.querySelectorAll('.fpe-browse__tree [aria-expanded="true"]').length,
@@ -158,10 +154,7 @@ try {
 
   const treePick = await page.evaluate(`(async () => {
     const text = node => (node?.textContent || '').split(/\\s+/).join(' ').trim();
-    // Aufklappen OHNE zu waehlen: ein Klick auf eine Zeile waehlt sie auch aus
-    // (select-Modus), ein Bulk-Klick liesse also am Ende ein beliebiges Objekt
-    // gewaehlt zurueck. Pfeil-rechts klappt nur auf. Eine Zeile je Runde, weil
-    // das Neuzeichnen die uebrigen Verweise ungueltig macht.
+    // ArrowRight expands without selecting; query one row per redraw.
     for (let round = 0; round < 40; round++) {
       const shut = document.querySelector('.fpe-browse__tree [aria-expanded="false"]');
       if (!shut) break;
@@ -209,10 +202,7 @@ try {
   `${treePick.statsScope} · ${treePick.pills.join(' | ')}`);
 
   const floorPick = await page.evaluate(`(async () => {
-    // Sicherstellen, dass das Objekt offen steht: der Klick davor hat es
-    // gewaehlt UND dabei umgeschaltet — waehlen und aufklappen sind im
-    // select-Modus dieselbe Geste. Pfeil-rechts oeffnet, ohne die Auswahl
-    // anzutasten.
+    // Expand with ArrowRight so the current selection remains unchanged.
     const row = document.querySelector('.fpe-browse__tree [data-node="obj:1080/6650/AA"]');
     if (row && row.getAttribute('aria-expanded') === 'false') {
       row.focus();
@@ -515,10 +505,7 @@ try {
   await sleep(600);
   await waitFor(page, '.fpe-browse__tree .pf-tree__row', 10000);
   await page.evaluate(`(async () => {
-    // Aufklappen OHNE zu waehlen: ein Klick auf eine Zeile waehlt sie auch aus
-    // (select-Modus), ein Bulk-Klick liesse also am Ende ein beliebiges Objekt
-    // gewaehlt zurueck. Pfeil-rechts klappt nur auf. Eine Zeile je Runde, weil
-    // das Neuzeichnen die uebrigen Verweise ungueltig macht.
+    // ArrowRight expands without selecting; query one row per redraw.
     for (let round = 0; round < 40; round++) {
       const shut = document.querySelector('.fpe-browse__tree [aria-expanded="false"]');
       if (!shut) break;
@@ -526,9 +513,7 @@ try {
       shut.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
       await new Promise(resolve => setTimeout(resolve, 25));
     }
-    // Alles steht schon offen (siehe oben), also nur noch das Geschoss anklicken.
-    // Das Objekt anzuklicken wuerde es zugleich zuklappen — waehlen und
-    // aufklappen sind im select-Modus dieselbe Geste.
+    // With every parent open, select only the floor row.
     const leaf = document.querySelector(
       '.fpe-browse__tree [data-node=' + JSON.stringify('obj:' + ${JSON.stringify(BUILDING_ID)}) + ']');
     leaf?.closest('.pf-tree__item')?.querySelector('[data-node^="sub:"]')?.click();
@@ -2774,9 +2759,7 @@ try {
   check(await waitFor(page, '#fpe-navigation[data-view="portfolio"]'), 'brand link opens the portfolio root');
   const home = await page.evaluate(`(() => ({
     hash: location.hash,
-    // Der Baum kommt zugeklappt (nur die aeusserste Stufe steht offen), und
-    // Kinder entstehen erst beim Aufklappen — die Objekte sind also nicht im
-    // DOM. Dass es sieben sind, sagt der Zaehler der Wurzel.
+    // Lazy children are absent while collapsed, so use the root count.
     objects: Number(document.querySelector('.fpe-browse__tree .pf-tree__section > li .pf-tree__n')?.textContent) || 0,
     overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     barOverflows: (() => {

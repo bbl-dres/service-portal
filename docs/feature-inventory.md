@@ -63,11 +63,13 @@ ausgegeben.
 | `#/app/media-library` | Mediathek |
 | `#/app/media-library/<id>` | Mediendetail |
 | `#/app/api-docs` | API-Dokumentation (Swagger UI) |
-| `#/app/metadata-catalog` | Metadaten Katalog |
-| `#/app/metadata-catalog?id=<id>` | Geschäftsobjektdetail |
-| `#/app/metadata-catalog?table=<id>` | Datentabellendetail |
+| `#/app/metadata-catalog` | Dokumentation der Geschäftsarchitektur |
+| `#/app/metadata-catalog?id=<id>` | Geschäftsobjektdetail (standardmässig Übersicht) |
+| `#/app/metadata-catalog?table=<id>` | Datentabellendetail (standardmässig Übersicht) |
+| `#/app/metadata-catalog?list=<id>` | Referenzlistendetail (standardmässig Übersicht) |
 | `#/app/process-docs` | Prozessdokumentation Bauten |
-| `#/app/process-docs?id=<id>&tab=<uebersicht|diagramm|schritte>` | Prozessdetail mit BPMN- und Schrittansicht |
+| `#/app/process-docs?id=<id>&tab=<uebersicht|diagramm|schritte>` | Fachliches Prozessdetail; Übersicht ist Standard |
+| `#/app/process-docs?def=<id>&tab=<uebersicht|diagramm|schritte>` | Portal-Ablaufdetail; Übersicht ist Standard |
 | `#/app/shop` | BBL Intranetshop – Produktkatalog |
 | `#/app/shop/product/<id>` | Produktdetail |
 | `#/app/shop/cart` | Warenkorb |
@@ -303,7 +305,7 @@ Hash-Router: NAV-Definition, Seiten-/App-Registry mit dynamischem Import, Altlas
 - ctx.navigate(h) als programmatischer Navigationsweg der Module — router.js:239
 - Keine eigenen sichtbaren Bedienelemente — Interaktionen liegen in Shell und Seitenmodulen
 
-## js/core/bookmarks.js · js/core/favorites.js · js/ui/bookmark.js
+## js/core/bookmarks.js · js/ui/bookmark.js
 
 Persönliche Favoriten: EIN Speicher hinter jedem «merken»-Herz. Ein Eintrag ist eine typisierte Referenz `{ kind, id, addedAt }` — nie eine Kopie; Titel und Link werden beim Rendern aus den Katalogen aufgelöst (js/ui/bookmark-kinds.js).
 
@@ -313,7 +315,7 @@ Persönliche Favoriten: EIN Speicher hinter jedem «merken»-Herz. Ein Eintrag i
 - Zwei Quellen, eine Liste: data/users.json setzt den Startbestand je Demo-Person; localStorage `bbl_bookmarks_v1` (`{ userId: { seeded, items } }`) ist danach massgebend — ein entfernter Seed-Eintrag kommt beim nächsten Laden NICHT zurück
 - Migration des anonymen Vorgängers `bbl_favorites_v1` beim ersten Lesen; unbekannte Arten werden verworfen statt als Daten übernommen
 - Ablage pro Person über `session.user().userId`; abgemeldet ist `toggle()` ein No-op
-- `favorites.js` ist nur noch eine dünne Sicht auf denselben Speicher, damit die Herzen der Raumbuchung nicht in einem zweiten Bestand landen
+- Die Raumbuchung verwendet denselben typisierten Bookmark-Speicher direkt; es gibt keinen zweiten Favoritenbestand
 - `bookmarkButton({ kind, id, name, variant })` — zwei Formen desselben Bedienelements: `icon` (icon-only, ohne Beschriftung, mit Titel-Tooltip) und `link` (`btn--link btn--icon-left`, sichtbare Beschriftung, deshalb OHNE Tooltip); `aria-pressed`, sr-only-Name des Datensatzes; abgemeldet wird NICHTS gerendert
 - Beide sagen denselben Satz («Zu meinen Favoriten hinzufügen» / «Aus meinen Favoriten entfernen») — der Link zeigt ihn, das Herz verbirgt ihn für Screenreader
 - EIN Ort für das Herz: `C.detailHead` legt es oben links INS Bild (`.hero__image`) — gleich auf Dienstleistung, Datensatz und Anwendung, den drei Detailköpfen, auf denen man aus der Suche landet; auf Bildgrösse skaliert, auf heller Scheibe, damit er über jedem Foto denselben Kontrast hat
@@ -958,7 +960,7 @@ Daraus folgen zwei Schreibpfade auf Stammdaten: `PATCH /buildings/{bblId}` bzw. 
 - Echtes Swagger UI 5.17.14 lazy vom CDN (unpkg), BaseLayout, docExpansion 'list' (Z.40–58, 222–231)
 - Übersetzung Kurzform-Spez → OpenAPI 3: Pfade, Parameter, requestBody-Beispiel, Response-Codes, Tags, Server-URL (toOpenApi, Z.65–107)
 - Live-Beispiele: 200er-Response mit echten core-Daten je Endpunkt (Schlüsselkonvention '<tag>.<endpunkt>', Z.132–184); Fallback auf ep.example aus der Spez (Z.185–188)
-- process-definitions.json wird separat geladen (kein core-Bestand) für die Beispiele der Ressource process-definitions (Z.115–118, 140–141)
+- Der bereits beim Start im Core gecachte Bestand `processes.json` liefert den Portal-Ast für `process-definitions` und den fachlichen Ast für `processes`; die API-Doku lädt ihn nicht erneut.
 - Auth-Hinweis der Spez → Security-Schema mit Swagger-Schloss + «Authorize»-Dialog (nur Doku): mit `spec.scopes` OAuth 2 (clientCredentials, Scopes je Operation aus `ep.scopes`), sonst apiKey
 - Schreib-Querschnitt aus der Kurzform: `ep.responseHeaders` (Location auf 201, ETag auf Lesezugriffe), 4xx/5xx automatisch als RFC-9457-`problem+json` mit Feldfehlern bei 422
 - Bewusst deaktiviert: deepLinking (Kollision mit Hash-Router), «Try it out» (supportedSubmitMethods []), Models-Block, externer Validator (Z.228–233)
@@ -974,7 +976,7 @@ Daraus folgen zwei Schreibpfade auf Stammdaten: `PATCH /buildings/{bblId}` bzw. 
 - CDN-Fehler/Zeitüberschreitung (12 s): Fehlermeldung mit «Seite neu laden»-Knopf, live-Region (Z.46, 211–219)
 - Ladefehler wird nicht gecacht — ein späterer Aufruf lädt die Bibliothek erneut (Z.56)
 - stale()-Abbruch nach jedem await (fetchJSON, loadSwaggerUI) gegen überholte Navigation (Z.119, 210, 212)
-- api-specs.json-Fetch-Fehler → leeres specs-Objekt → NotFound-Pfad; process-definitions-Fehler → Beispiele entfallen still (Z.114, 118)
+- api-specs.json-Fetch-Fehler → leeres specs-Objekt → NotFound-Pfad; ein Fehler des gemeinsamen Prozessbestands wird über den globalen Datenstatus sichtbar.
 - Live-Beispiel-Fehler je Endpunkt abgefangen → Fallback auf Spez-Beispiel (Z.186)
 
 **Interaktionen**
@@ -1290,86 +1292,44 @@ Mediathek Bauten: Katalog der Fotos/Videos (Galerie/Liste/Karte) mit Vollbildgal
 
 ## js/apps/metadata-catalog.js
 
-Metadaten Katalog Bauten: Data-Governance-Katalog mit zwei Sichten (Geschäftsobjekte / Datentabellen), Seitenbaum, Detailseiten mit je 3 Registern und der Kernfrage «welches Feld welchen Systems trägt diesen Fachbegriff» (Realisierungen in beide Richtungen via core-Rückwärtsindex).
+Dokumentation der Geschäftsarchitektur als einheitlicher Explorer für Geschäftsobjekte, Datentabellen und Referenzdaten. Hierarchie, Suche und Darstellungsform sind URL-adressierbar; ausgewählte Einträge öffnen zuerst ihre Beschreibung und Metadaten.
 
 **Routen**
 
-- #/app/metadata-catalog — Bestandsansicht, Standardsicht Geschäftsobjekte, Standardansicht Liste (Z.145, 154)
-- #/app/metadata-catalog?kind=tabellen — Datentabellen-Sicht (kind bleibt bei Standardsicht aus der Adresse, Z.203–205)
-- #/app/metadata-catalog?q=… — Suche (Objekte: Name/Definition/Bemerkung/Attributnamen; Tabellen: Name/DisplayName/Beschreibung/Schema/System/Feldnamen, Z.177–186)
-- #/app/metadata-catalog?domain=<key>,… — Domänen-Filter (nur Objekte-Sicht)
-- #/app/metadata-catalog?system=<key>,…&schema=<key>,… — System-/Schema-Filter (nur Tabellen-Sicht)
-- #/app/metadata-catalog?status=<id>,… — Status-Filter (objectStatuses, nur Objekte-Sicht)
-- #/app/metadata-catalog?mapped=ja|nein — mit/ohne Realisierung (beide Sichten, Z.153)
-- #/app/metadata-catalog?sort=name|domain|attrs|maps bzw. name|system|fields|real — Sortierung je Sicht (Z.161–174)
-- #/app/metadata-catalog?view=list|gallery — Ansichtswechsel, Standard Liste (Z.154)
-- #/app/metadata-catalog?page=<n> — Blättern, 12 pro Seite (Z.196–198)
-- #/app/metadata-catalog?id=<objectId> — Geschäftsobjekt-Detail (Inventar-Idiom statt Routensegment, Z.71–78)
-- #/app/metadata-catalog?id=<objectId>&tab=uebersicht|attribute|realisierung — Register-Deeplink (Z.487–497)
-- #/app/metadata-catalog?table=<tableId> — Datentabellen-Detail (Z.76–78)
-- #/app/metadata-catalog?table=<tableId>&tab=uebersicht|felder|realisierung — Register-Deeplink (Z.658–666)
+- `#/app/metadata-catalog` — Einstieg mit drei Bestandskarten, letzten Änderungen und Geschäftsobjekt-Domänen.
+- `#/app/metadata-catalog?kind=<objekt|tabelle|referenz>` — Ast; `leaf=<name>` grenzt auf Domäne, System oder Thema ein.
+- `#/app/metadata-catalog?q=…` — Volltextsuche; am Einstieg über alle drei Äste, innerhalb eines Astes über dessen Einträge.
+- `tab=<uebersicht|diagramm|tabelle>` — Darstellung eines Astes oder einer Gruppe. Äste und Gruppen starten im Diagramm; ein Eintrag startet in der Übersicht.
+- `group=<achse|verantwortung|status|keine>` und `sort=<name|n|ord>` — explizite Gruppierung beziehungsweise Sortierung, soweit sie für die aktuelle Ebene angeboten wird.
+- `#/app/metadata-catalog?id=<objectId>` — Geschäftsobjekt; `table=<tableId>` — Datentabelle; `list=<refKey>` — Referenzliste. Diese etablierten Deep Links bleiben stabil.
+- `attr=<name>` — direktes Detail eines Attributes, Feldes oder Referenzwertes unter dem gewählten Eintrag.
 
 **Funktionen**
 
-- Katalogleiste: Suche mit sichtabhängigem Label/Placeholder, Trefferzahl mit Kasus-korrekter unit {nom,dat} (Z.318–333), Sortierung (4 Optionen je Sicht), Filterpanel, Ansichtswechsel Liste/Galerie
-- Seitenbaum pf-tree--plain, genau 2 Ebenen: «Geschäftsobjekte»→Domänen, «Systeme»→Systeme, mit Trefferzahlen je Knoten (Z.387–459)
-- Baum-Klappzustand modulweit persistent (OPEN-Map überlebt Neu-Renders; gefilterter Zweig immer offen, Z.92–97, 446–457)
-- Listenansicht Objekte: Tabelle mit festen Spaltenbreiten — Name-Link, Domäne-Badge, gekürzte Definition (kurz(), Z.64–69), Attributzahl, Status-Badge (Z.264–275)
-- Listenansicht Tabellen: DisplayName-Link + technischer Name als code, System-Badge, Beschreibung, Felderzahl, Zertifiziert/Nicht-zertifiziert-Badge (Z.276–291)
-- Galerieansicht: bildlose CD-Karten mit Badges (Domäne/Status bzw. System/Art/Zertifiziert) und Kennzahlen-Footer (Attribute·Realisierungen bzw. Felder·Zeilen, Z.228–254)
-- Aktive-Filter-Pillen inkl. «Mit/Ohne Realisierung» und «Schema …» (Z.215–222)
-- Objekt-Detail: detailBar, H1, Definition als Lead, 3 Register mit Zählern in den Beschriftungen (Z.487–491, 547–565)
-- Objekt-Übersicht: «Verantwortliche Personen» (Rolle → AdminDir-Link, geteilter Baustein personsSection, Z.121–127), Metadaten-kv (Domäne als Filterlink, Status-Badge mit Definition+Konsequenz, Norm-Referenz, Bemerkung, Stand, ID), Kontakt-Karte (steward-Kontakt, Z.480–544)
-- Objekt-Register Attribute: C.mountDataTable mit Suche, 2 Sortierungen, Facetten Schlüsselrolle/Pflichtangabe, 15 pro Seite; Spalten Attribut(+optional-Marke)/Beschreibung/Werttyp/Schlüssel-Badge (Z.569–603)
-- Objekt-Register Realisierung: Datentabelle Attribut/System/Tabelle-Link(+technischer Name)/Feld/Güte-Badge (Z.605–625)
-- Güte-Badge (Exakt/Nahe/Teilweise) mit Erklärung im title-Attribut am Wert statt Legende (MATCH_HINT/matchBadge, Z.99–114)
-- Tabellen-Detail: gleiche Anatomie; Metadaten-kv System/Schema(+Typ)/technischer Name/Art/«Publiziert als» DCAT-Link/Quellsystem-Link (Host statt URL, hostOf Z.90)/Stand/ID (Z.680–702)
-- Tabellen-Detail Randspalte: «Zugriff»-Karte mit «Datensatz ansehen»-Button (nur bei datasetId), Kontakt-Karte (Z.703–716)
-- Tabellen-Register Felder: Datentabelle Feld-code/Beschreibung/Datentyp/PK-FK-optional/Realisiert-durch-Objektbadges mit Tooltip «Objekt · Attribut»; Facetten Schlüssel + «Trägt einen Begriff» (Z.739–774)
-- Tabellen-Register Realisierung: Geschäftsobjekt-Link/Attribut/Feld/Güte (Z.776–791)
-- datasets (115 KB) nur im Tabellen-Detail nachgefordert (core.ensure('datasets'), Z.641–647)
-- Beschriftungs-Maps für Ablageformen: TABLE_TYPE/SCHEMA_TYPE/VALUE_TYPE/KEY_ROLE (Z.46–58)
-- Krume: Anwendungen → Metadaten Katalog Bauten (→ Name im Detail); Seitentitel je Ansicht (Z.137–138, 475–476, 648–649)
+- Gemeinsamer Sidebar-Baum `C.sidebarTree`: Übersicht → Ast → Domäne/System/Thema → Eintrag → Bestandteil. Eintragszeilen trennen Navigation und Aufklappen; Bestandteile werden erst beim Öffnen erzeugt.
+- Jede Ebene besitzt einen kontextuellen H1, Lead, Brotkrumen und einen Zurück-Link genau eine Ebene nach oben.
+- Aggregate Ebenen bieten Übersicht, gruppierbare Landschaft und Tabelle. Tabellen zeigen Name, Verantwortung, Beschreibung, Umfang und Status; die Root-Suche gruppiert Treffer nach Ast.
+- Eintragsdetails verwenden echte Textregister nach APG-Muster: «Übersicht» plus «Attribute», «Felder» oder «Werte». Die Übersicht zeigt Beschreibung, Kerndaten, Verantwortung, technische Angaben und Quellen im vollen Inhaltsbereich ohne zweite Randspalte.
+- Bestandteil-Details zeigen Typ/Schlüssel/Pflicht, geerbte Verantwortung und die Abbildung Geschäftsobjekt-Attribut ↔ Datentabellen-Feld inklusive Gütehinweis.
+- Startseite mit Bestandskennzahlen, zuletzt geänderten Einträgen und Domänentabelle; Referenzdaten sind ein gleichwertiger dritter Ast.
+- CSV-, Excel- und Druckexport beziehen sich auf den vollständigen gefilterten Umfang beziehungsweise alle Bestandteile des gewählten Eintrags, nicht nur auf eine sichtbare Tabellenseite.
 
 **Zustände**
 
-- needs businessObjects/dataTables/contacts (Z.35)
-- Leerzustand/Ladefehler je Sicht via catalogueResults + core.available('businessObjects'|'dataTables') (Z.346–356)
-- NotFound Geschäftsobjekt bzw. Tabelle mit renderNotFound (Z.468–474, 634–640)
-- Filter aktiv: Pillenzeile + Filterzähler je Sicht (Z.311–313); Sichtwechsel nimmt Filter der anderen Sicht NICHT mit (kindHref, Z.208–212)
-- Baumzustand: Zweig offen/zu (aria-expanded/hidden), aktiver Knoten is-active + aria-current; gefilterter Zweig erzwungen offen (Z.412–418, 446–457)
-- Register-Zustand über ?tab, unbekannte Werte fallen still auf Übersicht (Z.496–497, 665–666)
-- Leere Realisierung: Tabelle MIT Kopfzeile + erklärender Leertext statt Leerzustand (emptyMsg, Z.508–513, 607, 778)
-- Keine verantwortliche Person: Hinweistext im Personen-Kasten (Z.127)
-- stale()-Prüfung nach dem datasets-await im Tabellen-Detail (Z.644–647)
-- Seite auf totalPages geklemmt (Z.196–197); Standard-Sortierung Name A–Z ohne sort-Param (Z.195)
-- Detail-Datentabellen: eigener Such-/Facetten-/Seitenzustand je mountDataTable (mc-at/mc-mp/mc-fl/mc-rl)
+- Datenvertrag `needs = ['businessObjects', 'dataTables', 'contacts']`; Ladefehler werden pro betroffenem Ast angezeigt, während verfügbare Äste benutzbar bleiben.
+- Ungültige Eintrags-Deep-Links ergeben eine Nicht-gefunden-Seite. Ungültige Äste, Gruppen, Bestandteile, Register, Gruppierungen und Sortierungen werden vor dem Rendern auf gültige Standardwerte normalisiert.
+- Eine neue Eintrags- oder Bestandteil-Auswahl setzt die Darstellung auf Übersicht zurück; ein ausdrücklich gesetztes Detailregister bleibt direkt adressierbar.
+- Nur echte Volltextsuche erscheint als entfernbare Filterpille. Hierarchische Auswahl wird bereits durch H1, Brotkrumen und Baum kommuniziert.
+- Landschafts- und Baumfaltungen bleiben bei lokalen Neuzeichnungen erhalten; leere Tabellen und fehlende Governance-Angaben besitzen erklärende Zustände.
+- Detailansichten nutzen `pf-layout--detail` und ein responsives `mc-detail`-Raster; auf kleinen Viewports steht der Inhalt vor der sekundären Hierarchie und es gibt kein `detail-layout__aside`.
 
 **Interaktionen**
 
-- Suchformular mc-search (Submit → Hash, C.wireCatalogue, Z.362–365)
-- Sortier-Dropdown mc-sort (sichtabhängige Optionen)
-- Filter-Knopf mit Panel: Checkbox-Gruppen Domäne/Status/Realisierung bzw. System/Schema/Realisierung; Panel-Reset (Z.294–309)
-- Pillen einzeln entfernen, Gesamt-Reset auf BASE (Z.339)
-- Ansichtsumschalter Liste/Galerie (Z.337)
-- Pagination mit Seiteneingabefeld mc-page (Z.353–354)
-- Baum: Zweigknopf — von woanders navigiert er auf den Zweig und öffnet ihn, an Ort klappt er auf/zu (Klick-Delegation an .pf-sidebar, Z.368–385); Blätter sind Filterlinks (Domäne/System)
-- Zeilenklick in beiden Listen (C.wireTableRows mit onUnmount, Z.366)
-- Registerwechsel mit URL-Sync per history.replaceState (C.wireTabs, Z.498–502, 567, 663–671, 737)
-- Detail-Datentabellen: eigene Suche, Sortierung, Facettenfilter, Blätterleiste (C.mountDataTable, Z.572, 605, 739, 776)
-- Externe Links: AdminDir-Personeneinträge (target _blank rel noopener, Z.125), Quellsystem-URL (Z.698)
-- Interne Querlinks: Tabelle↔Geschäftsobjekt (Realisierungen), «Publiziert als»/«Datensatz ansehen» in den DCAT-Katalog (links.datensatz, Z.695, 712), Domänen-/Gruppen-Filterlink in den Metadaten (Z.526)
-- Zurück-Link im Tabellen-Detail führt auf die GEFILTERTE Systemsicht (kind=tabellen&system=…, Z.724–727); im Objekt-Detail auf BASE
-- Tooltip-Erklärungen: Güte-Badges (title=MATCH_HINT) und Realisiert-Badges (title «Objekt · Attribut», Z.771)
-
-- Der Standortbaum (`.pf-tree`, `js/ui/spatial-tree.js`, `css/sections/explorer.css`) ist EIN wiederverwendbares Bauteil hinter fünf Explorern — Liegenschaften-Inventar, Bauprojekte, Mietendenportal, Workspace Management, Plan-Editor — plus drei Oberflächen, die dasselbe Markup als Navigationsliste von Hand bauen: Metadaten-Katalog, Prozessdokumentation und die mobile Shop-Kategorienavigation.
-- Gestaltung ist Variante H2 aus `docs/wireframes/260810 - Standortbaum.html`, gewählt nach dem Vergleich von zehn Behandlungen am echten sechsstufigen Bestand: Einrückung von 16 px je Ebene als Zeilen-Innenabstand (nicht als Listenrand, sonst treppen die linken Enden der Trennlinien), Trennlinien über die volle Spaltenbreite, und eine senkrechte Führungslinie NUR entlang des ausgewählten Zweigs — auf der Achse des übergeordneten Chevrons und unter der ausgewählten Zeile, weil diese das Ziel der Spur ist und nicht etwas, das die Spur durchquert.
-- Tiefe wird über verschachtelte `.pf-tree__children`-Selektoren ausgedrückt, nicht über `aria-level`: die drei handgebauten Oberflächen verschachteln gleich, führen aber keine Ebenenattribute, und erben Einrückung wie Trennlinien so unverändert.
-- Auswahl zweistufig: die gewählte Zeile dunkelgrau mit Primärbalken an der Kante, ihre Vorfahren hellgrau. Auswahl ruht damit nie auf Farbe allein.
-- Zähler lesen sich als `(7)`. Die Klammern sind CSS-Pseudoelemente; der Textinhalt bleibt die nackte Zahl, die `scripts/check-tree.mjs`, `test-portfolio.mjs` und `test-tenancies.mjs` mit `Number()` auswerten.
-- Vollständiges ARIA-Baummuster mit wanderndem `tabindex`: `role="tree"`/`treeitem"`/`group"`, `aria-level`, `aria-selected`, ein einziger Tabstopp für den ganzen Baum, `↑↓` bewegen, `→` öffnet, `←` schliesst oder springt zur übergeordneten Ebene, `Home`/`End` an die Enden. Vorher war jede Zeile ein eigener Tabstopp — im Liegenschaften-Inventar über hundert vor der Karte — und die Pfeiltasten taten nichts. `syncTreeCounts` setzt den Tabstopp nach dem Filtern auf eine sichtbare Zeile zurück, sonst wäre der Baum per Tastatur unerreichbar.
-- Ein Klick öffnet genau EINE Ebene. Das ist auch die Voraussetzung für verzögertes Rendern, das noch offen ist: der Prototyp weist gemessen nach, dass H2 bei 3500 Objekten mit verzögertem Rendern 46 Zeilen in den DOM legt, während ein vollständiger Aufbau rund 13 500 Zeilen bräuchte.
-- `scripts/test-spatial-tree.mjs` prüft diesen Vertrag an einer Stelle für alle sieben Oberflächen.
+- Die Suche aktualisiert URL und Inhalt nach kurzer Tippverzögerung; Absenden wirkt sofort. Ein Hierarchiewechsel beginnt bewusst ohne die vorherige Suche.
+- Aggregate Ansichtsbuttons wechseln lokal zwischen Übersicht, Diagramm und Tabelle. Eintragsregister verwenden roving `tabindex`, Pfeiltasten sowie Home/End und synchronisieren `tab` per `history.replaceState`.
+- Separater Eintragslink und Chevron im Baum verhindern, dass Aufklappen versehentlich navigiert. Tastaturaktivierung, Fokuswiederherstellung und lazy erzeugte Kinder kommen aus dem gemeinsamen Sidebar-Baustein.
+- Gruppieren ist nur in Diagramm/Tabelle verfügbar, Sortieren nur in Tabellen; «Alle auf-/zuklappen» verändert die Landschaft ohne zusätzlichen Verlaufseintrag.
+- Aktionen exportieren CSV/Excel oder öffnen den Druckdialog. Interne Links verbinden Attribute und Felder sowie Datentabellen und veröffentlichte Datensätze; externe Quellen und AdminDir-Einträge verwenden abgesicherte Links.
 
 ## js/apps/portfolio.js
 
@@ -1441,74 +1401,46 @@ Liegenschaften Inventar — map-first Explorer über Gebäude UND Grundstücke a
 
 ## js/apps/process-docs.js
 
-Prozessdokumentation Bauten: Prozesslandkarte (L1-Bereich → L2-Gruppe → L3-Prozess) als Katalog mit Seitenbaum; Detail mit BPMN-Diagramm (bpmn-js NavigatedViewer, lazy CDN) und viewer-unabhängiger Schrittliste aus dem BPMN-XML (DOMParser) als zugänglicher Alternative.
+Prozessdokumentation Bauten als gemeinsamer Explorer für fachliche Prozesse und Kundenportal-Abläufe. Aggregate Ebenen teilen Übersicht, Landschaft und Tabelle; jedes Prozessdetail startet mit Beschreibung und Metadaten und lädt BPMN erst für Diagramm oder Schritte.
 
 **Routen**
 
-- #/app/process-docs — Landkarte (Liste + Baum), Standardansicht Liste (Z.179)
-- #/app/process-docs?q=… — Suche über ID, Name, Beschreibung, Gruppenlabel, Tags, Systeme (Z.189–193)
-- #/app/process-docs?group=<key>,… — Prozessgruppen-Filter (CSV)
-- #/app/process-docs?status=<id>,… — Status-Filter (objectStatuses-Lebenszyklus wie Katalogobjekte, Z.139–141)
-- #/app/process-docs?sort=nr|name|group — Sortierung (Standard nr numerisch, Z.182–187)
-- #/app/process-docs?view=list|gallery — Ansichtswechsel (Z.179)
-- #/app/process-docs?page=<n> — Blättern, 12 pro Seite (Z.201–203)
-- #/app/process-docs?id=<processId> — Prozess-Detail (Z.156–158)
-- #/app/process-docs?id=<processId>&tab=uebersicht|diagramm|schritte — Register-Deeplink, Unbekanntes → Übersicht (Z.366–368)
+- `#/app/process-docs` — gemeinsamer Einstieg mit je einer Karte für fachliche Prozesse und Kundenportal-Abläufe, letzten Änderungen und Prozessgruppen.
+- `branch=<fachlich|portal>`, `org=<name>`, `area=<key>` oder `group=<key>` — adressierbare Hierarchie-Sichten; die engste gültige Auswahl gewinnt.
+- `q=…`, `status=<id>,…` und `sort=<nr|name|group>` — Volltext-, Status- und Sortierzustand im aktuellen Umfang.
+- `view=<uebersicht|diagramm|tabelle>` — Aggregatdarstellung; ein ausgewählter Umfang startet im Diagramm.
+- `axis=<bereich|gruppe|status|keine>` — Gruppierung von Landschaft und Tabelle, mit einem zur Hierarchie passenden Standard.
+- `#/app/process-docs?id=<processId>` — fachlicher Prozess; `def=<processId>` — Kundenportal-Ablauf.
+- `tab=<uebersicht|diagramm|schritte>` — Detail-Deeplink; Übersicht ist Standard, unbekannte Werte fallen darauf zurück.
 
 **Funktionen**
 
-- Katalogleiste: Suche, Trefferzahl (unit {Prozesse, Prozessen}), Sortierung, Filter (Gruppe/Status), Ansichtswechsel Liste/Galerie (Z.278–286)
-- Seitenbaum «Prozesshierarchie»: Prozessbereich (L1, mit Zähler) → Prozessgruppen (L2, als Filterlinks); L3 ist die gefilterte Liste rechts — Gruppenklick IST der Filter (Z.235–264)
-- Baum-Klappzustand modulweit persistent (OPEN-Map, Standard: alle Bereiche offen, Filterzweig erzwungen offen, Z.150–153, 262)
-- Listenansicht: Tabelle Nr.(code)/Prozess-Link mit gekürzter Beschreibung darunter/Prozessgruppe/Status-Badge (Z.224–233)
-- Galerieansicht: Karten mit idLine (processId), gekürzter Beschreibung (kurz(), Z.143–148), Gruppen-Badge, Bereichslabel im Footer (Z.215–222)
-- Aktive-Filter-Pillen (Suche/Gruppe/Status) mit Entfernen-Links (Z.209–213)
-- Detail: detailBar, H1, Beschreibung als Lead, 3 Register — «Übersicht», «Prozessdiagramm» und «Prozessschritte (n)» mit Zähler aus dem BPMN (Z.363–366, 435–441)
-- Übersicht: «Verantwortliche Personen» (AdminDir-Links, lokale Kopie von personsSection, Z.374–382), Metadaten-kv Bereich(+Code)/Gruppe als Filterlink/Status-Badge mit Definition+Konsequenz/Version/Unterstützende-Systeme-Badges/Grundlagen/Stand/ID (Z.384–397)
-- Randspalte: «Verwandte Prozesse» (Links via links.prozess, Name aus core.processDoc aufgelöst, Z.399–406) + Kontakt-Karte (generische Ansprechstelle CONTACT_ID 'immobilienmanagement', Z.29–30, 407)
-- BPMN-Diagramm in einem eigenen Register über die volle Inhaltsbreite; die zweispaltige Übersicht bleibt davon unabhängig (Z.411–428)
-- bpmn-js NavigatedViewer 17.11.1 lazy vom CDN inkl. 3 Stylesheets, 12-s-Timeout (Z.32–59)
-- Vertikale Overlay-Werkzeugleiste: Vergrössern, Verkleinern und Ausschnitt zurücksetzen (Faktor 1.2, fit-viewport, Z.419–422, 531–536)
-- Das Diagramm-Tabpanel besitzt eine sr-only-H2; die gleichwertige textuelle Alternative steht im Register «Prozessschritte». Der interaktive Host trägt bewusst kein `role=img`.
-- Schrittliste aus BPMN-XML via DOMParser: 21 typisierte Flusselementtypen in Dokumentreihenfolge, mit Lane-Zuordnung, Ein-/Ausgangszahlen, Dokumentation (parseBpmnSteps, Z.61–135)
-- Schrittregister: Datentabelle Nr./Schritt (Fallback «ohne Bezeichnung» + id)/Typ/Rolle(Lane), Facetten Art + Rolle (Lane-Facette nur wenn Lanes existieren), 15 pro Seite (Z.446–467)
-- Ein BPMN-Abruf für Diagramm UND Schrittliste (Z.350–360)
-- Krume: Anwendungen → Prozessdokumentation Bauten (→ Prozessname im Detail); Screenreader-Trefferansage (Z.166–167, 307, 344–345)
+- Gemeinsamer Sidebar-Baum `C.sidebarTree`: fachlich über Organisation → Prozessbereich → Prozessgruppe → Prozess; Kundenportal direkt über Gruppe → Ablauf. Split-Zeilen trennen Ziel und Aufklappen, Kinder werden lazy erzeugt.
+- Root-Übersicht über beide Zweige; in einem Umfang beschreiben Übersicht, Diagramm, Tabelle, Trefferzahl und Export stets dieselbe gefilterte Prozessmenge.
+- Landschaften gruppieren nach Bereich, Gruppe oder Status. Die Tabelle zeigt Zweig (nur bei gemischtem Bestand), Nummer, Prozess mit Kurzbeschreibung, Prozessgruppe und Status.
+- Beide Prozessarten verwenden dasselbe vollbreite Detailmuster ohne verschachtelte Randspalte: Beschreibung, Einordnung, Verantwortung, Ablauf/Systeme sowie — sofern vorhanden — Schlagwörter, Grundlagen und führende Quelle.
+- Drei APG-Register «Übersicht», «Prozessdiagramm» und «Prozessschritte». Die Übersicht rendert ohne BPMN-Abruf; Diagramm und Schritttabelle teilen einen validierten und gecachten BPMN-Download.
+- `parseBpmnSteps` liest typisierte BPMN-Flusselemente in Dokumentreihenfolge, ordnet Lanes zu und berechnet Ein-/Ausgänge. Die zugängliche Tabelle bietet Suche, Sortierung sowie Facetten für Art und Rolle.
+- bpmn-js `NavigatedViewer` wird samt integritätsgeprüften Styles/Skript erst beim ersten sichtbaren Diagrammregister geladen; vertikale Overlay-Aktionen steuern Zoom und Einpassen.
+- CSV-, Excel- und Druckexport erfassen den vollständigen gefilterten Prozessumfang beziehungsweise alle geladenen Prozessschritte.
 
 **Zustände**
 
-- needs processes/contacts (Z.23)
-- Leerzustand/Ladefehler via catalogueResults + core.available('processes') (Z.294–302)
-- NotFound Prozess mit renderNotFound (Z.337–343)
-- Filter aktiv: Pillen + Filterzähler (Z.266); Baumzweige offen/zu mit aria-expanded/hidden, aktiver Knoten is-active/aria-current
-- Register-Zustand ?tab mit stillem Fallback auf Übersicht (Z.366–367)
-- BPMN-Fetch-Fehler: BEIDE Register degradieren einzeln — Schrittliste zeigt Fehlermeldung mit Pfad+Ursache (Z.441–445), Diagramm eigene Meldung (Z.489–493)
-- Viewer-CDN-Fehler/Timeout: Meldung mit «Seite neu laden»-Knopf, live-Region; Fehler nicht gecacht → Retry (Z.57, 498–504)
-- Import-/Zeichenfehler des Diagramms: eigene Fehlermeldung (Z.515–518)
-- Ladeanzeige C.loading «Diagramm wird geladen…» im bpmn-Host (Z.424–426)
-- Zoomknöpfe disabled, bis das Diagramm steht (Z.420–422, 513–514)
-- Viewer startet erst beim ersten sichtbaren Aufruf des Registers «Prozessdiagramm» (viewerStarted-Guard)
-- Aufgeschobenes Einpassen: bei 0×0-Panel (Registerwechsel während CDN-Laden) wird fit gemerkt und beim Rückwechsel per requestAnimationFrame nachgeholt (needsFit/fitDiagram, Z.474–483, 534–539)
-- stale()-Prüfungen nach BPMN-Fetch, Viewer-Laden und importXML (Z.359, 499, 506, 511)
-- viewer.destroy() via ctx.onUnmount, Fehler beim Zerstören geschluckt (Z.521)
-- Seite auf totalPages geklemmt (Z.201–202); Detail-Schritttabelle mit eigenem Such-/Facetten-/Seitenzustand (pd-st)
+- Datenvertrag `needs = ['processes', 'contacts']`; ein fehlender Prozessbestand zeigt einen Ladefehler, unbekannte `id`/`def`-Werte eine Nicht-gefunden-Seite.
+- Hierarchie-Sicht wird durch Baum, H1-Kontext und Zurück-Link dargestellt; nur unabhängige Suche und Statusfilter erscheinen als entfernbare Pillen.
+- Ein neu gewählter Prozess beginnt immer in der Übersicht. Detailregister bleiben deeplink-fähig und synchronisieren die URL ohne neuen Verlaufseintrag.
+- BPMN-Dateipfad und XML-Namensraum werden validiert. Fetch-, Parser-, CDN- und Importfehler besitzen getrennte Meldungen; soweit Schritte verfügbar sind, bleibt die textuelle Alternative erreichbar.
+- Ladeanzeigen und deaktivierte Zoomaktionen decken den Viewer-Aufbau ab. Sichtwechsel während des Ladens verschiebt `fit-viewport`, bis der Container messbar ist; Route-Abbruch und Unmount verhindern stale Rendering und zerstören den Viewer.
+- `mc-detail` und `pf-layout--detail` ordnen auf schmalen Viewports den Prozessinhalt vor der sekundären Hierarchie; Detailregister scrollen intern und erzeugen keinen Dokument-Overflow.
 
 **Interaktionen**
 
-- Suchformular pd-search (Submit → Hash, C.wireCatalogue, Z.308–311)
-- Sortier-Dropdown pd-sort (Nummer/Bezeichnung/Prozessgruppe)
-- Filter-Knopf mit Panel: Checkbox-Gruppen Prozessgruppe/Status, Panel-Reset (Z.267–270)
-- Pillen entfernen, Gesamt-Reset auf BASE (Z.287)
-- Ansichtsumschalter Liste/Galerie (Z.285)
-- Pagination mit Seiteneingabefeld pd-page (Z.299–300)
-- Baum: Zweigknopf navigiert (nimmt q und view mit, sonst könnte er bei gesetzter Suche nie klappen, Z.256–262) oder klappt an Ort auf/zu; Gruppen-Blattlinks filtern (Z.314–328)
-- Zeilenklick in der Liste (C.wireTableRows, Z.312)
-- Registerwechsel mit URL-Sync (replaceState); onSelect auf «Prozessdiagramm» startet den Viewer beziehungsweise holt das Einpassen nach
-- Overlay-Werkzeugleiste: 3 Knöpfe (in/out/reset), delegierter Klick am .tabs-Kind statt mount gegen Horcher-Ansammlung
-- Diagramm: Pan/Zoom mit der Maus (NavigatedViewer, Z.417)
-- Schritttabelle: eigene Suche, Sortierung (Reihenfolge/Name), Facetten (Art, Rolle), Blättern (C.mountDataTable, Z.448–467)
-- Externe Links: AdminDir-Personeneinträge (target _blank, Z.380–381)
-- Interne Links: Gruppen-Filterlink in den Metadaten (Z.389), verwandte Prozesse (Z.402–405), «Seite neu laden»-Knopf im Viewer-Fehlerfall (Z.502)
+- Suche und Statuspillen erhalten den gewählten Hierarchie-Umfang. Die Suche im Detail führt bewusst zurück in den globalen Prozesskatalog statt einen wirkungslosen Detailzustand zu erzeugen.
+- Aggregate Ansichtsbuttons schalten Übersicht, Diagramm und Tabelle; Gruppierungsmenü und «Alle auf-/zuklappen» gelten nur für die wirksamen Darstellungen.
+- Baumziele navigieren, separate Chevrons falten. Der gemeinsame Baustein unterstützt Tastaturaktivierung, Fokuswiederherstellung, aktive Pfade und lazy Kinder.
+- Detailregister unterstützen Pfeiltasten sowie Home/End. Das erstmalige Öffnen von Diagramm oder Schritten startet die gemeinsame BPMN-Ladung; die Schrittzahl ergänzt anschliessend die Registerbeschriftung.
+- Diagrammsteuerung bietet Pan/Zoom, Vergrössern, Verkleinern und Ausschnitt zurücksetzen. Die Schritttabelle besitzt eigene Suche, Sortierung, Facetten und Blätterung.
+- AdminDir-, Dienstleistungs-, Prozessgruppen- und verwandte Prozesslinks bleiben im Kontext; externe Quellen und Mailadressen werden über die gemeinsamen URL-Sicherheitshelfer erzeugt.
 
 ## js/apps/projects.js
 
@@ -1754,7 +1686,7 @@ Workspace Management — Prozesseinstieg und Objektportal der Workspace-Suite. D
 
 ## js/apps/floorplan-editor.js
 
-Eigenständiger, loginpflichtiger Plan-Editor / Viewer der Workspace-Suite mit `layout='standalone'`. `js/apps/floorplan-editor.js` ist der kleine Router-Einstieg; Startseite, Workbench, gemeinsame Darstellungshilfen, Dokumentbefehle und technische Adapter liegen gebündelt unter `js/floorplan-editor/`. Er übernimmt stabile Fachschlüssel vom Portal, besitzt aber eigenes Chrome, eigenes Dokumentmodell und eigenen Lebenszyklus. Datenquellen sind die kanonischen Bestände `buildings`, `floors`, `spaces`, `tenancies` und `shopProducts` sowie das kleine Overlay `workspacePlanning`; der Editor arbeitet stets auf einem Klon und mutiert diese Quellen nicht. Die Startseite besteht aus zwei gleichrangigen Ansichten: `tasks.js` leitet die offenen Arbeiten je Attributebene rein aus den Beständen ab, `work-view.js` rendert die Arbeitsliste, `browse-view.js` die kartenzentrierte Portfoliosuche und `navigation.js` besitzt Routing, Datenaufbau und Ereignisverdrahtung beider Ansichten. `canvas.js` liefert die Autoren-Planfläche, die `three.js`-Fassade das aus demselben Dokument erzeugte, in `three-viewer.js` gekapselte 3D-/Begehungsmodell, `colors.js` und `geometry.js` rendererübergreifende Regeln, `interactions.js` reine Eingabeberechnungen und `dialogs.js` die Aktionsdialoge. `model.js` besitzt Baseline, Validierung, Katalogabgleich und Verlauf, `commands.js` die fachlichen Raum-/Platzierungsoperationen und `repository.js` kapselt Arbeitskopie, Archive und lokale Publikationssimulation. Three.js r184 liegt mit Lizenz lokal und versioniert unter `js/vendor/`; zur Laufzeit wird kein 3D-CDN benötigt.
+Eigenständiger, loginpflichtiger Plan-Editor / Viewer der Workspace-Suite mit `layout='standalone'`. `js/apps/floorplan-editor.js` ist der kleine Router-Einstieg; Startseite, Workbench, gemeinsame Darstellungshilfen, Dokumentbefehle und technische Adapter liegen gebündelt unter `js/floorplan-editor/`. Er übernimmt stabile Fachschlüssel vom Portal, besitzt aber eigenes Chrome, eigenes Dokumentmodell und eigenen Lebenszyklus. Datenquellen sind die kanonischen Bestände `buildings`, `floors`, `spaces`, `tenancies` und `shopProducts` sowie das kleine Overlay `workspacePlanning`; der Editor arbeitet stets auf einem Klon und mutiert diese Quellen nicht. Die Startseite besteht aus zwei gleichrangigen Ansichten: `tasks.js` leitet die offenen Arbeiten je Attributebene rein aus den Beständen ab, `work-view.js` rendert die Arbeitsliste, `browse-view.js` die kartenzentrierte Portfoliosuche und `navigation.js` besitzt Routing, Datenaufbau und Ereignisverdrahtung beider Ansichten. `canvas.js` liefert die Autoren-Planfläche, `three-viewer.js` das aus demselben Dokument erzeugte 3D-/Begehungsmodell, `colors.js` und `geometry.js` rendererübergreifende Regeln, `interactions.js` reine Eingabeberechnungen und `dialogs.js` die Aktionsdialoge. `model.js` besitzt Baseline, Validierung, Katalogabgleich und Verlauf, `commands.js` die fachlichen Raum-/Platzierungsoperationen und `repository.js` kapselt Arbeitskopie, Archive und lokale Publikationssimulation. Three.js r184 liegt mit Lizenz lokal und versioniert unter `js/vendor/`; zur Laufzeit wird kein 3D-CDN benötigt.
 
 **Routen**
 

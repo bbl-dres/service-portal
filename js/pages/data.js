@@ -65,7 +65,7 @@ function overview(ctx) {
     // (`needs`), and a hard-coded count would drift from the file.
     { title: 'Dokumentation der Geschäftsarchitektur', icon: 'Stack', href: '#/app/metadata-catalog',
       desc: 'Geschäftsobjekte des BBL, ihre Realisierung in den Führungssystemen und die Wertelisten, auf die beide verweisen.',
-      meta: 'Geschäftsobjekte, Systeme und Referenzdaten' },
+      meta: 'Geschäftsobjekte, Datentabellen und Referenzdaten' },
     // No count, for the same reason as the metadata catalogue.
     { title: 'Prozessdokumentation Bauten', icon: 'Share', href: '#/app/process-docs',
       desc: 'Die Prozesse des Immobilienmanagements mit BPMN-Diagrammen und Prozessschritten — von der Akquisition bis zur Rückgabe.',

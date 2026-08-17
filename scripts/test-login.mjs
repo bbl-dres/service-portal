@@ -72,6 +72,13 @@ try {
   check(result.h1 === 'Raumbuchung', `route renders (h1: "${result.h1}")`);
   check(result.hasForm && !result.hasGate, 'the search bar is present and the login gate is gone');
   check(result.rooms > 0 && result.bookable === result.rooms, `results are bookable straight away (${result.rooms} rooms)`);
+  const breadcrumbAfterHeaderRefresh = await page.evaluate(`(() => {
+    const button = document.querySelector('#breadcrumb .breadcrumb__dropdown');
+    button?.click();
+    return button?.getAttribute('aria-expanded') || '';
+  })()`);
+  check(breadcrumbAfterHeaderRefresh === 'true',
+    'breadcrumb delegation survives the header replacement performed during login');
 
   const logout = await page.evaluate(LOGOUT).catch((error) => 'logout-eval-destroyed: ' + error.message);
   check(logout === 'logout-called', `logout fired (${logout})`);

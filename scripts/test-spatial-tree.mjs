@@ -1,17 +1,4 @@
-// The shared structure tree (.pf-tree) as ONE reusable component.
-//
-// Five explorers build it through js/ui/spatial-tree.js — the property
-// inventory, construction projects, tenancies, workspace and the Plan-Editor —
-// and three further surfaces hand-roll the same markup as a navigation list:
-// the metadata catalogue, the process documentation and the shop's mobile
-// category nav. A change to the component or its CSS reaches all eight, so this
-// suite checks the contract in one place rather than eight times.
-//
-// The design is variant H2 of docs/wireframes/260810 - Standortbaum.html:
-// indentation as row padding, full-bleed dividers, and a vertical guide only
-// along the selected branch. Verified here: the ARIA tree pattern, a single tab
-// stop with working arrow keys, indentation that grows with nesting depth, and
-// counts that stay machine-readable behind their CSS parentheses.
+// Verifies the shared sidebar-tree and legacy navigation-list appearance contract.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 let failures = 0;
@@ -20,11 +7,7 @@ const check = (condition, label, detail = '') => {
   if (!condition) failures++;
 };
 
-// route, tree selector, whether it is built by the shared module
-// Waehrend des Umzugs laufen zwei Vertraege nebeneinander, und jede Oberflaeche
-// wird gegen den geprueft, den sie tatsaechlich benutzt — sonst misst man die
-// alte Gestaltung an der neuen und bekommt Fehler, die keine sind.
-// `component: true` — laeuft auf C.sidebarTree (js/ui/components/sidebar-tree.js)
+// `component` distinguishes the ARIA widget from legacy link navigation.
 const SURFACES = [
   ['Liegenschaften Inventar', '/app/portfolio', true, true],
   ['Bauprojekte', '/app/projects', true, true],
@@ -48,8 +31,7 @@ const READ = `(() => {
     const row = treeEl.querySelector(':scope ' + (chain ? chain + ' ' : '') + '> .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub,.pf-tree__split)');
     return row ? Math.round(parseFloat(getComputedStyle(row).paddingLeft)) : null;
   };
-  // Fuer das Bauteil: wo die Beschriftung je Stufe beginnt, und ob Geschwister
-  // — alle Kinder EINER Liste — ihren linken Rand teilen.
+  // Measure label starts by depth and alignment between siblings.
   const box = tree.getBoundingClientRect();
   const labelX = (row) => {
     const l = row && row.querySelector('.pf-tree__label');
@@ -127,10 +109,7 @@ try {
     await cdp.send('Emulation.setDeviceMetricsOverride',
       { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false }, page.sessionId);
     await sleep(1800);
-    // Spaet gebaute Kinder: ein zugeklappter Ast hat im DOM GAR KEINE Kinder —
-    // das ist der Sinn der Sache (eine Datentabelle fuehrt bis zu 75 Felder).
-    // Also erst zwei Stufen aufklappen, sonst misst die Tiefenprobe einen Baum
-    // mit einer einzigen Stufe und meldet Fehler, die keine sind.
+    // Folded branches render children lazily, so open enough levels before probing.
     if (component) {
       await page.evaluate(`(async () => {
         const w = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -151,22 +130,13 @@ try {
       continue;
     }
 
-    // Indentation must GROW with nesting depth. This is what carries affiliation
-    // now that the fake icon-margin indentation is gone, and it has to work for
-    // the hand-rolled surfaces too, which is why the CSS keys off nesting rather
-    // than aria-level.
+    // Indentation must grow with nesting on component and legacy surfaces.
     if (component) {
-      // Der neue Vertrag. Die Leiter ist eine Summe je Stufe und steht in
-      // --pf-ind auf dem Listeneintrag; gemessen wird, wo die BESCHRIFTUNG
-      // beginnt, denn das ist, was ein Leser als Einrueckung sieht. Geschwister
-      // teilen ihren linken Rand — die Regel, an der die Vorgaenger scheiterten.
+      // The component stores cumulative indentation in --pf-ind on each item.
       check(tree.ladder.length >= 2 && tree.ladder.every((x, i) => i === 0 || x >= tree.ladder[i - 1]),
         'Leiter faellt nie zurueck', tree.ladder.join(' → ') + 'px');
       check(!tree.siblingsOff.length, 'Geschwister teilen ihren linken Rand',
         tree.siblingsOff.slice(0, 2).join(' · ') || tree.siblingGroups + ' Gruppen geprueft');
-      // Und KEINE Zeilentrenner: eine Linie markiert einen Abschnitt, sonst
-      // nichts. Sechzehn Kategorien trugen fuenfzehn Striche fuer eine
-      // Gliederung, die die Einrueckung schon zeigt.
       check(tree.divider.between === '0px', 'zieht keine Linie zwischen Zeilen',
         'Breite ' + tree.divider.between);
     } else {
@@ -183,12 +153,7 @@ try {
         'draws no rule below the last row or above the first',
         `trailing ${tree.divider.trailing}, leading painted: ${tree.divider.leadingPainted}`);
     }
-    // The parentheses are CSS, so the element's text stays the bare number that
-    // scripts/check-tree.mjs and the app suites parse.
-    // Der Zaehler ist im DOM immer eine blosse Zahl — das ist der Vertrag, den
-    // Skripte und Tests lesen. Ob Klammern darum GEZEICHNET werden, ist eine
-    // Frage der Darstellung, und das Bauteil zeichnet keine: eine rechtsbuendige
-    // Spalte tabellarischer Ziffern liest sich ohne sie als Zaehler.
+    // Counts stay numeric in the DOM; punctuation is presentation-only.
     check(tree.countsNumeric, 'Zaehler bleibt im DOM eine blosse Zahl', tree.counts.join(','));
     if (!component) {
       check(/\(/.test(tree.parens) && /\)/.test(tree.parens),
@@ -206,8 +171,6 @@ try {
       'exposes the ARIA tree pattern', `${tree.treeitems} treeitems · ${tree.groups} groups`);
     check(tree.levels.length >= 3 && tree.levels[0] === 1,
       'numbers every level for assistive technology', tree.levels.join(','));
-    // One tab stop for the whole tree. Before this the property inventory alone
-    // put more than a hundred buttons in the tab order ahead of the map.
     check(tree.tabStops === 1, 'is a single tab stop', `${tree.tabStops} of ${tree.rows} rows`);
 
     const keys = await page.evaluate(`(async () => {
@@ -241,9 +204,7 @@ try {
       await new Promise((r) => setTimeout(r, 90));
       const last = label();
       return { first, closed, opened, descended, returned, last,
-        // LIVE abfragen: eine Oberflaeche darf den Baum als Antwort auf die
-        // Auswahl neu setzen, dann ist das eingangs gemerkte Element abgehaengt
-        // und zaehlt null sichtbare Zeilen — ein Messfehler, kein Befund.
+        // Re-query after selection because applications may replace the tree DOM.
         stops: [...document.querySelectorAll('.pf-tree__node, .pf-tree__leaf, .pf-tree__sub, .pf-tree__row')]
           .filter((row) => row.offsetParent !== null && row.tabIndex === 0).length };
     })()`);
@@ -253,21 +214,12 @@ try {
     check(keys.last && keys.last !== keys.first && keys.stops === 1,
       'jumps to the last row with End and keeps one tab stop', keys.last);
 
-    // The guide appears only along the selected branch, and the selected row sits
-    // ABOVE it: the row is where the trace arrives, not something it crosses.
-    // Die Fuehrungslinie: sie laeuft NUR entlang des Astes, der die Auswahl
-    // haelt. Alte und neue Gestaltung zeichnen sie an verschiedenen Stellen —
-    // frueher ::before auf der Kinderliste, im Bauteil ::after und nur per
-    // :has(.is-active,.is-path) —, deshalb zwei Messungen fuer eine Aussage.
+    // The guide exists only on the selected branch and remains below its rows.
     const guide = await page.evaluate(`(async () => {
       const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       const COMPONENT = ${component ? 'true' : 'false'};
       if (COMPONENT) {
-        // Kinder entstehen erst beim Aufklappen — also erst oeffnen, dann ein
-        // Kind waehlen. Ein zugeklappter Ast hat im DOM gar keine Kinder.
-        // Sicher OEFFNEN statt blind klicken: der Tastaturblock davor kann den
-        // Ast schon aufgeklappt haben, und ein zweiter Klick klappte ihn wieder
-        // zu — dann gibt es keine Kinder, und die Messung faende nichts.
+        // Ensure the branch is open because keyboard checks may have changed it.
         for (let n = 0; n < 3; n++) {
           const shut = document.querySelector('.pf-tree__section > li > [aria-expanded="false"]');
           if (!shut) break;
@@ -301,13 +253,9 @@ try {
     check(guide.selected === 'true' && guide.path > 0,
       'marks the selection and its ancestor path', `${guide.path} path rows`);
     if (component) {
-      // Das Bauteil zieht die Linie ueber :has() — auf einem Ast ohne Auswahl
-      // entsteht sie gar nicht erst, dort ist die Breite deshalb leer/auto.
       check(guide.accentWidth && guide.accentWidth !== 'auto' && guide.quietContent === 'none',
         'draws the guide only on the branch that holds the selection',
         `${guide.accentWidth} Leitlinie · Ast ohne Auswahl ${guide.quietContent}`);
-      // Im Bauteil liegt die Zeile auf 1 und das Chevron auf 2 darueber: der
-      // Fokusgriff muss oben liegen, sonst faengt die Zeile seinen Klick ab.
       check(guide.activeZ === '1', 'keeps the selected row above the guide', `z-index ${guide.activeZ}`);
     } else {
       check(guide.accentWidth === '2px' && guide.quietContent === 'none',

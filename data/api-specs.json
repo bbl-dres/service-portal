@@ -407,7 +407,7 @@
       {
         "tag": "process-definitions",
         "label": "process-definitions",
-        "description": "Die Prozessdefinitionen hinter den Dienstleistungen — Schritte, Rollen und Statusmodell je Ablauf.",
+        "description": "Die ausführbaren Portal-Abläufe hinter den Dienstleistungen — Schritte, Rollen und Statusmodell je Definition.",
         "endpoints": [
           {
             "method": "GET",
@@ -3946,7 +3946,7 @@
       {
         "tag": "processes",
         "label": "processes",
-        "description": "Die Prozessdokumentation Bauten (processes.json): Immobilienprozesse mit L1–L3-Einordnung, Schritten und BPMN-Diagramm je Prozess.",
+        "description": "Die fachliche Prozessdokumentation Bauten: Immobilienprozesse mit L1–L3-Einordnung und BPMN-Diagramm je Prozess.",
         "endpoints": [
           {
             "method": "GET",

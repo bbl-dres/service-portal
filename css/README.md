@@ -4,7 +4,7 @@ Das Portal verwendet Plain CSS ohne Build-Schritt, Framework oder Laufzeitabhän
 
 ## Kaskade und Laufzeitanker
 
-Die 24 statischen Blätter stehen in dieser exakten Reihenfolge in `index.html`:
+Die 26 statischen Blätter stehen in dieser exakten Reihenfolge in `index.html`:
 
 ```text
 01 css/tokens.css
@@ -30,9 +30,11 @@ Die 24 statischen Blätter stehen in dieser exakten Reihenfolge in `index.html`:
    <meta name="css-app-anchor" content="early">
 21 css/sections/catbar.css
 22 css/sections/explorer.css
-23 css/components/overlay.css
+23 css/sections/sidebar-tree.css
+24 css/sections/landscape.css
+25 css/components/overlay.css
    <meta name="css-app-anchor" content="portfolio">
-24 css/utilities.css
+26 css/utilities.css
    <meta name="css-app-anchor" content="late">
 ```
 
@@ -63,7 +65,7 @@ Die acht lazy Blätter besitzen unabhängig von der Reihenfolge der besuchten Ro
 | `projects` | `dataportal`, `portfolio` |
 | `document-archive` | `dataportal`, `archive` |
 | `workspace` | `dataportal`, `portfolio`, `floorplan`, `workplace` |
-| `floorplan-editor` | `dataportal`, `portfolio`, `floorplan-editor` |
+| `floorplan-editor` | `dataportal`, `portfolio`, `floorplan`, `floorplan-editor` |
 | `plan-check` | `plan-check` |
 | `room-booking` | `dataportal`, `floorplan`, `workplace`, `room-booking` |
 | `transaction` | — |
@@ -90,9 +92,9 @@ Die acht lazy Blätter besitzen unabhängig von der Reihenfolge der besuchten Ro
 | `apps/` | ausschliesslich lazy, routenspezifische Geometrie und Fachvisualisierung | Shell- oder Shared-Component-Regeln |
 | `utilities.css` | kleine, eindeutige Hilfsklassen sowie Print-/Reduced-Motion-Kaskadenabschluss | neue Komponenten |
 
-Die vorgeschlagene Taxonomie wurde nach dem Abhängigkeitsaudit leicht angepasst. `filter-panel.css` muss statisch sein, weil Facetten sowohl statische Kataloge als auch Micro-Apps bedienen. `listbox.css` wird von globalen Suchvorschlägen und der Adress-Combobox geteilt. `explorer.css` trägt die historischen `pf-*`-Strukturen für Portfolio, Projekte, Mietende, Workspace, Shop, Metadaten- und Prozesskatalog und darf deshalb keiner einzelnen App gehören. Umgekehrt bilden die acht Dateien unter `apps/` die acht realen Lazy-Grenzen ab; ein Zusammenlegen würde auf mehreren Routen unbenutztes CSS laden oder Abhängigkeitsreihenfolgen verstecken.
+Die vorgeschlagene Taxonomie wurde nach dem Abhängigkeitsaudit leicht angepasst. `filter-panel.css` muss statisch sein, weil Facetten sowohl statische Kataloge als auch Micro-Apps bedienen. `listbox.css` wird von globalen Suchvorschlägen und der Adress-Combobox geteilt. `explorer.css` trägt die historischen `pf-*`-Strukturen; `sidebar-tree.css` und `landscape.css` enthalten die daraus konsolidierten, seitenübergreifenden Komponenten. Umgekehrt bilden die acht Dateien unter `apps/` die acht realen Lazy-Grenzen ab; ein Zusammenlegen würde auf mehreren Routen unbenutztes CSS laden oder Abhängigkeitsreihenfolgen verstecken.
 
-Die Aufgabenbeschreibung sagte zugleich «roughly fifteen files» und lieferte eine 29-Dateien-Taxonomie. Die auditierte Struktur umfasst mit der neuen Planprüfung 32 Dateien (24 statisch, 8 lazy) und bleibt damit nahe an der konkreten Zielliste. Breadcrumb bleibt in `shell.css`, Pagination bei Tabs; das vermeidet die ausdrücklich unerwünschte Datei pro Kleinstkomponente.
+Die Aufgabenbeschreibung sagte zugleich «roughly fifteen files» und lieferte eine 29-Dateien-Taxonomie. Die auditierte Struktur umfasst mit der neuen Planprüfung 34 Dateien (26 statisch, 8 lazy) und bleibt damit nahe an der konkreten Zielliste. Breadcrumb bleibt in `shell.css`, Pagination bei Tabs; das vermeidet die ausdrücklich unerwünschte Datei pro Kleinstkomponente.
 Chart-Chrome bleibt in `dataportal.css`, Karten-/Mosaik-Chrome in
 `portfolio.css`: separate `charts.css`/`map.css` wären keine eigenständigen
 Ladegrenzen, sondern würden nur zusätzliche Abhängigkeitsdateien erzeugen.
@@ -175,16 +177,17 @@ Aktueller Messstand, UTF-8-Rohbytes und gzip Level 6:
 | Gruppe | Dateien | Zeilen | Rohbytes | gzip-6 |
 | --- | ---: | ---: | ---: | ---: |
 | vorher: `app.css` + `tokens.css` | 2 | 5'174 | 372'077 | 104'848 |
-| aktuell: statische Kaskade | 24 | 3'826 | 266'286 | 89'179 |
-| aktuell: lazy Apps allein | 8 | 1'508 | 110'533 | 23'243 |
-| aktuell: alle Blätter | 32 | 5'334 | 376'819 | 112'422 |
+| aktuell: statische Kaskade | 26 | 4'611 | 321'404 | 107'339 |
+| aktuell: lazy Apps allein | 8 | 1'980 | 145'471 | 32'333 |
+| aktuell: alle Blätter | 34 | 6'591 | 466'875 | 139'672 |
 
 Die gzip-Werte summieren jede tatsächlich getrennte HTTP-Response; sie sind
 nicht die Kompression eines künstlich zusammengefügten Bundles. Der statische
-Erstpfad liegt gegenüber dem Monolith-Baselinewert raw 28.4 % und gzip 14.9 %
-tiefer. `plan-check.css` kommt nur auf der Planprüfungsroute hinzu: 232 Zeilen,
-18'572 Rohbytes beziehungsweise 3'345 Bytes gzip-6. Die Summe aller, in einer
-normalen Route nie gleichzeitig neu geladenen Blätter trägt 32 eigene
+Erstpfad liegt gegenüber dem Monolith-Baselinewert raw 13.6 % tiefer; die Summe
+der getrennten gzip-Antworten liegt 2.4 % höher. `plan-check.css` kommt nur auf
+der Planprüfungsroute hinzu: 398 Zeilen, 30'678 Rohbytes beziehungsweise 5'819
+Bytes gzip-6. Die Summe aller, in einer
+normalen Route nie gleichzeitig neu geladenen Blätter trägt 34 eigene
 Kompressionskontexte. `scripts/css-bundle.mjs`
 ist ein optionaler, dependency-freier Verifier/Concat-Schritt und keine
 Entwicklungsvoraussetzung.

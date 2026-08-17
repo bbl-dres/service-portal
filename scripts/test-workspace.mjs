@@ -42,10 +42,7 @@ const CATALOGUE = `(() => {
     h1: document.querySelector('#main-content h1')?.textContent.trim() || '',
     cards: cards.length,
     views: document.querySelectorAll('.view-switch__btn').length,
-    // Seit dem Umzug auf das Seitenbaum-Bauteil (2026-08-14) entstehen Blaetter
-    // erst beim Aufklappen — im zugeklappten Baum gibt es sie im DOM nicht.
-    // Dieselbe Aussage ohne sie: die Zaehler der obersten Stufe summieren sich
-    // auf die Zahl der Objekte, denn jedes liegt in genau einem Land.
+    // Lazy leaves are absent while collapsed, so sum the mutually exclusive root counts.
     treeLeaves: [...document.querySelectorAll('.workspace-sidebar .pf-tree__section > li > .pf-tree__row .pf-tree__n')]
       .reduce((sum, n) => sum + (Number(n.textContent) || 0), 0),
     count: document.querySelector('#workspace-count')?.textContent.replace(/\\s+/g, ' ').trim() || '',

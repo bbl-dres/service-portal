@@ -4,6 +4,7 @@
 import { NAV } from '../../routing/routes.js';
 import { core } from '../../core/index.js';
 import { session } from '../../core/session.js';
+import { SHOP_CART_KEY, cartItemCount } from '../../core/shop-cart.js';
 import { icon, escape as escapeHtml, select } from '../../components.js';
 import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../../security/urls.js';
 
@@ -11,6 +12,12 @@ import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../../security/urls.js
 // AbortController that removes the previous global document/window/matchMedia
 // listeners; otherwise they accumulate (code-review A3).
 let shellAbort = null;
+let searchFocusTimer = null;
+
+function clearSearchFocusTimer() {
+  if (searchFocusTimer !== null) clearTimeout(searchFocusTimer);
+  searchFocusTimer = null;
+}
 
 // Navy-menu rows (CD anatomy). external → new window + External icon. Do not use
 // menu__item--condensed: in CD it is a SEPARATE variant (menu.postcss:87-93) not
@@ -78,15 +85,8 @@ const META_LINKS = [
 const TOP_BAR_LINKS = [
   { href: 'https://www.egate.admin.ch/', label: 'eGate', icon: 'External', external: true },
 ];
-const SHOP_CART_KEY = 'bbl_shop_cart_v1';
-
 function shopCartCount() {
-  try {
-    const rows = JSON.parse(localStorage.getItem(SHOP_CART_KEY) || '[]');
-    return Array.isArray(rows)
-      ? rows.reduce((n, r) => n + Math.max(0, Number.parseInt(r.qty, 10) || 0), 0)
-      : 0;
-  } catch { return 0; }
+  return cartItemCount();
 }
 
 function shoppingCartButton() {
@@ -349,6 +349,8 @@ export function renderHeader(el) {
     oldBurger.setAttribute('aria-label', 'Menü öffnen');
   }
   document.body.classList.remove('body--mobile-menu-is-open');
+  document.body.classList.remove('body--search-is-open');
+  clearSearchFocusTimer();
   const oldMain = document.getElementById('main-content');
   const oldFoot = document.getElementById('main-footer');
   if (oldMain) oldMain.inert = false;
@@ -363,10 +365,14 @@ export function renderHeader(el) {
   shellAbort?.abort();
   shellAbort = new AbortController();
   const { signal } = shellAbort;
+  signal.addEventListener('abort', clearSearchFocusTimer, { once: true });
   updateShopCartButton(el);
   window.__updateShopCart = () => updateShopCartButton(document);
   window.addEventListener('hashchange', () => updateShopCartButton(el), { signal });
   window.addEventListener('shop:cartchange', () => updateShopCartButton(el), { signal });
+  window.addEventListener('storage', (event) => {
+    if (event.key === SHOP_CART_KEY || event.key === null) updateShopCartButton(el);
+  }, { signal });
 
   // Skip link (CD: <a href="#main-content">): preventDefault keeps the hash router
   // from treating the fragment as a route; set focus explicitly (#main-content
@@ -578,7 +584,13 @@ export function renderHeader(el) {
     document.body.classList.toggle('body--search-is-open', open);
     searchWrap.classList.toggle('open', open);
     searchToggle.setAttribute('aria-expanded', String(open));
-    if (open) setTimeout(() => searchInput.focus(), 60);
+    clearSearchFocusTimer();
+    if (open) {
+      searchFocusTimer = setTimeout(() => {
+        searchFocusTimer = null;
+        if (!signal.aborted && searchInput.isConnected && searchWrap.classList.contains('open')) searchInput.focus();
+      }, 60);
+    }
   };
   searchToggle.addEventListener('click', () => openSearch(true));
   // Open only through click/keyboard. Focusing alone must not change context

@@ -56,10 +56,7 @@ o = JSON.parse(await p.evaluate(`(async () => {
   document.querySelector('.active-filter')?.click();
   await new Promise(r => setTimeout(r, 300));
   const sidebar = document.querySelector('.pf-sidebar');
-  // Seit dem Umzug auf das Seitenbaum-Bauteil (2026-08-14): .pf-tree__row statt
-  // .pf-tree__node, ein Abschnitt statt der Wurzelliste, und Kinder entstehen
-  // erst beim Aufklappen — also nach dem Klick LIVE neu suchen statt am vorher
-  // gemerkten Element, das beim Neuzeichnen abgehaengt wird.
+  // Expansion redraws lazy children, so query the live row again after clicking.
   const roots = [...sidebar.querySelectorAll('.pf-tree__section > li > .pf-tree__row')];
   const countries = roots.map(n => n.querySelector('.pf-tree__label').textContent + ' ' + n.querySelector('.pf-tree__n').textContent);
   const ch = roots.find(n => n.dataset.node === 'country:CH');
@@ -83,7 +80,7 @@ check(o.chCount === '11', 'Switzerland has the expected count of 11', o.chCount)
 check(o.cantons.length >= 3, 'Cantons form the second level below Switzerland', o.cantons.join(', '));
 
 o = JSON.parse(await p.evaluate(`(async () => {
-  const bern = document.querySelector('.pf-sidebar .pf-tree__row[data-node="region:CH▸BE"]');
+  const bern = document.querySelector('.pf-sidebar .pf-tree__row[data-node="region:CH:BE"]');
   bern.click();
   await new Promise(r => setTimeout(r, 350));
   return JSON.stringify({ count: document.querySelector('#mt-count')?.textContent.replace(/\\s+/g,' ').trim(),

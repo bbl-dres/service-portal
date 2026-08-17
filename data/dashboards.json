@@ -577,10 +577,6 @@
         {
           "name": "tonnen",
           "type": "num"
-        },
-        {
-          "name": "recyclinganteil",
-          "type": "num"
         }
       ],
       "rows": [

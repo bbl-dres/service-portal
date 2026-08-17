@@ -22,10 +22,10 @@ A static single-page application: no build step, no `node_modules`, no framework
 | `assets/` | 418 tracked files, ~48 MB |
 | `docs/review-assets/` | 344 tracked files (342 PNGs), ~134 MB |
 | Page modules / micro-apps | 9 / 16 |
-| Verification scripts | 29 `test-*.mjs`, 20 `check-*.mjs` |
+| Verification scripts | 60 `test-*.mjs` (36 browser, 24 pure Node), 25 `check-*.mjs` |
 | Runtime libraries | MapLibre GL 4.7.1, Swagger UI 5.17.14, bpmn-js 17.11.1 — pinned, lazy, from `unpkg.com` |
 
-Boot is four requests: `services.json` + `reference-data.json` (everything the shell needs to draw) and the two process files, in one `Promise.all`. Everything else is pulled per route.
+Boot is four requests: `services.json` + `reference-data.json` (everything the shell needs to draw), the shared `processes.json` registry, and `process-instances.json`, in one `Promise.all`. The process engine derives its portal definitions from the core-cached registry, and everything else is pulled per route.
 
 ### 2. The layers that actually exist
 
@@ -158,7 +158,7 @@ Saying this explicitly changes the architecture (ingestion pipelines, not a data
 
 - **AGOV / FedLogin over OIDC.** Two audiences with different identity paths: BBL staff and federal-office customers (federated) vs. external parties such as brokers in the divestment process. The service catalogue already tags `audience: [staff, customers]` — that tag becomes the routing rule.
 - **BFF pattern.** The browser holds an `HttpOnly`, `Secure`, `SameSite` session cookie; tokens never reach JavaScript. This is also what makes a strict CSP achievable.
-- **Authorization is a server concern, expressed as policy.** The role vocabulary already exists in `data/process-definitions.json` — *Antragstellende Stelle, Generalsekretariat, Portfoliomanagement BBL, BBL Bau, Objektbetrieb, FLM/IM/PFM*. That is the seed role model; harvest it rather than inventing one.
+- **Authorization is a server concern, expressed as policy.** The role vocabulary already exists in the portal branch of `data/processes.json` — *Antragstellende Stelle, Generalsekretariat, Portfoliomanagement BBL, BBL Bau, Objektbetrieb, FLM/IM/PFM*. That is the seed role model; harvest it rather than inventing one.
 - **Classification becomes enforced data.** `INTERN` / `VERTRAULICH` moves out of `normalizeBuilding()` into a stored attribute on the record, applied as a filter in the query layer and in the document delivery path — and, critically, in the **search index** (see §7.5), which is where classification leaks usually happen.
 
 #### 7.2 Domain services — a modular monolith, not microservices
@@ -183,7 +183,7 @@ Split a module out only when it earns it — a different release cadence, a diff
 #### 7.3 Process orchestration — Camunda, with process variables as references
 
 - **Camunda 8 (Zeebe)** if the operating model tolerates its infrastructure; **Camunda 7** if a simpler embedded engine and on-prem licensing matter more. This is an operations decision, not an architecture one — the BPMN models are portable either way.
-- **Seed models already exist.** `data/process-definitions.json` (8 definitions) plus the 18 BPMN files behind `#/app/process-docs` in `assets/bpmn/`. The process-documentation app is already a BPMN viewer — in production it should read the *deployed* models, not a parallel copy, so documentation cannot drift from execution.
+- **Seed models already exist.** The portal branch of `data/processes.json` plus the BPMN files behind `#/app/process-docs` in `assets/bpmn/`. The process-documentation app is already a BPMN viewer — in production it should read the *deployed* models, not a parallel copy, so documentation cannot drift from execution.
 - **Process variables hold references, never copies.** `bbl_id`, `projectId`, `tenancyId` — the prototype already does this via `linkedEntities`. Keep the rule; it is what stops the engine from becoming a second, stale data store.
 - **User tasks render in the portal.** Consume the Tasklist/Zeebe API but keep the CD Bund UI — the "Meine Vorgänge" and reviewer-inbox surfaces stay BBL's, not Camunda's.
 - **`js/process-engine.js` keeps its interface.** `load / definitions / instances / start / advance / cancel` is already the right shape for an API client. That module becomes a thin HTTP client and every calling site is untouched.

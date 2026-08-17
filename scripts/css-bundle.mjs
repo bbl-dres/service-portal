@@ -78,6 +78,8 @@ export const CSS_SOURCE_ORDER = Object.freeze([
   'css/apps/dataportal.css',
   'css/sections/catbar.css',
   'css/sections/explorer.css',
+  'css/sections/sidebar-tree.css',
+  'css/sections/landscape.css',
   'css/components/overlay.css',
   'css/apps/portfolio.css',
   'css/utilities.css',

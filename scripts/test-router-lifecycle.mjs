@@ -83,6 +83,34 @@ try {
   check(terminalPage.exceptions.length === 0, 'terminal outcomes do not throw uncaught exceptions', terminalPage.exceptions[0] || '');
   check(terminalPage.consoleErrors.filter((entry) => !entry.includes('router lifecycle probe')).length === 0,
     'terminal outcomes emit no unexpected console errors', terminalPage.consoleErrors.join(' | '));
+
+  const blockedScrollStorage = await terminalPage.evaluate(`(async () => {
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const nativeGet = Storage.prototype.getItem;
+    Storage.prototype.getItem = function (key) {
+      if (this === sessionStorage) throw new DOMException('blocked', 'SecurityError');
+      return nativeGet.call(this, key);
+    };
+    try {
+      history.pushState({ callerState: 'preserve-me' }, '', '#/knowledge?blocked-scroll-storage=1');
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      for (let i = 0; i < 120; i++) {
+        if (document.querySelector('#main-content h1')?.textContent.includes('Wissen und Hilfsmittel')) break;
+        await wait(50);
+      }
+      return {
+        heading: document.querySelector('#main-content h1')?.textContent.trim() || '',
+        state: history.state,
+      };
+    } finally {
+      Storage.prototype.getItem = nativeGet;
+    }
+  })()`);
+  check(blockedScrollStorage.heading === 'Wissen und Hilfsmittel'
+      && blockedScrollStorage.state?.callerState === 'preserve-me'
+      && Number.isInteger(blockedScrollStorage.state?.bblIdx),
+    'blocked sessionStorage falls back safely and route stamping preserves caller history state',
+    JSON.stringify(blockedScrollStorage));
   await terminalPage.closeTarget();
 
   console.log('■ Superseded query dispatch and route-owned abort');
@@ -280,6 +308,8 @@ try {
         heading: heading?.textContent.trim() || '',
         focused: document.activeElement === heading,
         staleErrorVisible: !!document.querySelector('#main-content .notification--error'),
+        dataStatus: document.querySelector('#data-status .notification--error')
+          ?.textContent.replace(/[\\s\\u00a0]+/g, ' ').trim() || '',
       };
     } finally {
       rejectBuildings?.(new Error('estate cache probe cleanup'));
@@ -296,8 +326,13 @@ try {
       && estateResult.focused
       && !estateResult.staleErrorVisible,
     'the stale cache rejection cannot overwrite the final services route', JSON.stringify(estateResult));
-  const estateProblems = await estatePage.problems();
-  check(estateProblems.length === 0, 'stale estate rejection emits no browser errors', estateProblems.join(' | '));
+  check(estateResult.dataStatus.includes('Einige Daten konnten nicht geladen werden')
+      && estateResult.dataStatus.includes('Liegenschaften')
+      && estateResult.dataStatus.includes('Ladefehler'),
+    'the shared-core failure remains visible in the global data-status banner', estateResult.dataStatus);
+  check(estatePage.exceptions.length === 0 && estatePage.consoleErrors.length === 0,
+    'stale estate rejection emits no exception or console error',
+    [...estatePage.exceptions, ...estatePage.consoleErrors].join(' | '));
   await estatePage.closeTarget();
 
   console.log('■ Malformed dashboard data keeps accessible terminal views');
@@ -376,8 +411,8 @@ try {
     'malformed estate GeoJSON retains and focuses its Immobilienportfolio H1', JSON.stringify(dataFailureResult.estate));
   check(dataFailureResult.estate.hasNotificationContent
       && dataFailureResult.estate.notificationRole === 'alert'
-      && dataFailureResult.estate.notification.includes('Ungültige GeoJSON FeatureCollection: buildings.geojson'),
-    'malformed estate GeoJSON renders an explicit validation notification', JSON.stringify(dataFailureResult.estate));
+      && dataFailureResult.estate.notification.includes('Nicht verfügbare Datenbestände: buildings'),
+    'malformed estate GeoJSON names the unavailable shared-core dataset', JSON.stringify(dataFailureResult.estate));
   check(dataFailureResult.dashboardReady
       && dataFailureResult.requests.dashboards === 1
       && dataFailureResult.dashboard.heading === 'Datenportal'

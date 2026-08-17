@@ -59,21 +59,13 @@ export const NAV = [
       ] },
       { href: '#/app/dataportal', label: 'Datenportal' },
       { href: '#/data/catalog', label: 'Datenbezug und API Verzeichnis' },
-      // German UI term: «Geschäftsarchitektur» (2026-08-14). The former name
-      // «Prozesse und Geschäftsobjekte» listed two of the four layers the
-      // signpost covers and missed the reference data entirely; every time the
-      // catalogue gained a branch the label went further out of date. The name
-      // of the thing itself does not have that problem.
-      //
-      // Each row lands on the branch of the SAME NAME in the catalogue, so the
-      // row and the page it opens say the same word. That is why the fourth row
-      // reads «Systeme» rather than «Datentabellen»: the catalogue groups tables
-      // by the system that holds them, and that is what a reader sees on arrival.
+      // Keep the architecture directory aligned with the catalogue's four
+      // branches; each entry opens the corresponding branch overview.
       { label: 'Dokumentation der Geschäftsarchitektur', branchKey: 'architecture', branches: [
         { href: '#/data/architecture', label: 'Übersicht' },
         { href: '#/app/process-docs', label: 'Prozesse' },
         { href: '#/app/metadata-catalog?kind=objekt', label: 'Geschäftsobjekte' },
-        { href: '#/app/metadata-catalog?kind=tabelle', label: 'Systeme' },
+        { href: '#/app/metadata-catalog?kind=tabelle', label: 'Datentabellen' },
         { href: '#/app/metadata-catalog?kind=referenz', label: 'Referenzdaten' },
       ] },
     ],
@@ -139,11 +131,8 @@ export const NAV = [
 // Sections whose children are a single overview row get nothing — a dropdown
 // listing only the page you are already on is a control that does nothing.
 //
-// EVERY level resolves, not just the top one (2026-08-14). CD gives a dropdown
-// to every crumb after «Startseite», the current page included; here only the
-// five NAV sections matched, so «Digitalisierung», «Geschäftsarchitektur» and
-// «Anwendungen» never had one. A branch is matched by ANY of its hrefs, not just
-// its overview, so a leaf page's own crumb opens the pages beside it.
+// Every level resolves, including the current page. A branch is matched by any
+// of its hrefs so a leaf breadcrumb can open its sibling pages.
 export function crumbChildren(href) {
   if (!href) return [];
   const section = NAV.find((item) => item.path === href);
