@@ -45,54 +45,96 @@ WORKSPACE_BRANCHES.forEach((branch, index) => {
 check(pages.every((entry) => !entry.confidential),
   'no page shows a price or a cost figure from the handbook');
 
-// The overview leads with one card per sibling page, the way the data and digitalisation
-// overviews do. Counts are derived from the fixture and the download groups, so a page
-// that gains a module says so without anyone editing a number.
+// The overview leads with one CD highlight card per sibling page in the dedicated
+// four-item grid. The focused suite owns card content and image behavior.
 const overview = await page.evaluate(`(async () => {
   const pause = (ms = 800) => new Promise(resolve => setTimeout(resolve, ms));
   location.hash = '#/knowledge/workspace';
   await pause();
   const main = document.querySelector('#main-content');
+  const grid = main.querySelector('.grid.grid--items-4.gap--responsive');
   return {
     firstHeading: main.querySelector('h2')?.textContent.trim() || '',
-    cards: [...main.querySelectorAll('.card')].map(function (card) {
-      const iconNode = card.querySelector('.domain-tile__icon .icon');
-      const style = iconNode ? (iconNode.getAttribute('style') || '') : '';
-      // Parsed by splitting, not by a regex: a pattern containing an escaped slash
-      // cannot survive being written inside a template literal, which has already
-      // cost this repository three debugging sessions.
-      const after = style.split('icons/')[1] || '';
+    grid: !!grid,
+    cards: [...(grid?.querySelectorAll('.card') || [])].map(function (card) {
       return {
-        icon: after.split('.svg')[0] || '',
         href: card.querySelector('.card__link')?.getAttribute('href') || '',
+        highlight: card.classList.contains('card--highlight'),
       };
     }).filter((card) => card.href.startsWith('#/knowledge/workspace/')),
   };
 })()`);
-check(overview.firstHeading === 'Themen' && overview.cards.length === 4,
-  'the overview leads with one card per sibling page',
+check(overview.firstHeading === 'Themen' && overview.grid && overview.cards.length === 4,
+  'the overview leads with one card per sibling page in the CD four-item grid',
   `${overview.firstHeading} · ${overview.cards.length} cards`);
-check(overview.cards.every((card) => card.icon),
-  'every card carries an icon', overview.cards.map((card) => card.icon || '(none)').join(', '));
+check(overview.cards.every((card) => card.highlight),
+  'every branch uses the CD highlight-card variant');
 check(new Set(overview.cards.map((card) => card.href)).size === 4,
   'the cards address four distinct pages', overview.cards.map((card) => card.href).join(' '));
 
-// Downloads are grouped by the moment they are needed, not listed as fourteen files.
+// Downloads follow the CD detail-page pattern: one H2 and one direct list per
+// planning phase, with the same ordered entries in the table of contents.
 const downloads = await page.evaluate(`(async () => {
   const pause = (ms = 800) => new Promise(resolve => setTimeout(resolve, ms));
   location.hash = '#/knowledge/workspace/downloads';
   await pause();
   const main = document.querySelector('#main-content');
   return {
-    groups: [...main.querySelectorAll('.accordion__title')].map((node) => node.textContent.trim()),
+    groups: [...main.querySelectorAll('.anchor-section')].map((section) => ({
+      id: section.id,
+      title: section.querySelector(':scope > h2')?.textContent.trim() || '',
+      directList: !!section.querySelector(':scope > .download-items'),
+    })),
+    toc: [...main.querySelectorAll('.anchor-nav [data-anchor]')].map((link) => ({
+      id: link.dataset.anchor || '',
+      title: link.textContent.trim(),
+    })),
     items: main.querySelectorAll('.download-items li').length,
+    accordions: main.querySelectorAll('.accordion').length,
     tools: /AutoCAD/.test(main.textContent || '') && /Revit/.test(main.textContent || ''),
   };
 })()`);
-check(downloads.groups.length === 4 && downloads.items > 0,
-  'the download page groups its files in an accordion',
+const expectedDownloadGroups = [
+  { id: 'wi-standard-vorgaben', title: 'Standard und Vorgaben' },
+  { id: 'wi-cad-bausteine', title: 'CAD-Bausteine' },
+  { id: 'wi-cad-werkzeuge', title: 'Werkzeuge für AutoCAD und Revit' },
+  { id: 'wi-planungsvorlagen', title: 'Vorlagen für die Planung' },
+];
+check(JSON.stringify(downloads.groups.map(({ id, title }) => ({ id, title })))
+  === JSON.stringify(expectedDownloadGroups)
+  && downloads.groups.every((group) => group.directList)
+  && downloads.items === 10 && downloads.accordions === 0,
+  'the download page exposes four ordered H2 sections and ten direct rows without accordions',
   `${downloads.groups.length} groups · ${downloads.items} files`);
+check(JSON.stringify(downloads.toc) === JSON.stringify(expectedDownloadGroups),
+  'the download table of contents mirrors the four sections exactly');
 check(downloads.tools, 'the download page offers the planned AutoCAD and Revit tooling');
+
+const lifecycle = await page.evaluate(`(async () => {
+  const pause = (ms = 800) => new Promise(resolve => setTimeout(resolve, ms));
+  location.hash = '#/knowledge/workspace/kreislauf';
+  await pause();
+  const main = document.querySelector('#main-content');
+  return {
+    sections: [...main.querySelectorAll('.anchor-section')].map((section) => ({
+      id: section.id,
+      title: section.querySelector(':scope > h2')?.textContent.trim() || '',
+    })),
+    toc: [...main.querySelectorAll('.anchor-nav [data-anchor]')].map((link) => ({
+      id: link.dataset.anchor || '',
+      title: link.textContent.trim(),
+    })),
+  };
+})()`);
+const lifecycleIds = [
+  'wi-occasionsmobiliar', 'wi-lieferung', 'wi-reparaturen', 'wi-rueckgabe',
+];
+check(JSON.stringify(lifecycle.sections.map((section) => section.id))
+  === JSON.stringify(lifecycleIds),
+  'the lifecycle page exposes four stable H2 sections in reading order',
+  lifecycle.sections.map((section) => section.id).join(' | '));
+check(JSON.stringify(lifecycle.toc) === JSON.stringify(lifecycle.sections),
+  'the lifecycle table of contents mirrors every section exactly once');
 
 const catalogue = await page.evaluate(`(async () => {
   const pause = (ms = 800) => new Promise(resolve => setTimeout(resolve, ms));
@@ -102,7 +144,7 @@ const catalogue = await page.evaluate(`(async () => {
   // grid, not a list inside a document page.
   const links = [...document.querySelectorAll('#main-content .wsm-module-card .card__link')]
     .map((node) => node.getAttribute('href'));
-  const photos = document.querySelectorAll('#main-content .wsm-space__photo').length;
+  const photos = document.querySelectorAll('#main-content .wsm-example__photo').length;
   const allExamples = /Alle Beispiele anzeigen/.test(document.querySelector('#main-content').textContent || '');
   const visited = [];
   for (const href of links) {
@@ -125,7 +167,7 @@ const catalogue = await page.evaluate(`(async () => {
 check(catalogue.links.length === 11, 'the handbook shows every module as a card',
   `${catalogue.links.length} cards`);
 check(catalogue.photos === 3 && catalogue.allExamples,
-  'the handbook carries a short gallery of realised spaces and the way to all of them',
+  'the handbook previews three canonical planning examples and links to all of them',
   `${catalogue.photos} photos · link ${catalogue.allExamples}`);
 check(catalogue.visited.every((entry) => /^\d+ · /.test(entry.h1)),
   'every module link opens its own page',
@@ -172,10 +214,10 @@ check(examples.unused.hasSection && examples.unused.rows === 0
 check(!examples.used.objectObject && !examples.unused.objectObject,
   'no component is called with the wrong argument shape');
 
-// Each module card leads with a picture. Until real photography is dropped into
-// assets/images/multispace-modules/, the slot shows the module's own colour — the one the
-// plan editor paints its rooms with — so a card still identifies its module instead of
-// showing a broken frame.
+// The supported workspace-knowledge suite owns decoded image bytes, card/detail source
+// parity, and the forced missing-file fallback. This retained structural probe checks
+// that every image holder still carries the module colour underneath the illustration,
+// so that shared fallback has the intended surface if a request fails.
 const pictures = await page.evaluate(`(async () => {
   const pause = (ms = 850) => new Promise(resolve => setTimeout(resolve, ms));
   location.hash = '#/knowledge/workspace/multispace';
@@ -199,15 +241,14 @@ check(pictures.blocks === 11 && pictures.collapsed === 0,
   'every module card leads with a picture slot that occupies space',
   `${pictures.blocks} slots · ${pictures.collapsed} collapsed`);
 check(pictures.distinct === 11,
-  'the fallback gives each module its own colour rather than one neutral grey',
+  'every module image holder retains its own fallback colour',
   `${pictures.distinct} distinct`);
 check(pictures.detail && pictures.detailColour === pictures.cardColour,
-  'the module detail page shows the same picture as its card',
+  'the module detail and card share the same fallback colour',
   `${pictures.cardColour} vs ${pictures.detailColour}`);
 
-// Planungsbeispiele: a gallery of realised places and one page each. The licence check is
-// the point of substance — several referenced photographs are marked as not freely
-// licensed, so an image must never appear without its licence line.
+// Planungsbeispiele is a catalogue of gallery launchers, not a second layer of
+// document pages. The focused browser suite owns modal interaction and rights.
 const examplePages = await page.evaluate(`(async () => {
   const pause = (ms = 900) => new Promise(resolve => setTimeout(resolve, ms));
   const main = () => document.querySelector('#main-content');
@@ -215,44 +256,32 @@ const examplePages = await page.evaluate(`(async () => {
   await pause();
   const cards = main().querySelectorAll('.card').length;
   const photos = main().querySelectorAll('.wsm-example__photo').length;
-  const scopes = [...main().querySelectorAll('.wsm-example__scope')].map((n) => n.textContent.trim());
-  const first = main().querySelector('.card__link');
-  const href = first ? first.getAttribute('href') : '';
-  location.hash = href.replace(/^#/, '');
-  await pause();
-  const figures = [...main().querySelectorAll('.wsm-example__figure')];
-  const captioned = figures.filter((figure) => {
-    const caption = (figure.querySelector('figcaption') || {}).textContent || '';
-    return caption.trim().length > 0;
-  }).length;
-  const detail = {
-    sections: [...main().querySelectorAll('h2')].map((n) => n.textContent.trim()),
-    figures: figures.length,
-    captioned,
-    downloads: main().querySelectorAll('.download-items li').length,
-    facts: main().querySelectorAll('.kv dt').length,
-    objectObject: (main().textContent || '').includes('[object Object]'),
-  };
-  location.hash = '#/knowledge/workspace/inspiration/gibt-es-nicht';
-  await pause();
-  const missing = (main().querySelector('h1') || {}).textContent.trim();
-  return { cards, photos, scopes, detail, missing };
+  const badges = [...main().querySelectorAll('.card')].map((card) =>
+    [...card.querySelectorAll('.pill-row .badge__text')].map((node) => node.textContent.trim()));
+  const hrefs = [...main().querySelectorAll('.card__link')]
+    .map((link) => link.getAttribute('href') || '');
+  return { cards, photos, badges, hrefs };
 })()`);
 check(examplePages.cards === 4 && examplePages.photos === 4,
   'the gallery shows every realised place with a picture',
   `${examplePages.cards} cards · ${examplePages.photos} photos`);
-check(examplePages.scopes.every((scope) => ['Geschoss', 'Zone', 'Raum'].includes(scope)),
+check(examplePages.badges.length === 4 && examplePages.badges.every((badges) =>
+  ['Geschoss', 'Zone', 'Raum'].includes(badges[0])
+    && badges.slice(1).length > 0
+    && badges.slice(1).every((badge) => badge.startsWith('M')
+      && Number.isInteger(Number(badge.slice(1))))),
   'each card states its scope, because an example is a place and not a building',
-  examplePages.scopes.join(', '));
-check(examplePages.detail.figures > 0 && examplePages.detail.captioned === examplePages.detail.figures,
-  'no photograph appears without its caption and licence',
-  `${examplePages.detail.captioned} of ${examplePages.detail.figures}`);
-check(examplePages.detail.downloads > 0 && examplePages.detail.facts > 0
-  && !examplePages.detail.objectObject,
-  'the example page carries its floor plan and its location facts',
-  `${examplePages.detail.downloads} plan(s) · ${examplePages.detail.facts} facts`);
-check(/nicht gefunden/i.test(examplePages.missing),
-  'an unknown example is a not-found page', examplePages.missing);
+  examplePages.badges.map((badges) => badges.join(' ')).join(' | '));
+check(examplePages.hrefs.length === 4
+  && new Set(examplePages.hrefs).size === 4
+  && examplePages.hrefs.every((href) => {
+    const [path, query = ''] = href.split('?');
+    const imageId = new URLSearchParams(query).get('bild') || '';
+    return path === '#/knowledge/workspace/inspiration'
+      && /^WSE-\d+:MED-\d+$/.test(imageId) && href.includes('%3A');
+  }),
+  'each example card opens a unique scoped gallery image query',
+  examplePages.hrefs.join(' | '));
 
 const problems = await page.problems();
 check(problems.length === 0, 'the branch produces no runtime problems', problems.join(' | '));

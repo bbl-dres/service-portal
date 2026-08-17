@@ -611,7 +611,7 @@ function toolsHtml(ctx, s) {
 }
 
 const BRANCH_ICON_OF = {
-  'objekt': 'tree/boxes', 'tabelle': 'tree/database', 'referenz': 'tree/list',
+  'objekt': 'lucide/boxes', 'tabelle': 'lucide/database', 'referenz': 'lucide/list',
 };
 
 function treeConfig(ctx, s) {
@@ -695,7 +695,7 @@ function treeConfig(ctx, s) {
         label: 'Übersicht',
         count: BRANCHES.reduce((a, k) => a + rowsOf(k).length, 0),
         countUnit: 'Einträge',
-        icon: 'tree/library',
+        icon: 'lucide/library',
         href: BASE,
         state: s.lvl === 0 ? 'active' : '',
       }],

@@ -9,6 +9,9 @@ const WORKSPACE_FILES = ['buildings.geojson', 'floors.json', 'spaces.json', 'wor
 const EDITOR_FILES = [...WORKSPACE_FILES, 'shop-products.json'];
 const PLAN_CHECK_FILES = EDITOR_FILES;
 const PROCESS_FILES = ['processes.json'];
+const KNOWLEDGE_FILES = [
+  'multispace-modules.json', 'shop-products.json', 'media.json', 'workspace-examples.json',
+];
 const CASES = [
   { route: '/data', tracked: DATA_FILES, want: ['applications.json', 'datasets.json'] },
   { route: '/data/catalog', tracked: DATA_FILES, want: ['catalog-labels.json', 'datasets.json'] },
@@ -16,6 +19,17 @@ const CASES = [
   { route: '/data/digitalisation/strategy', tracked: DATA_FILES, want: [] },
   { route: '/data/ict-projects', tracked: DATA_FILES, want: [] },
   { route: '/data/gibtsnicht', tracked: DATA_FILES, want: [], title: 'Seite nicht gefunden' },
+  { route: '/knowledge/workspace', tracked: KNOWLEDGE_FILES, want: [] },
+  { route: '/knowledge/workspace/multispace', tracked: KNOWLEDGE_FILES,
+    want: ['multispace-modules.json', 'media.json', 'workspace-examples.json'] },
+  { route: '/knowledge/workspace/multispace/modul-1', tracked: KNOWLEDGE_FILES,
+    want: ['multispace-modules.json', 'shop-products.json', 'workspace-examples.json'] },
+  { route: '/knowledge/workspace/multispace/modul-01', tracked: KNOWLEDGE_FILES,
+    want: [], title: 'Seite nicht gefunden' },
+  { route: '/knowledge/workspace/inspiration', tracked: KNOWLEDGE_FILES,
+    want: ['media.json', 'workspace-examples.json'] },
+  { route: '/knowledge/workspace/kreislauf', tracked: KNOWLEDGE_FILES, want: [] },
+  { route: '/knowledge/workspace/downloads', tracked: KNOWLEDGE_FILES, want: [] },
   { route: '/app/dataportal', tracked: ESTATE_FILES, want: [] },
   { route: '/app/dataportal/energie-klima', tracked: ESTATE_FILES, want: [] },
   { route: '/app/dataportal/immobilien', tracked: ESTATE_FILES, want: ESTATE_FILES },

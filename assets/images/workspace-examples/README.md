@@ -1,26 +1,17 @@
-# Bilder der Multispace-Beispiele
+# Workspace example photography
 
-Fotografien der realisierten Flächen aus `data/workspace-examples.json`. Ein Beispiel ist
-ein ausgebauter **Ort** — ein Geschoss, eine Zone darin oder ein einzelner Raum — und
-nicht ein Gebäude; entsprechend zeigen die Bilder hier Innenräume, nicht Fassaden.
+Workspace examples are realised places—a floor, zone, or room—not entire
+buildings. Their current images are references from
+`data/workspace-examples.json` into `data/media.json`; that keeps the creator,
+copyright, licence, source, and access level attached to each asset.
 
-## Namensschema
+Do not copy those media-library files into this directory. The page uses
+`coverMediaId` for the card and the ordered `mediaIds` list for the
+example-specific gallery opened from that card. A local `images` field previously documented here was never rendered
+or validated and has been removed instead of maintaining a false contract.
 
-    <example-slug>_<n>.jpg
-
-Beispiel: `bundeshaus-west-2og-stabsstelle_1.jpg`
-
-## Woher die Bilder kommen
-
-Zwei Wege, und sie sind nicht gleichwertig:
-
-- **Eigene Aufnahmen der Fläche.** Hierher, mit dem Schema oben, und im Beispielrecord
-  unter `images` eingetragen.
-- **Bestehende Assets der Mediendatenbank.** NICHT hierher kopieren. Der Beispielrecord
-  verweist über `mediaIds` in `data/media.json`, damit Lizenz, Fotograf:in, Copyright und
-  Quelle beim Asset bleiben. Ein Teil dieser Aufnahmen ist als «BBL-Mediendatenbank, nicht
-  frei lizenziert» geführt; eine Kopie hier würde diese Angabe verlieren.
-
-Die Beispielseite bevorzugt `images` und fällt auf `mediaIds` zurück. Solange keine
-eigenen Aufnahmen vorliegen, zeigen die Beispiele die verwiesenen Assets — mit ihrer
-Lizenzangabe.
+This directory is reserved for future photographs of the exact realised
+workspace. Before adding one, define and implement a provenance-bearing local
+image schema, renderer precedence, and integrity checks. Such photographs must
+show the described interior rather than a building facade and retain explicit
+publication rights.

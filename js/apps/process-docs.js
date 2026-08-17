@@ -185,7 +185,7 @@ export default async function render(ctx) {
 // List and detail routes share the same data-driven hierarchy.
 function buildTree({ all, areas, hash, selGroups, activeId, activeDef = null,
   scopeOf = () => '', pathOf = () => false, href = () => BASE }) {
-  const ICON = { fachlich: 'tree/workflow', portal: 'tree/app-window' };
+  const ICON = { fachlich: 'lucide/workflow', portal: 'lucide/app-window' };
   const UNIT = { fachlich: 'Prozesse', portal: 'Abläufe' };
 
   const nest = (rows, inner, onPath) => {
@@ -301,7 +301,7 @@ function buildTree({ all, areas, hash, selGroups, activeId, activeDef = null,
       [{
         id: 'root',
         label: 'Übersicht',
-        icon: 'tree/library',
+        icon: 'lucide/library',
         count: all.length,
         countUnit: 'Prozesse',
         href: hash({ q: '', sort: '', group: [], status: [], page: 1 }),

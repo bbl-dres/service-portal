@@ -12,6 +12,9 @@
 
 A static single-page application: no build step, no `node_modules`, no framework. ES modules loaded directly by the browser, hash routing, HTML produced by template literals, data read from `data/*.json` over `fetch`.
 
+The structural and size rows below are the document's 2026-08-07 snapshot; the
+verification row is kept current because it is an operational test inventory.
+
 | | |
 |---|---:|
 | Tracked files | 1'101 |
@@ -22,7 +25,7 @@ A static single-page application: no build step, no `node_modules`, no framework
 | `assets/` | 418 tracked files, ~48 MB |
 | `docs/review-assets/` | 344 tracked files (342 PNGs), ~134 MB |
 | Page modules / micro-apps | 9 / 16 |
-| Verification scripts | 62 `test-*.mjs` (38 browser, 24 pure Node), 25 `check-*.mjs` |
+| Verification scripts | 65 `test-*.mjs` (40 browser, 25 pure Node), 25 `check-*.mjs` |
 | Runtime libraries | MapLibre GL 4.7.1, Swagger UI 5.17.14, bpmn-js 17.11.1 — pinned, lazy, from `unpkg.com` |
 
 Boot is four requests: `services.json` + `reference-data.json` (everything the shell needs to draw), the shared `processes.json` registry, and `process-instances.json`, in one `Promise.all`. The process engine derives its portal definitions from the core-cached registry, and everything else is pulled per route.
@@ -61,6 +64,14 @@ Four things fall out of it that most prototypes never get:
 - **`ctx.stale()`** + a monotonic dispatch ticket kill the render race that async route modules otherwise always have.
 - **`ctx.onUnmount(fn)`** gives routes a teardown hook, so maps, observers and media-query listeners do not outlive the view that made them.
 
+> **Route-loader refinement, 17 August 2026.** `needs` is not limited to one
+> static array per module: the workspace knowledge branch now resolves it from
+> the exact path parameters. Hub, lifecycle, downloads, malformed and surplus
+> paths request no catalogues; the handbook index, record-shaped module detail,
+> and inspiration request only their consumers. A production route loader must keep
+> this parameter-sensitive boundary, including the zero-data not-found path,
+> rather than broadening it back to one feature-wide payload.
+
 **The failure model is unusually honest.** `core` keeps a `FAILED` set and exposes `available(key)` / `failedAreas()`; the shell paints a persistent banner; `C.empty()` distinguishes *"no entries"* from *"could not be loaded"*. Almost every production application in the wild renders a load failure as a plausible zero. This one refuses to. **This is a design rule worth carrying forward explicitly**, because no framework gives it to you by default.
 
 **Golden-record discipline is real.** `buildings.geojson` (SAP RE-FX shape) is the single source for both the dashboard and the inventory; `normalizeBuilding()` / `normalizeParcel()` / `normalizeLandcover()` translate raw SAP/AV field names into the lean shape every view reads. That is an anti-corruption layer, already in the right place — at the data boundary, once, not per view.
@@ -98,6 +109,12 @@ Ordered by how much they cost to fix later.
 ### 4. Verdict on the prototype
 
 It is a strong prototype and, more usefully, **an unusually precise specification**. It has settled the information architecture, the route contract, the domain vocabulary, the reference lists, the design-system alignment, the accessibility behaviour and the failure semantics — and it has 29 browser tests that describe all of it executably. Those decisions are the expensive ones. The parts that are missing (persistence, identity, authorization, scale, orchestration, i18n) are the parts a production stack supplies.
+
+> **Test-inventory note, 17 August 2026.** The number 29 in this dated draft and
+> its migration tables records the 7 August snapshot. The maintained inventory
+> is now 65 `test-*.mjs` suites (40 browser, 25 pure) plus 25 focused
+> `check-*.mjs` probes. The architectural requirement is to carry the maintained
+> behavioral suite forward, not to preserve the historical number.
 
 **So the production question is not "what do we rewrite?" but "what do we keep, and in what order do we replace the rest?"**
 

@@ -1,5 +1,4 @@
-// Knowledge-and-resources content: 117 resources in 27 sections across seven
-// subject areas (L2), grouped by material type within each (L3).
+// Knowledge-and-resources content shared by the page and global search.
 //
 // WHY A SEPARATE MODULE: this content now has two consumers. The page
 // (js/pages/knowledge.js) renders it, while search (js/pages/search.js) indexes
@@ -13,6 +12,77 @@
 // Toolkits and templates sit under «Informatik», while BKB documents sit under
 // «Beschaffen». Material belongs to the subject currently being worked on
 // (docs/legacy-analysis.md).
+
+/**
+ * Workspace downloads, grouped by the point in the planning process where they
+ * are needed. Each group is a real page section so it appears in the table of
+ * contents and in global search. The files are placeholders in this prototype;
+ * `href: '#'` keeps the download row visibly unavailable.
+ */
+export const WORKSPACE_DOWNLOAD_GROUPS = Object.freeze([
+  Object.freeze({
+    id: 'standard-vorgaben',
+    branch: 'downloads',
+    title: 'Standard und Vorgaben',
+    intro: 'Was gilt. Vor dem Planen zu lesen.',
+    items: Object.freeze([
+      Object.freeze({ title: 'Handbuch Multispace — Neue Arbeitswelten (NAW)',
+        desc: 'Der vollständige Ausstattungsstandard: Farbkonzept, Materialisierung, die Module mit Charakteristik, Umsetzungsrichtlinien und Elementlisten.',
+        href: '#', meta: Object.freeze(['PDF', 'Handbuch', 'Stand 6.1.2025']) }),
+      Object.freeze({ title: 'Zielbild «Serviceportal & Workspacemanagement»',
+        desc: 'Systemgrenze, Prämissen und strategische Anforderungen des Workspace Managements. Version 1.0, freigegeben am 30.10.2024.',
+        href: '#', meta: Object.freeze(['PDF', 'Zielbild']) }),
+      Object.freeze({ title: 'Anforderungen PDF-Druck «Flächennachweis SIA 416»',
+        desc: 'Vorgaben an Papierformate, Massstäbe, Plankopf und Legende der grafischen Planausgabe.',
+        href: '#', meta: Object.freeze(['PDF', 'Anforderungen']) }),
+    ]),
+  }),
+  Object.freeze({
+    id: 'cad-bausteine',
+    branch: 'downloads',
+    title: 'CAD-Bausteine',
+    intro: 'Womit gezeichnet wird. Die Blöcke tragen die Layer- und Attributkonvention, auf der die Planübernahme beruht.',
+    items: Object.freeze([
+      Object.freeze({ title: 'BBL Module — CAD-Blöcke',
+        desc: 'Die Multispace-Module als Zeichnungsblöcke, je Modul ein Repräsentant mit den Möbeln als Attribute.',
+        href: '#', meta: Object.freeze(['DWG', 'CAD-Bibliothek']) }),
+      Object.freeze({ title: 'Vorlagezeichnung CAFM-Plan',
+        desc: 'Layerstruktur, Raumpolygone und Raumstempel als leere Ausgangszeichnung.',
+        href: '#', meta: Object.freeze(['DWG', 'Vorlage']) }),
+      Object.freeze({ title: 'Handout BBL Möbelkatalog',
+        desc: 'Die CAD-Block-Konvention erklärt: Modul, Repräsentant, Möbel mit Layer und Attributen.',
+        href: '#', meta: Object.freeze(['DOCX', 'Handout']) }),
+    ]),
+  }),
+  Object.freeze({
+    id: 'cad-werkzeuge',
+    branch: 'downloads',
+    title: 'Werkzeuge für AutoCAD und Revit',
+    intro: 'Geplant, noch nicht verfügbar. Das Plug-in soll die Prüfung, die heute im Browser läuft, in die Zeichenumgebung holen und den Planstand mit dem Portal abgleichen.',
+    items: Object.freeze([
+      Object.freeze({ title: 'BBL Plan-Check — Plug-in für AutoCAD',
+        desc: 'Layerstruktur, Raumpolygone, Raumstempel und Bemassung direkt in der Zeichnung gegen die CAD-Vorgaben prüfen, ohne Datei-Upload.',
+        href: '#', meta: Object.freeze(['In Vorbereitung', 'Plug-in']) }),
+      Object.freeze({ title: 'BBL Plan-Sync — Plan-Editor-Abgleich',
+        desc: 'Den geprüften Planstand aus AutoCAD oder Revit in das Portal übernehmen und Änderungen aus dem Portal zurückholen.',
+        href: '#', meta: Object.freeze(['In Vorbereitung', 'Plug-in']) }),
+    ]),
+  }),
+  Object.freeze({
+    id: 'planungsvorlagen',
+    branch: 'downloads',
+    title: 'Vorlagen für die Planung',
+    intro: 'Womit der Bedarf erhoben und das Mengengerüst geführt wird.',
+    items: Object.freeze([
+      Object.freeze({ title: 'Mengengerüst je Geschoss',
+        desc: 'Register für Module, Sub-Module und Standardmobiliar mit dem Mengengerüst von UG bis 8. OG.',
+        href: '#', meta: Object.freeze(['XLSX', 'Vorlage']) }),
+      Object.freeze({ title: 'Arbeitsstilanalyse — Erhebungsbogen',
+        desc: 'Grundlage für den Modulmix: Aufgaben, Arbeitsweisen und tatsächliche Präsenz einer Organisationseinheit.',
+        href: '#', meta: Object.freeze(['XLSX', 'Vorlage']) }),
+    ]),
+  }),
+]);
 
 export const AREAS = {
   it: {
@@ -121,39 +191,24 @@ export const AREAS = {
   // handbook marks them confidential.
   workspace: {
     title: 'Arbeitsplätze gestalten',
-    lead: 'Der Ausstattungsstandard «Multispace» des BBL — die Module für die Büroflächen der Bundesverwaltung, von der Arbeitsstilanalyse bis zur Planübernahme.',
+    lead: 'Planungshilfen für Büroflächen der Bundesverwaltung: Multispace-Module, realisierte Beispiele, Kreislaufwirtschaft sowie Vorlagen und Werkzeuge.',
     intro: 'Die rechtlichen Grundlagen — VILB, Weisungen und Standards für Büroarbeitsplätze — stehen unter <a href="#/knowledge/accommodation">Unterbringung und Objektbetrieb</a>. Geplant und geprüft wird im <a href="#/app/floorplan-editor">Plan-Editor</a> und in der <a href="#/app/plan-check">Planprüfung</a>.',
     sections: [
-      { id: 'standard', branch: 'multispace', title: 'Die Multispace-Module', intro: 'Jedes Modul bildet eine funktionale und gestalterische Einheit. Module lassen sich kombinieren; ein Mix einzelner Modulelemente wird ausdrücklich nicht empfohlen. Die Flächenrichtmasse sind Planungswerte aus der Modulübersicht des Handbuchs.', html: (C) => moduleList(C) },
-      { id: 'einrichtung', branch: 'multispace', title: 'Einrichtungsrichtlinien', intro: 'Räumliche Regeln aus dem Handbuch — sie entscheiden über die Qualität einer Fläche mehr als die Möbelwahl.', html: (C) => guidelineList(C) },
-      { id: 'farbe', branch: 'multispace', title: 'Farbkonzept und Materialien', html: (C) => `
-        <p>Das Farbkonzept leitet sich aus «Polychromie Architecturale» ab, dem 1931 von Le Corbusier entwickelten Farbsystem mit 43 Farben. Aus einer Serie von Volltonfarben ergeben sich abgestufte Aufhellungen; die Abstufungen der Rottöne der Schweizer Fahne dienen als Grundton der Farbwelten.</p>
-        <p><strong>Die Farben des Mobiliars sind verbindlich und standardisiert und können nicht angepasst werden.</strong> Das BBL folgt damit dem Bundesratsauftrag zur Standardisierung und ermöglicht eine nachhaltige Kreislaufwirtschaft.</p>
-        <p>Die Farben für Wände und Böden sind integraler Bestandteil der Module. Pro Modul stehen vier Wandfarben zur freien Auswahl. Weisse Wände sind ausdrücklich nicht im Sinn des Konzepts. Gibt es nachvollziehbare Gründe, vom Farbkonzept für Wände und Böden abzuweichen, ist dem BBL ein alternatives Farbkonzept zur Freigabe vorzulegen.</p>` },
-      { id: 'planungsschritte', branch: 'multispace', title: 'Von der Analyse zur Belegung', intro: 'Drei Begriffe des Zielbilds, die nicht austauschbar sind, und die vier Schritte, die das Handbuch der Gestaltung einer Büroumgebung voranstellt.', html: (C) => planningSteps(C) },
-      { id: 'plandaten', branch: 'multispace', title: 'Plandaten und Flächennachweis', intro: 'Was ein Grundriss enthalten muss, damit er übernommen, geprüft und massstäblich ausgegeben werden kann.', html: (C) => planDataBlock(C), items: [
-        { title: 'Grundriss im Plan-Editor bearbeiten', desc: 'Räume, Nutzungsarten und Multispace-Module direkt im Geschossplan pflegen.', href: '#/app/floorplan-editor', meta: ['Anwendung'] },
-        { title: 'DWG-Datei prüfen lassen', desc: 'Layerstruktur, Raumpolygone, Raumstempel und Bemassung lokal im Browser gegen die CAD-Vorgaben prüfen.', href: '#/app/plan-check', meta: ['Anwendung'] },
-        { title: 'Grundriss prüfen', desc: 'Die Dienstleistung mit Beschrieb, Voraussetzungen und Ablauf.', href: '#/services/plan-pruefen', meta: ['Dienstleistung'] },
-      ] },
-      { id: 'beschaffung', branch: 'kreislauf', title: 'Beschaffung, Lieferung und Kreislauf', intro: 'Die standardisierte Raumausstattung wird in einem Kreislaufmodell bewirtschaftet. Das bestimmt, womit geplant wird und was mit ausgedientem Mobiliar geschieht.', html: (C) => `
-        <ul class="wsm-rules">
-          <li>Ausstattungen werden in erster Linie mit <strong>Occasionsmobiliar</strong> geplant.</li>
-          <li>Das Mobiliarportfolio ist auf einen Life Cycle von <strong>15 Jahren</strong> ausgerichtet.</li>
-          <li>Die Benutzerorganisationen führen keine eigenen Lager; nicht mehr benötigtes Mobiliar wird mit einem Umzugsauftrag zurückgegeben.</li>
-          <li>Für zurückgegebenes Mobiliar erfolgt keine Vergütung. Über Wiederverwendung im Kreislaufmodell oder einen Verkauf von ausgedientem Mobiliar entscheidet das BBL.</li>
-          <li>Die Zuständigkeit des BBL für Reparaturen und Rückschubaufträge beschränkt sich auf die vom BBL beschafften Artikel.</li>
-          <li>In der Region Bern übernimmt das BBL die Montage. Ausserhalb stellen die Dienststellen das Personal für Entgegennahme, Verteilung und Aufstellung.</li>
+      { id: 'standard', branch: 'multispace', title: 'Die Multispace-Module', intro: 'Jedes Modul bildet eine funktionale und gestalterische Einheit. Module lassen sich kombinieren; ein Mix einzelner Modulelemente wird ausdrücklich nicht empfohlen. Die Flächenrichtmasse sind Planungswerte aus der Modulübersicht des Handbuchs.', indexOnly: true },
+      { id: 'occasionsmobiliar', branch: 'kreislauf', title: 'Occasionsmobiliar zuerst',
+        intro: 'Ausstattungen werden in erster Linie mit Occasionsmobiliar geplant. Das Mobiliarportfolio ist auf einen Lebenszyklus von 15 Jahren ausgerichtet.' },
+      { id: 'lieferung', branch: 'kreislauf', title: 'Lieferung und Montage',
+        intro: 'In der Region Bern übernimmt das BBL die Montage. Ausserhalb der Region stellen die Dienststellen das Personal für Entgegennahme, Verteilung und Aufstellung.' },
+      { id: 'reparaturen', branch: 'kreislauf', title: 'Reparaturen und Zuständigkeiten',
+        intro: 'Die Zuständigkeit des BBL für Reparaturen und Rückschubaufträge beschränkt sich auf Artikel, die das BBL beschafft hat.' },
+      { id: 'rueckgabe', branch: 'kreislauf', title: 'Rückgabe und Wiederverwendung',
+        intro: 'Benutzerorganisationen führen keine eigenen Möbellager. Nicht mehr benötigtes Mobiliar geht mit einem Umzugsauftrag an das BBL zurück.',
+        html: () => `<ul class="list--default">
+          <li>Für zurückgegebenes Mobiliar erfolgt keine Vergütung.</li>
+          <li>Das BBL entscheidet über die Wiederverwendung im Kreislaufmodell oder den Verkauf ausgedienter Möbel.</li>
         </ul>
         <p class="small muted mt-4">Formulare für Transport-, Umzugs- und Rückschubaufträge stehen unter <a href="#/knowledge/accommodation?section=${sectionDomId('formulare')}">Unterbringung und Objektbetrieb</a>.</p>` },
-      { id: 'unterlagen', branch: 'downloads', title: 'Zum Herunterladen', intro: 'Nach Zweck gruppiert: erst lesen, dann zeichnen, dann prüfen. Die Preise des Handbuchs sind vertraulich und deshalb nicht Teil dieser Sammlung.', html: (C) => downloadGroups(C) },
-      { id: 'anwendungen', branch: 'multispace', title: 'Anwendungen und Dienstleistungen', intro: 'Wo die hier beschriebenen Vorgaben im Portal angewendet werden.', items: [
-        { title: 'Workspace Management (Portal)', desc: 'Objekte, Planstände, schreibgeschützte Grundrissvorschauen und Ausstattung der Arbeitsplatzplanung.', href: '#/app/workspace', meta: ['Anwendung'] },
-        { title: 'Plan-Editor', desc: 'Flächen, Räume und Multispace-Ausstattung direkt im Grundriss verwalten und planen.', href: '#/app/floorplan-editor', meta: ['Anwendung'] },
-        { title: 'BBL Intranetshop', desc: 'Büromaterial und Mobiliar aus dem Standardsortiment bestellen.', href: '#/app/shop', meta: ['Anwendung'] },
-        { title: 'Raumbedarf melden', desc: 'Zusätzlichen Flächenbedarf, Umnutzungen oder bauliche Anpassungen anmelden.', href: '#/services/raumbedarf-melden', meta: ['Dienstleistung'] },
-        { title: 'Umzug, Transport und Entsorgung', desc: 'Umzüge und Transporte innerhalb der gemieteten Lokalitäten beauftragen.', href: '#/services/umzug-anmelden', meta: ['Dienstleistung'] },
-      ] },
+      ...WORKSPACE_DOWNLOAD_GROUPS,
     ],
   },
 
@@ -303,16 +358,16 @@ export const FAQS = [
  *
  * The area was one page carrying eight sections, an eleven-module catalogue and a
  * document library — too much to read in one sitting, and the reason it is now a
- * drill-down branch. Sections declare which branch they belong to, so the content
- * stays in ONE list and each page filters it; five separate lists would drift.
+ * drill-down branch. The shared section list now owns the handbook's search target
+ * and the two document branches; catalogues render their canonical data directly.
  */
 export const WORKSPACE_BRANCHES = Object.freeze([
   Object.freeze({ slug: '', key: 'overview', label: 'Übersicht',
-    lead: 'Wie eine Bürofläche geplant, geprüft und übernommen wird — und wo das im Portal passiert.' }),
+    lead: 'Multispace planen und umsetzen — vom Ausstattungsstandard über realisierte Beispiele bis zu Kreislauf und Planungsunterlagen.' }),
   Object.freeze({ slug: 'multispace', key: 'multispace', label: 'Multispace-Handbuch',
-    lead: 'Der Ausstattungsstandard: die Module mit Sub-Modulen und Flächenrichtmassen, die Einrichtungsrichtlinien und das Farbkonzept.' }),
+    lead: 'Der Ausstattungsstandard: Module mit Sub-Modulen, Flächenrichtmassen, Ausstattung und verknüpften Planungsbeispielen.' }),
   Object.freeze({ slug: 'inspiration', key: 'inspiration', label: 'Planungsbeispiele',
-    lead: 'Umgesetzte Flächen der Bundesverwaltung: je Beispiel ein ausgebauter Ort — ein Geschoss, eine Zone oder ein Raum — mit den eingesetzten Modulen, Grundrissen und Möbeln.' }),
+    lead: 'Umgesetzte Flächen der Bundesverwaltung. Jedes Beispiel öffnet eine Bildergalerie mit Projektkontext und vollständigen Bildnachweisen.' }),
   Object.freeze({ slug: 'kreislauf', key: 'kreislauf', label: 'Kreislaufwirtschaft und Occasionsmobiliar',
     lead: 'Die standardisierte Raumausstattung wird in einem Kreislaufmodell bewirtschaftet. Das bestimmt, womit geplant wird und was mit ausgedientem Mobiliar geschieht.' }),
   Object.freeze({ slug: 'downloads', key: 'downloads', label: 'Downloads und Vorlagen',
@@ -346,178 +401,6 @@ export const MULTISPACE_MODULES = Object.freeze([
     desc: 'Sammelbehälter an den Arbeitsplätzen und Entsorgungsstellen auf den Etagen, damit Reststoffe getrennt in den Stoffkreislauf zurückgeführt werden.' },
 ]);
 
-// Spatial rules from the handbook. They are design constraints, not decoration:
-// each one decides whether a floor plan can be approved.
-export const MULTISPACE_GUIDELINES = Object.freeze([
-  'Einzelarbeitsplätze immer entlang der Fassade und rechtwinklig zum Tageslicht, damit keine Reflexion auf dem Bildschirm entsteht.',
-  'Arbeitsplatzgruppen umfassen höchstens vier Tische; grössere Teams werden über mehrere Gruppen verteilt.',
-  'Telefon- und Besprechungsboxen gleichmässig auf der Fläche verteilen und nie in Fluchtwegen aufstellen.',
-  'Boxen dürfen sicherheitsrelevante Installationen weder verdecken noch behindern — Sprinkler, Brandmelder, Notausgänge, Fluchtwegkennzeichen, Sicherheitsbeleuchtung, Löschgeräte sowie Rauch- und Wärmeabzugsöffnungen.',
-  'Der Zugang für Wartung und Unterhalt an gebäudetechnischen Anlagen, Leitungssystemen und Wartungsöffnungen in Boden, Wand und Decke bleibt frei.',
-  'Locker und Garderoben stehen nahe beim Eingang.',
-  'Die Team Ablage ist immer vom Korridor zugänglich, nie hinter dem Arbeitsplatz.',
-  'Ein Auditorium wird nur einmal pro Gebäude eingerichtet.',
-  'Die SECO-Richtlinien zu Abständen, Verkehrsflächen und Fluchtwegen sind einzuhalten.',
-]);
-
-// The three planning terms are defined in the Zielbild and are NOT
-// interchangeable; the portal keeps them apart because each has a different
-// owner and a different system.
-export const WORKSPACE_TERMS = Object.freeze([
-  { term: 'Raumplanung', gloss: 'Strategische Planung der Raumstruktur im Gebäude.' },
-  { term: 'Unterbringungsplanung', gloss: 'Zuordnung einer Organisationseinheit zu einem Gebäude oder Gebäudeteil, auf Basis der Raumplanung.' },
-  { term: 'Belegungsplanung', gloss: 'Operative Zuweisung von Arbeitsräumen oder Arbeitsplätzen an Mitarbeitende oder Gruppen.' },
-]);
-
-// The handbook's four preparatory steps before a layout is drawn.
-export const WORKSPACE_STEPS = Object.freeze([
-  { title: 'Arbeitsstilanalyse', desc: 'Wie arbeitet die Organisationseinheit heute — allein, im Team, mobil, im Sitzungszimmer?' },
-  { title: 'Spezifische Bedürfnisse der Organisationseinheit', desc: 'Aufgaben, Arbeitsweisen und Grad der Digitalisierung unterscheiden sich stark und bestimmen den Modulmix.' },
-  { title: 'Erhebung der Multispace Module', desc: 'Welche Module in welcher Anzahl gebraucht werden, abgeleitet aus Analyse und Bedürfnissen.' },
-  { title: 'Adaption der Multispace Module auf die Fläche', desc: 'Layout und Belegung — die Module werden auf dem konkreten Geschoss platziert.' },
-]);
-
-/**
-/**
- * The modules as a navigable list, followed by the summary table.
- *
- * The table alone could not answer «what is in module 4?», which is the question the
- * handbook is opened for; each row now leads to the module's own page. The table stays,
- * because reading the area guide values DOWN a column is how a floor gets planned.
- */
-/**
- * Downloads, grouped by the moment they are needed.
- *
- * Every entry is a placeholder in this prototype: `href: '#'` renders as a disabled
- * download item, which is the honest state for a file the portal does not host yet.
- * The CAD plugin is described as planned rather than shown as available.
- */
-export const WORKSPACE_DOWNLOAD_GROUPS = Object.freeze([
-  Object.freeze({
-    title: 'Standard und Vorgaben',
-    intro: 'Was gilt. Vor dem Planen zu lesen.',
-    items: Object.freeze([
-      Object.freeze({ title: 'Handbuch Multispace — Neue Arbeitswelten (NAW)',
-        desc: 'Der vollständige Ausstattungsstandard: Farbkonzept, Materialisierung, die Module mit Charakteristik, Umsetzungsrichtlinien und Elementlisten.',
-        meta: Object.freeze(['PDF', 'Handbuch', 'Stand 6.1.2025']) }),
-      Object.freeze({ title: 'Zielbild «Serviceportal & Workspacemanagement»',
-        desc: 'Systemgrenze, Prämissen und strategische Anforderungen des Workspace Managements. Version 1.0, freigegeben am 30.10.2024.',
-        meta: Object.freeze(['PDF', 'Zielbild']) }),
-      Object.freeze({ title: 'Anforderungen PDF-Druck «Flächennachweis SIA 416»',
-        desc: 'Vorgaben an Papierformate, Massstäbe, Plankopf und Legende der grafischen Planausgabe.',
-        meta: Object.freeze(['PDF', 'Anforderungen']) }),
-    ]),
-  }),
-  Object.freeze({
-    title: 'CAD-Bausteine',
-    intro: 'Womit gezeichnet wird. Die Blöcke tragen die Layer- und Attributkonvention, auf der die Planübernahme beruht.',
-    items: Object.freeze([
-      Object.freeze({ title: 'BBL Module — CAD-Blöcke',
-        desc: 'Die Multispace-Module als Zeichnungsblöcke, je Modul ein Repräsentant mit den Möbeln als Attribute.',
-        meta: Object.freeze(['DWG', 'CAD-Bibliothek']) }),
-      Object.freeze({ title: 'Vorlagezeichnung CAFM-Plan',
-        desc: 'Layerstruktur, Raumpolygone und Raumstempel als leere Ausgangszeichnung.',
-        meta: Object.freeze(['DWG', 'Vorlage']) }),
-      Object.freeze({ title: 'Handout BBL Möbelkatalog',
-        desc: 'Die CAD-Block-Konvention erklärt: Modul, Repräsentant, Möbel mit Layer und Attributen.',
-        meta: Object.freeze(['DOCX', 'Handout']) }),
-    ]),
-  }),
-  Object.freeze({
-    title: 'Werkzeuge für AutoCAD und Revit',
-    intro: 'Geplant, noch nicht verfügbar. Das Plug-in soll die Prüfung, die heute im Browser läuft, in die Zeichenumgebung holen und den Planstand mit dem Portal abgleichen.',
-    items: Object.freeze([
-      Object.freeze({ title: 'BBL Plan-Check — Plug-in für AutoCAD',
-        desc: 'Layerstruktur, Raumpolygone, Raumstempel und Bemassung direkt in der Zeichnung gegen die CAD-Vorgaben prüfen, ohne Datei-Upload.',
-        meta: Object.freeze(['In Vorbereitung', 'Plug-in']) }),
-      Object.freeze({ title: 'BBL Plan-Sync — Plan-Editor-Abgleich',
-        desc: 'Den geprüften Planstand aus AutoCAD oder Revit in das Portal übernehmen und Änderungen aus dem Portal zurückholen.',
-        meta: Object.freeze(['In Vorbereitung', 'Plug-in']) }),
-    ]),
-  }),
-  Object.freeze({
-    title: 'Vorlagen für die Planung',
-    intro: 'Womit der Bedarf erhoben und das Mengengerüst geführt wird.',
-    items: Object.freeze([
-      Object.freeze({ title: 'Mengengerüst je Geschoss',
-        desc: 'Register für Module, Sub-Module und Standardmobiliar mit dem Mengengerüst von UG bis 8. OG.',
-        meta: Object.freeze(['XLSX', 'Vorlage']) }),
-      Object.freeze({ title: 'Arbeitsstilanalyse — Erhebungsbogen',
-        desc: 'Grundlage für den Modulmix: Aufgaben, Arbeitsweisen und tatsächliche Präsenz einer Organisationseinheit.',
-        meta: Object.freeze(['XLSX', 'Vorlage']) }),
-    ]),
-  }),
-]);
-
-function downloadGroups(C) {
-  return C.accordion(WORKSPACE_DOWNLOAD_GROUPS.map((group) => ({
-    title: group.title,
-    meta: `<span class="small muted">${C.escape(String(group.items.length))}</span>`,
-    body: `<p class="muted">${C.escape(group.intro)}</p>
-      <ul class="download-items">${group.items.map((item) => C.downloadItem({
-        href: '#', ...item, meta: [...item.meta], download: false, wrapLi: true,
-      })).join('')}</ul>`,
-  })), { id: 'wsm-downloads' });
-}
-
-function moduleList(C) {
-  const items = MULTISPACE_MODULES.map((module) => `
-    <a class="wsm-catalogue__item" href="#/knowledge/workspace/multispace/modul-${module.nr}">
-      <span class="wsm-catalogue__nr">${C.escape(String(module.nr))}</span>
-      <span class="wsm-catalogue__body">
-        <strong>${C.escape(module.name)}</strong>
-        <small>${C.escape(module.desc)}</small>
-      </span>
-      ${C.icon('ChevronRight', 'icon--sm')}
-    </a>`).join('');
-  return `<nav class="wsm-catalogue" aria-label="Module">${items}</nav>
-    <h3 class="mt-6">Flächenrichtmasse im Überblick</h3>
-    ${moduleTable(C)}`;
-}
-
-function moduleTable(C) {
-  return `${C.table({
-    caption: 'Die Multispace-Module mit Sub-Modulen und Flächenrichtmass',
-    zebra: true,
-    columns: [
-      // The characteristic sits under the name rather than in a fourth column:
-      // four columns overflow the anchor-navigation content width, and a module
-      // is read as one thing, not as a name and a separate sentence.
-      { key: 'nr', label: 'Modul',
-        render: (m) => `<span class="wsm-module__nr">${m.nr}</span>${C.escape(m.name)}`
-          + `<span class="wsm-module__desc">${C.escape(m.desc)}</span>` },
-      { key: 'variants', label: 'Sub-Module', width: '15rem', render: (m) => C.escape(m.variants) },
-      { key: 'area', label: 'Flächenrichtmass', width: '11rem',
-        render: (m) => `<span class="wsm-module__area">${C.escape(m.area)}</span>` },
-    ],
-    rows: MULTISPACE_MODULES,
-  })}
-  <p class="small muted mt-4">Die Flächenrichtmasse sind Planungswerte aus der Modulübersicht des Handbuchs. Einzelne Detailseiten weichen davon ab; verbindlich ist das Handbuch.</p>
-  ${C.notification(`Diese Übersicht folgt der Ausgabe vom ${MULTISPACE_EDITION}. Gegenüber der Ausgabe vom 6.1.2025 heisst Modul 1 neu «Standardarbeitsplatz», der Coffee Point ist kein eigenes Modul mehr, und die früheren Module 8 bis 11 sind zu 7 bis 10 aufgerückt. Ältere Pläne und Ausstattungslisten können deshalb eine andere Nummerierung tragen.`, 'info', 'InfoCircle')}`;
-}
-
-function guidelineList(C) {
-  return `<ul class="wsm-rules">${
-    MULTISPACE_GUIDELINES.map((rule) => `<li>${C.escape(rule)}</li>`).join('')}</ul>`;
-}
-
-function planningSteps(C) {
-  return `<h3 class="wsm-subhead">Drei Planungsebenen</h3>
-    <dl class="kv kv--ruled">${WORKSPACE_TERMS.map((t) => `
-      <dt>${C.escape(t.term)}</dt><dd>${C.escape(t.gloss)}</dd>`).join('')}
-    </dl>
-    <h3 class="wsm-subhead">Vier Schritte vor dem Layout</h3>
-    <ol class="wsm-steps">${WORKSPACE_STEPS.map((s) => `
-      <li><strong>${C.escape(s.title)}</strong><span class="muted">${C.escape(s.desc)}</span></li>`).join('')}
-    </ol>
-    <p class="small muted mt-4">Für die Umsetzung empfiehlt das Handbuch die Beauftragung eines externen Changemanagements nach dem FlexWork-Change-Konzept.</p>`;
-}
-
-function planDataBlock(C) {
-  return `<p>Grundrisse werden als binäre DWG-Datei übernommen. Geprüft werden Layerstruktur, Raumpolygone, Raumstempel (AOID), Beschriftung und Bemassung — die <a href="#/app/plan-check">Planprüfung</a> führt diese Prüfung lokal im Browser aus und erstellt einen Prüfbericht.</p>
-    <p>Der grafische Report für die Flächenausgabe heisst <strong>Flächennachweis SIA 416</strong>. Er dient als Beilage zu Verkaufsdokumentationen und zu Verträgen mit Dritten und wird in den Formaten A4 und A3 quer oder hoch gedruckt, wahlweise als gesamter Grundriss oder als Ausschnitt in einem festen Massstab von 1:100 bis 1:1500. Über alle Geschosse eines Gebäudes gilt derselbe Massstab.</p>`;
-}
-
 export const sectionDomId = (id) => 'wi-' + id;
 
 // Flat search index: one row per resource, plus one for the section itself and
@@ -532,7 +415,16 @@ export function knowledgeIndex() {
   for (const [key, area] of Object.entries(AREAS)) {
     const areaHref = `#/knowledge/${key}`;
     for (const s of area.sections) {
-      const sectionHref = `${areaHref}?section=${sectionDomId(s.id)}`;
+      const branch = key === 'workspace' && s.branch
+        ? WORKSPACE_BRANCHES.find((entry) => entry.key === s.branch)
+        : null;
+      const pageHref = branch?.slug ? `${areaHref}/${branch.slug}` : areaHref;
+      // The Multispace handbook is a catalogue rather than an anchor-navigation page.
+      // Its search results therefore open the catalogue itself; the other knowledge
+      // pages retain precise section targets.
+      const sectionHref = branch?.key === 'multispace'
+        ? pageHref
+        : `${pageHref}?section=${sectionDomId(s.id)}`;
       out.push({
         title: s.title, desc: s.intro || area.lead, href: sectionHref,
         extra: [area.title, 'Wissen Hilfsmittel Unterlagen'].join(' '),

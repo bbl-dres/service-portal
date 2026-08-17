@@ -6,8 +6,8 @@ Protocol** from Node (using the global `WebSocket`, Node ≥ 22) — no puppetee
 Each test opens the real app, runs an in-page probe, and asserts on the result,
 exiting non-zero on failure.
 
-There are currently **62 supported `test-*.mjs` suites: 38 browser suites and
-24 pure-Node suites**, plus **25 retained `check-*.mjs` diagnostics**. Browser
+There are currently **65 supported `test-*.mjs` suites: 40 browser suites and
+25 pure-Node suites**, plus **25 retained `check-*.mjs` diagnostics**. Browser
 suites use `APP_BASE` to select the running app and exit non-zero on failure.
 The always-run `test-plan-check-parser.mjs` starts its own ephemeral loopback
 server, verifies the exact bundled runtime and artifact provenance, and parses
@@ -93,10 +93,12 @@ inventory is `scripts/test-*.mjs`.
 | `test-bookmarks.mjs` | Personal bookmarks end to end: the star in the dataset detail head (state, accessible name, focus retention, live announcement), the per-person store seeded from `data/users.json` with a removal that survives a reload, no star at all when signed out, the «Meine Favoriten» band below the cases table as a real CD section band (tint on the section, container inside, edge to edge) with references to vanished records dropped, and room booking's own stars writing into the same store rather than a second one. |
 | `test-login.mjs` | Opens Room Booking in an explicitly signed-out session, verifies login persists and replaces the gate, then verifies logout stores the `"signed-out"` marker — so a reload cannot sign the user back in via the logged-in default — and restores both the route gate and header without a subscription API. |
 | `test-workspace.mjs` | Workspace portal: seven canonical objects, plan availability and overdue order state, shared adaptive CD hero/cards (one-image solo layout and five-image Tenancies parity), read-only floor preview URL/room/color/print/fullscreen behavior, safe Plan-Editor/Planprüfung new-window handoffs with building/floor context, contextual process launches in new tabs, and desktop/mobile containment. |
+| `test-workspace-knowledge.mjs` | Full workspace-knowledge browser contract: eleven same-origin module images decode and share their first authored image with the eager detail hero; the three-example handbook preview decodes canonical media and the Planungsbeispiele catalogue exposes all four canonical gallery routes; click/Enter opens only the chosen four-image gallery, Arrow keys and scoped `?bild=` state stay in that collection, Escape restores card/page focus, valid legacy slugs canonicalise, non-free media has metadata but no download action, malformed routes fail strictly, 320/768/1440 remain contained, and a missing image preserves the swatch and operable link. |
+| `test-pipeline.mjs` | Authenticated `#/my-cases/seed-2` status-pipeline contract: exact step/state semantics, one current step, decorative Lucide completion/current glyphs, same-origin HTTP-200 mask assets, 20/24 px responsive sizing, expected wrapping, containment, and clean runtime diagnostics. |
 | `test-floorplan-editor.mjs` | Standalone Plan-Editor: the building detail (breadcrumb, key-figure strip, Übersicht/Grundrisse/Ausstattungen registers, card previews versus fact-only table, module standard and per-floor equipment, shared action and contact cards), both landing views (map-first portfolio as the default — shared catalogue bar and active-filter pills, location tree down to the floors of a building, marker popup carrying object detail and both handoffs, statistics panel scoped to the filters; work queue as the shared compact table with attribute-layer tabs, severity marks and empty-layer explanation), exact Workspace deep link, default uncolored/flat room tree and attribute-driven aggregation, independent disclosures, top-layer color menu hit-testing, CD-style menu keyboard patterns, edit-specific tool order, on-demand product/module library, structural menu and geometry lock, three-pane shell, canonical rooms and deterministic illustrative furniture, direct primary/middle-button and touch panning with tap selection, continuous canvas-only wheel zoom, two-touch pinch-to-one-touch handoff, reversible responsive 2D camera sizing, persistent touch-sized 2D/3D/walk navigation with roving keyboard focus and view-specific actions, retained Three.js orbit/walk controls with camera preservation, dirty-route blocking, focus-safe discard dialogs, selection/URL state, overlap-safe product and structural room editing, CSS-pixel edit jitter and pointer-cancel rollback, inspector scroll preservation, module assignment, undo/redo, local save/publish/history/reload, core-data isolation, mutually exclusive 320px drawers with canvas-focused edit restoration, and editor-navigation restoration. |
 | `test-floorplan-editor-three-controls.mjs` | Focused real-WebGL Three.js camera controls: click-jitter threshold, floor-plane pan direction, zoom-to-cursor, two-finger pinch, deterministic camera diagnostics, responsive aspect/fit preservation, and runtime health. |
 | `test-floorplan-editor-model.mjs` | Pure Plan-Editor model/repository/commands: all canonical floor baselines, deterministic placements, catalogue-independent baseline token, detached edits, strict command allowlists and document invariants, room collision and rotated-footprint guards, catalogue rebasing and legacy-draft migration, recoverable baseline-scoped archives, cross-tab write conflicts, immutable simulated publications, scoped removal, and bounded undo/redo. |
-| `test-knowledge-workspace.mjs` | Pure contracts of the workspace-design knowledge area: the CURRENT Multispace edition (ten modules, no Coffee Point, module 1 renamed), the area figures that are actually in the source and the dash where none is, no confidential price or supplier data, safe and unbanned section ids, no duplication of the accommodation area's legal basis, and the search rows including in-portal application targets. |
+| `test-knowledge-workspace.mjs` | Pure contracts of the workspace-design knowledge area: the published 6.1.2025 Multispace edition (eleven modules with Coffee Point), sourced area figures and explicit missing values, no confidential data, four ordered lifecycle sections, four direct-download sections with ten resources, routed section/resource search targets, no duplicated legal basis, and no search entries for the five removed handbook sections. |
 | `test-floorplan-editor-landing.mjs` | Pure Plan-Editor landing model: the four attribute layers and their canonicalisation, task derivation per layer (unsynchronised floors, due plan orders, open local drafts, missing equipment data, expiring leases) with error/warning/info ordering, Swiss and ISO date parsing, per-layer counts, and the recently-edited floor list. |
 | `test-floorplan-editor-rendering.mjs` | Pure Plan-Editor rendering/input seams: canonical color descriptors, reversible viewport-aspect camera sizing, continuous wheel normalization, inverse screen transforms, floor-plane Three.js pan/fit/rotation math, visible-occluder picking policy, rotation-aware footprints and clamping (including thin products), keyboard cursor SVG, CSS-pixel pointer thresholds, temporary middle-button pan policy, room drag geometry, keyboard panning, and roving-focus calculations. |
 | `test-plan-check-core.mjs` | Pure Planprüfung contracts: defensive geometry/normalisation, the exact 40-rule set, abort conditions and resource limits, report/viewer behavior, `.dwg`/size/header file validation, `parse(file)` lifecycle, and fresh-Worker recovery. |
@@ -111,10 +113,10 @@ inventory is `scripts/test-*.mjs`.
 | `test-ui-state.mjs` | W-03/W-04/W-05/W-22 state regression: catalogue debounce teardown, nested overlay ownership, route cleanup, action-menu ARIA, and mobile-shell reset. |
 | `test-router-lifecycle.mjs` | Route ownership: stale route work is aborted, cache-owned work survives, only the winning render mounts, and focus/scroll finalisation belongs to terminal views. |
 | `test-network-resilience.mjs` | Offline/deferred-data recovery: the active view remains understandable and keyboard-ready after failures, and revisiting it retries once connectivity returns. |
-| `test-routes.mjs` | Complete documented-route and legacy-redirect sweep, protecting addressability after route or parameter changes. |
+| `test-routes.mjs` | Complete documented-route and legacy-redirect sweep, including strict workspace module/example paths and canonicalisation of a valid old example slug to its scoped cover-gallery query. |
 | `test-document-archive.mjs` | Bauwerksdokumentation: reduced six-column table, KBOB document types, filename extensions, plain building cells, and viewer metadata at desktop/mobile widths. |
 | `test-catalogue.mjs` | D2 catalogue triplet (`C.catalogueHash`/`C.catalogueControls`/`C.wireCatalogue`) across services · applications · katalog: deep-link round-trips (q/view/filter), search-submit / view-switch / filter interactions, active-filter pill removal, the services multi-value `topic`, detail rendering, and neutral safe new-tab launch CTAs. |
-| `test-route-needs.mjs` | K-05/K-04 route loading contract: fresh-page resource assertions prove that data routes load only their declared deferred data, generic dashboards load no estate GeoJSON, and the specialized Immobilien renderer loads each of its three master files exactly once. |
+| `test-route-needs.mjs` | K-05/K-04 route loading contract: fresh-page resource assertions prove that data routes load only their declared deferred data, including zero workspace catalogue requests for hub/static/malformed paths and exact record-shaped Multispace/inspiration subsets; generic dashboards load no estate GeoJSON, and the specialized Immobilien renderer loads each master file exactly once. |
 | `test-forms.mjs` | D3 form helpers (`C.field`/`C.select`/`C.val`/`C.readForm`) + the C5 fix across the three wizards: renders, a custom validation error attaches `input--error`+`aria-invalid`+badge to the previously class-less fields (`#org`/`#cc`/`#description`/`#booking-date`), and a valid submit creates a Vorgang. Logs in via the stub first. |
 | `test-content.mjs` | D4 download-item + contact-box unification: the pages rendering `C.downloadItem` (grundlagen, anleitungen, digitalisierung, application entries, my-cases attachments) and `C.contactBox` (application, services detail) render with the expected items / mailto links and no exceptions. |
 | `test-combobox.mjs` | Shared `createListboxController`: Arrow keys, active descendant, selection, Escape/Tab close behavior and cleanup for global suggestions and address search. |
@@ -122,13 +124,14 @@ inventory is `scripts/test-*.mjs`.
 | `test-catalogue-state.mjs` · `test-print-mode.mjs` · `test-shop-cart.mjs` | Pure lifecycle contracts for catalogue fold state, replaceable print ownership, and cross-tab-safe cart normalization/mutation. |
 | `test-search.mjs` · `test-search-log-security.mjs` | Pure search ranking/tokenisation plus quarantine of malformed or hostile locally stored diagnostic records. |
 | `test-data-integrity.mjs` · `test-data-resilience.mjs` | Cross-file references, strict data shapes, retry behavior, storage failures, duplicate identifiers, and safe fallback states. |
+| `test-icon-assets.mjs` | Pure Lucide asset contract: every maintained `lucide/<name>` reference resolves to a checked-in 24×24 stroke SVG, the retired `tree/` namespace is absent, the icon helper retains its safe fallback, and the reproduction script remains checkout-relative. |
 | `test-security-urls.mjs` · `test-security-url-sinks.mjs` · `test-html-contracts.mjs` | URL/resource allowlists, inert rejected URLs at real browser sinks, text-by-default templates, explicit trusted-HTML slots, and hostile SVG/tab payloads. |
 | `test-external-assets.mjs` · `test-export-security.mjs` · `test-calendar-security.mjs` | Authenticated HTTPS asset-loader sequencing/retry, spreadsheet-formula neutralisation, and CR/LF-safe iCalendar output. |
 | `test-dev-server-security.mjs` | Pure HTTP-boundary probe for methods, Host validation, hidden/traversal/malformed paths, compression negotiation, `HEAD`, and security headers. |
 | `test-apidocs.mjs` | Swagger adapter semantics, H2 hierarchy, stable accessible names/language, target sizes and focus styling. |
 | `test-metadata-catalog.mjs` | Unified architecture catalogue across root, branch, group, record and field/attribute scopes: overview-first entity links, aggregate view controls versus APG detail tabs, URL-state isolation, lazy split-tree disclosures, complete exports, error states, keyboard behavior and 320 px reflow. |
 | `test-process-docs.mjs` | Shared process catalogue and both detail branches: scoped overview/diagram/table views, non-redundant filters, overview-first APG tabs, deferred BPMN/step loading and export, viewer controls and failure recovery, search handoff, keyboard behavior and 320 px reflow. |
-| `test-sidebar-tree.mjs` | Shared split-disclosure accessibility contract: navigation-mode disclosure tab order and Enter/Space folding, lazy children, focus restoration, no accidental navigation, plus select-mode single-tab-stop behavior without unintended selection. |
+| `test-sidebar-tree.mjs` | Shared split-disclosure accessibility contract: navigation-mode disclosure tab order and Enter/Space folding, lazy children, focus restoration, no accidental navigation, same-origin HTTP-200 Lucide chevron/node masks, plus select-mode single-tab-stop behavior without unintended selection. |
 | `test-shop.mjs` | Shop catalogue, product/cart/checkout flows, global top-header cart and responsive category disclosure. |
 | `test-race.mjs` | A2 router render-race: rapid navigation between an awaiting page (application detail) and another must always land on the last-requested page (the `ctx.stale()` guard drops stale renders), across several timings and both directions. |
 | `test-dashboard.mjs` | Datenportal redesign and renderer boundary: exact seven-card routing, smoke coverage for all six generic dashboards, the specialized four-tab Immobilien route, Superset-style framing, dashboard/chart menus, fullscreen, and CSV/PNG export. Saves a screenshot to `$SHOT`. |
@@ -152,6 +155,7 @@ Useful focused gates can be run directly; pure suites do not need the server:
 node scripts/test-data-integrity.mjs
 node scripts/test-data-resilience.mjs
 node scripts/test-security-urls.mjs
+node scripts/test-icon-assets.mjs
 node scripts/test-external-assets.mjs
 node scripts/test-floorplan-editor-landing.mjs
 node scripts/test-knowledge-workspace.mjs
@@ -161,6 +165,7 @@ node scripts/test-plan-check-core.mjs
 node scripts/test-router-lifecycle.mjs
 node scripts/test-network-resilience.mjs
 node scripts/test-security-url-sinks.mjs
+node scripts/test-pipeline.mjs
 node scripts/test-plan-check.mjs
 
 # Always-run local-parser golden (self-serving; no separate dev server required)
@@ -210,6 +215,7 @@ write effects are explicit here.
 | `make-image-variants.mjs` | Supported home-hero image maintenance. | Overwrites the two generated WebP variants; requires the dev server and Edge. |
 | `fetch-application-images.mjs` | Application-card image maintenance. | Downloads from Unsplash and writes only missing JPGs. |
 | `fetch-swisstopo.mjs` | Reproducible address/cadastral research helper. | Calls public APIs; stdout-only unless `--aus <path>` is supplied. |
+| `fetch-lucide-icons.mjs` | Reproducible, pinned Lucide subset used by trees and status pipelines. | Downloads the allowlisted SVGs and rewrites the checkout-relative `assets/icons/lucide/` collection, manifest, licence, and provenance README. |
 | `build-tenancy-data.mjs` | Deterministic tenancy fixture generator. | Overwrites `data/tenancies.json`, `data/floors.json`, and `data/spaces.json`. |
 | `add-research-buildings.mjs` | Historical researched-building import. | `--pruefen` is read-only; without it, overwrites building, parcel, and child-register data. |
 | `apply-research-data.mjs` | Historical real-building enrichment. | `--pruefen` is read-only; without it, overwrites building and parcel data. |
@@ -243,10 +249,10 @@ its dry-run mode.
 
 | Script | What it checks | Output / write effect |
 |---|---|---|
-| `review-routes.mjs` | Shared inventory of 70 representative routes and states plus the 320/768/1440 viewport matrix. | Read-only shared inventory. |
-| `review-audit.mjs` | Overflow, H1/heading structure, IDs, names, image/table semantics and responsive target-size policy across 210 renders. | Overwrites `audit.json` in the selected review output directory. |
-| `review-accessibility.mjs` | 200% reflow proxy, keyboard focus visibility, tab-order hazards, ARIA references, landmarks and accessible control names across 70 states. | Overwrites `accessibility.json` in the selected review output directory. |
-| `review-screenshots.mjs` | Full-page screenshots for all 210 route/viewport combinations. | Requires `before`, `after`, or `current`; writes/overwrites 210 PNGs below that subdirectory. |
+| `review-routes.mjs` | Shared inventory of 76 representative routes and states plus the 320/768/1440 viewport matrix; the workspace branch contributes hub, handbook, inspiration, lifecycle, and downloads, while `seed-2` represents the status pipeline. | Read-only shared inventory; inclusion is not a claim that the matrix has been run. |
+| `review-audit.mjs` | Overflow, H1/heading structure, IDs, names, image/table semantics and responsive target-size policy across 228 renders. | Overwrites `audit.json` in the selected review output directory. |
+| `review-accessibility.mjs` | 200% reflow proxy, keyboard focus visibility, tab-order hazards, ARIA references, landmarks and accessible control names across 76 states. | Overwrites `accessibility.json` in the selected review output directory. |
+| `review-screenshots.mjs` | Full-page screenshots for all 228 route/viewport combinations. | Requires `before`, `after`, or `current`; writes/overwrites 228 PNGs below that subdirectory. |
 
 For an ordinary verification run, direct output to a temporary directory. The
 `current` screenshot mode is accepted only with this override, so it cannot

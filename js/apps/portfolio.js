@@ -99,19 +99,19 @@ export default async function render(ctx) {
 
   const TREE = {
     levels: [
-      { key: 'country', icon: 'tree/globe', label: (v) => countryName(v) },
-      { key: 'region', icon: 'tree/map' },
-      { key: 'city', icon: 'tree/map-pin' },
+      { key: 'country', icon: 'lucide/globe', label: (v) => countryName(v) },
+      { key: 'region', icon: 'lucide/map' },
+      { key: 'city', icon: 'lucide/map-pin' },
 
       // A business entity uses its stable unit number, not a child building's name.
-      { key: 'businessEntity', attr: 'business-entity', icon: 'tree/folder',
+      { key: 'businessEntity', attr: 'business-entity', icon: 'lucide/folder',
         word: 'Wirtschaftseinheit',
         label: (v) => `WE ${v}`,
         sort: (a, b) => (a < b ? -1 : a > b ? 1 : 0) },
     ],
 
     leaf: {
-      icon: (o) => (o.kind === 'building' ? 'tree/building' : 'tree/land-plot'),
+      icon: (o) => (o.kind === 'building' ? 'lucide/building' : 'lucide/land-plot'),
       idText: objId, label: (o) => o.name, objId: (o) => o.id,
       sort: (a, b) => a.kind.localeCompare(b.kind) || nameCmp(a, b),
     },

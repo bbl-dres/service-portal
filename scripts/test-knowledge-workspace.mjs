@@ -8,8 +8,8 @@
 import assert from 'node:assert/strict';
 
 import {
-  AREAS, MULTISPACE_EDITION, MULTISPACE_GUIDELINES, MULTISPACE_MODULES,
-  WORKSPACE_STEPS, WORKSPACE_TERMS, knowledgeIndex, sectionDomId,
+  AREAS, MULTISPACE_EDITION, MULTISPACE_MODULES, WORKSPACE_DOWNLOAD_GROUPS,
+  knowledgeIndex, sectionDomId,
 } from '../js/knowledge-content.js';
 
 const area = AREAS.workspace;
@@ -52,23 +52,10 @@ for (const m of MULTISPACE_MODULES) {
   assert.ok(m.desc.length > 40, `module ${m.nr} carries a characteristic`);
 }
 
-assert.equal(MULTISPACE_GUIDELINES.length, 9);
-assert.ok(MULTISPACE_GUIDELINES.some((r) => /Fluchtwegen/.test(r)),
-  'box placement carries its fire-safety constraint');
-assert.ok(MULTISPACE_GUIDELINES.some((r) => /SECO/.test(r)));
-assert.equal(MULTISPACE_GUIDELINES.some((r) => /Coffee Point/.test(r)), false,
-  'no guideline may reference a module the current edition removed');
-
-// The three planning levels are defined terms and are not interchangeable.
-assert.deepEqual(WORKSPACE_TERMS.map((t) => t.term),
-  ['Raumplanung', 'Unterbringungsplanung', 'Belegungsplanung']);
-assert.equal(WORKSPACE_STEPS.length, 4);
-assert.equal(WORKSPACE_STEPS[0].title, 'Arbeitsstilanalyse');
-
 // --- Nothing confidential -----------------------------------------------------
 // The handbook marks its prices confidential, and the print-requirements
 // document is internal with a supplier named in it.
-const allText = JSON.stringify([area, MULTISPACE_MODULES, MULTISPACE_GUIDELINES]);
+const allText = JSON.stringify([area, MULTISPACE_MODULES]);
 for (const forbidden of ['CHF', 'Preis pro', 'Kostenkennwert', 'Korasoft', 'BBL-D-A']) {
   assert.equal(allText.includes(forbidden), false, `no "${forbidden}" in published content`);
 }
@@ -76,6 +63,12 @@ for (const forbidden of ['CHF', 'Preis pro', 'Kostenkennwert', 'Korasoft', 'BBL-
 // --- Structural contract of a subject area ------------------------------------
 const ids = area.sections.map((s) => s.id);
 assert.equal(new Set(ids).size, ids.length, 'section ids are unique');
+const lifecycleIds = ['occasionsmobiliar', 'lieferung', 'reparaturen', 'rueckgabe'];
+const downloadIds = [
+  'standard-vorgaben', 'cad-bausteine', 'cad-werkzeuge', 'planungsvorlagen',
+];
+assert.deepEqual(ids, ['standard', ...lifecycleIds, ...downloadIds],
+  'the workspace content model keeps the handbook, lifecycle, and download sections in route order');
 for (const id of ids) {
   assert.match(id, /^[a-z][a-z-]*$/, `section id "${id}" is a safe slug`);
 }
@@ -83,10 +76,24 @@ for (const id of ids) {
 for (const banned of ['uebersicht', 'grundriss', 'grundrisse', 'flaechen', 'ausstattung']) {
   assert.equal(ids.includes(banned), false, `section id must not be "${banned}"`);
 }
-// Every section renders something: a document list, free-form content, or both.
+// Every section renders something, except the dedicated catalogue search row.
 for (const s of area.sections) {
-  assert.ok(s.items || s.html, `section "${s.id}" has content`);
+  assert.ok(s.intro || s.items || s.html || s.indexOnly,
+    `section "${s.id}" has content or a search target`);
 }
+const lifecycleSections = area.sections.filter((section) => section.branch === 'kreislauf');
+assert.deepEqual(lifecycleSections.map((section) => section.id), lifecycleIds,
+  'the lifecycle page exposes four stable anchor sections in reading order');
+const downloadSections = area.sections.filter((section) => section.branch === 'downloads');
+assert.deepEqual(WORKSPACE_DOWNLOAD_GROUPS.map((section) => section.id), downloadIds,
+  'the shared download groups expose stable anchor ids in reading order');
+assert.deepEqual(downloadSections.map((section) => section.id), downloadIds,
+  'the downloads branch consumes the shared groups without a second ordering source');
+assert.equal(downloadSections.reduce((sum, section) => sum + section.items.length, 0), 10,
+  'the four direct download lists contain the ten canonical resources');
+assert.ok(downloadSections.every((section) => Array.isArray(section.items)
+  && section.items.length > 0 && !section.html),
+  'every download group is a direct list rather than custom accordion markup');
 // The area cross-references rather than duplicating the legal basis, which lives
 // under the accommodation area.
 assert.match(area.intro, /#\/knowledge\/accommodation/);
@@ -101,14 +108,38 @@ for (const s of area.sections) {
 
 // --- Search --------------------------------------------------------------------
 const index = knowledgeIndex().filter((row) => row.area === area.title);
-assert.ok(index.length >= area.sections.length, 'every section is indexed');
+const expectedIndexRows = area.sections.length
+  + downloadSections.reduce((sum, section) => sum + section.items.length, 0);
+assert.equal(index.length, expectedIndexRows,
+  'every workspace section and each downloadable resource is indexed once');
 assert.ok(index.some((row) => /Multispace/.test(row.title) || /Multispace/.test(row.desc)),
   'the standard is findable by its name');
 const sectionRow = index.find((row) => row.title === 'Die Multispace-Module');
-assert.equal(sectionRow.href, `#/knowledge/workspace?section=${sectionDomId('standard')}`);
-// In-portal targets keep their own href so a result opens the application.
-const appRow = index.find((row) => row.title === 'Plan-Editor');
-assert.equal(appRow.href, '#/app/floorplan-editor');
+assert.equal(sectionRow.href, '#/knowledge/workspace/multispace');
+for (const section of [...lifecycleSections, ...downloadSections]) {
+  const href = `#/knowledge/workspace/${section.branch}?section=${sectionDomId(section.id)}`;
+  const indexedSection = index.find((row) => row.title === section.title
+    && row.sectionTitle === section.title);
+  assert.equal(indexedSection?.href, href,
+    `section "${section.title}" targets its routed anchor`);
+  for (const item of section.items || []) {
+    const indexedItem = index.find((row) => row.title === item.title
+      && row.sectionTitle === section.title);
+    assert.equal(indexedItem?.href, href,
+      `resource "${item.title}" targets its containing download section`);
+  }
+}
+const removedTitles = [
+  'Einrichtungsrichtlinien',
+  'Farbkonzept und Materialien',
+  'Von der Analyse zur Belegung',
+  'Plandaten und Flächennachweis',
+  'Anwendungen und Dienstleistungen',
+];
+for (const title of removedTitles) {
+  assert.equal(index.some((row) => row.title === title), false,
+    `removed section "${title}" is not searchable`);
+}
 
 console.log(`Knowledge area "${area.title}" passed: ${MULTISPACE_MODULES.length} modules `
   + `(edition ${MULTISPACE_EDITION}), ${area.sections.length} sections, ${index.length} index rows.`);

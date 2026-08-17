@@ -424,7 +424,8 @@ try {
   const hostileReference = `REF-${'x'.repeat(240)}-<img src=x onerror=alert(1)>`;
   try {
     await p.evaluate(`(async () => {
-      const { core } = await import('/js/core/index.js');
+      const moduleUrl = new URL('js/core/index.js', document.baseURI).href;
+      const { core } = await import(moduleUrl);
       const record = core.businessObject('heizzentrale');
       window.__mcSourceBackup = record.source;
       record.source = { ...record.source,
@@ -453,7 +454,8 @@ try {
       'a long unbroken provenance value wraps without horizontal overflow', JSON.stringify(hostile));
   } finally {
     await p.evaluate(`(async () => {
-      const { core } = await import('/js/core/index.js');
+      const moduleUrl = new URL('js/core/index.js', document.baseURI).href;
+      const { core } = await import(moduleUrl);
       core.businessObject('heizzentrale').source = window.__mcSourceBackup;
       delete window.__mcSourceBackup;
       return 1;

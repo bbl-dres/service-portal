@@ -67,7 +67,7 @@ rewrites whose only benefit would be a different framework.
 | JR-13 | Medium | Building-create redraws accumulated document click handlers. Catalogue tables, print mode, header focus timers, maps, and other route resources had inconsistent replacement ownership. | Replaceable `AbortController`/disposer ownership was added where needed. New `ui/print-mode.js` gives workspace and tenancies one unmount-safe implementation. |
 | JR-14 | Medium | Process and metadata grouping actions compared the wrong default axis or rebuilt hashes without preserving scope. Tree/landscape keyboard focus also drifted between two implementations. | Hash construction is scope-preserving, grouping defaults are consistent, and shared `ui/landscape-state.js` owns fold wiring and focus restoration. Root summaries cover both process branches. |
 | JR-15 | Low | Dead compatibility layers and repeated small helpers obscured ownership: a favourites facade, a floor-plan Three facade, local chart/export/download code, duplicate cart code, and duplicate landscape/print wiring. | The two facades were deleted; callers use their real owners. Cart, print, export, chart, and landscape behaviours now have one tested implementation each. Unused imports, aliases, arguments, selectors, and synthetic rerender paths were removed. |
-| JR-16 | Low | Migration drift left tests and documentation pointing to the deleted process-definition file. CSS manifests and test counts were also stale, and maintained code contained hundreds of German or historical comment findings. | References, manifests, counts, and architecture notes were updated. The English-code gate now passes across 270 maintained source files; comments retained in touched code explain current invariants in English. |
+| JR-16 | Low | Migration drift left tests and documentation pointing to the deleted process-definition file. CSS manifests and test counts were also stale, and maintained code contained hundreds of German or historical comment findings. | References, manifests, counts, and architecture notes were updated. The English-code gate now passes across 271 maintained source files; comments retained in touched code explain current invariants in English. |
 
 ## Security conclusions
 
@@ -322,7 +322,7 @@ for a separate change.
 
 ## Verification evidence
 
-The maintained test inventory is now 62 `test-*.mjs` suites (38 browser and 24
+The maintained test inventory is now 63 `test-*.mjs` suites (39 browser and 24
 pure) plus 25 `check-*.mjs` probes.
 
 - **24/24 pure suites pass**, including data integrity/resilience, URL and export
@@ -334,16 +334,56 @@ pure) plus 25 `check-*.mjs` probes.
   responses, 21/21 represented records, visible clusters/counts, trusted pointer
   navigation, retained geometry/navigation when glyph requests are blocked, and
   an observable degraded state without suppressing the active error.
+- **The focused Multispace knowledge browser suite passes cleanly**: all eleven
+  local card images decode, match their detail heroes, preserve keyboard and
+  responsive behavior, and recover safely from a forced missing image. The
+  three canonical planning-example preview covers decode, and the catalogue
+  exposes all four canonical example routes.
 - **24/25 checker scripts pass.** The remaining legacy design-contract probe
   reports the pre-existing application-card vertical padding difference
   (`24px` implemented versus `40px` in the design contract) at three viewports;
   it is outside this JavaScript review.
-- `node --check` passes for all 239 JavaScript/MJS files under `js/` and
+- `node --check` passes for all 240 JavaScript/MJS files under `js/` and
   `scripts/`.
-- The English-code gate passes for 270 maintained source files.
+- The English-code gate passes for 271 maintained source files.
 - The CSS token gate passes for 34 stylesheets and 341 custom properties.
 - Changed JSON parses, references to the deleted split process fixture are zero,
   and `git diff --check` reports no whitespace errors.
 
 The remaining design-contract deviation is recorded explicitly so a green-looking
 summary cannot mask unrelated visual debt.
+
+## Post-review supersession — workspace knowledge (17 August 2026)
+
+The verification summary above is retained as evidence of the 16 August review.
+Its Multispace bullet describes the then-current contract with four canonical
+example **detail routes**. That interaction was deliberately superseded one day
+later; it is not a regression or a correction to the historical test result.
+
+The current contract is documented in
+[`design-review-workspace-knowledge-2026-08-17.md`](design-review-workspace-knowledge-2026-08-17.md):
+
+- example cards open per-example shared galleries with scoped `?bild=` state;
+- valid old detail slugs canonicalise to the corresponding cover gallery while
+  invalid and surplus paths remain not-found states;
+- lifecycle and download groups are real H2/ToC sections, with ten direct
+  download rows and no accordion counts;
+- gallery file actions fail closed unless media carries a recognised reusable
+  CC licence; and
+- the extracted workspace renderer uses route-scoped data requirements, with no
+  catalogue requests on the hub, static document pages, unknown branches,
+  malformed aliases, or surplus paths; record-shaped paths load only the data
+  needed to validate and render their record.
+
+Current verification belongs to `test-workspace-knowledge.mjs`,
+`test-knowledge-workspace.mjs`, `test-route-needs.mjs`, `test-routes.mjs`, and
+`check-workspace-branch.mjs`. The five workspace additions to
+`review-routes.mjs` expand the next visual-review matrix but do not imply that a
+complete matrix run formed part of this focused change.
+
+At this supersession point the supported inventory is 65 suites (40 browser,
+25 pure) plus 25 checkers. The workspace renderer and the focused pipeline/icon
+contracts raise the live syntax count to 243 JavaScript/MJS files and the
+English-code scope to 274 maintained source files. The representative visual
+review inventory now contains 76 states and 228 viewport renders. The earlier
+240/271 figures above remain the exact 16 August snapshot.

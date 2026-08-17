@@ -2,11 +2,57 @@
 // Loads all data/*.json once; pages read via the accessors below.
 
 import { fetchJSON } from './fetch-json.js';
+import { safeAssetUrl } from '../security/urls.js';
 
 const DATA = Object.create(null);
 const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
 const safeDictionary = (value = {}) => Object.assign(Object.create(null), value);
+const MODULE_IMAGE_PREFIX = 'assets/images/multispace-modules/';
+const MODULE_IMAGE_FIELDS = new Set(['src', 'alt', 'caption', 'credit', 'license', 'provenance']);
+const nonEmptyString = (value) => typeof value === 'string' && value.trim() === value && value.length > 0;
+
+function validateModuleStructure(modules, url) {
+  const invalid = modules.findIndex((module) => !isRecord(module)
+    || !Number.isInteger(module.nr) || module.nr <= 0
+    || !nonEmptyString(module.slug) || !nonEmptyString(module.name)
+    || (!nonEmptyString(module.description) && !nonEmptyString(module.summary))
+    || (module.description != null && !nonEmptyString(module.description))
+    || (module.summary != null && !nonEmptyString(module.summary))
+    || !Array.isArray(module.subModules)
+    || module.subModules.some((subModule) => !isRecord(subModule)
+      || typeof subModule.nr !== 'string' || !/^\d+(?:\.\d+)?$/.test(subModule.nr)
+      || !nonEmptyString(subModule.name)
+      || (subModule.area !== null && !Number.isFinite(subModule.area))
+      || (subModule.persons !== null && !Number.isFinite(subModule.persons)))
+    || !Array.isArray(module.equipment) || module.equipment.some((item) => !nonEmptyString(item))
+    || !Array.isArray(module.guidelines) || module.guidelines.some((item) => !nonEmptyString(item)));
+  if (invalid >= 0) throw new Error(`invalid module structure ${invalid}: ${url}`);
+}
+
+function validateModuleImages(modules, url) {
+  const sources = new Set();
+  for (const [moduleIndex, module] of modules.entries()) {
+    if (hasOwn(module, 'image') || !Array.isArray(module.images)) {
+      throw new Error(`invalid module images ${moduleIndex}: ${url}`);
+    }
+    for (const [imageIndex, image] of module.images.entries()) {
+      const keys = isRecord(image) ? Object.keys(image) : [];
+      const validFields = keys.length === MODULE_IMAGE_FIELDS.size
+        && keys.every((key) => MODULE_IMAGE_FIELDS.has(key))
+        && [...MODULE_IMAGE_FIELDS].every((key) => typeof image[key] === 'string'
+          && image[key].trim() === image[key] && image[key].length > 0);
+      const src = validFields ? image.src : '';
+      const safeSrc = safeAssetUrl(src, MODULE_IMAGE_PREFIX);
+      if (!validFields || safeSrc !== src || !/\.(?:avif|jpe?g|png|webp)$/i.test(src)) {
+        throw new Error(`invalid module image ${moduleIndex}.${imageIndex}: ${url}`);
+      }
+      const sourceKey = src.toLowerCase();
+      if (sources.has(sourceKey)) throw new Error(`duplicate module image src: ${url}`);
+      sources.add(sourceKey);
+    }
+  }
+}
 
 // EAGER: only what the shell needs before the router dispatches. js/ui/shell/index.js
 // reads exactly two keys: `ref().domains` and `services()` for the service
@@ -266,6 +312,8 @@ function validateObjectFile(value, url, key) {
   if (key === 'multispaceModules') {
     if (!Array.isArray(value.modules)) throw new Error(`invalid module list: ${url}`);
     validateUniqueField(value.modules, 'nr', url, 'module');
+    validateModuleStructure(value.modules, url);
+    validateModuleImages(value.modules, url);
   }
   if (key === 'workspaceExamples') {
     if (!Array.isArray(value.examples)) throw new Error(`invalid workspace example list: ${url}`);
@@ -482,8 +530,6 @@ export const core = {
   multispaceModule: (nr) => ((DATA.multispaceModules || {}).modules || [])
     .find((module) => Number(module.nr) === Number(nr)) || null,
   workspaceExamples: () => (DATA.workspaceExamples || {}).examples || [],
-  workspaceExample: (slug) => ((DATA.workspaceExamples || {}).examples || [])
-    .find((example) => example.slug === String(slug)) || null,
   shopProducts: () => DATA.shopProducts || [],
   shopProduct: (id) => find(DATA.shopProducts, 'id', Number(id)),
   shopCategories: () => DATA.shopCategories || [],

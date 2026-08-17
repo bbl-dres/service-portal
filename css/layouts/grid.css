@@ -5,16 +5,19 @@
    viewport), a fixed minimum would make the track wider than its container.
    This is the same safeguard used by the home-page tile grid. */
 .grid--auto { grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr)); }
+.grid--items-4 { grid-template-columns:minmax(0,1fr); }
 @media (min-width:768px) {
   .grid--responsive-cols-2, .grid--responsive-cols-3, .grid--responsive-cols-4 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  /* CD curated four-card layout: the primary destination spans the first row,
+     followed by three equal siblings (grids.postcss:248-258). */
+  .grid--items-4 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .grid--items-4 > :first-child { grid-column:1 / -1; }
 }
 @media (min-width:1024px){
   .grid--responsive-cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .grid--responsive-cols-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
 }
-/* .grid--items-N (CD grids.postcss:226-271, row balancing) was EXCISED: zero
-   consumers for two waves. Style-sheet rule: parity classes arrive with their
-   first consumer (Design Review C10). */
+/* Other .grid--items-N variants remain deferred until they gain a consumer. */
 
 /* .ratio--* (ratio.postcss:5-33) was excised: zero consumers (Design Review C10). */
 

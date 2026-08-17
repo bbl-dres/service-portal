@@ -58,7 +58,8 @@ const expectedSteps = (file) => {
     check(o.h1 === 'Prozessdokumentation Bauten', 'page title', o.h1);
     check(/27 von 27 Prozessen/.test(o.count), 'the unified root count includes both branches', o.count);
     const rejectsNonBpmn = await p.evaluate(`(async () => {
-      const { parseBpmnSteps } = await import('/js/apps/process-docs.js');
+      const moduleUrl = new URL('js/apps/process-docs.js', document.baseURI).href;
+      const { parseBpmnSteps } = await import(moduleUrl);
       try { parseBpmnSteps('<root><process/></root>'); return false; } catch { return true; }
     })()`);
     check(rejectsNonBpmn, 'well-formed non-BPMN XML is rejected before caching');

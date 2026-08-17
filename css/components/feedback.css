@@ -161,6 +161,8 @@
   clip-path:polygon(0 0, 100% 0, 100% 100%, 0 100%, var(--arrow) 50%); }
 .pipeline__step--done { background:var(--color-success-text); color:var(--color-text-negative); }
 .pipeline__step--active { background:var(--color-primary-600); color:var(--color-text-negative); }
+/* pipeline() uses the shared CD `icon--md` tier: 20px on phones and 24px from
+   768px. Keep sizing in that tier so every pipeline consumer stays aligned. */
 .pipeline__glyph { flex:none; }
 
 /* Accordion (accordion.postcss:5-78) */

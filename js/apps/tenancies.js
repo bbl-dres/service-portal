@@ -116,11 +116,11 @@ function overview(ctx) {
 
   const TREE = {
     levels: [
-      { key: 'country', icon: 'tree/globe', label: (k) => countryName(k) },
-      { key: 'canton', attr: 'region', icon: 'tree/map' },
-      { key: 'city', icon: 'tree/map-pin' },
+      { key: 'country', icon: 'lucide/globe', label: (k) => countryName(k) },
+      { key: 'canton', attr: 'region', icon: 'lucide/map' },
+      { key: 'city', icon: 'lucide/map-pin' },
     ],
-    leaf: { icon: () => 'tree/house', idText: (t) => t.administrativeUnit, label: (t) => t.buildingName,
+    leaf: { icon: () => 'lucide/house', idText: (t) => t.administrativeUnit, label: (t) => t.buildingName,
       objId: (t) => t.tenancyId, sort: (a, b) => a.buildingName.localeCompare(b.buildingName, 'de') },
   };
 

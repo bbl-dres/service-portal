@@ -98,19 +98,68 @@ queue('data/workspace-examples.json', {
 await core.ensure('workspaceExamples');
 check(!core.available('workspaceExamples'), 'duplicate nested workspace-example IDs are rejected');
 await core.ensure('workspaceExamples');
-check(core.available('workspaceExamples') && core.workspaceExample('example-one')?.exampleId === 'example-1',
+check(core.available('workspaceExamples')
+  && core.workspaceExamples().find((example) => example.slug === 'example-one')?.exampleId === 'example-1',
   'a corrected workspace-example registry succeeds on retry');
 
-queue('data/multispace-modules.json', {
-  modules: [{ nr: 1 }, { nr: 1 }],
-}, {
-  modules: [{ nr: 1, name: 'Module' }],
-});
+const moduleRecord = {
+  nr: 1,
+  slug: 'module-one',
+  name: 'Module One',
+  summary: 'A module used by the data-contract test.',
+  description: 'A complete module used by the data-contract test.',
+  subModules: [{ nr: '1.1', name: 'Module One variant', area: 3, persons: 1 }],
+  equipment: [],
+  guidelines: [],
+  images: [],
+};
+const moduleImage = {
+  src: 'assets/images/multispace-modules/module-one-01.jpg',
+  alt: 'Illustrative module',
+  caption: 'Illustrative, non-binding module image.',
+  credit: 'OpenAI, 2026',
+  license: 'Prototype use',
+  provenance: 'Generated with OpenAI for the prototype.',
+};
+queue('data/multispace-modules.json',
+  { modules: [moduleRecord, moduleRecord] },
+  { modules: [{ ...moduleRecord, subModules: [{ nr: '1.1', name: 'Broken', area: Infinity, persons: 1 }] }] },
+  { modules: [{ ...moduleRecord, subModules: [{ nr: '../1', name: 'Broken', area: 3, persons: 1 }] }] },
+  { modules: [{ ...moduleRecord, image: moduleImage.src }] },
+  { modules: [{ ...moduleRecord, images: [{ src: moduleImage.src }] }] },
+  { modules: [{ ...moduleRecord, images: [{ ...moduleImage, src: 'assets/images/multispace-modules/../secret.jpg' }] }] },
+  { modules: [
+    { ...moduleRecord, images: [moduleImage] },
+    { ...moduleRecord, nr: 2, slug: 'module-two', subModules: [{ ...moduleRecord.subModules[0], nr: '2.1' }], images: [
+      { ...moduleImage, src: 'assets/images/multispace-modules/module-one-01.JPG' },
+    ] },
+  ] },
+  { modules: [
+    moduleRecord,
+    { ...moduleRecord, nr: 2, slug: 'module-two', subModules: [{ ...moduleRecord.subModules[0], nr: '2.1' }], images: [
+      { ...moduleImage, src: 'assets/images/multispace-modules/module-two-hero.jpg' },
+      { ...moduleImage, src: 'assets/images/multispace-modules/module-two-detail.jpg' },
+    ] },
+  ] });
 await core.ensure('multispaceModules');
 check(!core.available('multispaceModules'), 'duplicate nested module numbers are rejected');
 await core.ensure('multispaceModules');
-check(core.available('multispaceModules') && core.multispaceModule(1)?.name === 'Module',
-  'a corrected module registry succeeds on retry');
+check(!core.available('multispaceModules'), 'malformed submodule figures are rejected');
+await core.ensure('multispaceModules');
+check(!core.available('multispaceModules'), 'unsafe submodule identifiers are rejected');
+await core.ensure('multispaceModules');
+check(!core.available('multispaceModules'), 'the retired scalar module-image field is rejected');
+await core.ensure('multispaceModules');
+check(!core.available('multispaceModules'), 'incomplete module-image metadata is rejected');
+await core.ensure('multispaceModules');
+check(!core.available('multispaceModules'), 'module images cannot escape their local asset directory');
+await core.ensure('multispaceModules');
+check(!core.available('multispaceModules'), 'duplicate module-image paths are rejected across modules');
+await core.ensure('multispaceModules');
+check(core.available('multispaceModules') && core.multispaceModule(1)?.images.length === 0
+  && core.multispaceModule(2)?.images.map((image) => image.src).join('|')
+    === 'assets/images/multispace-modules/module-two-hero.jpg|assets/images/multispace-modules/module-two-detail.jpg',
+  'a corrected registry preserves an empty fallback and ordered image heroes');
 
 queue('data/shop-categories.json', [{
   id: 'duplicate', children: [{ id: 'duplicate', children: [] }],

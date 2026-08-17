@@ -69,7 +69,7 @@ export function sidebarTree(host, cfg = {}) {
     return x;
   };
 
-  const CHEV = iconHTML('tree/chevron-right', 'pf-tree__chev');
+  const CHEV = iconHTML('lucide/chevron-right', 'pf-tree__chev');
   // A level reserves its icon column even when an individual node has no icon.
   const glyph = (node, depth) => ((levels[depth] || {}).icons
     ? (node.icon ? iconHTML(node.icon, 'pf-tree__ico') : '<span class="pf-tree__ico" aria-hidden="true"></span>')

@@ -5,9 +5,11 @@
 // header with title and actions above the image stage. Keyboard: Escape closes,
 // left/right arrows navigate, and Tab remains trapped in the gallery.
 //
-// items = [{ photo, title, meta, type, gray, href?, details? }]
+// items = [{ photo, photoSrc?, title, meta, type, gray, href?, details?, downloadable? }]
 //   details = [[label, value], …] — enables the metadata button.
 //   href    = media detail page linked from the metadata panel.
+//   downloadable = false hides the file action for rights-restricted media;
+//                  omitted keeps the existing downloadable-by-default behaviour.
 // C is passed through; this module does not import components.js itself.
 //
 // STRUCTURE: build the shell ONCE; `update()` then writes only what changes per
@@ -224,8 +226,9 @@ export function openGallery(items, start, C, options = {}) {
     // naturalWidth is known only after loading; fit-mode percentage needs it, so
     // update after the load event.
     if (el.img.complete) applyZoom(); else el.img.addEventListener('load', applyZoom, { once: true });
-    el.download.hidden = !imageUrl;
-    if (imageUrl) el.download.href = imageUrl; else el.download.removeAttribute('href');
+    const canDownload = !!imageUrl && it.downloadable !== false;
+    el.download.hidden = !canDownload;
+    if (canDownload) el.download.href = imageUrl; else el.download.removeAttribute('href');
 
     el.metabtn.hidden = !hasDetails(it);
     el.metabtn.setAttribute('aria-expanded', String(showMeta && hasDetails(it)));

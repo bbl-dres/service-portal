@@ -24,7 +24,8 @@ try {
   await sleep(500);
 
   const initial = JSON.parse(await page.evaluate(`(async () => {
-    const { sidebarTree } = await import('/js/ui/components/sidebar-tree.js');
+    const moduleUrl = new URL('js/ui/components/sidebar-tree.js', document.baseURI).href;
+    const { sidebarTree } = await import(moduleUrl);
     const fixture = document.createElement('section');
     fixture.id = 'sidebar-tree-keyboard-fixture';
     fixture.innerHTML = '<button id="before-tree" type="button">Before</button>'
@@ -32,12 +33,14 @@ try {
       + '<div id="select-tree"></div>';
     document.body.prepend(fixture);
 
-    const children = () => [{ id: 'child', label: 'Child', href: '#/child' }];
+    const children = () => [{
+      id: 'child', label: 'Child', href: '#/child', icon: 'lucide/building',
+    }];
     window.__dropNavTree = sidebarTree(document.getElementById('nav-tree'), {
-      id: 'keyboard-nav', mode: 'nav', levels: [{ icons: false }, { icons: false }],
+      id: 'keyboard-nav', mode: 'nav', levels: [{ icons: true }, { icons: true }],
       sections: [[{
         id: 'parent', label: 'Parent', href: '#/parent', split: true,
-        hasChildren: true, children,
+        icon: 'lucide/folder', hasChildren: true, children,
       }]],
     });
 
@@ -55,6 +58,29 @@ try {
 
     const navFold = document.querySelector('#nav-tree .pf-tree__fold');
     const selectFold = document.querySelector('#select-tree .pf-tree__fold');
+    const iconElements = [
+      document.querySelector('#nav-tree .pf-tree__chev'),
+      document.querySelector('#nav-tree .pf-tree__ico'),
+    ].filter(Boolean);
+    const maskSource = (element) => {
+      const mask = element.style.maskImage || element.style.webkitMaskImage
+        || getComputedStyle(element).maskImage || getComputedStyle(element).webkitMaskImage || '';
+      const match = /^url\\(["']?(.*?)["']?\\)$/.exec(mask);
+      return match ? match[1] : '';
+    };
+    const iconAssets = await Promise.all(iconElements.map(async (element) => {
+      const source = maskSource(element);
+      let url;
+      try { url = new URL(source, location.href); } catch { return { source, valid: false }; }
+      try {
+        const response = await fetch(url.href, { cache: 'no-store' });
+        return { source, valid: true, origin: url.origin, appOrigin: location.origin,
+          pathname: url.pathname, status: response.status };
+      } catch (error) {
+        return { source, valid: true, origin: url.origin, appOrigin: location.origin,
+          pathname: url.pathname, status: 0, error: String(error) };
+      }
+    }));
     document.getElementById('before-tree').focus();
     return JSON.stringify({
       navFoldTabIndex: navFold?.tabIndex,
@@ -63,6 +89,7 @@ try {
       selectFoldTabIndex: selectFold?.tabIndex,
       selectTabStops: document.querySelectorAll('#select-tree [tabindex="0"]').length,
       selectSelected: document.querySelector('#select-tree [aria-selected="true"]')?.dataset.node || '',
+      iconAssets,
     });
   })()`));
 
@@ -73,6 +100,11 @@ try {
   check(initial.selectFoldTabIndex === -1 && initial.selectTabStops === 1
     && initial.selectSelected === 'select-parent',
   'select mode retains one roving treeitem tab stop', JSON.stringify(initial));
+  check(initial.iconAssets.length === 2 && initial.iconAssets.every((asset) => asset.valid
+    && asset.origin === asset.appOrigin && asset.status === 200
+    && /\/assets\/icons\/lucide\/(?:chevron-right|folder)\.svg$/.test(asset.pathname)),
+  'tree chevron and node masks use available same-origin Lucide assets',
+  JSON.stringify(initial.iconAssets));
 
   await press(cdp, page, 'Tab', 'Tab', 9);
   let state = JSON.parse(await page.evaluate(`JSON.stringify({

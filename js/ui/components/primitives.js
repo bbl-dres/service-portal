@@ -73,8 +73,10 @@ export function photo(o = {}) {
   if (src) ensurePhotoFallback();
   const cls = safeClassList(o.cls);
   const color = SAFE_COLOR.test(String(o.color || '')) ? o.color : 'var(--color-secondary-600)';
+  // Lazy is the safe collection default; only an explicit detail-hero request opts in.
+  const eager = o.loading === 'eager';
   const img = src
-    ? `<img src="${src}" alt="${escape(o.alt || '')}" loading="lazy" decoding="async" data-photo-fallback>`
+    ? `<img src="${src}" alt="${escape(o.alt || '')}" loading="${eager ? 'eager' : 'lazy'}" decoding="async"${eager ? ' fetchpriority="high"' : ''} data-photo-fallback>`
     : '';
   return `<div class="photo${cls ? ' ' + cls : ''}" style="background-color:${color}">${img}${o.overlayHtml || ''}</div>`;
 }

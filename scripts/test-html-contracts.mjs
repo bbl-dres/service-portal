@@ -65,11 +65,36 @@ check(header.includes('&lt;img') && !header.includes('<img')
 const photo = C.photo({ src: 'assets/images/social1.jpg', alt: 'Image' });
 check(photo.includes('data-photo-fallback') && !photo.includes('onerror='),
   'photo fallback uses delegated handling rather than executable inline attributes');
+check(photo.includes('loading="lazy"') && !photo.includes('fetchpriority='),
+  'ordinary photos remain lazy and do not claim high fetch priority');
+const eagerPhoto = C.photo({ src: 'assets/images/social1.jpg', alt: 'Image', loading: 'eager' });
+check(eagerPhoto.includes('loading="eager"') && eagerPhoto.includes('fetchpriority="high"'),
+  'above-the-fold photos can opt into eager high-priority loading');
 
 const hostileIcon = C.icon(`ArrowRight');color:red/*`, `icon--base" onmouseover="alert(1)`);
 check(hostileIcon.includes('InfoCircle.svg') && hostileIcon.includes('class="icon icon--base"')
   && !hostileIcon.includes('onmouseover') && !hostileIcon.includes('color:red'),
   'icon names and class tokens cannot escape markup or inline CSS');
+
+const pipeline = C.pipeline([
+  { label: 'Eingereicht' }, { label: 'In Prüfung' }, { label: 'Erledigt' },
+], 1, { label: 'Status des Vorgangs' });
+const pipelineTodo = pipeline.match(/<li class="pipeline__step pipeline__step--todo"[^>]*>([\s\S]*?)<\/li>/)?.[1] || '';
+check((pipeline.match(/pipeline__step--done/g) || []).length === 1
+  && (pipeline.match(/pipeline__step--active/g) || []).length === 1
+  && (pipeline.match(/pipeline__step--todo/g) || []).length === 1,
+  'pipeline renders the exact completed, current, and upcoming state sequence');
+check(pipeline.includes('assets/icons/lucide/circle-check-big.svg')
+  && pipeline.includes('assets/icons/lucide/clock-3.svg')
+  && (pipeline.match(/class="icon icon--md pipeline__glyph"/g) || []).length === 2
+  && (pipeline.match(/aria-hidden="true"/g) || []).length === 2
+  && !pipelineTodo.includes('pipeline__glyph'),
+  'pipeline uses medium decorative Lucide glyphs only for completed and current steps');
+check(pipeline.includes('role="group" aria-label="Status des Vorgangs"')
+  && (pipeline.match(/aria-current="step"/g) || []).length === 1
+  && pipeline.includes('<span class="sr-only">Erledigt: </span>')
+  && pipeline.includes('<span class="sr-only">Aktueller Schritt: </span>'),
+  'pipeline exposes one current step and textual state equivalents');
 
 const hostilePhoto = C.photo({
   src: 'assets/images/social1.jpg', cls: `safe-class bad" onclick="alert(1)`,

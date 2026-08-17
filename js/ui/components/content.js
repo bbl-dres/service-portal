@@ -98,6 +98,7 @@ export function card(o) {
   const variant = CARD_VARIANTS.has(o.variant) ? o.variant : 'default';
   const tag = safeHeadingTag(o.titleTag, 'h3');
   const ext = o.external ? newWindowAttrs(href, { external: classifyUrl(href) === 'external' }) : '';
+  const popup = o.dialog ? ' aria-haspopup="dialog"' : '';
   // Stretched-link pattern (CD/WAI-ARIA APG): the card is a <div>, and its title
   // is a real heading containing an <a> whose ::after makes the whole card
   // clickable. This preserves the document outline AND keeps nested links
@@ -105,7 +106,7 @@ export function card(o) {
   // `breakable`: long German compounds may break after «/» and «-»; otherwise,
   // for example, «Sicherheits-/Datenschutzvorfall» breaks mid-word (Item 5.8).
   const titleInner = href
-    ? `<a class="card__link" href="${escape(href)}"${ext}>${breakable(o.title)}</a>`
+    ? `<a class="card__link" href="${escape(href)}"${ext}${popup}>${breakable(o.title)}</a>`
     : breakable(o.title);
   // CD builds the footer from TWO named slots (card.postcss:245-257,
   // Card.vue:27-37): `footerInfo` (metadata row) and `footerAction` (CTA).

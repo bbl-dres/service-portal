@@ -58,7 +58,7 @@ const nodes = objectsToNodes([
   levels: [{ key: 'group' }],
   leaf: {
     objId: (item) => item.id, label: (item) => item.name,
-    icon: () => 'tree/boxes',
+    icon: () => 'lucide/boxes',
   },
 });
 check(nodes[0].id === 'group:a%3Ab' && nodes[0].children()[0].id === 'obj:x%3Ay',

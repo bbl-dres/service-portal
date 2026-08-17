@@ -86,6 +86,23 @@
 .card--clickable:not(:where(.card--disabled,.card--loading,[aria-disabled="true"],[aria-busy="true"])):active::after {
   border-color:var(--color-primary-100); }
 
+/* CD highlight card (card.postcss:43-80). The offset secondary panel identifies
+   curated hub navigation; the white content remains the reading surface. */
+.card--highlight { position:relative; padding-top:var(--sp-5); padding-left:var(--sp-5);
+  background:transparent; box-shadow:none; }
+.card--highlight::before { content:""; position:absolute; inset:0 var(--sp-5) var(--sp-5) 0;
+  z-index:var(--z-local-base); background:var(--color-secondary-300);
+  transition:transform var(--duration-slow) var(--ease-in-out); }
+.card--highlight .card__content { position:relative; z-index:var(--z-local-content);
+  gap:var(--sp-5); background:var(--color-bg); }
+.card--highlight .card__body { padding-top:var(--sp-8); padding-bottom:0; }
+.card--highlight.card--clickable:where(:hover,:focus-within) { background:transparent; box-shadow:none; }
+.card--highlight.card--clickable:where(:hover,:focus-within)::before { transform:scale(var(--scale-hover)); }
+@media (min-width:1024px){
+  .card--highlight { padding-top:var(--sp-7); padding-left:var(--sp-7); }
+  .card--highlight::before { right:var(--sp-7); bottom:var(--sp-7); }
+}
+
 /* State contract. Cards remain structurally identical; callers expose status
    through ARIA where one exists and may use the BEM aliases while rendering a
    skeleton, validation failure, or empty result. Disabled cards must omit the

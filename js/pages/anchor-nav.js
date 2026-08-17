@@ -8,8 +8,13 @@
 // cannot split a second `#` (`#/knowledge/it#wi-vorlagen`). It would see the
 // segment «it#wi-vorlagen» and show 404. A section is also state WITHIN the page,
 // not a separate location (sitemap §1.1).
-export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
+export function anchorNavPage(ctx, {
+  title, lead, intro, sections, back, image = '', tags = '', detailHead = false,
+}) {
   const { mount, C } = ctx;
+  // `detailHead` keeps the canonical detail anatomy even when a record has no image;
+  // supplying an image implies the same anatomy automatically.
+  const useDetailHead = detailHead || !!image;
 
   const sectionHtml = sections.map(s => `
     <section class="anchor-section" id="${s.id}">
@@ -17,8 +22,8 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
       ${s.html}
     </section>`).join('');
 
-  // Table of contents (CD: card + menu). No row icon because CD leaf rows carry
-  // none; .menu__item--active marks the current section. Below 768px the table is
+  // Table of contents (CD: card + menu). The angled arrow mirrors each anchor
+  // row in detailPageAnchorNav.vue; .menu__item--active marks the current section. Below 768px the table is
   // a collapsed <details>. With container--reverse-mobile it appears BEFORE the
   // content and costs ~48px rather than ~260px. From 768px, CSS hides <summary>
   // and permanently expands the content, leaving the table open in the sidebar.
@@ -35,6 +40,7 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
               ${sections.map(s => `<li>
                 <a class="menu__item menu__item--border menu__item--condensed" href="#${s.id}" data-anchor="${s.id}">
                   <span>${C.markLang(s.title)}</span>
+                  ${C.icon('ArrowAngleBottomLeft', 'menu__item__icon')}
                 </a></li>`).join('')}
             </ul>
           </div>
@@ -45,16 +51,28 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.detailBar({ backHref: back && back.href, backLabel: back && back.label })}
+    ${useDetailHead
+      ? C.detailHead({
+        backHref: back && back.href,
+        backLabel: back && back.label,
+        title,
+        lead,
+        tags,
+        image,
+      })
+      : C.detailBar({ backHref: back && back.href, backLabel: back && back.label })}
     ${/* container--reverse-mobile: below 768px the table of contents previously
           appeared at page end, directly above the footer, only AFTER users had
           scrolled past everything it indexes (CD container.postcss:100-101). */''}
     <div class="container--grid gap--responsive container--reverse-mobile">
-      <div class="anchor-page__header">
+      ${useDetailHead ? '' : `<div class="anchor-page__header">
         ${C.pageHeader({ title, lead })}
         ${intro ? `<p class="page-intro muted">${intro}</p>` : ''}
+      </div>`}
+      <div class="container__main vertical-spacing">
+        ${useDetailHead && intro ? `<p class="page-intro muted">${intro}</p>` : ''}
+        ${sectionHtml}
       </div>
-      <div class="container__main vertical-spacing">${sectionHtml}</div>
       <aside class="container__aside">${toc}</aside>
     </div>
   </div>`;

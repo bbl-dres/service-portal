@@ -18,15 +18,15 @@ export function backLink(href, label) {
     : `<div class="back-link-row"><span class="btn btn--outline btn--sm btn--icon-left btn--back" aria-disabled="true">${content}</span></div>`;
 }
 
-// Horizontal status stepper (CD steps / tenant-portal pipeline): chevron segments
-// — done (green, check) · current (primary colour, clock) · open (grey). `steps`
-// = [{ label }]; `currentIndex` is the current step index. Scrolls horizontally
-// on mobile.
+// Portal-specific horizontal status pipeline: chevron segments show completed
+// (green, check), current (primary colour, clock), and upcoming (grey) steps.
+// `steps` = [{ label }]; `currentIndex` is the current step index. Long pipelines
+// wrap instead of creating a keyboard-scrollable region.
 export function pipeline(steps, currentIndex = 0, { label = 'Statusverlauf' } = {}) {
   const seg = (st, i) => {
     const state = i < currentIndex ? 'done' : i === currentIndex ? 'active' : 'todo';
-    const glyph = state === 'done' ? icon('Checkmark', 'icon--sm pipeline__glyph')
-      : state === 'active' ? icon('Clock', 'icon--sm pipeline__glyph') : '';
+    const glyph = state === 'done' ? icon('lucide/circle-check-big', 'icon--md pipeline__glyph')
+      : state === 'active' ? icon('lucide/clock-3', 'icon--md pipeline__glyph') : '';
     const sr = state === 'done' ? '<span class="sr-only">Erledigt: </span>'
       : state === 'active' ? '<span class="sr-only">Aktueller Schritt: </span>' : '';
     return `<li class="pipeline__step pipeline__step--${state}"${state === 'active' ? ' aria-current="step"' : ''}>${glyph}<span>${sr}${escape(st.label)}</span></li>`;

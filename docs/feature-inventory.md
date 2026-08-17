@@ -693,7 +693,7 @@ Statische Übersichtstabelle der sechs IKT-Vorhaben des BBL (Demo-Inhalt, an SUP
 
 ## js/pages/knowledge.js
 
-Wissen und Hilfsmittel: Übersicht mit 7 Fachgebiets-Kacheln plus je eine Ankernavigations-Seite pro Fachgebiet; Inhalt (AREAS/FAQS) kommt aus js/knowledge-content.js, Layout aus anchor-nav.js.
+Wissen und Hilfsmittel: Übersicht mit 7 Fachgebiets-Kacheln plus je eine Ankernavigations-Seite pro gewöhnlichem Fachgebiet; Inhalt (AREAS/FAQS) kommt aus js/knowledge-content.js, Layout aus anchor-nav.js. «Arbeitsplätze gestalten» delegiert als einziger katalogartiger Zweig an `workspace-knowledge.js`.
 
 **Routen**
 
@@ -701,7 +701,13 @@ Wissen und Hilfsmittel: Übersicht mit 7 Fachgebiets-Kacheln plus je eine Ankern
 - #/knowledge/it — Informatik und IKT-Beschaffung (5 Abschnitte, 39 Unterlagen)
 - #/knowledge/procurement — Beschaffung (4 Abschnitte)
 - #/knowledge/accommodation — Unterbringung und Objektbetrieb (4 Abschnitte)
-- #/knowledge/workspace — Arbeitsplätze gestalten (8 Abschnitte): der Ausstattungsstandard Multispace als Inhalt, nicht als Linkliste
+- #/knowledge/workspace — Arbeitsplätze gestalten: Zweigübersicht für Handbuch, Planungsbeispiele, Kreislaufwirtschaft und Downloads
+- #/knowledge/workspace/multispace — visueller Katalog der elf Multispace-Module
+- #/knowledge/workspace/multispace/modul-<nr> — Moduldetail mit Detailkopf und Ankernavigation
+- #/knowledge/workspace/inspiration?bild=<example-id>:<media-id> — vier Planungsbeispiele; der Parameter öffnet genau die zugehörige Bildergalerie
+- #/knowledge/workspace/inspiration/<slug> — Kompatibilitätsroute: gültiger Slug wird auf den kanonischen `?bild=`-Link ersetzt, unbekannte oder zusätzliche Segmente ergeben 404
+- #/knowledge/workspace/kreislauf?section=wi-<id> — vier echte H2-Abschnitte zur Kreislaufwirtschaft
+- #/knowledge/workspace/downloads?section=wi-<id> — vier echte H2-Gruppen mit zehn direkten Download-Zeilen
 - #/knowledge/publishing — Publikationen, Druck und Versand (3 Abschnitte)
 - #/knowledge/guides — Anleitungen und Schulungen (2 Abschnitte)
 - #/knowledge/processes — entfällt (2026-08-13), leitet auf #/data/architecture um
@@ -719,27 +725,43 @@ Wissen und Hilfsmittel: Übersicht mit 7 Fachgebiets-Kacheln plus je eine Ankern
 - Die frühere processes-Seite nannte «Archimap» als Prozessportal. Das war falsch: die IKT-Vorgabe A736 schreibt Innovator (Modellierung) und smartfacts (webbasierte Publikation) vor. Der korrigierte Verweis steht auf #/data/architecture
 - Interne Deep-Links in Unterlagenlisten (z. B. #/services/sicherheitsvorfall-melden, #/app/dataportal; knowledge-content.js:27,108)
 
-- «Arbeitsplätze gestalten» ist das einzige Fachgebiet, das den fachlichen Inhalt selbst führt statt nur darauf zu verlinken: Das Handbuch Multispace umfasst rund 150 Seiten, und seine Module sind das Vokabular, das die übrigen Workspace-Oberflächen bereits sprechen — `data/workspace-planning.json` führt die Ausstattung je Objekt unter denselben Modulnamen, und das Objektdetail des Plan-Editors weist sie im Register «Module» aus. Die Seite führt deshalb die Modultabelle mit Flächenrichtmassen, die Einrichtungsrichtlinien, das Farbkonzept, die drei Planungsebenen des Zielbilds mit den vier Planungsschritten, die Plandaten-Vorgaben samt «Flächennachweis SIA 416» sowie Beschaffung und Kreislaufmodell.
-- Ausgabenstand ist ausgewiesen: Die Tabelle folgt der Handbuchausgabe vom 31.10.2025 (zehn Module). Eine Meldung nennt die Abweichung zur Ausgabe vom 6.1.2025 (elf Module, Coffee Point als eigenes Modul, Module 8–11 eine Nummer höher), weil ältere Pläne und Ausstattungslisten — und der Fixture-Bestand des Prototyps — noch die frühere Nummerierung tragen.
+- «Arbeitsplätze gestalten» ist das einzige Fachgebiet, das den fachlichen Inhalt selbst führt statt nur darauf zu verlinken: Das Handbuch Multispace umfasst rund 150 Seiten, und seine Module sind das Vokabular, das die übrigen Workspace-Oberflächen bereits sprechen — `data/workspace-planning.json` führt die Ausstattung je Objekt unter denselben Modulnamen, und das Objektdetail des Plan-Editors weist sie im Register «Module» aus. Die Handbuch-Landingpage ist bewusst auf den visuellen Modulkatalog und drei verknüpfte Planungsbeispiele reduziert. Kreislaufwirtschaft und Downloads bleiben eigene Zweigseiten; ausführliche Richtlinien stehen nur noch dort, wo sie zum einzelnen Modul gehören.
+- Die Zweigübersicht folgt dem lokal geprüften CD-Hub: vier kuratierte `card--highlight` in `grid--items-4`, erste Karte breit, danach drei gleichrangige Geschwister. Die frühere Bestandsnotiz, beide Muster seien mangels Verbrauchern entfernt, ist seit 17. August 2026 überholt; dieser Hub ist ihr erster Verbraucher.
+- Ausgabenstand ist ausgewiesen: Das Portal publiziert bewusst die Handbuchausgabe vom 6.1.2025 mit elf Modulen und Coffee Point als Modul 7, weil genau diese Nummern der Plan-Editor bereits in gespeicherte Pläne schreibt. Die Ausgabe vom 31.10.2025 steht als dokumentiertes Delta mit zehn Modulen und Umnummerierung, nicht als zweite aktive Liste.
 - Bewusst nicht publiziert: Preise und Kostenkennwerte (das Handbuch bezeichnet sie als vertraulich), Lieferantennennungen und die Ist/Soll-Mängeltabellen des internen Anforderungsdokuments zur PDF-Druckausgabe. `scripts/test-knowledge-workspace.mjs` prüft das als Vertrag.
 - Rechtsgrundlagen werden nicht dupliziert: VILB, Weisungen und Anhang I/II stehen unter «Unterbringung und Objektbetrieb»; der `intro` des Fachgebiets verweist dorthin, wie es `it` und `procurement` untereinander bereits tun.
 - Interne Portalziele in Unterlagenlisten sind echte Links: `download` markiert nur Dateien, weil `safeResourceUrl` Hash-URLs verwirft und eine als Download markierte Portalroute sonst als deaktivierter Platzhalter erschien (knowledge.js).
 
 **Zustände**
 
-- Keine needs — Bestand ist im JS-Bundle (knowledge-content.js bewusst JS statt JSON, knowledge-content.js:8-10)
+- Die sechs allgemeinen Wissensgebiete benötigen keine Datenladung. Auch Workspace-Hub, Kreislauf, Downloads, unbekannte Zweige, Fehlaliasse wie `modul-01` und Zusatzsegmente laden keinen Katalog. Multispace-Landing lädt `multispaceModules`, `media`, `workspaceExamples`; jeder recordförmige `modul-N`-Pfad `multispaceModules`, `shopProducts`, `workspaceExamples`; Inspiration und jeder einsegmentige alte Beispielpfad `media`, `workspaceExamples`. Die jeweilige Minimalmenge ist nötig, um einen unbekannten, aber formal gültigen Record als 404 zu erkennen. `test-route-needs.mjs` pinnt diese exakte Zuordnung.
 - 404-Zustand für unbekanntes Fachgebiet mit Rücksprung #/knowledge
 - FAQ-Akkordeon auf-/zugeklappt; ToC-Zustände siehe anchor-nav.js
 - ?section-Deep-Link: Abschnitt gescrollt + Überschrift fokussiert (anchor-nav.js:67-74)
+- ?bild-Deep-Link: öffnet nur die Galerie des kodierten Planungsbeispiels; unbekannte Bildschlüssel lassen die Übersicht intakt
 
 **Interaktionen**
 
-- Fachgebiets-Kacheln (6)
+- Fachgebiets-Kacheln (7, einschliesslich Querverweis zur Geschäftsarchitektur)
 - Download-Einträge (Klick = Download bzw. externer Absprung mit External-Icon)
 - FAQ-Akkordeon auf-/zuklappen (C.accordion + wireAccordion via anchor-nav.js:142)
-- Querverweis-Links in intro-Texten (it↔procurement, guides→Fachgebiete, processes→#/services)
-- Externer Button Archimap (target=_blank)
+- Querverweis-Links in intro-Texten (it↔procurement, Workspace→Unterbringung sowie der Architektur-Querverweis)
 - Inhaltsverzeichnis-Navigation + Zurück-Link «Wissen und Hilfsmittel» (via anchorNavPage)
+
+## js/pages/workspace-knowledge.js
+
+Eigenständiger Renderer des Zweigs «Arbeitsplätze gestalten», dynamisch aus `knowledge.js` geladen. Er besitzt Hub, Multispace-Katalog und -Details, Planungsbeispiele sowie die beiden dokumentartigen Seiten; das Inhaltsmodell und der Suchindex bleiben gemeinsam in `knowledge-content.js`.
+
+**Funktionen und Interaktionen**
+
+- CD-Hub mit vier kuratierten Highlight-Karten in `grid--items-4`; die Gebietseinleitung bleibt sichtbar, Icons und abgeleitete Zähler entfallen.
+- Kreislaufwirtschaft als vier, Downloads als vier echte H2-/ToC-Abschnitte. Die zehn Ressourcen stehen direkt in `ul.download-items`; es gibt weder Download-Akkordeons noch Zähler in Akkordeonköpfen.
+- Multispace-Katalog mit elf Karten und drei neuesten Planungsbeispielen. Moduldetails behalten Hero, optionale Bildfolge, Sub-Module, Ausstattung, Einrichtungsrichtlinien und abgeleitete Beispielverweise.
+- Vier Beispielkarten öffnen die vorhandene Vollbildgalerie (`js/ui/gallery.js`) je Beispiel. Der Link bleibt mit `?bild=<example-id>:<media-id>` teilbar; `aria-haspopup="dialog"`, Pfeiltasten, Escape, Fokusfalle und Fokusrückgabe gehören zum Vertrag.
+- Galeriemetadaten führen Beispiel-, Objekt- und Medienangaben zusammen, ohne Lizenz/Urheberschaft aus `media.json` in den Beispielrecord zu kopieren.
+- Der Datei-Button ist opt-in: nur erkannte `CC0`, `CC BY` und `CC BY-SA`-Angaben erlauben den Download. Unbekannte oder proprietäre Rechte verbergen ihn.
+- Gültige alte `/inspiration/<slug>`-Links werden mit `replaceRoute` kanonisiert und öffnen das Titelbild; unbekannte Slugs und zusätzliche Segmente bleiben echte 404-Zustände.
+- Suchtreffer der vier Downloadgruppen und ihrer zehn Ressourcen führen auf den jeweiligen `?section=`-Anker. Platzhalter ohne publizierte Datei bleiben sichtbare, aber inerte Download-Zeilen.
 
 ## js/pages/my-cases.js
 
@@ -757,7 +779,7 @@ Meine Vorgänge: einziger persönlicher Bereich (Login-Gate), Liste über C.moun
 - Kennzahlen-Stats: «Vorgänge total» und «offen / in Arbeit» (Status nicht in abgeschlossen/erledigt/geliefert) (my-cases.js:31–41)
 - Vorgangstabelle (C.mountDataTable, id 'cases'): Spalten Referenz (Link), Titel, Typ (defName), Aktualisiert (datum, Fallback createdAt), Status-Badge (my-cases.js:55–74)
 - Detailkopf: Status-Pille, h1 «Referenz — Titel», Lead «Eingereicht <Datum> · Typ <defName> [· Organisation]» (my-cases.js:163–165)
-- Prozess-Ablaufleiste C.pipeline(steps, stepIndex) aus der Prozessdefinition (my-cases.js:170)
+- Prozess-Ablaufleiste `C.pipeline(steps, stepIndex)` aus der Prozessdefinition: erledigte Schritte mit lokalem Lucide-Kreis-Haken, aktueller Schritt mit Lucide-Uhr, beide in der responsiven CD-Grösse `icon--md` (20/24 px); zukünftige Schritte bleiben bewusst ohne Symbol. `aria-current="step"` und unsichtbare Zustandspräfixe machen Farbe und Symbol entbehrlich (my-cases.js:236; navigation.js:25–38)
 - Warn-Notification «Ablauf nicht verfügbar» wenn die Prozessdefinition fehlt (statt leerer Pipeline, M17) (my-cases.js:171–174)
 - Tab «Daten»: Karten Antragsteller (Name+Organisation), Standort (verknüpftes Gebäude: Name, Adresse, WE/EGID, Button «Gebäude ansehen» → links.objekt) und Verknüpftes Projekt (Name, Projektnummer, Button «Projekt ansehen» → links.bauprojekt) (my-cases.js:113–124)
 - Tab «Daten», Abschnitt «Eckdaten»: eingereichte Formularfelder als dl.kv--ruled, Schlüssel über DATA_LABELS lesbar übersetzt (inkl. Gebäude-Erfassungs-Felder) (my-cases.js:79–90, 129–133)
@@ -838,7 +860,7 @@ Föderierte Suche (#/search?q=…): baut den Index über 8 Inhaltsarten, ein Erg
 **Funktionen**
 
 - Grosses CD-Suchfeld (search--large search--page-result) im ersten Band, vorbelegt mit q (search.js:139–148)
-- Index über 8 Inhaltsarten (buildIndex): Dienstleistungen (boost für Vorgänge +12 und popular-Rang), Anwendungen, Wissen und Hilfsmittel (113 Unterlagen, Ziel = Abschnitt der Fachgebietsseite, external möglich), Datensätze, Dokumente (Deep-Link ins Archiv MIT ?q=<Titel>), News, Liegenschaften (bbl_id zusätzlich ohne Schrägstriche indexiert), Bauprojekte (Pfadsegment-Link) (search.js:189–293)
+- Index über 8 Inhaltsarten (buildIndex): Dienstleistungen (boost für Vorgänge +12 und popular-Rang), Anwendungen, Wissen und Hilfsmittel (148 Indexzeilen aus 115 Unterlagen, 28 Abschnitten und 5 FAQ; gewöhnliche Ziele = Abschnitt, Workspace-Ziele = gerouteter Zweig, external möglich), Datensätze, Dokumente (Deep-Link ins Archiv MIT ?q=<Titel>), News, Liegenschaften (bbl_id zusätzlich ohne Schrägstriche indexiert), Bauprojekte (Pfadsegment-Link) (search.js:189–293)
 - `extra`-Feld je Zeile: unsichtbar durchsuchbares Fachvokabular aus den Daten (Domänenlabel, Voraussetzungen, Kontaktname, Tags, Ort …) statt Synonymtabelle (search.js:180–188)
 - Eigene Vorgänge BEWUSST nicht im Index (persönliche Arbeitsliste, Datenschutz der Antragsteller) (search.js:285–289)
 - Trefferzeile (Liste): Meta «Inhaltsart · Meta», h3-Titel, Beschreibung; externe Treffer mit External-Icon, target=_blank rel=noopener external (search.js:45–57)
@@ -1744,11 +1766,12 @@ Eigenständiger, loginpflichtiger Plan-Editor / Viewer der Workspace-Suite mit `
 - Der Ressourcenbaum spricht die Baumsprache aus `.pf-tree` (H2), behält aber eigenes Markup: eine Zeile ist zwei Bedienelemente und trägt Zahlen rechts. Geteilt sind Einrückung als Zeilen-Innenabstand (16 px je Ebene, gemessen 20/36/76 px), eine Trennlinienstärke, Führungslinie nur im ausgewählten Zweig, zweistufige Auswahl über `is-path`, Zähler als `(23)` mit Klammern aus CSS. `--tree-gutter` ist der Panelrand statt der 8 px des Portfoliobaums, damit Kopf, Suchfeld und Baum eine linke Kante teilen.
 - Das Strukturmenü zeigt entsperrt zwölf Bauteile als deaktivierte Platzhalter (`js/floorplan-editor/structure-elements.js`) mit eigenen Inline-SVG-Planzeichen — der Icon-Satz des Designsystems führt kein einziges Bausymbol. Keine Tastenkürzel: ein Kürzel neben einem Bedienelement, das nicht laufen kann, ist ein Versprechen, das die Anwendung bricht.
 
-- «Arbeitsplätze gestalten» ist ein aufklappbarer Zweig (`routes.js`, `branchKey: 'workspace'`) mit fünf Unterseiten: Übersicht, Multispace-Handbuch, Planungsbeispiele, Kreislaufwirtschaft und Occasionsmobiliar, Downloads und Vorlagen. Die Abschnitte deklarieren ihren Zweig und liegen in EINER Liste, die jede Seite filtert.
+- «Arbeitsplätze gestalten» ist ein aufklappbarer Zweig (`routes.js`, `branchKey: 'workspace'`) mit fünf Unterseiten: Übersicht, Multispace-Handbuch, Planungsbeispiele, Kreislaufwirtschaft und Occasionsmobiliar, Downloads und Vorlagen. `knowledge.js` deklariert die exakten Routenbedürfnisse und lädt den spezialisierten Renderer `workspace-knowledge.js` dynamisch; die gemeinsame Abschnittsliste führt den Suchtreffer des Handbuchs sowie die beiden dokumentartigen Zweige.
 - `data/multispace-modules.json` ist die einzige Quelle der Multispace-Module. Der Plan-Editor (`MODULE_OPTIONS`) und die Wissensseite leiten daraus ab; `scripts/check-multispace-modules.mjs` beweist die Übereinstimmung, weil das Repository keinen Build-Schritt hat. Publiziert wird «Stand 6.1.2025» mit elf Modulen — genau, was der Editor immer geschrieben hat, also ohne Migration. Die Ausgabe 31.10.2025 steht als Delta samt Umnummerierungstabelle.
-- Die Handbuchseite ist ein Katalog in voller Breite: elf Modulkarten mit Bild, darunter eine kurze Auswahl Planungsbeispiele mit dem Weg zu allen. Je Modul eine eigene Seite mit Sub-Modulen, Flächenrichtmassen, Ausstattung aus `shop-products.json`, Einrichtungsrichtlinien und den Planungsbeispielen, die dieses Modul verwendet haben.
-- `data/workspace-examples.json` führt realisierte Flächen als **Orte** — Geschoss, Zone oder Raum —, nicht als Gebäude. Bilder sind Verweise in `data/media.json`, damit Lizenz, Urheberschaft und Quelle beim Asset bleiben; ein Teil ist als nicht frei lizenziert geführt, und keine Aufnahme erscheint ohne diese Angabe.
-- Modulbilder liegen in `assets/images/multispace-modules/` (`modul-<nr>.jpg`), Aufnahmen von Beispielflächen in `assets/images/workspace-examples/`. Fehlt eine Datei, zeigt die Karte die Modulfarbe aus `colors.js` — `swatchHex()`, nicht `swatchCss()`, weil das Editorblatt auf Wissensseiten nicht geladen ist.
+- Die Handbuchseite ist ein Katalog in voller Breite: elf kanonische `C.card`-Modulkarten mit lokalem Bild, darunter die drei neuesten echten Planungsbeispiele mit dem Weg zu allen. Je Modul eine eigene Seite mit dem ersten Bild als gemeinsamem Karten-/Detail-Hero, optionaler Galerie in Datenreihenfolge, Sub-Modulen, Flächenrichtmassen, Ausstattung aus `shop-products.json`, Einrichtungsrichtlinien und den Planungsbeispielen, die dieses Modul verwendet haben.
+- `data/workspace-examples.json` führt realisierte Flächen als **Orte** — Geschoss, Zone oder Raum —, nicht als Gebäude. Bilder sind Verweise in `data/media.json`, damit Lizenz, Urheberschaft und Quelle beim Asset bleiben. Die vier Beispielkarten führen nicht mehr auf eigene Detailseiten, sondern öffnen je eine begrenzte, per `?bild=<example-id>:<media-id>` teilbare Galerie. Alte gültige Slug-Routen werden darauf kanonisiert. Der Datei-Button erscheint nur bei explizit wiederverwendbaren CC-Lizenzen; unbekannte oder proprietäre Angaben bleiben ohne Download.
+- Kreislaufwirtschaft und Downloads verwenden die gemeinsame Ankernavigation mit je vier echten H2-Abschnitten. Zehn Downloadressourcen stehen als direkte CD-Zeilen unter ihren Gruppen; die frühere Akkordeonstruktur samt Zählern ist entfernt, und Gruppen wie Ressourcen sind im Wissensindex adressierbar.
+- Jedes Modul besitzt eine geordnete, validierte Liste `images[]`; `images[0]` ist Hero, weitere Einträge bilden die Detailgalerie. Die aktuellen 16:9-Dateien unter `assets/images/multispace-modules/` verwenden stabile Modul-Slugs statt veränderlicher Nummern und sind ausdrücklich nicht verbindliche, mit OpenAI erzeugte Prototypillustrationen. Alt-Text, Bildlegende, Credit, Lizenzstatus und Provenienz sind Pflicht; Pfad, Dateifall, 1440×810-Mass, JPEG-Format sowie Einzel-/Gesamtbudget werden geprüft. Eine leere Liste bleibt kompakt und bildlos ohne Anfrage; bei einem fehlgeschlagenen angeforderten Bild bleibt die sichere Farbrückfallebene erhalten.
 
 ## js/apps/plan-check.js
 
@@ -1919,19 +1942,19 @@ KEIN Routen-Modul — geteiltes Dashboard-Chrome (Superset-Muster). Konsumenten 
 
 ## js/knowledge-content.js
 
-Inhaltsbestand von «Wissen und Hilfsmittel» (113 Unterlagen in 22 Abschnitten, 6 AREAS, 5 FAQS) mit zwei Lesern: knowledge.js rendert, search.js indexiert via knowledgeIndex(). Keine eigene Route.
+Inhaltsbestand von «Wissen und Hilfsmittel» (115 Unterlagen in 28 Abschnitten, 6 AREAS, 5 FAQS; 148 Suchzeilen) mit zwei Lesern: knowledge.js bzw. der delegierte Workspace-Renderer stellen ihn dar, search.js indexiert via knowledgeIndex(). Keine eigene Route.
 
 **Routen**
 
-- Keine — liefert aber die Suchziele: Abschnitt #/knowledge/<key>?section=wi-<id> je Abschnitt/Unterlage/FAQ; externe Einträge (Fedlex, BKB) und interne #/-hrefs sind direktes Suchziel (knowledgeIndex, knowledge-content.js:248-282)
+- Keine — liefert aber die Suchziele: gewöhnliche Abschnitte nach `#/knowledge/<key>?section=wi-<id>`, Workspace-Abschnitte nach ihrer Zweigroute, Multispace direkt zum Katalog; externe Einträge (Fedlex, BKB) und interne #/-hrefs bleiben direkte Suchziele.
 
 **Funktionen**
 
-- AREAS-Struktur je Fachgebiet: title/lead/intro(HTML)/sections mit id/title/intro und items|html|faq (knowledge-content.js:17-225)
+- AREAS-Struktur je Fachgebiet: title/lead/intro(HTML)/sections mit id/title/intro und items|html|faq|indexOnly; Workspace-Abschnitte tragen zusätzlich ihren branch-Schlüssel.
 - Unterlagen mit title/desc/meta (Format+Grösse bzw. Quelldomain), external-Flag, optionalem href (extern oder #/-intern)
 - sectionDomId-Präfix wi- gegen id-Kollisionen («preise» existiert in zwei Fachgebieten, knowledge-content.js:235-238)
-- FAQS: 5 Frage/Antwort-Paare für das Akkordeon der processes-Seite und die Suche (knowledge-content.js:227-233)
-- knowledgeIndex(): flacher Suchindex — je Abschnitt, je Unterlage, je FAQ eine Zeile; Ziel ist der Abschnitt, nie die Platzhalter-Datei (knowledge-content.js:243-282)
+- FAQS: 5 Frage/Antwort-Paare für das Akkordeon unter «Anleitungen und Schulungen» und die Suche.
+- knowledgeIndex(): flacher Suchindex — je Abschnitt, je Unterlage, je FAQ eine Zeile. Platzhalter-Dateien führen zur zugehörigen Gruppe; Multispace zum Katalog; reale externe und portalinterne Ziele bleiben direkt.
 
 **Zustände**
 

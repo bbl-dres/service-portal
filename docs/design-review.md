@@ -545,13 +545,18 @@ Ausgabenhinweis. Neu sind drei kleine CSS-Muster, die die Wissensschicht noch
 nicht hatte: eine Modulnummer-Marke, eine Regelliste und eine nummerierte
 Schrittliste.
 
+Diese Beschreibung dokumentiert den Stand vom 10. August. Die spätere
+Kataloggestaltung und die Reduktion der Handbuch-Landingpage sind in 15.7 und
+15.20 festgehalten; die damalige Ankernavigation, Modultabelle und Schrittliste
+sind dort nicht mehr Teil der aktuellen Oberfläche.
+
 ### Befunde und Umsetzung
 
 | Nr. | Befund | Entscheid / Umsetzung | Status |
 | --- | --- | --- | --- |
-| 11.1 | Zwei Ausgaben des Handbuchs sind im Umlauf und widersprechen sich: «Stand 6.1.2025» führt elf Module mit Coffee Point als Modul 7, «Stand 31.10.2025» führt zehn — Modul 1 heisst neu «Standardarbeitsplatz», der Coffee Point ist kein eigenes Modul mehr, die früheren Module 8–11 rücken auf 7–10 auf. Der Fixture-Bestand und die Anforderungsdokumentation des Repositorys tragen noch die frühere Nummerierung. | Die Seite folgt der aktuellen Ausgabe. Die Abweichung wird als Meldung benannt statt stillschweigend geglättet, weil ältere Pläne und Ausstattungslisten die frühere Nummerierung tragen. `scripts/test-knowledge-workspace.mjs` pinnt Ausgabe, Modulzahl und die Abwesenheit des Coffee Point. | erledigt |
-| 11.2 | Die Flächenrichtmasse sind aus dem PDF nicht naiv auslesbar: Die Datei setzt Zero-Width-Spaces innerhalb mehrstelliger Zahlen, und die zweispaltige Seitenanlage lässt Modulüberschriften über Spaltengrenzen bluten. Eine einfache Extraktion liefert «2 5 m²» oder ordnet Zahlen dem falschen Modul zu. | Zahlen nur übernommen, wo zwei unabhängige Extraktionsverfahren übereinstimmen und die Zuordnung von der Modulseite selbst stammt, nicht vom laufenden Kolumnentitel. Wo die Quelle kein Richtmass nennt (Module 8–10), steht ein Gedankenstrich statt einer Schätzung. | erledigt |
-| 11.3 | Vertrauliches Material in den Quellen: Das Handbuch hält fest «Die Preise sind vertraulich zu behandeln»; das Anforderungsdokument zur PDF-Druckausgabe ist ein internes Papier mit Geschäftsnummer, Lieferantennennung und Ist/Soll-Mängeltabellen. | Preise, Kostenkennwerte, Lieferantennennungen und Mängeltabellen bleiben aussen vor. Übernommen ist nur der anwendungsbezogene Teil: die Umbenennung in «Flächennachweis SIA 416», Papierformate, Massstäbe und die Regel, dass über alle Geschosse derselbe Massstab gilt. Der Testvertrag prüft die Abwesenheit. | erledigt |
+| 11.1 | Zwei Ausgaben des Handbuchs sind im Umlauf und widersprechen sich: «Stand 6.1.2025» führt elf Module mit Coffee Point als Modul 7, «Stand 31.10.2025» führt zehn — Modul 1 heisst neu «Standardarbeitsplatz», der Coffee Point ist kein eigenes Modul mehr, die früheren Module 8–11 rücken auf 7–10 auf. Der Fixture-Bestand und die Anforderungsdokumentation des Repositorys tragen noch die frühere Nummerierung. | Der spätere Entscheid aus 15.1 ersetzt die damalige Annahme «neueste Ausgabe = aktive Liste»: Das Portal publiziert 6.1.2025, weil der Plan-Editor genau diese Nummern bereits speichert. 31.10.2025 bleibt als Delta dokumentiert. `scripts/test-knowledge-workspace.mjs` pinnt elf Module und Coffee Point. | erledigt, durch 15.1 präzisiert |
+| 11.2 | Die Flächenrichtmasse sind aus dem PDF nicht naiv auslesbar: Die Datei setzt Zero-Width-Spaces innerhalb mehrstelliger Zahlen, und die zweispaltige Seitenanlage lässt Modulüberschriften über Spaltengrenzen bluten. Eine einfache Extraktion liefert «2 5 m²» oder ordnet Zahlen dem falschen Modul zu. | Zahlen nur übernommen, wo zwei unabhängige Extraktionsverfahren übereinstimmen und die Zuordnung von der Modulseite selbst stammt, nicht vom laufenden Kolumnentitel. Wo die aktive Ausgabe kein Richtmass nennt (Module 9–11), steht ein Gedankenstrich statt einer Schätzung. | erledigt |
+| 11.3 | Vertrauliches Material in den Quellen: Das Handbuch hält fest «Die Preise sind vertraulich zu behandeln»; das Anforderungsdokument zur PDF-Druckausgabe ist ein internes Papier mit Geschäftsnummer, Lieferantennennung und Ist/Soll-Mängeltabellen. | Preise, Kostenkennwerte, Lieferantennennungen und Mängeltabellen bleiben aussen vor. Der anwendungsbezogene Flächennachweis-Abschnitt war zunächst ohne diese Angaben publiziert und wurde mit 15.20 vollständig von der Landingpage entfernt. | erledigt, durch 15.20 präzisiert |
 | 11.4 | Die Rechtsgrundlagen des Handbuchs — VILB, Weisungen, Anhang I «Standards für Büroarbeitsplätze», Anhang II, Desksharing-Konzept — stehen bereits vollständig unter «Unterbringung und Objektbetrieb». | Nicht dupliziert, sondern über den `intro` des Fachgebiets verlinkt — dasselbe Muster, mit dem sich `it` und `procurement` bereits gegenseitig referenzieren. Der Test scheitert, wenn ein Titel in beiden Fachgebieten auftaucht. | erledigt |
 | 11.5 | Portalinterne Ziele in Unterlagenlisten wurden als deaktivierte Platzhalter dargestellt. `knowledge.js` markierte jeden nicht externen Eintrag als `download`, und `safeResourceUrl` verwirft Hash-URLs bewusst. Gemessen auf `#/knowledge/it`: «Sicherheits-/Datenschutzvorfall melden» war seit jeher tot. | `download` markiert nur noch Dateien; Portalrouten sind Links. Platzhalter ohne echtes Ziel bleiben deaktiviert, was das gewünschte Prototypverhalten ist. Behebt einen Bestandsfehler und ist Voraussetzung dafür, dass das neue Fachgebiet auf Plan-Editor, Planprüfung und Dienstleistungen verweisen kann. | erledigt |
 | 11.6 | Der Unterlagenzähler der Übersichtsseite rechnete ungeschützt `s.items.length` und wäre an einem Abschnitt ohne Dokumentliste gescheitert — genau die Form, die das neue Fachgebiet überwiegend verwendet. | Auf `(s.items || []).length` gehärtet. | erledigt |
@@ -776,7 +781,7 @@ Unterseiten, und die Modulliste existiert nur noch einmal.
 | --- | --- | --- | --- |
 | 15.4 | Eine Seite mit acht Abschnitten, elf Modulen und einer Dokumentensammlung ist in einer Sitzung nicht lesbar. | Aufklappbarer Zweig wie «Digitalisierung»: Übersicht, Multispace-Handbuch, Planungsbeispiele, Kreislaufwirtschaft, Downloads. | erledigt |
 | 15.5 | `js/pages/knowledge.js` begründete ausdrücklich das Gegenteil: «Separate Routen ergäben Seiten mit drei Dokumenten.» | Die Regel gilt weiter — für die anderen sechs Gebiete. Dieses eine trägt einen Katalog mit einer Seite je Modul, und der Kommentar sagt das jetzt, statt dem Code zu widersprechen. | erledigt |
-| 15.6 | Fünf Unterseiten könnten fünf Inhaltslisten bedeuten, die auseinanderlaufen. | Die Abschnitte deklarieren ihren Zweig; jede Seite filtert **eine** Liste. | erledigt |
+| 15.6 | Fünf Unterseiten könnten fünf Inhaltslisten bedeuten, die auseinanderlaufen. | Die gemeinsame Abschnittsliste besitzt die zwei dokumentartigen Zweige und den Suchtreffer des Handbuchs. Modul- und Beispielkatalog rendern stattdessen ihre kanonischen JSON-Datensätze; damit gibt es auch dort keine zweite Inhaltskopie. | erledigt, durch 15.20 präzisiert |
 | 15.7 | Das Handbuch war eine Dokumentseite mit Inhaltsverzeichnis, obwohl der Inhalt ein Katalog ist. | Volle Breite, Module als Karten, darunter die Planungsbeispiele — die Vorlage aus `docs/wireframes/260806 - Workspace Management.html`. | erledigt |
 | 15.8 | Die Übersicht war eine Dokumentseite mit Inhaltsverzeichnis über einer einzigen Kartenreihe. | Nur Karten, im Muster der Digitalisierungsübersicht: `page-header`, dann `section section--default bg--secondary-50`, drei Spalten. Die Klassen wurden gegen jene Seite gemessen, nicht angenommen. | erledigt |
 | 15.9 | Der «alles anzeigen»-Link stand links, weil er von Hand in den Abschnittsinhalt geschrieben war. | Über den `more`-Slot von `pageSection`, denselben, den das News-Band der Startseite benutzt. Gemessen: rechter Abstand 0 px auf allen drei Bändern. | erledigt |
@@ -795,9 +800,12 @@ Unterseiten, und die Modulliste existiert nur noch einmal.
 
 | Nr. | Befund | Entscheid / Umsetzung | Status |
 | --- | --- | --- | --- |
-| 15.15 | Modulkarten ohne Bild; echte Aufnahmen gibt es noch nicht. | Ordner, Namensschema und Lizenztabelle stehen (`assets/images/multispace-modules/`, `modul-<nr>.jpg`); der Modulrecord trägt `image`. Eine Datei wirkt, sobald sie da ist — ohne Codeänderung. | erledigt |
-| 15.16 | Ein fehlendes Bild darf keinen kaputten Rahmen zeigen. | Ersatzfläche in der **Modulfarbe** aus `colors.js` — derselben, mit der der Plan-Editor Räume dieses Moduls einfärbt. Gemessen: elf Karten, elf verschiedene Farben, Detailseite gleich der Karte. | erledigt |
+| 15.15 | Alle elf skalaren Bildpfade zeigten auf nicht vorhandene Dateien; die Farbrückfallebene liess die Karten dennoch vollständig aussehen. Echte, freigegebene Modulaufnahmen gibt es nicht. | Elf unterscheidbare 1440×810-Prototypillustrationen wurden lokal erzeugt und ausdrücklich als nicht verbindlich gekennzeichnet. Jeder Modulrecord trägt eine geordnete `images[]`-Liste mit Alt-Text, Legende, Credit, Lizenzstatus und Provenienz; stabile Slug-Dateinamen überleben die dokumentierte Umnummerierung. | erledigt |
+| 15.16 | Karte und Detail brauchten denselben Hero und eine Erweiterung auf mehrere Bilder, ohne einen zweiten `heroImage`-Vertrag. | `images[0]` ist Kartenbild und kanonischer Detail-Hero; weitere Einträge erscheinen in gespeicherter Reihenfolge als Galerie. `images:[]` ergibt eine kompakte textbasierte Darstellung ohne Anfrage. Eine angeforderte defekte Datei wird entfernt, während die sichere Modulfarbe und der Link erhalten bleiben. | erledigt |
 | 15.17 | `swatchCss()` liefert `var(--fpe-module-4)`, und dieses Blatt lädt auf einer Wissensseite nicht — genau die Form des Fehlers, der einmal alle Räume schwarz gemalt hat. | `swatchHex()` für Verbraucher ausserhalb des Editors. | erledigt |
+| 15.18 | Die drei «Planungsbeispiele» des Handbuchs waren eine zweite, hart codierte Datenliste. Lokale Dateipfade wurden als alte Unsplash-ID übergeben; deshalb blieben ihre Bildcontainer leer, obwohl die kanonischen Beispiele gültige Medien besitzen. | Die Duplikatliste und ihr Kartenrenderer sind entfernt. Handbuch und vollständige Beispielseite verwenden dieselben `workspaceExamples`, dieselben `coverMediaId`-Medien und `C.card`; die Vorschau zeigt die drei neuesten Einträge, «Alle Beispiele anzeigen» die vollständige Sammlung. | erledigt |
+| 15.19 | Die alte Browserdiagnose zählte `.photo`-Container und konnte elf fehlende Bilder als Erfolg melden. | `test-workspace-knowledge.mjs` prüft echte, dekodierte Bildpixel, Same-Origin-Pfade, Karten-/Hero-Gleichheit, kanonische Routen, Tastaturöffnung, 320/768/1440-Containment und den sicheren Fehlerfall. Datenintegrität pinnt Dateifall, 1440×810 JPEG, 220-KiB-Einzel- und 2-MiB-Gesamtbudget. | erledigt |
+| 15.20 | Die Katalog-Landingpage wiederholte nach Modulen und Planungsbeispielen fünf lange Fachabschnitte: Einrichtungsrichtlinien, Farbkonzept, Planungsablauf, Plandaten und Anwendungsverweise. Sie machte aus dem visuellen Einstieg erneut eine Dokumentseite und duplizierte Ziele, die das Portal bereits global erschliesst. | Die fünf Abschnitte sind aus Landingpage, Inhaltsmodell und Wissenssuche entfernt; ihre exklusiven Renderer und CSS-Regeln ebenfalls. Die Seite endet nach «Planungsbeispiele». Modulbezogene Einrichtungsrichtlinien bleiben auf den jeweiligen Moduldetails, Kreislauf und Downloads auf ihren eigenen Zweigseiten. Pure und Browser-Verträge pinnen die Abwesenheit. | erledigt, 17. August 2026 |
 
 ### 15.5 Zwei Ursachen, nicht eine
 
@@ -825,5 +833,53 @@ Dass der Unterschied überhaupt sichtbar wurde, geht auf die Harness-Korrektur a
 - `node scripts/check-workspace-branch.mjs` — fünf Unterseiten, elf Modulseiten, die
   Kartenbilder mit Farbrückfall, die Galerie und die Beispieldetailseite, und die Regel,
   dass keine Aufnahme ohne Lizenzangabe erscheint.
+- `node scripts/test-workspace-knowledge.mjs` — echte dekodierte Karten-/Hero-Bilder,
+  kanonische Beispiele, Tastaturroute, responsive Grenzen und sicherer Bildfehler.
 - `node scripts/test-knowledge-workspace.mjs`, `node scripts/test-content.mjs` — die
   Bestandsprüfungen des Gebiets, angepasst an den Zweig statt an die eine Seite.
+
+## 16. «Arbeitsplätze gestalten»: CD-Hub, Dokumentseiten und Bildergalerien
+
+Stand: 17. August 2026. Dieser Abschnitt **ersetzt nicht die Historie in
+Abschnitt 15**. Er präzisiert den heutigen Oberflächenvertrag nach der
+anschliessenden Gesamtprüfung des Zweigs. Insbesondere beschreiben 15.8, 15.12,
+15.18, 15.19 und die dortigen Prüfarbezeichnungen den Zwischenstand mit
+generischen Hub-Karten und eigenen Beispieldetailseiten. Die Entscheidungen zu
+einer kanonischen Modulliste, echten Medienreferenzen, Lizenzangaben und
+dekodierten Bildprüfungen bleiben gültig.
+
+Die vollständige Herleitung aus dem lokal ausgecheckten Swiss Federal Design
+System, der Vorher-/Nachher-Befund, die Routen-/Datenmatrix und die verbleibenden
+Grenzen stehen in
+[`design-review-workspace-knowledge-2026-08-17.md`](design-review-workspace-knowledge-2026-08-17.md).
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 16.1 | Der Zweig-Hub verwendete generische Icon-Kacheln und Zähler. Das lokal geprüfte CD baut Hubs aus Highlight-Karten auf und führt für vier kuratierte Ziele ein eigenes Raster: erste Karte breit, danach drei Geschwister. | `.card--highlight` und `.grid--items-4` sind nach dem CD-Quellcode als erster echter Verbraucher wiederhergestellt. Der Hub zeigt vier Ziele ohne Kategorie-Icon oder Zähler und behält die Gebietseinleitung. Frühere Bestandsnotizen, beide Klassen seien mangels Verbrauchern entfernt, sind damit datiert überholt. | erledigt |
+| 16.2 | Kreislaufwirtschaft war ein einziger langer Abschnitt; vier Downloadgruppen steckten mit Zählern in Akkordeons. Weder Lebenszyklus noch Materialgruppen ergaben ein brauchbares Inhaltsverzeichnis. | Je vier echte `h2[id]`-Abschnitte in der geteilten Ankernavigation. Die zehn Downloadressourcen sind direkte CD-Zeilen, ohne Akkordeon und ohne Kopfzähler; Gruppen und Einträge sind im Wissensindex adressierbar. | erledigt |
+| 16.3 | Vier visuelle Planungsbeispiele erzeugten vier umfangreiche Detailseiten mit Aufnahmen, Grundriss, Möbeltabelle und Ortsdaten. | Jede Karte öffnet die bereits vorhandene, auf dieses Beispiel begrenzte Galerie. `?bild=<example-id>:<media-id>` hält Bild und Sammlung teilbar; Metadaten tragen Projektfakten, Urheberschaft und Lizenz. Gültige alte Slug-Routen werden auf das Titelbild kanonisiert, ungültige bleiben 404. | erledigt |
+| 16.4 | Der Galerie-Download war standardmässig sichtbar, solange eine Bilddatei existierte; unbekannte Rechte konnten damit wie eine Freigabe wirken. | Opt-in: nur erkannte CC0-/CC-BY-/CC-BY-SA-Angaben erlauben die Dateiaktion. Proprietäre oder unbekannte Labels verbergen sie, während die Rechteinformation sichtbar bleibt. | erledigt |
+| 16.5 | Rund fünfhundert Zeilen Workspace-Katalog- und Detailcode lagen im generischen Wissensrenderer; jede Workspace-Route lud Module, Produkte, Medien und Beispiele. | `workspace-knowledge.js` besitzt den Zweig. `knowledge.js` lädt ihn dynamisch und deklariert Daten pro exakter Routenform: Hub/Kreislauf/Downloads sowie unbekannte Zweige, Fehlaliasse und Zusatzsegmente ohne Kataloge; recordförmige Modul-/Beispielpfade nur mit den Daten, die ihren Bestand prüfen und darstellen. | erledigt |
+| 16.6 | Der allgemeine visuelle Prüflauf enthielt keine einzige Route dieses Wissenszweigs. | Hub, Handbuch, Inspiration, Kreislauf und Downloads sind in `scripts/review-routes.mjs` aufgenommen. Das ist künftige Abdeckung, kein behaupteter vollständiger Matrixlauf für diese Änderung. | erledigt |
+
+### Prüfartefakte
+
+- `node scripts/test-knowledge-workspace.mjs` — Abschnitts-, Ressourcen-, Such-
+  und Vertraulichkeitsvertrag.
+- `node scripts/test-route-needs.mjs`, `node scripts/test-routes.mjs` — exakte
+  Datenbedürfnisse, kanonische Routen, Kompatibilität und strikte Fehlpfade.
+- `node scripts/check-workspace-branch.mjs` — Hub, H2-/ToC-Struktur, direkte
+  Downloadzeilen, Modul-/Beispielkatalog und kanonische Galerie-Links.
+- `node scripts/test-workspace-knowledge.mjs` — echte Bildbytes,
+  Galerietastatur, Deep Links, Fokusrückgabe, Rechteaktion, responsive Grenzen
+  und sicherer Bildfehler.
+
+Die vollständige Root-Regressionsmatrix einschliesslich 24/24 reinen Suiten
+lief grün. Alle fünf fokussierten Routen-/Browser-Gates liefen grün; ebenso die
+Shared-Surface-Regressions für CSS, Portfolio, UI-State, Galerie-/Grundrisszustand
+und Ankersuche, `test-data-resilience`, Syntax für 241 JS/MJS-Dateien,
+Englisch-Gate für 272 gepflegte Quelldateien und `git diff --check`. Der
+unterstützte Bestand bleibt 63 Suiten (39 Browser, 24 rein) plus 25 Checker. Die
+75 Einträge von `review-routes.mjs` wurden für diese Änderung nicht als
+vollständige visuelle Screenshot-Matrix ausgeführt und werden deshalb nicht als
+Prüfergebnis gezählt.

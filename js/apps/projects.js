@@ -86,18 +86,18 @@ function overview(ctx) {
   const esc = C.escape;
   const TREE = {
     levels: [
-      { key: 'country', icon: 'tree/globe', label: (k) => countryName(k) },
-      { key: 'region', icon: 'tree/map' },
-      { key: 'city', icon: 'tree/map-pin' },
+      { key: 'country', icon: 'lucide/globe', label: (k) => countryName(k) },
+      { key: 'region', icon: 'lucide/map' },
+      { key: 'city', icon: 'lucide/map-pin' },
       // Bare number plus the level's own icon; «WE» stays for assistive
       // technology through `word` (as in portfolio.js).
-      { key: 'businessEntity', attr: 'business-entity', icon: 'tree/building',
+      { key: 'businessEntity', attr: 'business-entity', icon: 'lucide/building',
         idText: (k) => String(k), word: 'Wirtschaftseinheit',
         label: (k, es) => (es[0] || {}).buildingName || '',
         sort: (a, b) => String(a).localeCompare(String(b)) },
     ],
     leaf: {
-      icon: () => 'tree/briefcase', idText: (o) => o.projectNumber,
+      icon: () => 'lucide/briefcase', idText: (o) => o.projectNumber,
       label: (o) => o.name, objId: (o) => o.id,
       sort: (a, b) => String(a.name).localeCompare(String(b.name), 'de'),
     },

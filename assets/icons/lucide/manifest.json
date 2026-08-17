@@ -1,0 +1,104 @@
+{
+  "name": "service-portal Lucide subset",
+  "version": "1.31.0",
+  "source": "https://cdn.jsdelivr.net/npm/lucide-static@1.31.0/icons/",
+  "release": "https://github.com/lucide-icons/lucide/tree/1.31.0",
+  "license": {
+    "file": "LICENSE.txt",
+    "source": "https://raw.githubusercontent.com/lucide-icons/lucide/1.31.0/LICENSE",
+    "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+  },
+  "generatedBy": "scripts/fetch-lucide-icons.mjs",
+  "icons": [
+    {
+      "name": "chevron-right",
+      "purpose": "Tree disclosure control",
+      "sha256": "e0369bedde85e8740f40fda0456e648b8de9fcf03fb8208cfbdba56df819b1ec"
+    },
+    {
+      "name": "library",
+      "purpose": "Catalogue and process-documentation roots",
+      "sha256": "2804c9a659ffe4fffc14a7667213adfee8a1c8511f98b8a8573c993ee65bd69c"
+    },
+    {
+      "name": "boxes",
+      "purpose": "Business objects",
+      "sha256": "c5f74a90fbbe26690ea3d5a972c11934d5f173808ca502c80eb9c9c3a5b67575"
+    },
+    {
+      "name": "database",
+      "purpose": "Data tables and systems",
+      "sha256": "eb5f4d2f2856d342ad152db649d57c23944c7a11eb518cbf9602ee809fbd8df4"
+    },
+    {
+      "name": "list",
+      "purpose": "Reference data",
+      "sha256": "23f009f9376dff2db0bb847eb36facda8b7ec4e0dd979006f67e2bbd226f8b5b"
+    },
+    {
+      "name": "globe",
+      "purpose": "Country level",
+      "sha256": "d44781a25e32673dac1d822373c2d984da02182d17cc53793401c5ead5d6d17e"
+    },
+    {
+      "name": "map",
+      "purpose": "Canton or region level",
+      "sha256": "2d189ddee536c32a1edaefaf02d7fd2ba2fb4210c7420500128301c839b3c8cb"
+    },
+    {
+      "name": "map-pin",
+      "purpose": "City level",
+      "sha256": "4ef7a738ab033304b8028c7e735f2d815f21def2b48b5151e305fd5cb3295066"
+    },
+    {
+      "name": "folder",
+      "purpose": "Business entity",
+      "sha256": "0a4d3b9529f73788ea55a75948c2eb5b8acc811ea7846dbbf71af1e9b449d4c5"
+    },
+    {
+      "name": "building",
+      "purpose": "Building",
+      "sha256": "ef4c82b1470d1f3080871d0fc1bb3bee61e3de28fa4c9217104d02be42e132e0"
+    },
+    {
+      "name": "land-plot",
+      "purpose": "Land parcel",
+      "sha256": "8b835a67b3cca8a085e65ca7c945db078d620e11be88f849cf16465bf022ea22"
+    },
+    {
+      "name": "briefcase",
+      "purpose": "Construction project",
+      "sha256": "b5b107ec7a365abd4546b5376ad739ed94f20c82cafac0f64f362d00b5d16e1f"
+    },
+    {
+      "name": "house",
+      "purpose": "Tenancy",
+      "sha256": "07d935a7b71ea59a4745b75c8bed63864d8880be9e3de04ca65421d2db4e65be"
+    },
+    {
+      "name": "layers",
+      "purpose": "Floor",
+      "sha256": "baf7b55f6cfa4ef44381f7a82332f088cbaf60bd48e1b246dee2a3a362ae762f"
+    },
+    {
+      "name": "workflow",
+      "purpose": "Domain processes",
+      "sha256": "5da3e01abe2c81829ae8da64ea083dc87f6b1ab94c2e17e09831e12d515faf95"
+    },
+    {
+      "name": "app-window",
+      "purpose": "Customer-portal processes",
+      "sha256": "619b073778e5fbd58423ca70e47681c08ed4f0e8222f4a3b556e12235394a44d"
+    },
+    {
+      "name": "circle-check-big",
+      "purpose": "Completed pipeline step",
+      "sha256": "c197e3304b9a71f4263304af1fc7bb3d0b693589f67e58e796ffe6a44ed7d2f9"
+    },
+    {
+      "name": "clock-3",
+      "purpose": "Current pipeline step",
+      "sha256": "8022399e9301d64b5b010f1874e84d09a237d81cd04219cf94c2e1eb84b72e02"
+    }
+  ]
+}

@@ -40,7 +40,7 @@ export function objectsToNodes(objects, { levels, leaf }, selection = {}) {
             label: child.label,
             idText: child.idText || '',
             srPrefix: leaf.subWord || '',
-            icon: child.icon || 'tree/layers',
+            icon: child.icon || 'lucide/layers',
             state: stateOf([...own, ['sub', child.id]]),
             sel: Object.fromEntries([...own, ['sub', child.id]]),
           })),

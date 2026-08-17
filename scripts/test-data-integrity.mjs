@@ -7,12 +7,34 @@
 //
 // This check completes in milliseconds and needs no server:
 //   node scripts/test-data-integrity.mjs
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const json = (p) => JSON.parse(readFileSync(join(ROOT, p), 'utf8'));
+
+function jpegDimensions(path) {
+  const data = readFileSync(path);
+  if (data.length < 4 || data.readUInt16BE(0) !== 0xffd8) return null;
+  const frameMarkers = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);
+  let offset = 2;
+  while (offset + 3 < data.length) {
+    if (data[offset] !== 0xff) { offset++; continue; }
+    while (offset < data.length && data[offset] === 0xff) offset++;
+    const marker = data[offset++];
+    if (marker === 0xd9 || marker === 0xda) break;
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
+    if (offset + 1 >= data.length) break;
+    const length = data.readUInt16BE(offset);
+    if (length < 2 || offset + length > data.length) break;
+    if (frameMarkers.has(marker) && length >= 7) {
+      return { height: data.readUInt16BE(offset + 3), width: data.readUInt16BE(offset + 5) };
+    }
+    offset += length;
+  }
+  return null;
+}
 
 let failures = 0;
 const check = (ok, label) => { console.log(`   ${ok ? '✓' : '✗'} ${label}`); if (!ok) failures++; };
@@ -257,6 +279,112 @@ const coreSource = readFileSync(join(ROOT, 'js/core/index.js'), 'utf8');
 check(/\bngf:\s*raw\[['"]garea_ngf['"]\]\s*\|\|\s*0/.test(coreSource)
   && /\btotalFloors:\s*raw\[['"]gastw['"]\]\s*\|\|\s*0/.test(coreSource),
   'core normalisation exposes net floor area and total floor count under stable field names');
+
+console.log('Workspace module imagery and planning-example references');
+const moduleFixture = json('data/multispace-modules.json');
+const modules = moduleFixture.modules || [];
+const moduleNumbers = new Set(modules.map((module) => Number(module.nr)));
+const moduleByNumber = new Map(modules.map((module) => [Number(module.nr), module]));
+const moduleImagePrefix = 'assets/images/multispace-modules/';
+const moduleImageDirectory = join(ROOT, moduleImagePrefix);
+const moduleImageFiles = new Set(readdirSync(moduleImageDirectory, { withFileTypes: true })
+  .filter((entry) => entry.isFile() && /\.(?:avif|jpe?g|png|webp)$/i.test(entry.name))
+  .map((entry) => entry.name));
+const moduleImages = modules.flatMap((module) => (module.images || [])
+  .map((image, index) => ({ ...image, index, module })));
+
+check(modules.every((module) => Array.isArray(module.images) && !Object.hasOwn(module, 'image')),
+  'every module uses the ordered images array and no legacy scalar image');
+check(modules.every((module) => module.images.length === 1
+  && module.images[0].src === `${moduleImagePrefix}${module.slug}-01.jpg`),
+  'every current module has its stable slug hero at images[0]');
+check(new Set(moduleImages.map((image) => image.src.toLowerCase())).size === moduleImages.length,
+  'module image paths are unique across case-insensitive deployments');
+
+const missingModuleImages = moduleImages.filter((image) => !existsSync(join(ROOT, image.src)));
+const wrongCaseModuleImages = moduleImages.filter((image) =>
+  !moduleImageFiles.has(image.src.slice(moduleImagePrefix.length)));
+check(missingModuleImages.length === 0,
+  `every module image file exists${missingModuleImages.length
+    ? `; missing: ${missingModuleImages.map((image) => image.src).join(', ')}` : ''}`);
+check(wrongCaseModuleImages.length === 0,
+  `module image paths use the exact on-disk filename case${wrongCaseModuleImages.length
+    ? `; mismatched: ${wrongCaseModuleImages.map((image) => image.src).join(', ')}` : ''}`);
+
+const referencedModuleFiles = new Set(moduleImages.map((image) => image.src.slice(moduleImagePrefix.length)));
+const orphanModuleImages = [...moduleImageFiles].filter((file) => !referencedModuleFiles.has(file));
+check(orphanModuleImages.length === 0,
+  `the module image directory has no unreferenced assets${orphanModuleImages.length
+    ? `; orphaned: ${orphanModuleImages.join(', ')}` : ''}`);
+
+const invalidDimensions = moduleImages.filter((image) => {
+  if (!existsSync(join(ROOT, image.src))) return false;
+  const dimensions = jpegDimensions(join(ROOT, image.src));
+  return !dimensions || dimensions.width !== 1440 || dimensions.height !== 810;
+});
+check(invalidDimensions.length === 0,
+  `every module hero is a 1440 × 810 JPEG${invalidDimensions.length
+    ? `; invalid: ${invalidDimensions.map((image) => image.src).join(', ')}` : ''}`);
+
+const oversizedModuleImages = moduleImages.filter((image) => existsSync(join(ROOT, image.src))
+  && statSync(join(ROOT, image.src)).size > 220 * 1024);
+const moduleImageBytes = moduleImages.reduce((total, image) => total
+  + (existsSync(join(ROOT, image.src)) ? statSync(join(ROOT, image.src)).size : 0), 0);
+check(oversizedModuleImages.length === 0 && moduleImageBytes <= 2 * 1024 * 1024,
+  `module imagery stays within the 220 KiB each / 2 MiB total budget${oversizedModuleImages.length
+    ? `; oversized: ${oversizedModuleImages.map((image) => image.src).join(', ')}`
+    : `; total: ${Math.round(moduleImageBytes / 1024)} KiB`}`);
+
+const incompleteProvenance = moduleImages.filter((image) =>
+  !image.alt || !/illustrativ/i.test(image.caption || '') || !/nicht verbindlich/i.test(image.caption || '')
+  || !/OpenAI/i.test(image.credit || '') || !/2026/.test(image.credit || '')
+  || !image.license || !/OpenAI/i.test(image.provenance || '') || !/keine Fotografie/i.test(image.provenance || ''));
+check(incompleteProvenance.length === 0,
+  `every module image states useful text, non-binding status, credit, licence, and provenance${
+    incompleteProvenance.length ? `; incomplete: ${incompleteProvenance.map((image) => image.src).join(', ')}` : ''}`);
+
+const planningModuleProblems = workspacePlanning.flatMap((planning) => (planning.equipmentGroups || [])
+  .filter((group) => !moduleByNumber.has(Number(group.number))
+    || moduleByNumber.get(Number(group.number)).name !== group.name)
+  .map((group) => `${planning.buildingId}:M${group.number}`));
+check(planningModuleProblems.length === 0,
+  `workspace planning groups reference the current module name and number${planningModuleProblems.length
+    ? `; unresolved: ${planningModuleProblems.join(', ')}` : ''}`);
+
+const workspaceExamples = json('data/workspace-examples.json').examples || [];
+const media = json('data/media.json');
+const mediaById = new Map(media.map((item) => [item.mediaId, item]));
+const invalidExampleMediaLists = workspaceExamples.filter((example) => Object.hasOwn(example, 'images')
+  || !Array.isArray(example.mediaIds) || !example.mediaIds.length
+  || new Set(example.mediaIds).size !== example.mediaIds.length);
+check(invalidExampleMediaLists.length === 0,
+  `workspace examples use only ordered, duplicate-free media references${invalidExampleMediaLists.length
+    ? `; invalid: ${invalidExampleMediaLists.map((example) => example.exampleId).join(', ')}` : ''}`);
+
+const brokenExampleMedia = workspaceExamples.flatMap((example) => (example.mediaIds || [])
+  .filter((mediaId) => {
+    const item = mediaById.get(mediaId);
+    return !item || item.buildingId !== example.buildingId
+      || typeof item.file !== 'string' || !item.file.startsWith('assets/images/')
+      || !existsSync(join(ROOT, item.file));
+  })
+  .map((mediaId) => `${example.exampleId}:${mediaId}`));
+check(brokenExampleMedia.length === 0,
+  `workspace-example media resolves to an existing file for the same building${brokenExampleMedia.length
+    ? `; unresolved: ${brokenExampleMedia.join(', ')}` : ''}`);
+
+const invalidExampleCovers = workspaceExamples.filter((example) => !example.coverMediaId
+  || !example.mediaIds?.includes(example.coverMediaId) || !mediaById.has(example.coverMediaId));
+check(invalidExampleCovers.length === 0,
+  `each workspace-example cover resolves within its media fallback${invalidExampleCovers.length
+    ? `; invalid: ${invalidExampleCovers.map((example) => example.exampleId).join(', ')}` : ''}`);
+
+const brokenExampleModules = workspaceExamples.flatMap((example) => (example.modules || [])
+  .filter((number) => !moduleNumbers.has(Number(number)))
+  .map((number) => `${example.exampleId}:M${number}`));
+check(brokenExampleModules.length === 0,
+  `workspace examples reference current Multispace modules${brokenExampleModules.length
+    ? `; unresolved: ${brokenExampleModules.join(', ')}` : ''}`);
 
 // --- data tables: one primary key per table ---------------------------------
 // From the domain review (user, 2026-08-12). The flags claimed two to four

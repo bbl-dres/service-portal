@@ -55,7 +55,16 @@
         "stuehle",
         "tische"
       ],
-      "image": "assets/images/multispace-modules/modul-1.jpg",
+      "images": [
+        {
+          "src": "assets/images/multispace-modules/einzel-arbeitsplatz-01.jpg",
+          "alt": "Einzelarbeitsplatz mit Schreibtisch, Bürostuhl, Bildschirm und akustischer Trennwand in einem offenen Bürobereich",
+          "caption": "Illustrative, nicht verbindliche Darstellung des Moduls «Einzel Arbeitsplatz».",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp generiert, 2026; keine Fotografie eines realen Standorts."
+        }
+      ],
       "swatch": "module-1"
     },
     {
@@ -89,7 +98,16 @@
         "stuehle",
         "tische"
       ],
-      "image": "assets/images/multispace-modules/modul-2.jpg",
+      "images": [
+        {
+          "src": "assets/images/multispace-modules/team-arbeitsplatz-01.jpg",
+          "alt": "Abgeschirmter Teamarbeitsplatz mit Gruppentisch, sechs Stühlen, Bildschirm und Whiteboard",
+          "caption": "Illustrative, nicht verbindliche Darstellung des Moduls «Team Arbeitsplatz».",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp generiert, 2026; keine Fotografie eines realen Standorts."
+        }
+      ],
       "swatch": "module-2"
     },
     {
@@ -115,7 +133,16 @@
         "stuehle",
         "tische"
       ],
-      "image": "assets/images/multispace-modules/modul-3.jpg",
+      "images": [
+        {
+          "src": "assets/images/multispace-modules/fokus-arbeitsplatz-01.jpg",
+          "alt": "Ruhiger, akustisch umschlossener Fokusarbeitsplatz mit Schreibtisch und Stuhl",
+          "caption": "Illustrative, nicht verbindliche Darstellung des Moduls «Fokus Arbeitsplatz».",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp generiert, 2026; keine Fotografie eines realen Standorts."
+        }
+      ],
       "swatch": "module-3"
     },
     {
@@ -173,7 +200,16 @@
         "stuehle",
         "tische"
       ],
-      "image": "assets/images/multispace-modules/modul-4.jpg",
+      "images": [
+        {
+          "src": "assets/images/multispace-modules/formelle-sitzungen-01.jpg",
+          "alt": "Geschlossener Sitzungsraum mit Konferenztisch, acht Stühlen, Bildschirm und Whiteboard",
+          "caption": "Illustrative, nicht verbindliche Darstellung des Moduls «Formelle Sitzungen».",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp generiert, 2026; keine Fotografie eines realen Standorts."
+        }
+      ],
       "swatch": "module-4"
     },
     {
@@ -204,7 +240,16 @@
         "medientechnik",
         "sichtschutz"
       ],
-      "image": "assets/images/multispace-modules/modul-5.jpg",
+      "images": [
+        {
+          "src": "assets/images/multispace-modules/telefon-videokonferenzbox-01.jpg",
+          "alt": "Kompakte Telefon- und Videokonferenzbox mit Sitzplatz, Tisch und Bildschirm",
+          "caption": "Illustrative, nicht verbindliche Darstellung des Moduls «Telefon- / Videokonferenzbox».",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp generiert, 2026; keine Fotografie eines realen Standorts."
+        }
+      ],
       "swatch": "module-5"
     },
     {
@@ -248,7 +293,16 @@
         "stuehle",
         "tische"
       ],
-      "image": "assets/images/multispace-modules/modul-6.jpg",
+      "images": [
+        {
+          "src": "assets/images/multispace-modules/informelle-sitzungen-01.jpg",
+          "alt": "Informelle Besprechungszone mit Lounge-Sitzgruppe und kleinem Tisch in einer Nische",
+          "caption": "Illustrative, nicht verbindliche Darstellung des Moduls «Informelle Sitzungen».",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp generiert, 2026; keine Fotografie eines realen Standorts."
+        }
+      ],
       "swatch": "module-6"
     },
     {
@@ -276,7 +330,16 @@
       ],
       "figuresVerified": false,
       "figuresNote": "Flächenrichtmass und Personenzahl sind für die Rückmeldung gesetzt und noch nicht gegen das Handbuch geprüft.",
-      "image": "assets/images/multispace-modules/modul-7.jpg",
+      "images": [
+        {
+          "src": "assets/images/multispace-modules/coffee-point-01.jpg",
+          "alt": "Offener Coffee Point mit Stehtisch, Sitzgelegenheiten und Kaffeestation",
+          "caption": "Illustrative, nicht verbindliche Darstellung des Moduls «Coffee Point».",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp generiert, 2026; keine Fotografie eines realen Standorts."
+        }
+      ],
       "swatch": "module-7"
     },
     {
@@ -314,7 +377,16 @@
         "stuehle",
         "tische"
       ],
-      "image": "assets/images/multispace-modules/modul-8.jpg",
+      "images": [
+        {
+          "src": "assets/images/multispace-modules/interaktive-sitzungen-01.jpg",
+          "alt": "Flexibler Kreativ- und Veranstaltungsraum mit beweglichen Tischen, Stühlen, Bildschirm und Whiteboards",
+          "caption": "Illustrative, nicht verbindliche Darstellung des Moduls «Interaktive Sitzungen».",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp generiert, 2026; keine Fotografie eines realen Standorts."
+        }
+      ],
       "swatch": "module-8"
     },
     {
@@ -344,7 +416,16 @@
       "equipment": [
         "schraenke"
       ],
-      "image": "assets/images/multispace-modules/modul-9.jpg",
+      "images": [
+        {
+          "src": "assets/images/multispace-modules/team-ablage-01.jpg",
+          "alt": "Offene und geschlossene Teamablagen als raumbildende Regale zwischen Arbeitsbereichen",
+          "caption": "Illustrative, nicht verbindliche Darstellung des Moduls «Team Ablage».",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp generiert, 2026; keine Fotografie eines realen Standorts."
+        }
+      ],
       "swatch": "module-9"
     },
     {
@@ -374,7 +455,16 @@
       "equipment": [
         "schraenke"
       ],
-      "image": "assets/images/multispace-modules/modul-10.jpg",
+      "images": [
+        {
+          "src": "assets/images/multispace-modules/locker-garderoben-01.jpg",
+          "alt": "Eingangszone mit abschliessbaren Lockern und Garderobe",
+          "caption": "Illustrative, nicht verbindliche Darstellung des Moduls «Locker, Garderoben».",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp generiert, 2026; keine Fotografie eines realen Standorts."
+        }
+      ],
       "swatch": "module-10"
     },
     {
@@ -398,9 +488,18 @@
       "equipment": [
         "korpus"
       ],
-      "image": "assets/images/multispace-modules/modul-11.jpg",
+      "images": [
+        {
+          "src": "assets/images/multispace-modules/service-funktionen-01.jpg",
+          "alt": "Servicezone mit Drucker, Ablagen und getrennten Sammelbehältern",
+          "caption": "Illustrative, nicht verbindliche Darstellung des Moduls «Service Funktionen».",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp generiert, 2026; keine Fotografie eines realen Standorts."
+        }
+      ],
       "swatch": "module-11"
     }
   ],
-  "imagesNote": "Ein Bild je Modul unter assets/images/multispace-modules/. Fehlt die Datei, zeigt die Karte eine Farbfläche in der Modulfarbe aus js/floorplan-editor/colors.js."
+  "imagesNote": "Die geordnete Liste `images` enthält illustrative Modulbilder; der erste Eintrag ist das Hero-Bild. Eine leere Liste erzeugt eine kompakte, bildlose Darstellung ohne Medienanfrage; schlägt ein angefordertes Bild fehl, kann die Modulfarbe im Bildbereich sichtbar bleiben."
 }

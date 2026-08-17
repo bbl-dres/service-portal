@@ -11,7 +11,8 @@ const ROUTES = [
   { name: 'knowledge/guides',                   url: `${APP_BASE}/knowledge/guides`,            items: 1 },
   // The downloads moved to their own page when the area became a drill-down branch: the
   // overview is a hub of cards now, and a hub carries no files.
-  { name: 'knowledge/workspace/downloads',      url: `${APP_BASE}/knowledge/workspace/downloads`, items: 1 },
+  { name: 'knowledge/workspace/downloads',      url: `${APP_BASE}/knowledge/workspace/downloads`,
+    items: 10, exactItems: true, workspaceDownloads: true },
   { name: 'digitalisation/strategy',            url: `${APP_BASE}/data/digitalisation/strategy`, items: 2 },
   { name: 'applications/property inventory',   url: `${APP_BASE}/applications/liegenschaften-inventar`, items: 1, mailto: true, hero: true },
   { name: 'applications/superb (SAP ERP)',     url: `${APP_BASE}/applications/superb`, items: 2, mailto: true, hero: true, expectedTitle: 'ERP SAP (Supportprozesse)' },
@@ -38,6 +39,16 @@ const PROBE = `(async () => {
     headingJumps: jumps,
     heroRatio: heroMedia ? getComputedStyle(heroMedia).aspectRatio : '',
     mailto: !!document.querySelector('a[href^="mailto:"]'),
+    anchorSections: [...document.querySelectorAll('#main-content .anchor-section')].map(section => ({
+      id: section.id,
+      title: section.querySelector(':scope > h2')?.textContent.trim() || '',
+      directList: !!section.querySelector(':scope > .download-items'),
+    })),
+    toc: [...document.querySelectorAll('#main-content .anchor-nav [data-anchor]')].map(link => ({
+      id: link.dataset.anchor || '',
+      title: link.textContent.trim(),
+    })),
+    accordions: document.querySelectorAll('#main-content .accordion').length,
   };
 })()`;
 
@@ -57,8 +68,28 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       const result = await page.evaluate(PROBE);
       check(result.h1 && !result.notFound, `renders ("${result.h1}")`);
       if (route.expectedTitle) check(result.h1 === route.expectedTitle, `uses the expected title ("${route.expectedTitle}")`);
-      if (route.items) check(result.downloadItems >= route.items, `≥${route.items} download-item(s) (got ${result.downloadItems})`);
+      if (route.items) check(route.exactItems
+        ? result.downloadItems === route.items
+        : result.downloadItems >= route.items,
+      `${route.exactItems ? '=' : '≥'}${route.items} download-item(s) (got ${result.downloadItems})`);
       if (route.items) check(result.downloadHeadings.every(tag => tag === 'H3'), 'download-item titles use the contextual h3 level');
+      if (route.workspaceDownloads) {
+        const expectedSections = [
+          ['wi-standard-vorgaben', 'Standard und Vorgaben'],
+          ['wi-cad-bausteine', 'CAD-Bausteine'],
+          ['wi-cad-werkzeuge', 'Werkzeuge für AutoCAD und Revit'],
+          ['wi-planungsvorlagen', 'Vorlagen für die Planung'],
+        ];
+        const gotSections = result.anchorSections.map(({ id, title }) => [id, title]);
+        const gotToc = result.toc.map(({ id, title }) => [id, title]);
+        check(JSON.stringify(gotSections) === JSON.stringify(expectedSections),
+          'downloads render four ordered H2 sections with stable ids');
+        check(JSON.stringify(gotToc) === JSON.stringify(expectedSections),
+          'the table of contents mirrors every download section exactly once');
+        check(result.anchorSections.every((section) => section.directList),
+          'each download H2 owns a direct download list');
+        check(result.accordions === 0, 'downloads do not reintroduce accordion groups or counts');
+      }
       check(result.headingJumps.length === 0, `unbroken heading hierarchy (${result.headingJumps.join(', ') || 'ok'})`);
       if (route.mailto) check(result.mailto === true, 'renders a contact mailto link');
       if (route.hero) check(result.heroRatio === '16 / 9', `consumer declares its hero ratio (${result.heroRatio})`);

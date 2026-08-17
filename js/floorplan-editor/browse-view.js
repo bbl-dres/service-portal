@@ -276,19 +276,19 @@ export function browseSurfaceHTML(C, entries, mode) {
 // Shared by rendering and wiring because selection and counts rebuild the tree.
 export const BROWSE_TREE = {
   levels: [
-    { key: 'country', icon: 'tree/globe', label: (value) => countryName(value) },
-    { key: 'region', icon: 'tree/map', label: (value) => value || 'Ohne Kanton' },
-    { key: 'city', icon: 'tree/map-pin', label: (value) => value || 'Ohne Ort' },
+    { key: 'country', icon: 'lucide/globe', label: (value) => countryName(value) },
+    { key: 'region', icon: 'lucide/map', label: (value) => value || 'Ohne Kanton' },
+    { key: 'city', icon: 'lucide/map-pin', label: (value) => value || 'Ohne Ort' },
   ],
   leaf: {
-    icon: () => 'tree/building',
+    icon: () => 'lucide/building',
     label: (entry) => entry.name,
     objId: (entry) => entry.id,
     sort: (left, right) => left.name.localeCompare(right.name, 'de'),
     // The new level: the floors of a building, which is what the visitor is
     // actually looking for once the right object is on screen.
     children: (entry) => entry.floors.map((floor) => ({
-      id: floor.floorId, label: floor.label, icon: 'tree/layers',
+      id: floor.floorId, label: floor.label, icon: 'lucide/layers',
     })),
   },
 };

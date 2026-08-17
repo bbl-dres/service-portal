@@ -30,6 +30,18 @@ The checker is intended only for local, non-production parser and data-quality
 testing. It does not create an authoritative plan version or professional
 approval and must not be treated as a production records workflow.
 
+## Lucide 1.31.0 icon subset
+
+The portal bundles 18 SVG icons from `lucide-static` 1.31.0 below
+[`assets/icons/lucide/`](assets/icons/lucide/). They are served from the same
+origin at runtime; the pinned upstream CDN is used only by the maintenance
+script that refreshes the checked-in files.
+
+The directory contains a machine-readable inventory with SHA-256 hashes and
+the exact upstream license text. Lucide is ISC licensed, and its license also
+retains the MIT notice for icons derived from Feather. The portal's root MIT
+license does not replace those notices.
+
 ## Bundled MapLibre glyphs (Noto Sans)
 
 MapLibre labels use the bundled `Noto Sans Regular` and `Noto Sans Bold`

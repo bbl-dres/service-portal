@@ -40,8 +40,7 @@
         "MED-004",
         "MED-005"
       ],
-      "coverMediaId": "MED-001",
-      "images": []
+      "coverMediaId": "MED-001"
     },
     {
       "exampleId": "WSE-002",
@@ -78,8 +77,7 @@
         "MED-010",
         "MED-011"
       ],
-      "coverMediaId": "MED-008",
-      "images": []
+      "coverMediaId": "MED-008"
     },
     {
       "exampleId": "WSE-003",
@@ -116,8 +114,7 @@
         "MED-079",
         "MED-080"
       ],
-      "coverMediaId": "MED-077",
-      "images": []
+      "coverMediaId": "MED-077"
     },
     {
       "exampleId": "WSE-004",
@@ -154,9 +151,7 @@
         "MED-060",
         "MED-061"
       ],
-      "coverMediaId": "MED-058",
-      "images": []
+      "coverMediaId": "MED-058"
     }
-  ],
-  "images": "Eigene Aufnahmen einer Fläche liegen in assets/images/workspace-examples/ und stehen je Beispiel unter `images`. Fehlen sie, zeigt die Seite die über `mediaIds` verwiesenen Assets der Mediendatenbank samt Lizenzangabe."
+  ]
 }

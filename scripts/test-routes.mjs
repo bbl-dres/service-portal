@@ -23,6 +23,14 @@ const ROUTES = [
   ['/knowledge/procurement',        'Beschaffung'],
   ['/knowledge/accommodation',      'Unterbringung'],
   ['/knowledge/workspace',          'Arbeitsplätze gestalten'],
+  ['/knowledge/workspace/multispace', 'Multispace-Handbuch'],
+  ['/knowledge/workspace/multispace/modul-1', '1 · Einzel Arbeitsplatz'],
+  ['/knowledge/workspace/multispace/modul-01', 'Seite nicht gefunden'],
+  ['/knowledge/workspace/inspiration', 'Planungsbeispiele'],
+  ['/knowledge/workspace/kreislauf', 'Kreislaufwirtschaft'],
+  ['/knowledge/workspace/downloads', 'Downloads und Vorlagen'],
+  ['/knowledge/workspace/inspiration/gibt-es-nicht', 'Seite nicht gefunden'],
+  ['/knowledge/workspace/inspiration/bundeshaus-west-2og-stabsstelle/extra', 'Seite nicht gefunden'],
   ['/knowledge/publishing',         'Publikationen'],
   ['/knowledge/guides',             'Anleitungen und Schulungen'],
   // /knowledge/processes is no longer a page — it redirects to the architecture
@@ -102,6 +110,23 @@ try {
     if (wantH1 && !got.h1.startsWith(wantH1)) fails.push(`${route} -> h1 "${got.h1}", expected "${wantH1}..."`);
     else console.log(`  ok  ${route.padEnd(34)} h1="${got.h1.slice(0, 44)}"`);
   }
+
+  // Published inspiration detail URLs remain useful compatibility links, but the
+  // refactored destination is the first scoped gallery image on the catalogue.
+  const legacyExample = '/knowledge/workspace/inspiration/bundeshaus-west-2og-stabsstelle';
+  const canonicalExample = '#/knowledge/workspace/inspiration?bild=WSE-001%3AMED-001';
+  await page.evaluate(`location.hash = ${JSON.stringify(`#${legacyExample}`)}`);
+  const legacyNormalised = await page.waitFor(`location.hash === ${JSON.stringify(canonicalExample)}
+    && document.querySelector('#main-content h1')?.textContent.trim() === 'Planungsbeispiele'
+    && document.querySelector('.pf-lightbox[role="dialog"][aria-modal="true"]')`,
+  { timeout: 7000 });
+  if (!legacyNormalised) {
+    const actual = await page.evaluate('location.hash');
+    fails.push(`legacy inspiration example -> "${actual}", expected "${canonicalExample}" with gallery`);
+  } else {
+    console.log(`  ok  ${legacyExample.padEnd(34)} -> ${canonicalExample}`);
+  }
+  await page.evaluate(`document.querySelector('.pf-lightbox [data-act="close"]')?.click()`);
 
   await page.evaluate(`location.hash = '#/search?q=Raumbedarf-Antrag'`);
   await page.waitFor(`document.querySelector('a[href="#/app/process-docs?def=raumbedarf"]')`);
