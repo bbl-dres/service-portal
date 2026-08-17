@@ -21,9 +21,9 @@ const handbookRoute = '#/knowledge/workspace/multispace';
 const workspaceRoute = '#/knowledge/workspace';
 const inspirationRoute = '#/knowledge/workspace/inspiration';
 const missingProbe = 'assets/images/multispace-modules/__missing-image-regression-probe__.jpg';
-const scopedGalleryId = (example, mediaId) => `${example.exampleId}:${mediaId}`;
-const galleryHref = (example, mediaId = example.coverMediaId) =>
-  `${inspirationRoute}?bild=${encodeURIComponent(scopedGalleryId(example, mediaId))}`;
+const scopedGalleryId = (example, imageId) => `${example.exampleId}:${imageId}`;
+const galleryHref = (example, imageId = example.contextMediaId) =>
+  `${inspirationRoute}?bild=${encodeURIComponent(scopedGalleryId(example, imageId))}`;
 
 let failures = 0;
 const runStartedAt = Date.now();
@@ -131,6 +131,39 @@ const imageStatesFrom = async (page, holderExpression) => JSON.parse(await page.
 const imageStates = (page, holderSelector) => imageStatesFrom(page,
   `[...document.querySelectorAll(${JSON.stringify(holderSelector)})]`);
 
+const galleryFrameState = async (page) => JSON.parse(await page.evaluate(`(async () => {
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const image = document.querySelector('.pf-lightbox__img');
+  if (image && !image.complete) {
+    await Promise.race([
+      new Promise((resolve) => {
+        image.addEventListener('load', resolve, { once: true });
+        image.addEventListener('error', resolve, { once: true });
+      }),
+      wait(4000),
+    ]);
+  }
+  const current = image?.currentSrc || image?.src || '';
+  let resource = null;
+  try { resource = current ? new URL(current, location.href) : null; } catch { resource = null; }
+  const download = document.querySelector('.pf-lightbox [data-el="download"]');
+  const mediaLink = document.querySelector('.pf-lightbox [data-el="metalink"]');
+  const share = document.querySelector('.pf-lightbox [data-el="share"]');
+  return JSON.stringify({
+    loaded: !!image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0,
+    src: image?.getAttribute('src') || '',
+    path: resource?.pathname || '',
+    sameOrigin: !!resource && resource.origin === location.origin,
+    alt: image?.getAttribute('alt') || '',
+    shareLabel: share?.getAttribute('aria-label') || '',
+    shareTitle: share?.getAttribute('title') || '',
+    downloadHidden: download?.hidden ?? false,
+    downloadHref: download?.getAttribute('href') || '',
+    mediaLinkHidden: mediaLink?.hidden ?? false,
+    mediaLinkHref: mediaLink?.getAttribute('href') || '',
+  });
+})()`));
+
 const planningPreview = async (page) => {
   const holderExpression = `(() => {
     const heading = [...document.querySelectorAll('#main-content h2')]
@@ -170,11 +203,15 @@ const layoutState = async (page) => JSON.parse(await page.evaluate(`(() => {
 check(modules.length === 11, 'the source fixture exposes the eleven canonical modules',
   `${modules.length} modules`);
 check(canonicalExamples.length === 4
-  && canonicalExamples.every((example) => example.mediaIds?.length === 4
-    && example.mediaIds[0] === example.coverMediaId
-    && example.mediaIds.every((mediaId) => mediaById.has(mediaId))),
-'each canonical planning example owns four ordered media records led by its cover',
-canonicalExamples.map((example) => `${example.exampleId}:${example.mediaIds?.join(',')}`).join(' | '));
+  && canonicalExamples.every((example) => example.images?.length === 3
+    && example.referenceMediaIds?.includes(example.contextMediaId)
+    && mediaById.has(example.contextMediaId)
+    && example.images.every((image) => image.kind === 'generated-visualisation'
+      && image.imageId && image.src && image.alt && image.caption
+      && image.credit && image.license && image.provenance)),
+'each planning example owns one context photo and three complete generated visualisations',
+canonicalExamples.map((example) => `${example.exampleId}:${example.contextMediaId} + ${example.images
+  ?.map((image) => image.imageId).join(',')}`).join(' | '));
 
 const cdp = await launch();
 let page;
@@ -191,8 +228,11 @@ try {
   const expectedTitles = modules.map((module) => `Modul ${module.nr} · ${module.name}`);
   const expectedPreviewRoutes = previewExamples
     .map((example) => galleryHref(example));
+  const expectedPreviewSources = previewExamples
+    .map((example) => mediaById.get(example.contextMediaId)?.file || '');
   const expectedPreviewBadges = previewExamples
-    .map((example) => [example.scope, ...(example.modules || []).map((number) => `M${number}`)]);
+    .map((example) => [example.scope, 'Standortfoto',
+      ...(example.modules || []).map((number) => `M${number}`)]);
   const cards = JSON.parse(await page.evaluate(`JSON.stringify(
     [...document.querySelectorAll('#main-content .wsm-module-card')].map((card) => ({
       href: card.querySelector('.card__link')?.getAttribute('href') || '',
@@ -235,12 +275,14 @@ try {
   'the handbook previews the three newest canonical planning examples',
   examples.hrefs.join(' | '));
   check(JSON.stringify(examples.badges) === JSON.stringify(expectedPreviewBadges),
-    'preview cards expose their exact scope and module sequence',
+    'preview cards expose their context-photo status, scope, and module sequence',
     examples.badges.map((badges) => badges.join(' ')).join(' | '));
   check(examples.pictures.length === 3
-    && examples.pictures.every((image) => image.loaded && image.sameOrigin
-      && image.src.startsWith('assets/images/')),
-    'the three canonical planning-example cards render decoded local images',
+    && examples.pictures.every((image, index) => image.loaded && image.sameOrigin
+      && image.loading === 'lazy' && image.alt === ''
+      && image.src === expectedPreviewSources[index]
+      && image.src.startsWith('assets/images/buildings/')),
+    'the three canonical planning-example cards render their decoded context photos',
     `${examples.pictures.filter((image) => image.loaded).length}/${examples.pictures.length} decoded`);
   check(examples.allHref === inspirationRoute,
     'the separate all-examples link owns the complete inspiration catalogue',
@@ -333,6 +375,9 @@ try {
   await navigate(page, inspirationRoute, 'Planungsbeispiele');
   reportPhase('Inspiration galleries');
   const expectedFullExampleRoutes = canonicalExamples.map((example) => galleryHref(example));
+  const expectedCoverSources = canonicalExamples
+    .map((example) => mediaById.get(example.contextMediaId)?.file || '');
+  const exampleCardImages = await imageStates(page, '.wsm-example__photo');
   const galleryCards = JSON.parse(await page.evaluate(`JSON.stringify(
     [...document.querySelectorAll('#main-content .wsm-example-card')].map((card) => ({
       href: card.querySelector('.card__link')?.getAttribute('href') || '',
@@ -346,15 +391,39 @@ try {
       === JSON.stringify(expectedFullExampleRoutes),
   'all four example cards expose canonical scoped cover-image queries',
   galleryCards.map((card) => card.href).join(' | '));
-  check(galleryCards.every((card) => card.dialog === 'dialog' && card.photo),
-    'each planning example is a photo-backed dialog launcher');
+  check(galleryCards.every((card) => card.dialog === 'dialog' && card.photo
+    && card.badges[1] === 'Standortfoto'),
+  'each planning example is an explicitly labelled context-photo dialog launcher');
+  check(exampleCardImages.length === 4
+    && exampleCardImages.every((image, index) => image.loaded && image.sameOrigin
+      && image.loading === 'lazy' && image.alt === ''
+      && image.src === expectedCoverSources[index]
+      && image.src.startsWith('assets/images/buildings/')),
+  'all four cards lazily decode their retained building-context photo',
+  exampleCardImages.map((image) => image.src || '(missing)').join(' | '));
+  const inspirationContract = JSON.parse(await page.evaluate(`JSON.stringify({
+    contextLabel: /reales Standortfoto/.test(
+      document.querySelector('#main-content')?.textContent || ''),
+    disclaimer: /illustrative, nicht verbindliche Visualisierungen/.test(
+      document.querySelector('#main-content')?.textContent || ''),
+    mediaRequests: performance.getEntriesByType('resource')
+      .filter((entry) => {
+        try { return new URL(entry.name).pathname.endsWith('/data/media.json'); }
+        catch { return false; }
+      }).length,
+  })`));
+  check(inspirationContract.contextLabel && inspirationContract.disclaimer,
+    'the inspiration page distinguishes the real context photo from non-binding visualisations');
+  check(inspirationContract.mediaRequests === 1,
+    'workspace knowledge requests the media registry exactly once for context photography',
+    `${inspirationContract.mediaRequests} request(s)`);
 
   const coverClick = await clickCenter(
     page, '#main-content .wsm-example-card:first-child .wsm-example__photo',
   );
   const coverOpened = await page.waitFor(`document.querySelector('.pf-lightbox[role="dialog"]')
     && new URLSearchParams(location.hash.split('?')[1] || '').get('bild')
-      === ${JSON.stringify(scopedGalleryId(canonicalExamples[0], canonicalExamples[0].coverMediaId))}`,
+      === ${JSON.stringify(scopedGalleryId(canonicalExamples[0], canonicalExamples[0].contextMediaId))}`,
   { timeout: 7000 });
   check(coverClick.found && coverClick.hitHref === expectedFullExampleRoutes[0] && coverOpened,
     'clicking a card cover opens its scoped gallery without leaving the catalogue',
@@ -364,72 +433,112 @@ try {
 
   for (let exampleIndex = 0; exampleIndex < canonicalExamples.length; exampleIndex++) {
     const example = canonicalExamples[exampleIndex];
+    const context = mediaById.get(example.contextMediaId);
     const linkSelector = `#main-content .wsm-example-card:nth-child(${exampleIndex + 1}) .card__link`;
     await page.evaluate(`document.querySelector(${JSON.stringify(linkSelector)})?.focus()`);
     await press(cdp, page, 'Enter', 'Enter', 13);
     const opened = await page.waitFor(`document.querySelector('.pf-lightbox[role="dialog"][aria-modal="true"]')
       && new URLSearchParams(location.hash.split('?')[1] || '').get('bild')
-        === ${JSON.stringify(scopedGalleryId(example, example.mediaIds[0]))}`,
+        === ${JSON.stringify(scopedGalleryId(example, example.contextMediaId))}`,
     { timeout: 7000 });
     check(opened, `Enter opens ${example.exampleId} as a modal gallery`);
 
     const sequence = [await page.evaluate(
       `new URLSearchParams(location.hash.split('?')[1] || '').get('bild') || ''`)];
+    const firstFrame = await galleryFrameState(page);
+    check(firstFrame.loaded && firstFrame.sameOrigin
+      && firstFrame.src === context.file
+      && firstFrame.alt === context.title,
+    `${example.exampleId} opens its decoded context photo first`,
+    `${firstFrame.src || '(missing)'} / ${firstFrame.alt || '(missing alt)'}`);
+    const contextDownloadable = /^(?:CC0(?: 1\.0)?|CC BY(?:-SA)? \d(?:\.\d)?)$/i
+      .test(String(context.license || '').trim());
+    check(firstFrame.shareLabel === 'Bild teilen'
+      && firstFrame.shareTitle === 'Teilen'
+      && firstFrame.downloadHidden === !contextDownloadable
+      && Boolean(firstFrame.downloadHref) === contextDownloadable
+      && !firstFrame.mediaLinkHidden
+      && firstFrame.mediaLinkHref === `#/app/media-library/${context.mediaId}`,
+    `${example.exampleId} retains the context photo's media link and rights policy`,
+    `${firstFrame.shareLabel} / download ${firstFrame.downloadHidden ? 'hidden' : 'visible'}`);
+
     if (exampleIndex === 0) {
-      const freeAction = JSON.parse(await page.evaluate(`(() => {
-        const link = document.querySelector('.pf-lightbox [data-el="download"]');
-        let resource = null;
-        try { resource = link?.href ? new URL(link.href) : null; } catch { resource = null; }
-        return JSON.stringify({
-          visible: !!link && !link.hidden,
-          downloadable: link?.hasAttribute('download') || false,
-          sameOrigin: resource?.origin === location.origin,
+      await page.evaluate(`document.querySelector('.pf-lightbox [data-act="meta"]')?.click()`);
+      const metadata = JSON.parse(await page.evaluate(`(() => {
+        const panel = document.querySelector('.pf-lightbox__meta');
+        const values = {};
+        panel?.querySelectorAll('dt').forEach((term) => {
+          values[term.textContent.trim()] = term.nextElementSibling?.textContent.trim() || '';
         });
+        return JSON.stringify({ hidden: panel?.hidden ?? true, values });
       })()`));
-      check(freeAction.visible && freeAction.downloadable && freeAction.sameOrigin,
-        'the reusable CC BY-SA cover retains a same-origin download action');
+      check(!metadata.hidden
+        && metadata.values.Bildstatus === 'Standortfoto · keine Abbildung des Raumkonzepts'
+        && metadata.values['Medien-ID'] === context.mediaId
+        && metadata.values['Fotograf:in'] === context.photographer
+        && metadata.values.Lizenz === context.license,
+      'the gallery distinguishes and attributes the retained context photograph',
+      metadata.values.Bildstatus || '(missing image status)');
     }
 
-    for (let imageIndex = 1; imageIndex < example.mediaIds.length; imageIndex++) {
-      const expectedId = scopedGalleryId(example, example.mediaIds[imageIndex]);
+    for (let imageIndex = 0; imageIndex < example.images.length; imageIndex++) {
+      const expectedImage = example.images[imageIndex];
+      const expectedId = scopedGalleryId(example, expectedImage.imageId);
       await press(cdp, page, 'ArrowRight', 'ArrowRight', 39);
       await page.waitFor(`new URLSearchParams(location.hash.split('?')[1] || '').get('bild')
         === ${JSON.stringify(expectedId)}`);
       sequence.push(await page.evaluate(
         `new URLSearchParams(location.hash.split('?')[1] || '').get('bild') || ''`));
+      const frame = await galleryFrameState(page);
+      check(frame.loaded && frame.sameOrigin
+        && frame.src === expectedImage.src && frame.alt === expectedImage.alt
+        && frame.downloadHidden && !frame.downloadHref
+        && frame.mediaLinkHidden && !frame.mediaLinkHref
+        && frame.shareLabel === 'Visualisierung teilen'
+        && frame.shareTitle === 'Visualisierung teilen',
+      `${example.exampleId} visualisation ${imageIndex + 1} decodes in order without file or media actions`,
+      frame.src || '(missing)');
 
-      if (exampleIndex === 0 && imageIndex === 1) {
-        const restricted = mediaById.get(example.mediaIds[imageIndex]);
-        await page.evaluate(`document.querySelector('.pf-lightbox [data-act="meta"]')?.click()`);
+      if (exampleIndex === 0 && imageIndex === 0) {
+        const hero = expectedImage;
         const metadata = JSON.parse(await page.evaluate(`(() => {
           const panel = document.querySelector('.pf-lightbox__meta');
           const values = {};
           panel?.querySelectorAll('dt').forEach((term) => {
             values[term.textContent.trim()] = term.nextElementSibling?.textContent.trim() || '';
           });
-          const download = document.querySelector('.pf-lightbox [data-el="download"]');
-          return JSON.stringify({
-            hidden: panel?.hidden ?? true,
-            values,
-            downloadHidden: download?.hidden ?? true,
-            downloadHref: download?.getAttribute('href') || '',
-          });
+          return JSON.stringify({ hidden: panel?.hidden ?? true, values });
         })()`));
         check(!metadata.hidden
-          && metadata.values['Lizenz'] === restricted.license
-          && metadata.values['Fotograf:in'] === restricted.photographer
-          && metadata.values.Copyright === restricted.copyright
-          && metadata.values.Quelle === restricted.sourceUrl,
-        'the gallery exposes complete media attribution and licence metadata',
-        metadata.values['Lizenz'] || '(missing licence)');
-        check(metadata.downloadHidden && !metadata.downloadHref,
-          'non-free BBL media suppresses the download action');
+          && metadata.values.Bildstatus === 'Illustrative, nicht verbindliche Visualisierung'
+          && metadata.values.Szenariojahr === String(example.completed)
+          && metadata.values.Darstellung === hero.title
+          && metadata.values['Bild-ID'] === hero.imageId
+          && metadata.values.Bildlegende === hero.caption
+          && metadata.values.Urheberschaft === hero.credit
+          && metadata.values.Lizenz === hero.license
+          && metadata.values.Provenienz === hero.provenance,
+        'the gallery exposes complete generated-image status and provenance',
+        metadata.values.Bildstatus || '(missing image status)');
+
+        await page.evaluate(`document.querySelector('.pf-lightbox [data-act="share"]')?.click()`);
+        const shareModal = JSON.parse(await page.evaluate(`JSON.stringify({
+          title: document.querySelector('.modal--xs .modal__title')?.textContent.trim() || '',
+          gallery: !!document.querySelector('.pf-lightbox'),
+        })`));
+        check(shareModal.title === 'Visualisierung teilen' && shareModal.gallery,
+          'the share dialog calls generated imagery a visualisation, not an Aufnahme',
+          shareModal.title || '(missing title)');
+        await page.evaluate(`document.querySelector('.modal--xs [data-modal-close]')?.click()`);
       }
     }
-    const expectedSequence = example.mediaIds
-      .map((mediaId) => scopedGalleryId(example, mediaId));
+    const expectedSequence = [
+      scopedGalleryId(example, example.contextMediaId),
+      ...example.images.map((image) => scopedGalleryId(example, image.imageId)),
+    ];
     check(JSON.stringify(sequence) === JSON.stringify(expectedSequence),
-      `${example.exampleId} preserves its four-image fixture order`, sequence.join(' | '));
+      `${example.exampleId} preserves context-first then three-visualisation order`,
+      sequence.join(' | '));
 
     await press(cdp, page, 'Escape', 'Escape', 27);
     await page.waitFor(`!document.querySelector('.pf-lightbox')`);
@@ -446,20 +555,20 @@ try {
   }
 
   const directExample = canonicalExamples[0];
-  const directMediaId = directExample.mediaIds[2];
-  const directHash = galleryHref(directExample, directMediaId);
+  const directImageId = directExample.images[2].imageId;
+  const directHash = galleryHref(directExample, directImageId);
   await page.evaluate(`location.hash = ${JSON.stringify(directHash)}`);
   const directOpened = await page.waitFor(`location.hash === ${JSON.stringify(directHash)}
     && document.querySelector('.pf-lightbox [data-act="close"]') === document.activeElement`,
   { timeout: 7000 });
   const directSub = await page.evaluate(
     `document.querySelector('.pf-lightbox__sub')?.textContent.trim() || ''`);
-  check(directOpened && /Bild 3 von 4/.test(directSub),
+  check(directOpened && /Bild 4 von 4/.test(directSub),
     'a direct image deep link restores the requested gallery position and dialog focus', directSub);
   await press(cdp, page, 'ArrowLeft', 'ArrowLeft', 37);
   const previousId = await page.evaluate(
     `new URLSearchParams(location.hash.split('?')[1] || '').get('bild') || ''`);
-  check(previousId === scopedGalleryId(directExample, directExample.mediaIds[1]),
+  check(previousId === scopedGalleryId(directExample, directExample.images[1].imageId),
     'ArrowLeft updates the shareable query to the previous scoped image', previousId);
   await press(cdp, page, 'Escape', 'Escape', 27);
   const directClosed = JSON.parse(await page.evaluate(`JSON.stringify({
@@ -468,6 +577,21 @@ try {
   })`));
   check(directClosed.hash === inspirationRoute && directClosed.h1Focused,
     'closing a restored deep link returns focus to the routed page heading');
+
+  const formerMediaId = directExample.referenceMediaIds
+    .find((mediaId) => mediaId !== directExample.contextMediaId);
+  const formerMediaHash = galleryHref(directExample, formerMediaId);
+  const canonicalCoverHash = galleryHref(directExample);
+  await page.evaluate(`location.hash = ${JSON.stringify(formerMediaHash)}`);
+  const mediaAliasOpened = await page.waitFor(`location.hash === ${JSON.stringify(canonicalCoverHash)}
+    && document.querySelector('.pf-lightbox[role="dialog"][aria-modal="true"]')`,
+  { timeout: 7000 });
+  const mediaAliasFrame = await galleryFrameState(page);
+  check(mediaAliasOpened && mediaAliasFrame.loaded
+    && mediaAliasFrame.src === mediaById.get(directExample.contextMediaId).file,
+  'a recognised legacy WSE:MED query canonicalises to the retained context photo',
+  `${await page.evaluate('location.hash')} / ${mediaAliasFrame.src || '(missing)'}`);
+  await press(cdp, page, 'Escape', 'Escape', 27);
 
   const legacyHash = `${inspirationRoute}/${directExample.slug}`;
   const legacyTarget = galleryHref(directExample);
@@ -487,7 +611,7 @@ try {
 
   freshGalleryPage = await openPage(cdp,
     `${APP_BASE}/knowledge/workspace/inspiration?bild=${encodeURIComponent(
-      scopedGalleryId(directExample, directExample.coverMediaId),
+      scopedGalleryId(directExample, directExample.contextMediaId),
     )}`);
   const freshOpened = await freshGalleryPage.waitFor(
     `document.querySelector('.pf-lightbox[role="dialog"][aria-modal="true"]')`,

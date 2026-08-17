@@ -87,20 +87,160 @@ check(!core.available('users'), 'duplicate user identifiers are rejected');
 await core.ensure('users');
 check(core.available('users') && core.user('user-1'), 'a corrected user registry succeeds on retry');
 
+const workspaceExampleImage = {
+  imageId: 'WSE-TEST-01',
+  kind: 'generated-visualisation',
+  src: 'assets/images/workspace-examples/example-one-01.jpg',
+  title: 'Example visualisation',
+  alt: 'Illustrative workspace example',
+  caption: 'Illustrative, non-binding visualisation.',
+  credit: 'OpenAI, 2026',
+  license: 'Prototype use',
+  provenance: 'Generated with OpenAI for the prototype; not a photograph.',
+};
+const workspaceExampleRecord = {
+  exampleId: 'example-1',
+  slug: 'example-one',
+  contextMediaId: 'MED-001',
+  images: [workspaceExampleImage],
+  referenceMediaIds: ['MED-001'],
+};
 queue('data/workspace-examples.json', {
   examples: [
-    { exampleId: 'duplicate', slug: 'first' },
-    { exampleId: 'duplicate', slug: 'second' },
+    workspaceExampleRecord,
+    {
+      ...workspaceExampleRecord,
+      slug: 'example-two',
+      images: [{
+        ...workspaceExampleImage,
+        imageId: 'WSE-TEST-02',
+        src: 'assets/images/workspace-examples/example-two-01.jpg',
+      }],
+    },
   ],
 }, {
-  examples: [{ exampleId: 'example-1', slug: 'example-one' }],
+  examples: [null],
+}, {
+  examples: [{ ...workspaceExampleRecord, images: [] }],
+}, {
+  examples: [{ ...workspaceExampleRecord, contextMediaId: undefined }],
+}, {
+  examples: [{ ...workspaceExampleRecord, contextMediaId: 'med-001' }],
+}, {
+  examples: [{ ...workspaceExampleRecord, contextMediaId: 'MED-002' }],
+}, {
+  examples: [{
+    ...workspaceExampleRecord,
+    mediaIds: ['MED-001'],
+    coverMediaId: 'MED-001',
+  }],
+}, {
+  examples: [{
+    ...workspaceExampleRecord,
+    images: [{ ...workspaceExampleImage, provenance: undefined }],
+  }],
+}, {
+  examples: [{
+    ...workspaceExampleRecord,
+    images: [{ ...workspaceExampleImage, extra: 'not part of the contract' }],
+  }],
+}, {
+  examples: [{
+    ...workspaceExampleRecord,
+    images: [{
+      ...workspaceExampleImage,
+      src: 'assets/images/workspace-examples/../secret.jpg',
+    }],
+  }],
+}, {
+  examples: [{
+    ...workspaceExampleRecord,
+    images: [{ ...workspaceExampleImage, kind: 'photo' }],
+  }],
+}, {
+  examples: [{
+    ...workspaceExampleRecord,
+    images: [{ ...workspaceExampleImage, src: 'assets/images/workspace-examples/example-one.jpeg' }],
+  }],
+}, {
+  examples: [{
+    ...workspaceExampleRecord,
+    images: [
+      workspaceExampleImage,
+      {
+        ...workspaceExampleImage,
+        src: 'assets/images/workspace-examples/example-one-02.jpg',
+      },
+    ],
+  }],
+}, {
+  examples: [{
+    ...workspaceExampleRecord,
+    images: [
+      workspaceExampleImage,
+      {
+        ...workspaceExampleImage,
+        imageId: 'WSE-TEST-02',
+        src: 'assets/images/workspace-examples/EXAMPLE-ONE-01.JPG',
+      },
+    ],
+  }],
+}, {
+  examples: [{ ...workspaceExampleRecord, referenceMediaIds: ['MED-001', 'MED-001'] }],
+}, {
+  examples: [{ ...workspaceExampleRecord, referenceMediaIds: ['med-001'] }],
+}, {
+  examples: [{
+    ...workspaceExampleRecord,
+    images: [
+      workspaceExampleImage,
+      {
+        ...workspaceExampleImage,
+        imageId: 'WSE-TEST-02',
+        src: 'assets/images/workspace-examples/example-one-02.jpg',
+        title: 'Second example visualisation',
+      },
+    ],
+  }],
 });
 await core.ensure('workspaceExamples');
 check(!core.available('workspaceExamples'), 'duplicate nested workspace-example IDs are rejected');
 await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'primitive workspace-example records fail closed without throwing');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'workspace examples require a non-empty image collection');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'workspace examples require a context media identifier');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'workspace-example context media uses a canonical MED identifier');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'workspace-example context media belongs to its legacy references');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'retired workspace-example media cover fields are rejected');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'incomplete workspace-example image metadata is rejected');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'workspace-example images reject fields outside the exact contract');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'workspace-example images cannot escape their local asset directory');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'workspace-example images declare their generated visualisation kind');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'workspace-example images use the canonical .jpg extension');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'workspace-example image IDs are unique');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'workspace-example image paths are unique regardless of case');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'workspace-example media references are duplicate-free');
+await core.ensure('workspaceExamples');
+check(!core.available('workspaceExamples'), 'workspace-example media references use canonical MED identifiers');
+await core.ensure('workspaceExamples');
 check(core.available('workspaceExamples')
-  && core.workspaceExamples().find((example) => example.slug === 'example-one')?.exampleId === 'example-1',
-  'a corrected workspace-example registry succeeds on retry');
+  && core.workspaceExamples().find((example) => example.slug === 'example-one')?.contextMediaId === 'MED-001'
+  && core.workspaceExamples().find((example) => example.slug === 'example-one')?.images
+    .map((image) => image.imageId).join('|') === 'WSE-TEST-01|WSE-TEST-02',
+  'a corrected registry preserves its context and ordered generated-image collection');
 
 const moduleRecord = {
   nr: 1,

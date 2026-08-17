@@ -1,6 +1,6 @@
 {
-  "note": "Realisierte Multispace-Flächen als Anschauungsbeispiele. Ein Beispiel ist ein AUSGEBAUTER ORT — ein Geschoss, eine Zone darin oder ein einzelner Raum — und nicht ein Gebäude; das Gebäude ist nur, wo der Ort liegt.",
-  "assets": "Bilder sind Verweise in data/media.json, damit Lizenz, Fotograf:in und Quelle beim Asset bleiben. Grundrisse sind im Prototyp als PDF-Platzhalter geführt.",
+  "note": "Plausible Multispace-Planungsszenarien an realen BBL-Gebäuden. Ein Beispiel beschreibt einen möglichen ausgebauten Ort — ein Geschoss, eine Zone darin oder einen einzelnen Raum — und nicht das Gebäude selbst. Jahreszahlen, Flächen, Arbeitsplatzangaben und weitere Fakten sind Szenariodaten des Prototyps. Jede Galerie beginnt mit einem authentischen Aussen- oder Kontextfoto des realen Gebäudes. Die folgenden Innenraumbilder sind illustrative Visualisierungen: keine Fotografien realer Innenräume, keine verifizierten Rekonstruktionen und keine freigegebenen Planungen.",
+  "assets": "contextMediaId bestimmt das Titelbild und den ersten Galerieeintrag aus data/media.json; Urheberrecht, Lizenz und Quelle bleiben beim Medienobjekt. Die geordnete Liste images enthält danach drei lokal erzeugte Konzeptvisualisierungen. referenceMediaIds bewahrt alle früher verwendeten Gebäudeaufnahmen als Kompatibilitätsreferenzen für bestehende MED-Links. Grundrisse sind im Prototyp als PDF-Platzhalter geführt.",
   "examples": [
     {
       "exampleId": "WSE-001",
@@ -34,13 +34,48 @@
       ],
       "buildingName": "Bundeshaus West",
       "address": "Bundesgasse 1, 3011 Bern",
-      "mediaIds": [
+      "contextMediaId": "MED-001",
+      "images": [
+        {
+          "imageId": "WSE-001-01",
+          "kind": "generated-visualisation",
+          "src": "assets/images/workspace-examples/bundeshaus-west-2og-stabsstelle-01.jpg",
+          "title": "Gesamtansicht der Arbeitszone",
+          "alt": "Historische Bürofläche mit offenen Tischgruppen, akustisch abgeschirmten Arbeitsplätzen und einem verglasten Sitzungsraum",
+          "caption": "Illustrative, nicht verbindliche Visualisierung der offenen Arbeitsfläche mit den Modulen M1, M3 und M4.",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp auf Grundlage der Multispace-Module M1, M2, M3, M4 und M7 sowie der Architekturreferenz MED-003 generiert, 2026; keine Fotografie eines realen Standorts, keine verifizierte Rekonstruktion und keine freigegebene Planung."
+        },
+        {
+          "imageId": "WSE-001-02",
+          "kind": "generated-visualisation",
+          "src": "assets/images/workspace-examples/bundeshaus-west-2og-stabsstelle-02.jpg",
+          "title": "Fokus- und Sitzungsbereich",
+          "alt": "Zwei akustisch abgeschirmte Fokusarbeitsplätze neben einem verglasten Sitzungsraum in einer historischen Bürofläche",
+          "caption": "Illustrative, nicht verbindliche Visualisierung der Fokus- und Sitzungsbereiche mit den Modulen M3 und M4.",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp auf Grundlage der Multispace-Module M1, M2, M3, M4 und M7 sowie der Architekturreferenz MED-003 generiert, 2026; keine Fotografie eines realen Standorts, keine verifizierte Rekonstruktion und keine freigegebene Planung."
+        },
+        {
+          "imageId": "WSE-001-03",
+          "kind": "generated-visualisation",
+          "src": "assets/images/workspace-examples/bundeshaus-west-2og-stabsstelle-03.jpg",
+          "title": "Sitzungsraum und Coffee Point",
+          "alt": "Verglaster Sitzungsraum und Coffee Point entlang einer breiten Erschliessungszone in einem historischen Verwaltungsgebäude",
+          "caption": "Illustrative, nicht verbindliche Visualisierung des Sitzungs- und Coffee-Point-Bereichs mit den Modulen M4 und M7.",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp auf Grundlage der Multispace-Module M1, M2, M3, M4 und M7 sowie der Architekturreferenz MED-003 generiert, 2026; keine Fotografie eines realen Standorts, keine verifizierte Rekonstruktion und keine freigegebene Planung."
+        }
+      ],
+      "referenceMediaIds": [
         "MED-001",
         "MED-003",
         "MED-004",
         "MED-005"
-      ],
-      "coverMediaId": "MED-001"
+      ]
     },
     {
       "exampleId": "WSE-002",
@@ -71,13 +106,48 @@
       ],
       "buildingName": "Schweizerische Botschaft Berlin",
       "address": "Otto-von-Bismarck-Allee 4A, 10557 Berlin",
-      "mediaIds": [
+      "contextMediaId": "MED-008",
+      "images": [
+        {
+          "imageId": "WSE-002-01",
+          "kind": "generated-visualisation",
+          "src": "assets/images/workspace-examples/botschaft-berlin-empfang-01.jpg",
+          "title": "Empfang und Warten",
+          "alt": "Empfangsbereich mit zwei Arbeitsplätzen hinter einer niedrigen Theke und einer Sitzgruppe für Wartende",
+          "caption": "Illustrative, nicht verbindliche Visualisierung der Empfangssituation mit den Modulen M1 und M6.",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp auf Grundlage der Multispace-Module M1, M6 und M10 sowie der Architekturreferenz MED-010 generiert, 2026; keine Fotografie eines realen Standorts, keine verifizierte Rekonstruktion und keine freigegebene Planung."
+        },
+        {
+          "imageId": "WSE-002-02",
+          "kind": "generated-visualisation",
+          "src": "assets/images/workspace-examples/botschaft-berlin-empfang-02.jpg",
+          "title": "Wartezone und Garderobe",
+          "alt": "Wartebereich mit drei Lounge-Sesseln, Garderobe und abschliessbaren Lockern nahe dem Eingang",
+          "caption": "Illustrative, nicht verbindliche Visualisierung des Warte-, Garderoben- und Lockerbereichs mit den Modulen M6 und M10.",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp auf Grundlage der Multispace-Module M1, M6 und M10 sowie der Architekturreferenz MED-010 generiert, 2026; keine Fotografie eines realen Standorts, keine verifizierte Rekonstruktion und keine freigegebene Planung."
+        },
+        {
+          "imageId": "WSE-002-03",
+          "kind": "generated-visualisation",
+          "src": "assets/images/workspace-examples/botschaft-berlin-empfang-03.jpg",
+          "title": "Arbeitsplätze hinter dem Empfang",
+          "alt": "Rückwärtiger Empfangsbereich mit zwei Schreibtischen, Stauraum und Blick in die Wartezone",
+          "caption": "Illustrative, nicht verbindliche Visualisierung der zwei Empfangsarbeitsplätze mit Modul M1.",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp auf Grundlage der Multispace-Module M1, M6 und M10 sowie der Architekturreferenz MED-010 generiert, 2026; keine Fotografie eines realen Standorts, keine verifizierte Rekonstruktion und keine freigegebene Planung."
+        }
+      ],
+      "referenceMediaIds": [
         "MED-008",
         "MED-009",
         "MED-010",
         "MED-011"
-      ],
-      "coverMediaId": "MED-008"
+      ]
     },
     {
       "exampleId": "WSE-003",
@@ -108,13 +178,48 @@
       ],
       "buildingName": "Zollanlage Brig-Glis",
       "address": "Bielstrasse 1, 3902 Glis",
-      "mediaIds": [
+      "contextMediaId": "MED-077",
+      "images": [
+        {
+          "imageId": "WSE-003-01",
+          "kind": "generated-visualisation",
+          "src": "assets/images/workspace-examples/zollanlage-brig-glis-empfang-01.jpg",
+          "title": "Schalterhalle",
+          "alt": "Helle Schalterhalle mit drei Publikumsplätzen, Wartezone, Besprechungsraum und alpinem Ausblick",
+          "caption": "Illustrative, nicht verbindliche Visualisierung der Schalterhalle mit rückwärtigem Team- und offenem Wartebereich.",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp auf Grundlage der Multispace-Module M2, M4 und M6 sowie der Architekturreferenz MED-079 generiert, 2026; keine Fotografie eines realen Standorts, keine verifizierte Rekonstruktion und keine freigegebene Planung."
+        },
+        {
+          "imageId": "WSE-003-02",
+          "kind": "generated-visualisation",
+          "src": "assets/images/workspace-examples/zollanlage-brig-glis-empfang-02.jpg",
+          "title": "Rückwärtiger Teamarbeitsplatz",
+          "alt": "Rückwärtiger Teamarbeitsbereich mit Gruppentisch, Bildschirm, Whiteboard und Sichtbezug zur Schalterhalle",
+          "caption": "Illustrative, nicht verbindliche Visualisierung des Teamarbeitsplatzes mit Modul M2.",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp auf Grundlage der Multispace-Module M2, M4 und M6 sowie der Architekturreferenz MED-079 generiert, 2026; keine Fotografie eines realen Standorts, keine verifizierte Rekonstruktion und keine freigegebene Planung."
+        },
+        {
+          "imageId": "WSE-003-03",
+          "kind": "generated-visualisation",
+          "src": "assets/images/workspace-examples/zollanlage-brig-glis-empfang-03.jpg",
+          "title": "Warten und Besprechen",
+          "alt": "Wartezone mit Sitzplätzen und verglastem Besprechungsraum neben der Schalterhalle",
+          "caption": "Illustrative, nicht verbindliche Visualisierung des Warte- und Besprechungsbereichs mit den Modulen M4 und M6.",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp auf Grundlage der Multispace-Module M2, M4 und M6 sowie der Architekturreferenz MED-079 generiert, 2026; keine Fotografie eines realen Standorts, keine verifizierte Rekonstruktion und keine freigegebene Planung."
+        }
+      ],
+      "referenceMediaIds": [
         "MED-077",
         "MED-078",
         "MED-079",
         "MED-080"
-      ],
-      "coverMediaId": "MED-077"
+      ]
     },
     {
       "exampleId": "WSE-004",
@@ -145,13 +250,48 @@
       ],
       "buildingName": "Schweizerische Botschaft Canberra",
       "address": "Melbourne Avenue 7, 2603 Canberra",
-      "mediaIds": [
+      "contextMediaId": "MED-058",
+      "images": [
+        {
+          "imageId": "WSE-004-01",
+          "kind": "generated-visualisation",
+          "src": "assets/images/workspace-examples/botschaft-canberra-besprechung-01.jpg",
+          "title": "Besprechungs- und Kreativzone",
+          "alt": "Offene Besprechungs- und Kreativzone mit verglastem Sitzungsraum, beweglichen Tischen und informeller Besprechungskoje",
+          "caption": "Illustrative, nicht verbindliche Visualisierung der Besprechungs- und Kreativzone mit den Modulen M4, M6 und M8.",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp auf Grundlage der Multispace-Module M4, M6 und M8 sowie der Architekturreferenz MED-060 generiert, 2026; keine Fotografie eines realen Standorts, keine verifizierte Rekonstruktion und keine freigegebene Planung."
+        },
+        {
+          "imageId": "WSE-004-02",
+          "kind": "generated-visualisation",
+          "src": "assets/images/workspace-examples/botschaft-canberra-besprechung-02.jpg",
+          "title": "Kreativraum",
+          "alt": "Kreativraum mit zwei Gruppen mobiler Tische, beschreibbaren Stellwänden, Materialwagen und Bildschirm",
+          "caption": "Illustrative, nicht verbindliche Visualisierung des Kreativraums mit Modul M8.",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp auf Grundlage der Multispace-Module M4, M6 und M8 sowie der Architekturreferenz MED-060 generiert, 2026; keine Fotografie eines realen Standorts, keine verifizierte Rekonstruktion und keine freigegebene Planung."
+        },
+        {
+          "imageId": "WSE-004-03",
+          "kind": "generated-visualisation",
+          "src": "assets/images/workspace-examples/botschaft-canberra-besprechung-03.jpg",
+          "title": "Informelle Besprechungskoje",
+          "alt": "Informelle Besprechungskoje mit vier Sitzplätzen neben einem verglasten Sitzungsraum",
+          "caption": "Illustrative, nicht verbindliche Visualisierung der informellen Begegnungszone mit Modul M6.",
+          "credit": "OpenAI · für den Kundenportal-Prototyp generiert (2026)",
+          "license": "Prototypnutzung; Freigabe vor externer Publikation erforderlich",
+          "provenance": "Mit OpenAI für den Kundenportal-Prototyp auf Grundlage der Multispace-Module M4, M6 und M8 sowie der Architekturreferenz MED-060 generiert, 2026; keine Fotografie eines realen Standorts, keine verifizierte Rekonstruktion und keine freigegebene Planung."
+        }
+      ],
+      "referenceMediaIds": [
         "MED-058",
         "MED-059",
         "MED-060",
         "MED-061"
-      ],
-      "coverMediaId": "MED-058"
+      ]
     }
   ]
 }

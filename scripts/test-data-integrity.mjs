@@ -36,6 +36,42 @@ function jpegDimensions(path) {
   return null;
 }
 
+function jpegEmbeddedMetadata(path) {
+  const data = readFileSync(path);
+  if (data.length < 4 || data.readUInt16BE(0) !== 0xffd8) return ['invalid JPEG'];
+  const findings = [];
+  let offset = 2;
+  while (offset + 1 < data.length) {
+    if (data[offset] !== 0xff) {
+      findings.push('malformed marker stream');
+      break;
+    }
+    while (offset < data.length && data[offset] === 0xff) offset++;
+    const marker = data[offset++];
+    if (marker === 0xd9 || marker === 0xda) break;
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
+    if (offset + 1 >= data.length) {
+      findings.push('truncated marker');
+      break;
+    }
+    const length = data.readUInt16BE(offset);
+    if (length < 2 || offset + length > data.length) {
+      findings.push('invalid marker length');
+      break;
+    }
+    const payload = data.subarray(offset + 2, offset + length);
+    if (marker === 0xfe) findings.push('COM');
+    if (marker >= 0xe1 && marker <= 0xef) findings.push(`APP${marker - 0xe0}`);
+    if (marker === 0xe0) {
+      const isJfif = payload.length >= 14 && payload.subarray(0, 5).equals(Buffer.from('JFIF\0'));
+      if (!isJfif) findings.push('non-JFIF APP0');
+      else if (payload[12] !== 0 || payload[13] !== 0) findings.push('JFIF thumbnail');
+    }
+    offset += length;
+  }
+  return findings;
+}
+
 let failures = 0;
 const check = (ok, label) => { console.log(`   ${ok ? '✓' : '✗'} ${label}`); if (!ok) failures++; };
 
@@ -351,37 +387,218 @@ check(planningModuleProblems.length === 0,
   `workspace planning groups reference the current module name and number${planningModuleProblems.length
     ? `; unresolved: ${planningModuleProblems.join(', ')}` : ''}`);
 
-const workspaceExamples = json('data/workspace-examples.json').examples || [];
+const workspaceExampleFixture = json('data/workspace-examples.json');
+const workspaceExamples = workspaceExampleFixture.examples || [];
 const media = json('data/media.json');
 const mediaById = new Map(media.map((item) => [item.mediaId, item]));
-const invalidExampleMediaLists = workspaceExamples.filter((example) => Object.hasOwn(example, 'images')
-  || !Array.isArray(example.mediaIds) || !example.mediaIds.length
-  || new Set(example.mediaIds).size !== example.mediaIds.length);
-check(invalidExampleMediaLists.length === 0,
-  `workspace examples use only ordered, duplicate-free media references${invalidExampleMediaLists.length
-    ? `; invalid: ${invalidExampleMediaLists.map((example) => example.exampleId).join(', ')}` : ''}`);
+const workspaceExampleImagePrefix = 'assets/images/workspace-examples/';
+const workspaceExampleImageDirectory = join(ROOT, workspaceExampleImagePrefix);
+const workspaceExampleImageFields = new Set([
+  'imageId', 'kind', 'src', 'title', 'alt', 'caption', 'credit', 'license', 'provenance',
+]);
+const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
+const isNonEmptyString = (value) => typeof value === 'string'
+  && value.trim() === value && value.length > 0;
 
-const brokenExampleMedia = workspaceExamples.flatMap((example) => (example.mediaIds || [])
-  .filter((mediaId) => {
+check(/Planungsszenarien/.test(workspaceExampleFixture.note || '')
+  && /Szenariodaten/.test(workspaceExampleFixture.note || '')
+  && /keine Fotografien/.test(workspaceExampleFixture.note || '')
+  && /keine verifizierten Rekonstruktionen/.test(workspaceExampleFixture.note || '')
+  && /keine freigegebenen Planungen/.test(workspaceExampleFixture.note || ''),
+  'workspace-example fixture identifies its facts and images as non-binding scenario material');
+check(/contextMediaId.*Titelbild.*ersten Galerieeintrag/.test(workspaceExampleFixture.assets || '')
+  && /images enthält danach drei/.test(workspaceExampleFixture.assets || '')
+  && /referenceMediaIds.*Kompatibilitätsreferenzen/.test(workspaceExampleFixture.assets || ''),
+  'workspace-example fixture documents context first, then generated interiors, then legacy aliases');
+
+const invalidExampleCollections = workspaceExamples.filter((example) => !isRecord(example)
+  || Object.hasOwn(example, 'mediaIds') || Object.hasOwn(example, 'coverMediaId')
+  || !Array.isArray(example.images) || example.images.length !== 3
+  || !Array.isArray(example.referenceMediaIds) || !example.referenceMediaIds.length
+  || example.referenceMediaIds.some((mediaId) => !/^MED-\d{3}$/.test(mediaId))
+  || new Set(example.referenceMediaIds.map((mediaId) => mediaId.toLowerCase())).size
+    !== example.referenceMediaIds.length
+  || !/^MED-\d{3}$/.test(example.contextMediaId)
+  || !example.referenceMediaIds.includes(example.contextMediaId));
+check(invalidExampleCollections.length === 0,
+  `every workspace example has one canonical context, three generated images, and duplicate-free legacy references${
+    invalidExampleCollections.length
+      ? `; invalid: ${invalidExampleCollections.map((example) => example?.exampleId || '(invalid record)').join(', ')}`
+      : ''}`);
+
+// These are the four building references that backed each gallery before the
+// generated concepts were added. Pinning them protects old MED-* shared links.
+const expectedReferenceMediaIds = new Map([
+  ['WSE-001', ['MED-001', 'MED-003', 'MED-004', 'MED-005']],
+  ['WSE-002', ['MED-008', 'MED-009', 'MED-010', 'MED-011']],
+  ['WSE-003', ['MED-077', 'MED-078', 'MED-079', 'MED-080']],
+  ['WSE-004', ['MED-058', 'MED-059', 'MED-060', 'MED-061']],
+]);
+const expectedContextMediaIds = new Map([
+  ['WSE-001', 'MED-001'],
+  ['WSE-002', 'MED-008'],
+  ['WSE-003', 'MED-077'],
+  ['WSE-004', 'MED-058'],
+]);
+const changedReferenceMediaIds = [...expectedReferenceMediaIds].filter(([exampleId, expected]) => {
+  const actual = workspaceExamples.find((example) => example?.exampleId === exampleId)?.referenceMediaIds;
+  return !Array.isArray(actual) || actual.join('|') !== expected.join('|');
+});
+check(changedReferenceMediaIds.length === 0,
+  `workspace examples retain every former media reference in its original order${
+    changedReferenceMediaIds.length
+      ? `; changed: ${changedReferenceMediaIds.map(([exampleId]) => exampleId).join(', ')}` : ''}`);
+
+const changedContextMediaIds = [...expectedContextMediaIds].filter(([exampleId, expected]) =>
+  workspaceExamples.find((example) => example?.exampleId === exampleId)?.contextMediaId !== expected);
+check(changedContextMediaIds.length === 0,
+  `each workspace example retains its former cover as the sole active context photo${
+    changedContextMediaIds.length
+      ? `; changed: ${changedContextMediaIds.map(([exampleId]) => exampleId).join(', ')}` : ''}`);
+
+const brokenExampleMedia = workspaceExamples.flatMap((example) => {
+  const referenceMediaIds = Array.isArray(example?.referenceMediaIds) ? example.referenceMediaIds : [];
+  return referenceMediaIds.filter((mediaId) => {
     const item = mediaById.get(mediaId);
     return !item || item.buildingId !== example.buildingId
       || typeof item.file !== 'string' || !item.file.startsWith('assets/images/')
       || !existsSync(join(ROOT, item.file));
-  })
-  .map((mediaId) => `${example.exampleId}:${mediaId}`));
+  }).map((mediaId) => `${example.exampleId}:${mediaId}`);
+});
 check(brokenExampleMedia.length === 0,
-  `workspace-example media resolves to an existing file for the same building${brokenExampleMedia.length
+  `workspace-example references resolve to existing media for the same building${brokenExampleMedia.length
     ? `; unresolved: ${brokenExampleMedia.join(', ')}` : ''}`);
 
-const invalidExampleCovers = workspaceExamples.filter((example) => !example.coverMediaId
-  || !example.mediaIds?.includes(example.coverMediaId) || !mediaById.has(example.coverMediaId));
-check(invalidExampleCovers.length === 0,
-  `each workspace-example cover resolves within its media fallback${invalidExampleCovers.length
-    ? `; invalid: ${invalidExampleCovers.map((example) => example.exampleId).join(', ')}` : ''}`);
+const invalidContextMedia = workspaceExamples.filter((example) => {
+  const item = mediaById.get(example?.contextMediaId);
+  return !item || item.mediaType !== 'photo' || item.buildingId !== example.buildingId
+    || typeof item.file !== 'string' || !item.file.startsWith('assets/images/')
+    || !existsSync(join(ROOT, item.file))
+    || !isNonEmptyString(item.photographer) || !isNonEmptyString(item.copyright)
+    || !isNonEmptyString(item.license) || !/^https?:\/\//.test(item.sourceUrl || '');
+});
+check(invalidContextMedia.length === 0,
+  `every context photo resolves for the same building with creator, rights, licence, and source metadata${
+    invalidContextMedia.length
+      ? `; invalid: ${invalidContextMedia.map((example) => example?.exampleId || '(invalid record)').join(', ')}`
+      : ''}`);
 
-const brokenExampleModules = workspaceExamples.flatMap((example) => (example.modules || [])
+const workspaceExampleImages = workspaceExamples.flatMap((example) =>
+  (Array.isArray(example?.images) ? example.images : [])
+    .map((image, index) => ({ example, image, index })));
+const invalidExampleImageRecords = workspaceExampleImages.filter(({ image }) => {
+  if (!isRecord(image)) return true;
+  const fields = Object.keys(image);
+  return fields.length !== workspaceExampleImageFields.size
+    || fields.some((field) => !workspaceExampleImageFields.has(field))
+    || [...workspaceExampleImageFields].some((field) => !isNonEmptyString(image[field]))
+    || image.kind !== 'generated-visualisation';
+});
+check(invalidExampleImageRecords.length === 0,
+  `every workspace-example image matches the exact generated-visualisation record contract${
+    invalidExampleImageRecords.length
+      ? `; invalid: ${invalidExampleImageRecords.map(({ example, index }) => `${example.exampleId}:${index + 1}`).join(', ')}`
+      : ''}`);
+
+const misorderedExampleImages = workspaceExampleImages.filter(({ example, image, index }) => {
+  const sequence = String(index + 1).padStart(2, '0');
+  return image?.imageId !== `${example.exampleId}-${sequence}`
+    || image?.src !== `${workspaceExampleImagePrefix}${example.slug}-${sequence}.jpg`;
+});
+check(misorderedExampleImages.length === 0,
+  `generated images follow their example ID and slug order, with -01 as the first interior view${
+    misorderedExampleImages.length
+      ? `; invalid: ${misorderedExampleImages.map(({ example, index }) => `${example.exampleId}:${index + 1}`).join(', ')}`
+      : ''}`);
+
+const workspaceExampleImageIds = workspaceExampleImages
+  .map(({ image }) => String(image?.imageId || '').toLowerCase());
+const workspaceExampleImageSources = workspaceExampleImages
+  .map(({ image }) => String(image?.src || '').toLowerCase());
+check(new Set(workspaceExampleImageIds).size === workspaceExampleImageIds.length,
+  'workspace-example image IDs are globally unique regardless of case');
+check(new Set(workspaceExampleImageSources).size === workspaceExampleImageSources.length,
+  'workspace-example image paths are globally unique regardless of case');
+
+const workspaceExampleDirectoryEntries = readdirSync(workspaceExampleImageDirectory, { withFileTypes: true })
+  .filter((entry) => entry.isFile());
+const workspaceExampleImageFiles = new Set(workspaceExampleDirectoryEntries
+  .filter((entry) => /\.jpg$/i.test(entry.name))
+  .map((entry) => entry.name));
+const unexpectedWorkspaceExampleFiles = workspaceExampleDirectoryEntries
+  .filter((entry) => entry.name !== 'README.md' && !/^[a-z0-9-]+-\d{2}\.jpg$/.test(entry.name))
+  .map((entry) => entry.name);
+check(unexpectedWorkspaceExampleFiles.length === 0,
+  `the workspace-example image directory contains only conventionally named JPG assets${
+    unexpectedWorkspaceExampleFiles.length
+      ? `; invalid: ${unexpectedWorkspaceExampleFiles.join(', ')}` : ''}`);
+
+const safeWorkspaceExampleImages = workspaceExampleImages.filter(({ image }) =>
+  typeof image?.src === 'string'
+  && /^assets\/images\/workspace-examples\/[a-z0-9-]+-\d{2}\.jpg$/.test(image.src));
+const missingWorkspaceExampleImages = safeWorkspaceExampleImages
+  .filter(({ image }) => !existsSync(join(ROOT, image.src)));
+const wrongCaseWorkspaceExampleImages = safeWorkspaceExampleImages
+  .filter(({ image }) => !workspaceExampleImageFiles.has(image.src.slice(workspaceExampleImagePrefix.length)));
+check(missingWorkspaceExampleImages.length === 0,
+  `every workspace-example image asset exists${missingWorkspaceExampleImages.length
+    ? `; missing: ${missingWorkspaceExampleImages.map(({ image }) => image.src).join(', ')}` : ''}`);
+check(wrongCaseWorkspaceExampleImages.length === 0,
+  `workspace-example image paths use the exact on-disk filename case${wrongCaseWorkspaceExampleImages.length
+    ? `; mismatched: ${wrongCaseWorkspaceExampleImages.map(({ image }) => image.src).join(', ')}` : ''}`);
+
+const referencedWorkspaceExampleFiles = new Set(safeWorkspaceExampleImages
+  .map(({ image }) => image.src.slice(workspaceExampleImagePrefix.length)));
+const orphanWorkspaceExampleImages = [...workspaceExampleImageFiles]
+  .filter((file) => !referencedWorkspaceExampleFiles.has(file));
+check(orphanWorkspaceExampleImages.length === 0,
+  `the workspace-example image directory has no unreferenced JPG assets${orphanWorkspaceExampleImages.length
+    ? `; orphaned: ${orphanWorkspaceExampleImages.join(', ')}` : ''}`);
+
+const invalidWorkspaceExampleDimensions = safeWorkspaceExampleImages.filter(({ image }) => {
+  if (!existsSync(join(ROOT, image.src))) return false;
+  const dimensions = jpegDimensions(join(ROOT, image.src));
+  return !dimensions || dimensions.width !== 1440 || dimensions.height !== 810;
+});
+check(invalidWorkspaceExampleDimensions.length === 0,
+  `every workspace-example image is a 1440 × 810 JPEG${invalidWorkspaceExampleDimensions.length
+    ? `; invalid: ${invalidWorkspaceExampleDimensions.map(({ image }) => image.src).join(', ')}` : ''}`);
+
+const oversizedWorkspaceExampleImages = safeWorkspaceExampleImages.filter(({ image }) =>
+  existsSync(join(ROOT, image.src)) && statSync(join(ROOT, image.src)).size > 225280);
+const workspaceExampleImageBytes = safeWorkspaceExampleImages.reduce((total, { image }) => total
+  + (existsSync(join(ROOT, image.src)) ? statSync(join(ROOT, image.src)).size : 0), 0);
+check(oversizedWorkspaceExampleImages.length === 0 && workspaceExampleImageBytes <= 2.5 * 1024 * 1024,
+  `workspace-example imagery stays within 225,280 bytes each / 2.5 MiB total; total ${
+    workspaceExampleImageBytes.toLocaleString('en-CH')} bytes${oversizedWorkspaceExampleImages.length
+    ? `; oversized: ${oversizedWorkspaceExampleImages.map(({ image }) => image.src).join(', ')}` : ''}`);
+
+const workspaceExampleMetadata = safeWorkspaceExampleImages.flatMap(({ image }) => {
+  if (!existsSync(join(ROOT, image.src))) return [];
+  return jpegEmbeddedMetadata(join(ROOT, image.src))
+    .map((marker) => `${image.src}:${marker}`);
+});
+check(workspaceExampleMetadata.length === 0,
+  `workspace-example JPEGs contain no EXIF, XMP, ICC, IPTC, comments, or thumbnails${
+    workspaceExampleMetadata.length ? `; found: ${workspaceExampleMetadata.join(', ')}` : ''}`);
+
+const incompleteExampleProvenance = workspaceExampleImages.filter(({ image }) =>
+  !image?.title || !image.alt
+  || !/illustrativ/i.test(image.caption || '') || !/nicht verbindlich/i.test(image.caption || '')
+  || !/OpenAI/i.test(image.credit || '') || !/2026/.test(image.credit || '')
+  || !image.license || !/OpenAI/i.test(image.provenance || '') || !/2026/.test(image.provenance || '')
+  || !/keine Fotografie/i.test(image.provenance || '')
+  || !/keine verifizierte Rekonstruktion/i.test(image.provenance || '')
+  || !/keine freigegebene Planung/i.test(image.provenance || ''));
+check(incompleteExampleProvenance.length === 0,
+  `every workspace-example image states useful text, non-binding status, credit, licence, and full provenance${
+    incompleteExampleProvenance.length
+      ? `; incomplete: ${incompleteExampleProvenance.map(({ image }) => image?.src || '(invalid record)').join(', ')}`
+      : ''}`);
+
+const brokenExampleModules = workspaceExamples.flatMap((example) => (example?.modules || [])
   .filter((number) => !moduleNumbers.has(Number(number)))
-  .map((number) => `${example.exampleId}:M${number}`));
+  .map((number) => `${example?.exampleId || '(invalid record)'}:M${number}`));
 check(brokenExampleModules.length === 0,
   `workspace examples reference current Multispace modules${brokenExampleModules.length
     ? `; unresolved: ${brokenExampleModules.join(', ')}` : ''}`);

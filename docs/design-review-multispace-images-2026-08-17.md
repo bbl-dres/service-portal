@@ -4,6 +4,14 @@
 > Scope: `#/knowledge/workspace/multispace`, module details, and the handbook's
 > «Planungsbeispiele» preview.
 
+> **Planning-example imagery supersession (2026-08-17):** The module-image
+> contract in this review remains current. Statements below about
+> media-registry-only planning-example galleries describe the earlier
+> implementation and are superseded by the
+> [planning-example imagery review](design-review-planning-examples-imagery-2026-08-17.md):
+> each example now retains one attributed real context photo as card cover and
+> first gallery item, followed by three explicit, non-binding visualisations.
+
 ## Findings
 
 The page appeared to have image fallbacks, but all eleven scalar module paths

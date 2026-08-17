@@ -5,6 +5,17 @@
 **Scope:** `#/knowledge/workspace` and its Multispace, planning-example,
 lifecycle, and download branches
 
+> **Planning-example imagery supersession (2026-08-17):** The information
+> architecture and gallery interaction in this review remain current.
+> Statements below about four-item media-registry galleries, photographer or
+> download actions, and route-time `media.json` use describe the earlier
+> implementation and are superseded by the
+> [planning-example imagery review](design-review-planning-examples-imagery-2026-08-17.md):
+> every example now opens a four-item gallery containing one attributed real
+> context photo followed by three disclosed, non-binding visualisations. The
+> generated items expose neither a download nor a media-detail action. Earlier
+> verification remains a historical record of that refactor.
+
 ## Outcome
 
 The branch now behaves as one coherent knowledge product rather than a mixture

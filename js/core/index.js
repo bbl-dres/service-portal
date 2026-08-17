@@ -10,6 +10,10 @@ const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArr
 const safeDictionary = (value = {}) => Object.assign(Object.create(null), value);
 const MODULE_IMAGE_PREFIX = 'assets/images/multispace-modules/';
 const MODULE_IMAGE_FIELDS = new Set(['src', 'alt', 'caption', 'credit', 'license', 'provenance']);
+const WORKSPACE_EXAMPLE_IMAGE_PREFIX = 'assets/images/workspace-examples/';
+const WORKSPACE_EXAMPLE_IMAGE_FIELDS = new Set([
+  'imageId', 'kind', 'src', 'title', 'alt', 'caption', 'credit', 'license', 'provenance',
+]);
 const nonEmptyString = (value) => typeof value === 'string' && value.trim() === value && value.length > 0;
 
 function validateModuleStructure(modules, url) {
@@ -49,6 +53,43 @@ function validateModuleImages(modules, url) {
       }
       const sourceKey = src.toLowerCase();
       if (sources.has(sourceKey)) throw new Error(`duplicate module image src: ${url}`);
+      sources.add(sourceKey);
+    }
+  }
+}
+
+function validateWorkspaceExampleMedia(examples, url) {
+  const imageIds = new Set();
+  const sources = new Set();
+  for (const [exampleIndex, example] of examples.entries()) {
+    if (!isRecord(example)
+      || hasOwn(example, 'mediaIds') || hasOwn(example, 'coverMediaId')
+      || !Array.isArray(example.images) || !example.images.length
+      || !Array.isArray(example.referenceMediaIds) || !example.referenceMediaIds.length
+      || example.referenceMediaIds.some((mediaId) => !nonEmptyString(mediaId)
+        || !/^MED-\d{3}$/.test(mediaId))
+      || new Set(example.referenceMediaIds.map((mediaId) => mediaId.toLowerCase())).size
+        !== example.referenceMediaIds.length
+      || !nonEmptyString(example.contextMediaId) || !/^MED-\d{3}$/.test(example.contextMediaId)
+      || !example.referenceMediaIds.includes(example.contextMediaId)) {
+      throw new Error(`invalid workspace example images ${exampleIndex}: ${url}`);
+    }
+    for (const [imageIndex, image] of example.images.entries()) {
+      const keys = isRecord(image) ? Object.keys(image) : [];
+      const validFields = keys.length === WORKSPACE_EXAMPLE_IMAGE_FIELDS.size
+        && keys.every((key) => WORKSPACE_EXAMPLE_IMAGE_FIELDS.has(key))
+        && [...WORKSPACE_EXAMPLE_IMAGE_FIELDS].every((key) => nonEmptyString(image[key]));
+      const src = validFields ? image.src : '';
+      const safeSrc = safeAssetUrl(src, WORKSPACE_EXAMPLE_IMAGE_PREFIX);
+      if (!validFields || image.kind !== 'generated-visualisation'
+        || safeSrc !== src || !/\.jpg$/i.test(src)) {
+        throw new Error(`invalid workspace example image ${exampleIndex}.${imageIndex}: ${url}`);
+      }
+      const imageId = image.imageId.toLowerCase();
+      if (imageIds.has(imageId)) throw new Error(`duplicate workspace example imageId: ${url}`);
+      imageIds.add(imageId);
+      const sourceKey = src.toLowerCase();
+      if (sources.has(sourceKey)) throw new Error(`duplicate workspace example image src: ${url}`);
       sources.add(sourceKey);
     }
   }
@@ -109,10 +150,9 @@ const DEFERRED = {
   // file carries the edition it encodes, and NO prices: the handbook marks them
   // confidential.
   multispaceModules:'data/multispace-modules.json',
-  // Realised Multispace spaces, as examples. A record is an ausgebauter ORT — a floor, a
-  // zone within one, or a single room — not a building; the building is only where the
-  // place is. Images are references into `media`, so licence, photographer and source
-  // stay with the asset rather than being copied per example.
+  // Plausible planning scenarios tied to real BBL buildings. contextMediaId
+  // selects the attributed real card/gallery context; images contains the
+  // generated interiors, while referenceMediaIds keeps old shared links valid.
   workspaceExamples:'data/workspace-examples.json',
   // Metadata catalogue (#/app/metadata-catalog): the two layers BELOW the DCAT
   // catalogue. `businessObjects` is technology-neutral (a business object with
@@ -319,6 +359,7 @@ function validateObjectFile(value, url, key) {
     if (!Array.isArray(value.examples)) throw new Error(`invalid workspace example list: ${url}`);
     validateUniqueField(value.examples, 'exampleId', url, 'workspace example');
     validateUniqueField(value.examples, 'slug', url, 'workspace example');
+    validateWorkspaceExampleMedia(value.examples, url);
   }
   return value;
 }

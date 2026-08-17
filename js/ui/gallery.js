@@ -5,7 +5,7 @@
 // header with title and actions above the image stage. Keyboard: Escape closes,
 // left/right arrows navigate, and Tab remains trapped in the gallery.
 //
-// items = [{ photo, photoSrc?, title, meta, type, gray, href?, details?, downloadable? }]
+// items = [{ photo, photoSrc?, title, alt?, meta, type, gray, href?, details?, downloadable? }]
 //   details = [[label, value], …] — enables the metadata button.
 //   href    = media detail page linked from the metadata panel.
 //   downloadable = false hides the file action for rights-restricted media;
@@ -107,7 +107,7 @@ export function openGallery(items, start, C, options = {}) {
         <button type="button" class="pf-lightbox__btn interactive-control interactive-control--negative" data-act="meta" data-el="metabtn"
            aria-expanded="false" aria-controls="lb-meta"
            aria-label="Metadaten anzeigen" title="Metadaten" hidden>${C.icon('InfoCircle', 'icon--md')}</button>
-        <button type="button" class="pf-lightbox__btn interactive-control interactive-control--negative" data-act="share" aria-label="Bild teilen" title="Teilen">${C.icon('Share', 'icon--md')}</button>
+        <button type="button" class="pf-lightbox__btn interactive-control interactive-control--negative" data-act="share" data-el="share" aria-label="Bild teilen" title="Teilen">${C.icon('Share', 'icon--md')}</button>
         <button type="button" class="pf-lightbox__btn interactive-control interactive-control--negative" data-act="close" aria-label="Galerie schliessen" title="Schliessen">${C.icon('Cancel', 'icon--md')}</button>
       </div>
     </div>
@@ -217,12 +217,15 @@ export function openGallery(items, start, C, options = {}) {
     const imageUrl = fullUrl(it);
     const metaHref = safeLinkUrl(it.href);
     el.icon.innerHTML = C.icon(it.type === 'video' ? 'Video' : 'Image', 'icon--lg');
+    const visualisation = it.type === 'visualisation';
+    el.share.setAttribute('aria-label', visualisation ? 'Visualisierung teilen' : 'Bild teilen');
+    el.share.title = visualisation ? 'Visualisierung teilen' : 'Teilen';
     el.title.textContent = it.title || '';
     el.sub.textContent = `${it.meta || ''}${multi ? ` · Bild ${idx + 1} von ${items.length}` : ''}`;
     zoom = 'fit';
     el.img.style.width = ''; el.img.style.height = '';
     if (imageUrl) el.img.src = imageUrl; else el.img.removeAttribute('src');
-    el.img.alt = it.title || '';
+    el.img.alt = it.alt || it.title || '';
     // naturalWidth is known only after loading; fit-mode percentage needs it, so
     // update after the load event.
     if (el.img.complete) applyZoom(); else el.img.addEventListener('load', applyZoom, { once: true });
@@ -242,7 +245,8 @@ export function openGallery(items, start, C, options = {}) {
       // wording was the only outlier (design review D8).
       if (metaHref) {
         el.metalink.href = metaHref;
-        el.metalink.innerHTML = `${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Aufnahme ansehen</span>`;
+        const linkLabel = visualisation ? 'Visualisierung ansehen' : 'Aufnahme ansehen';
+        el.metalink.innerHTML = `${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">${linkLabel}</span>`;
       } else {
         el.metalink.removeAttribute('href');
       }
@@ -315,7 +319,8 @@ export function openGallery(items, start, C, options = {}) {
       // The same CD dialog as the share bar. Thanks to syncUrl(), location.hash
       // already carries the open image, so the shared link opens that exact item.
       const url = `${location.origin}${location.pathname}${location.search}${location.hash}`;
-      C.openShareModal(url, 'Aufnahme teilen');
+      C.openShareModal(url,
+        items[idx]?.type === 'visualisation' ? 'Visualisierung teilen' : 'Aufnahme teilen');
     }
   });
   // The header sits ABOVE the image stage. Its measured height becomes padding

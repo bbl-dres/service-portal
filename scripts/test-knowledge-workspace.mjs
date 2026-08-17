@@ -9,12 +9,14 @@ import assert from 'node:assert/strict';
 
 import {
   AREAS, MULTISPACE_EDITION, MULTISPACE_MODULES, WORKSPACE_DOWNLOAD_GROUPS,
-  knowledgeIndex, sectionDomId,
+  WORKSPACE_BRANCHES, knowledgeIndex, sectionDomId,
 } from '../js/knowledge-content.js';
 
 const area = AREAS.workspace;
 assert.ok(area, 'the workspace subject area exists');
 assert.equal(area.title, 'Arbeitsplätze gestalten');
+assert.match(area.lead, /illustrative Planungsbeispiele/,
+  'the workspace overview does not present generated planning imagery as realised photography');
 
 // --- The standard itself ------------------------------------------------------
 // The prototype publishes the «Stand 6.1.2025» handbook: ELEVEN modules with Coffee
@@ -97,6 +99,11 @@ assert.ok(downloadSections.every((section) => Array.isArray(section.items)
 // The area cross-references rather than duplicating the legal basis, which lives
 // under the accommodation area.
 assert.match(area.intro, /#\/knowledge\/accommodation/);
+const inspirationBranch = WORKSPACE_BRANCHES.find((branch) => branch.slug === 'inspiration');
+assert.match(inspirationBranch?.lead || '', /reales Standortfoto/,
+  'the planning-example branch identifies the real context image');
+assert.match(inspirationBranch?.lead || '', /illustrative, nicht verbindliche Visualisierungen/,
+  'the planning-example branch visibly states the status of its generated visualisations');
 const accommodationTitles = AREAS.accommodation.sections
   .flatMap((s) => (s.items || []).map((it) => it.title));
 for (const s of area.sections) {

@@ -225,7 +225,7 @@ function handbookPage(ctx, branch) {
     })}
     ${C.pageSection({
       title: 'Planungsbeispiele',
-      body: `<p class="muted">Umgesetzte Multispace-Flächen — als Bildergalerien mit den eingesetzten Modulen.</p>
+      body: `<p class="muted">Jede Galerie beginnt mit einem Standortfoto und zeigt danach drei illustrative, nicht verbindliche Raumkonzepte.</p>
         ${galleries.length
           ? `<div class="grid grid--responsive-cols-3">${galleries
               .map((gallery) => exampleCard(C, gallery)).join('')}</div>`
@@ -239,7 +239,7 @@ function modulePlanningExamplesHTML(C, core, nr) {
     .filter((example) => (example.modules || []).includes(Number(nr)));
   if (!examples.length) {
     return C.empty('Noch keine Planungsbeispiele für dieses Modul', {
-      hint: 'Sobald eine realisierte Fläche mit diesem Modul erfasst ist, erscheint sie hier.',
+      hint: 'Sobald ein Raumkonzept mit diesem Modul erfasst ist, erscheint es hier.',
       action: { href: INSPIRATION_ROUTE, label: 'Alle Planungsbeispiele' },
     });
   }
@@ -346,62 +346,98 @@ function modulePage(ctx, slug) {
   });
 }
 
-function scopedGalleryId(example, mediaId) {
-  return `${example.exampleId}:${mediaId}`;
+function scopedGalleryId(example, imageId) {
+  return `${example.exampleId}:${imageId}`;
 }
 
-function exampleCoverMediaId(example) {
-  const ids = Array.isArray(example.mediaIds) ? example.mediaIds : [];
-  return ids.includes(example.coverMediaId) ? example.coverMediaId : (ids[0] || '');
+function exampleImages(example) {
+  return Array.isArray(example?.images)
+    ? example.images.filter((image) => image && typeof image.imageId === 'string'
+      && typeof image.src === 'string' && image.src.trim())
+    : [];
 }
 
-function exampleGalleryHref(example, mediaId = exampleCoverMediaId(example)) {
-  if (!mediaId) return INSPIRATION_ROUTE;
-  return `${INSPIRATION_ROUTE}?${GALLERY_PARAM}=${encodeURIComponent(scopedGalleryId(example, mediaId))}`;
+function exampleCoverItemId(example) {
+  return example?.contextMediaId || exampleImages(example)[0]?.imageId || '';
+}
+
+function exampleGalleryHref(example, itemId = exampleCoverItemId(example)) {
+  if (!itemId) return INSPIRATION_ROUTE;
+  return `${INSPIRATION_ROUTE}?${GALLERY_PARAM}=${encodeURIComponent(scopedGalleryId(example, itemId))}`;
 }
 
 function isDownloadable(media) {
-  // Rights are opt-in: unknown or proprietary labels must never expose a file
-  // action merely because they do not match a particular restricted phrase.
-  return /^(?:CC0(?: 1\.0)?|CC BY(?:-SA)? \d(?:\.\d)?)$/i.test(String(media.license || '').trim());
+  // Download rights are opt-in; generated visualisations never call this path.
+  return /^(?:CC0(?: 1\.0)?|CC BY(?:-SA)? \d(?:\.\d)?)$/i
+    .test(String(media?.license || '').trim());
 }
 
 function exampleGalleries(core, examples) {
   const mediaById = new Map((core.media?.() || []).map((media) => [media.mediaId, media]));
   return examples.map((example) => {
-    const media = (example.mediaIds || []).map((id) => mediaById.get(id)).filter(Boolean);
-    const items = media.map((shot) => ({
-      id: scopedGalleryId(example, shot.mediaId),
-      photo: shot.photo || '',
-      photoSrc: shot.file || '',
-      title: shot.title || example.title,
-      meta: [example.title, example.buildingName, shot.date].filter(Boolean).join(' · '),
-      type: shot.mediaType || 'photo',
-      gray: shot.historicPeriod === 'historisch',
-      downloadable: isDownloadable(shot),
-      href: `#/app/media-library/${encodeURIComponent(shot.mediaId)}`,
+    const images = exampleImages(example);
+    const context = mediaById.get(example.contextMediaId) || null;
+    const contextItem = context ? {
+      id: scopedGalleryId(example, context.mediaId),
+      photo: context.photo || '',
+      photoSrc: context.file || '',
+      title: context.title || example.buildingName || example.title,
+      alt: context.title || example.buildingName || '',
+      meta: [example.title, example.buildingName, 'Standortfoto'].filter(Boolean).join(' · '),
+      type: context.mediaType || 'photo',
+      gray: context.historicPeriod === 'historisch',
+      downloadable: isDownloadable(context),
+      href: `#/app/media-library/${encodeURIComponent(context.mediaId)}`,
       details: [
         ['Planungsbeispiel', example.title],
+        ['Bildstatus', 'Standortfoto · keine Abbildung des Raumkonzepts'],
+        ['Gebäude', example.buildingName],
+        ['Adresse', example.address || 'nicht erfasst'],
+        ['Aufnahme', context.title],
+        ['Medien-ID', context.mediaId],
+        ['Aufnahmedatum', context.date],
+        ['Fotograf:in', context.photographer],
+        ['Copyright', context.copyright],
+        ['Lizenz', context.license],
+        ['Quelle', context.sourceUrl],
+      ].filter(([, value]) => value != null && String(value).trim()),
+    } : null;
+    const visualisations = images.map((image) => ({
+      id: scopedGalleryId(example, image.imageId),
+      photoSrc: image.src,
+      title: image.title || example.title,
+      alt: image.alt || image.title || '',
+      meta: [example.title, example.buildingName, 'Illustrative Visualisierung']
+        .filter(Boolean).join(' · '),
+      type: 'visualisation',
+      downloadable: false,
+      details: [
+        ['Planungsbeispiel', example.title],
+        ['Bildstatus', 'Illustrative, nicht verbindliche Visualisierung'],
         ['Umfang', example.scope],
         ['Gebäude', example.buildingName],
         ['Adresse', example.address || 'nicht erfasst'],
         ['Fläche', example.areaSqm == null ? '' : `${example.areaSqm} m²`],
         ['Arbeitsplätze', example.workplaces == null ? '' : String(example.workplaces)],
-        ['Fertigstellung', example.completed],
+        ['Szenariojahr', example.completed],
         ['Module', (example.modules || []).map((number) => `M${number}`).join(', ')],
-        ['Aufnahme', shot.title],
-        ['Medien-ID', shot.mediaId],
-        ['Aufnahmedatum', shot.date],
-        ['Fotograf:in', shot.photographer],
-        ['Copyright', shot.copyright],
-        ['Lizenz', shot.license],
-        ['Quelle', shot.sourceUrl],
+        ['Darstellung', image.title],
+        ['Bild-ID', image.imageId],
+        ['Bildlegende', image.caption],
+        ['Urheberschaft', image.credit],
+        ['Lizenz', image.license],
+        ['Provenienz', image.provenance],
       ].filter(([, value]) => value != null && String(value).trim()),
     }));
-    const coverId = exampleCoverMediaId(example);
-    const cover = media.find((shot) => shot.mediaId === coverId) || media[0] || null;
-    const start = Math.max(0, items.findIndex((item) => item.id === scopedGalleryId(example, cover?.mediaId || '')));
-    return { example, cover, items, start };
+    const items = [...(contextItem ? [contextItem] : []), ...visualisations];
+    return {
+      example,
+      cover: context || images[0] || null,
+      coverKindLabel: context ? 'Standortfoto' : 'Visualisierung',
+      coverItemId: context?.mediaId || images[0]?.imageId || '',
+      items,
+      start: 0,
+    };
   });
 }
 
@@ -411,20 +447,20 @@ function workplaceLabel(value) {
 }
 
 function exampleCard(C, gallery) {
-  const { example, cover, items } = gallery;
+  const { example, cover, coverKindLabel, coverItemId, items } = gallery;
   const facts = [
     example.areaSqm == null ? '' : `${example.areaSqm} m²`,
     workplaceLabel(example.workplaces),
     example.completed,
   ].filter(Boolean).join(' · ');
-  const href = items.length ? exampleGalleryHref(example, cover?.mediaId) : INSPIRATION_ROUTE;
+  const href = items.length ? exampleGalleryHref(example, coverItemId) : INSPIRATION_ROUTE;
   return C.card({
     href,
     dialog: items.length > 0,
     title: example.title,
     desc: example.summary,
     photo: cover ? {
-      src: cover.file || '',
+      src: cover.file || cover.src || '',
       id: cover.photo || '',
       color: cover.color || '',
       alt: '',
@@ -432,6 +468,7 @@ function exampleCard(C, gallery) {
     } : null,
     badges: [
       C.badge(example.scope, 'info'),
+      C.badge(coverKindLabel, 'yellow'),
       ...(example.modules || []).map((number) => C.badge(`M${number}`, 'gray')),
     ],
     footerInfo: `<span class="small muted">${C.escape(`${example.buildingName} · ${facts}`)}</span>`,
@@ -474,7 +511,22 @@ function restoreRequestedGallery(ctx, galleries) {
   const requested = ctx.query?.get(GALLERY_PARAM) || '';
   if (!requested) return;
   const gallery = galleries.find((entry) => entry.items.some((item) => item.id === requested));
-  if (gallery) restoreGalleryFromQuery(ctx.query, gallery.items, ctx.C, { param: GALLERY_PARAM });
+  if (gallery) {
+    restoreGalleryFromQuery(ctx.query, gallery.items, ctx.C, { param: GALLERY_PARAM });
+    return;
+  }
+
+  // Three former building-photo IDs no longer belong to the compact gallery.
+  // Keep their shared links useful by normalising them to the retained context
+  // photograph, which is always the first item.
+  const legacy = galleries.find((entry) => (entry.example.referenceMediaIds || [])
+    .some((mediaId) => scopedGalleryId(entry.example, mediaId) === requested));
+  if (!legacy?.items.length) return;
+  const href = exampleGalleryHref(legacy.example);
+  ctx.replaceRoute(href);
+  const normalized = new URLSearchParams(ctx.query);
+  normalized.set(GALLERY_PARAM, legacy.items[0].id);
+  restoreGalleryFromQuery(normalized, legacy.items, ctx.C, { param: GALLERY_PARAM });
 }
 
 function examplesPage(ctx, branch) {
@@ -512,7 +564,7 @@ function legacyExampleRoute(ctx, branch, slug) {
   const href = exampleGalleryHref(example);
   ctx.replaceRoute(href);
   const query = new URLSearchParams();
-  const coverId = exampleCoverMediaId(example);
+  const coverId = exampleCoverItemId(example);
   if (coverId) query.set(GALLERY_PARAM, scopedGalleryId(example, coverId));
   return examplesPage({ ...ctx, query }, branch);
 }

@@ -180,7 +180,7 @@ check(catalogue.visited.every((entry) => !entry.confidential),
 check(/nicht gefunden/i.test(catalogue.unknown),
   'an unknown module number is a not-found page, not an empty one', catalogue.unknown);
 
-// Every module page names the realised places that used it, and says so when there are
+// Every module page names the planning examples that use it, and says so when there are
 // none: an empty section reads as a page that failed to load. The relationship is derived
 // from the examples, which already declare their modules, so there is no second list.
 const examples = await page.evaluate(`(async () => {
@@ -205,11 +205,11 @@ const examples = await page.evaluate(`(async () => {
   return { used: await read(3), unused: await read(5) };
 })()`);
 check(examples.used.hasSection && !examples.used.hasOldSection && examples.used.rows > 0,
-  'a module used by a realised place lists it under Planungsbeispiele',
+  'a module used by a planning example lists it under Planungsbeispiele',
   `${examples.used.rows} example(s)`);
 check(examples.unused.hasSection && examples.unused.rows === 0
   && /Planungsbeispiele/.test(examples.unused.emptyHint),
-  'a module with no realised place says so instead of showing an empty section',
+  'a module with no matching planning example says so instead of showing an empty section',
   examples.unused.emptyHint.trim());
 check(!examples.used.objectObject && !examples.unused.objectObject,
   'no component is called with the wrong argument shape');
@@ -256,21 +256,28 @@ const examplePages = await page.evaluate(`(async () => {
   await pause();
   const cards = main().querySelectorAll('.card').length;
   const photos = main().querySelectorAll('.wsm-example__photo').length;
+  const photoSources = [...main().querySelectorAll('.wsm-example__photo img')]
+    .map((image) => image.getAttribute('src') || '');
   const badges = [...main().querySelectorAll('.card')].map((card) =>
     [...card.querySelectorAll('.pill-row .badge__text')].map((node) => node.textContent.trim()));
   const hrefs = [...main().querySelectorAll('.card__link')]
     .map((link) => link.getAttribute('href') || '');
-  return { cards, photos, badges, hrefs };
+  return { cards, photos, photoSources, badges, hrefs };
 })()`);
 check(examplePages.cards === 4 && examplePages.photos === 4,
-  'the gallery shows every realised place with a picture',
+  'the gallery shows every planning example with a picture',
   `${examplePages.cards} cards · ${examplePages.photos} photos`);
+check(examplePages.photoSources.length === 4
+  && examplePages.photoSources.every((src) => src.startsWith('assets/images/buildings/')),
+  'each card cover is the retained real building-context photograph',
+  examplePages.photoSources.join(' | '));
 check(examplePages.badges.length === 4 && examplePages.badges.every((badges) =>
   ['Geschoss', 'Zone', 'Raum'].includes(badges[0])
-    && badges.slice(1).length > 0
-    && badges.slice(1).every((badge) => badge.startsWith('M')
+    && badges[1] === 'Standortfoto'
+    && badges.slice(2).length > 0
+    && badges.slice(2).every((badge) => badge.startsWith('M')
       && Number.isInteger(Number(badge.slice(1))))),
-  'each card states its scope, because an example is a place and not a building',
+  'each card states its scope, context-photo status, and module references',
   examplePages.badges.map((badges) => badges.join(' ')).join(' | '));
 check(examplePages.hrefs.length === 4
   && new Set(examplePages.hrefs).size === 4

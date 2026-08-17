@@ -191,7 +191,7 @@ export const AREAS = {
   // handbook marks them confidential.
   workspace: {
     title: 'Arbeitsplätze gestalten',
-    lead: 'Planungshilfen für Büroflächen der Bundesverwaltung: Multispace-Module, realisierte Beispiele, Kreislaufwirtschaft sowie Vorlagen und Werkzeuge.',
+    lead: 'Planungshilfen für Büroflächen der Bundesverwaltung: Multispace-Module, illustrative Planungsbeispiele, Kreislaufwirtschaft sowie Vorlagen und Werkzeuge.',
     intro: 'Die rechtlichen Grundlagen — VILB, Weisungen und Standards für Büroarbeitsplätze — stehen unter <a href="#/knowledge/accommodation">Unterbringung und Objektbetrieb</a>. Geplant und geprüft wird im <a href="#/app/floorplan-editor">Plan-Editor</a> und in der <a href="#/app/plan-check">Planprüfung</a>.',
     sections: [
       { id: 'standard', branch: 'multispace', title: 'Die Multispace-Module', intro: 'Jedes Modul bildet eine funktionale und gestalterische Einheit. Module lassen sich kombinieren; ein Mix einzelner Modulelemente wird ausdrücklich nicht empfohlen. Die Flächenrichtmasse sind Planungswerte aus der Modulübersicht des Handbuchs.', indexOnly: true },
@@ -363,11 +363,11 @@ export const FAQS = [
  */
 export const WORKSPACE_BRANCHES = Object.freeze([
   Object.freeze({ slug: '', key: 'overview', label: 'Übersicht',
-    lead: 'Multispace planen und umsetzen — vom Ausstattungsstandard über realisierte Beispiele bis zu Kreislauf und Planungsunterlagen.' }),
+    lead: 'Multispace planen und umsetzen — vom Ausstattungsstandard über illustrative Planungsbeispiele bis zu Kreislauf und Planungsunterlagen.' }),
   Object.freeze({ slug: 'multispace', key: 'multispace', label: 'Multispace-Handbuch',
     lead: 'Der Ausstattungsstandard: Module mit Sub-Modulen, Flächenrichtmassen, Ausstattung und verknüpften Planungsbeispielen.' }),
   Object.freeze({ slug: 'inspiration', key: 'inspiration', label: 'Planungsbeispiele',
-    lead: 'Umgesetzte Flächen der Bundesverwaltung. Jedes Beispiel öffnet eine Bildergalerie mit Projektkontext und vollständigen Bildnachweisen.' }),
+    lead: 'Ein reales Standortfoto ordnet jedes Beispiel räumlich ein; drei illustrative, nicht verbindliche Visualisierungen zeigen das mögliche Raumkonzept. Die Galerie enthält vollständige Bildnachweise.' }),
   Object.freeze({ slug: 'kreislauf', key: 'kreislauf', label: 'Kreislaufwirtschaft und Occasionsmobiliar',
     lead: 'Die standardisierte Raumausstattung wird in einem Kreislaufmodell bewirtschaftet. Das bestimmt, womit geplant wird und was mit ausgedientem Mobiliar geschieht.' }),
   Object.freeze({ slug: 'downloads', key: 'downloads', label: 'Downloads und Vorlagen',

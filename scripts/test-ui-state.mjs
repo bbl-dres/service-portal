@@ -58,12 +58,16 @@ try {
     openGallery([{
       id: 'probe', title: 'Probe', meta: 'Test', photoSrc: 'assets/swiss-logo-flag.svg',
     }], 0, C, { param: 'bild' });
-    document.querySelector('.pf-lightbox [data-act="share"]').click();
+    const genericShare = document.querySelector('.pf-lightbox [data-act="share"]');
+    const genericShareLabel = genericShare?.getAttribute('aria-label') || '';
+    genericShare?.click();
     await wait(50);
     const nested = {
       gallery: !!document.querySelector('.pf-lightbox'),
       modal: !!document.querySelector('.modal'),
       lock: document.body.classList.contains('body--overlay-open'),
+      shareLabel: genericShareLabel,
+      modalTitle: document.querySelector('.modal__title')?.textContent.trim() || '',
     };
     document.querySelector('.modal__close').click();
     await wait(50);
@@ -106,6 +110,9 @@ try {
     'opening a second menu normalises the old trigger', JSON.stringify(overlay.menuState));
   check(overlay.nested.gallery && overlay.nested.modal && overlay.nested.lock,
     'nested gallery/share dialog retains both owners', JSON.stringify(overlay.nested));
+  check(overlay.nested.shareLabel === 'Bild teilen'
+    && overlay.nested.modalTitle === 'Aufnahme teilen',
+  'ordinary media retains its existing share terminology', JSON.stringify(overlay.nested));
   check(overlay.afterModal.gallery && !overlay.afterModal.modal && overlay.afterModal.lock,
     'closing the nested dialog leaves the gallery locked', JSON.stringify(overlay.afterModal));
   check(!overlay.afterRoute.gallery && !overlay.afterRoute.modal && !overlay.afterRoute.lock,

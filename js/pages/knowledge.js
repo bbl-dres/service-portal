@@ -32,8 +32,8 @@ export function needs(params = []) {
   const slug = params[1] || '';
   // The workspace hub and both document pages use authored content only.
   if (!slug || slug === 'kreislauf' || slug === 'downloads') return [];
-  // The handbook overview needs media for its example cards; module details need
-  // the shop catalogue for their equipment table instead.
+  // The handbook overview pairs each example's authored visualisations with one
+  // context photograph; module details need the shop catalogue instead.
   if (slug === 'multispace') {
     if (params.length === 2) return ['multispaceModules', 'media', 'workspaceExamples'];
     if (params.length === 3 && /^modul-[1-9]\d*$/.test(params[2])) {
@@ -77,7 +77,7 @@ function overview(ctx) {
     { title: AREAS.accommodation.title, icon: 'Building', href: '#/knowledge/accommodation',
       desc: 'Flächenstandards, Nachhaltigkeit, Preise und Formulare rund um Gebäude und Betrieb.', meta: `${count('accommodation')} Unterlagen` },
     { title: AREAS.workspace.title, icon: 'Apps', href: '#/knowledge/workspace',
-      desc: 'Der Ausstattungsstandard Multispace: Module, Ausstattung und realisierte Planungsbeispiele.',
+      desc: 'Der Ausstattungsstandard Multispace: Module, Ausstattung und illustrative Planungsbeispiele.',
       // Counted from the standard itself, so the tile cannot drift from it when
       // a new edition of the handbook changes the module set.
       meta: `${MULTISPACE_MODULES.length} Module & Vorgaben` },
