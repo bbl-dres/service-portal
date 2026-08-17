@@ -15,7 +15,7 @@
 > **This is an unofficial prototype for demonstration purposes only.**
 > The repository is intended to contain only fictional or publicly releasable data, and not every function is fully implemented. The current [technical review](docs/code-review-2026-08-16.md) records implemented findings and remaining production risks. The prototype is not intended for production use.
 
-The BBL Kundenportal is a process-oriented prototype for the [Federal Office for Buildings and Logistics (BBL)](https://www.bbl.admin.ch). It brings services, cases, specialist applications, property information, documents, and data access together in one interface based on the Swiss Confederation design system.
+The BBL service portal is a process-oriented prototype for the [Federal Office for Buildings and Logistics (BBL)](https://www.bbl.admin.ch). It brings services, cases, specialist applications, property information, documents, and data access together in one interface based on the Swiss Confederation design system.
 
 ## Demo
 
