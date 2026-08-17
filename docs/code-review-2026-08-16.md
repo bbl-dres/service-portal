@@ -67,7 +67,7 @@ rewrites whose only benefit would be a different framework.
 | JR-13 | Medium | Building-create redraws accumulated document click handlers. Catalogue tables, print mode, header focus timers, maps, and other route resources had inconsistent replacement ownership. | Replaceable `AbortController`/disposer ownership was added where needed. New `ui/print-mode.js` gives workspace and tenancies one unmount-safe implementation. |
 | JR-14 | Medium | Process and metadata grouping actions compared the wrong default axis or rebuilt hashes without preserving scope. Tree/landscape keyboard focus also drifted between two implementations. | Hash construction is scope-preserving, grouping defaults are consistent, and shared `ui/landscape-state.js` owns fold wiring and focus restoration. Root summaries cover both process branches. |
 | JR-15 | Low | Dead compatibility layers and repeated small helpers obscured ownership: a favourites facade, a floor-plan Three facade, local chart/export/download code, duplicate cart code, and duplicate landscape/print wiring. | The two facades were deleted; callers use their real owners. Cart, print, export, chart, and landscape behaviours now have one tested implementation each. Unused imports, aliases, arguments, selectors, and synthetic rerender paths were removed. |
-| JR-16 | Low | Migration drift left tests and documentation pointing to the deleted process-definition file. CSS manifests and test counts were also stale, and maintained code contained hundreds of German or historical comment findings. | References, manifests, counts, and architecture notes were updated. The English-code gate now passes across 267 maintained source files; comments retained in touched code explain current invariants in English. |
+| JR-16 | Low | Migration drift left tests and documentation pointing to the deleted process-definition file. CSS manifests and test counts were also stale, and maintained code contained hundreds of German or historical comment findings. | References, manifests, counts, and architecture notes were updated. The English-code gate now passes across 270 maintained source files; comments retained in touched code explain current invariants in English. |
 
 ## Security conclusions
 
@@ -315,6 +315,11 @@ Browser regressions at 320 and 768 px drive real Tab progression, while the
 1024 px transition proves the focused tree node remains stable. This finding is
 recorded as D17 in the focused design review.
 
+This fix is intentionally scoped to metadata details. Process documentation
+still keeps its hierarchy first in the DOM while visually moving the main pane
+first below 1024 px, so its analogous narrow-screen focus-order mismatch remains
+for a separate change.
+
 ## Verification evidence
 
 The maintained test inventory is now 62 `test-*.mjs` suites (38 browser and 24
@@ -333,9 +338,9 @@ pure) plus 25 `check-*.mjs` probes.
   reports the pre-existing application-card vertical padding difference
   (`24px` implemented versus `40px` in the design contract) at three viewports;
   it is outside this JavaScript review.
-- `node --check` passes for all 236 JavaScript/MJS files under `js/` and
+- `node --check` passes for all 239 JavaScript/MJS files under `js/` and
   `scripts/`.
-- The English-code gate passes for 267 maintained source files.
+- The English-code gate passes for 270 maintained source files.
 - The CSS token gate passes for 34 stylesheets and 341 custom properties.
 - Changed JSON parses, references to the deleted split process fixture are zero,
   and `git diff --check` reports no whitespace errors.

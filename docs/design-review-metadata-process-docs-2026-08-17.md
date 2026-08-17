@@ -247,6 +247,10 @@ grid areas put that same tree node in the left column without moving or
 duplicating it. The 320 and 768 px regressions drive actual Tab progression;
 the desktop transition also proves the focused tree node remains stable.
 
+The implementation is metadata-scoped. Process documentation still places its
+hierarchy first in the DOM while visually moving the main pane first below
+1024 px; the equivalent narrow-screen focus-order mismatch remains open there.
+
 ## Resulting interaction contract
 
 | User action | Result |

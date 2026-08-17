@@ -22,7 +22,7 @@ A static single-page application: no build step, no `node_modules`, no framework
 | `assets/` | 418 tracked files, ~48 MB |
 | `docs/review-assets/` | 344 tracked files (342 PNGs), ~134 MB |
 | Page modules / micro-apps | 9 / 16 |
-| Verification scripts | 60 `test-*.mjs` (36 browser, 24 pure Node), 25 `check-*.mjs` |
+| Verification scripts | 62 `test-*.mjs` (38 browser, 24 pure Node), 25 `check-*.mjs` |
 | Runtime libraries | MapLibre GL 4.7.1, Swagger UI 5.17.14, bpmn-js 17.11.1 — pinned, lazy, from `unpkg.com` |
 
 Boot is four requests: `services.json` + `reference-data.json` (everything the shell needs to draw), the shared `processes.json` registry, and `process-instances.json`, in one `Promise.all`. The process engine derives its portal definitions from the core-cached registry, and everything else is pulled per route.
