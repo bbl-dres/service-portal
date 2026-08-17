@@ -127,9 +127,11 @@ These items were not hidden behind frontend-only fixes:
 4. **Raw map popup capability.** `buildings-map.js` still accepts caller-composed
    `popup_html`. The current producer escapes its fields, but a structured popup
    model would make future callers safe by construction.
-5. **External runtime assets.** Maps, tiles/glyphs, and the BPMN viewer depend on
-   external hosts. They have graceful loader failures but no offline copy. This
-   is an availability, privacy, and deployment-policy decision.
+5. **External runtime assets.** The MapLibre renderer, raster basemap tiles,
+   BPMN viewer, and other on-demand libraries still depend on external hosts.
+   They have graceful loader failures but no offline copy. The two MapLibre
+   glyph ranges are pinned and bundled locally. The remaining dependencies are
+   an availability, privacy, and deployment-policy decision.
 6. **Large feature modules.** `metadata-catalog.js`, `process-docs.js`, and the
    two editor controllers still carry substantial presentation logic. A later
    split should follow stable state/lifecycle boundaries rather than create more
@@ -145,9 +147,9 @@ These items were not hidden behind frontend-only fixes:
 #### MAP-01 — Clustered maps depend on a failing demo glyph service
 
 **Priority:** High  
-**Status:** Queued on 2026-08-17; investigated, not yet implemented.
+**Status:** Implemented and verified on 2026-08-17.
 
-`js/map/buildings-map.js` points `CARTO_STYLE.glyphs` at
+Before remediation, `js/map/buildings-map.js` pointed `CARTO_STYLE.glyphs` at
 `https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf`. The shared
 cluster-count and point-label symbol layers request the Noto Sans Bold and
 Regular `0-255.pbf` ranges from that host. Requests from a local portal origin
@@ -167,7 +169,7 @@ Portfolio, Immobilien dashboard, Tenancies, Projects, Media Library, Room
 Booking, Workspace, and the floor-plan navigation map. The building-create
 picker has no symbol layer and normally does not trigger this glyph defect.
 
-The queued remediation is:
+The implemented remediation is:
 
 1. Reproducibly generate or vendor the two required open-licensed
    `Noto Sans Regular` and `Noto Sans Bold` `0-255.pbf` ranges with license,
@@ -200,29 +202,50 @@ neither restores the failed source tile. References:
 [MapLibre glyph specification](https://maplibre.org/maplibre-style-spec/glyphs/),
 [MapLibre demotiles repository](https://github.com/maplibre/demotiles).
 
+Implementation evidence: `js/map/map-style.js` resolves the literal MapLibre
+template against the module URL so deployment prefixes survive; the pinned PBFs,
+licenses, upstream commits, and SHA-256 hashes live in `assets/map-glyphs/`.
+`scripts/serve.mjs` serves them as `application/x-protobuf`. Geometry and symbols
+use separate GeoJSON sources, a neutral background remains without raster tiles,
+and active failures display `.map-degraded` while continuing to reach diagnostics.
+`test-map-rendering.mjs` verifies 21/21 represented records, a rendered count,
+same-origin responses, a trusted cluster click, and the glyph-blocked fallback.
+
 #### MAP-02 — Picker map failure removes the required address control
 
 **Priority:** Medium  
-**Status:** Queued on 2026-08-17; investigated, not yet implemented.
+**Status:** Implemented and verified on 2026-08-17.
 
-`initPickerMap` receives the outer `#bc-picker`, whose children are both the map
+Previously, `initPickerMap` replaced the outer `#bc-picker`, whose children are
 canvas and the mandatory address-search overlay. Its asset-loader failure path
-replaces `container.innerHTML`, deleting the search field even though the map is
-documented as optional and address selection is required. Render the failure
-only inside `.map-picker__canvas`, preserve the combobox and its listeners, and
-add an offline/blocked-CDN building-create regression.
+replaced `container.innerHTML`, deleting the search field even though the map is
+documented as optional and address selection is required. The remediation
+renders the failure only inside `.map-picker__canvas`, preserves the combobox
+and its listeners, and covers the behavior with an offline/blocked-CDN
+building-create regression.
+
+The loader and constructor failure paths now resolve and update only the canvas
+holder. `test-building-create.mjs` blocks the pinned MapLibre CDN and proves the
+required combobox, suggestion rendering, and listeners remain operational.
 
 #### MAP-03 — Rapid cluster clicks can apply out of order
 
 **Priority:** Medium  
-**Status:** Queued on 2026-08-17; investigated, not yet implemented.
+**Status:** Implemented and verified on 2026-08-17.
 
-`navigateCluster` correctly rejects completions after a map loses ownership,
-but `isCurrent` identifies only the map, not the click that initiated the
-request. Two quick clicks on the same live map can therefore resolve in reverse
-order and let the older request overwrite the newer camera. Give each map a
-cluster-navigation generation token, include it in `isCurrent`, and test both
-leaf-bounds and expansion-zoom completion orders.
+Before remediation, `navigateCluster` correctly rejected completions after a
+map lost ownership, but `isCurrent` identified only the map, not the click that
+initiated the request. Two quick clicks on the same live map could therefore
+resolve in reverse order and let the older request overwrite the newer camera.
+The remediation
+gives each map a cluster-navigation generation token, includes it in
+`isCurrent`, and tests both leaf-bounds and expansion-zoom completion orders.
+
+`createLatestNavigationGuard()` now belongs to the production navigation module;
+each map owns one guard and begins a generation only after hit testing returns a
+real cluster. The focused pure suite resolves old/new leaf and expansion requests
+in reverse order and proves stale work can neither move the camera nor show a
+failure toast.
 
 #### UX-01 — Metadata facts diverge from the federal information-block pattern
 
@@ -294,19 +317,18 @@ recorded as D17 in the focused design review.
 
 ## Verification evidence
 
-The maintained test inventory is now 60 `test-*.mjs` suites (36 browser and 24
+The maintained test inventory is now 62 `test-*.mjs` suites (38 browser and 24
 pure) plus 25 `check-*.mjs` probes.
 
 - **24/24 pure suites pass**, including data integrity/resilience, URL and export
   security, process dates, map ownership, cart concurrency, print lifecycle, and
   developer-server security.
-- **12/15 selected high-risk runtime suites pass cleanly**: login/session,
-  routes/route needs, router lifecycle, bookmarks, shop, process docs, metadata,
-  CSS layers, estate, lifecycle hygiene, and map cluster navigation. Every
-  functional assertion also passes in spatial tree, workspace, and tenancies;
-  those three exit non-zero only because the restricted test network rejects the
-  active MapLibre glyph request to `demotiles.maplibre.org`. The application
-  correctly leaves active network failures observable.
+- **4/4 focused MAP runtime suites pass cleanly** against a fresh server:
+  `test-map-rendering`, `test-estate`, `test-portfolio`, and
+  `test-building-create`. The dedicated map suite proves same-origin glyph
+  responses, 21/21 represented records, visible clusters/counts, trusted pointer
+  navigation, retained geometry/navigation when glyph requests are blocked, and
+  an observable degraded state without suppressing the active error.
 - **24/25 checker scripts pass.** The remaining legacy design-contract probe
   reports the pre-existing application-card vertical padding difference
   (`24px` implemented versus `40px` in the design contract) at three viewports;
@@ -318,6 +340,5 @@ pure) plus 25 `check-*.mjs` probes.
 - Changed JSON parses, references to the deleted split process fixture are zero,
   and `git diff --check` reports no whitespace errors.
 
-The network-only browser failures and the design-contract deviation are recorded
-explicitly so a green-looking summary cannot mask an unavailable dependency or
-unrelated visual debt.
+The remaining design-contract deviation is recorded explicitly so a green-looking
+summary cannot mask unrelated visual debt.

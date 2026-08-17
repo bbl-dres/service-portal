@@ -207,10 +207,34 @@ const newExpansionRun = startExpansionClick(21, newExpansion);
 await newExpansionStarted.promise;
 newExpansion.resolve(9);
 await newExpansionRun;
-oldExpansion.reject(new Error('old expansion failed'));
+oldExpansion.resolve(7);
 await oldExpansionRun;
 check(JSON.stringify(easedClicks) === '[21]' && failedClicks.length === 0,
-  'a stale expansion completion neither moves the camera nor raises a toast');
+  'an older expansion completion cannot move the camera after a newer real cluster click');
+
+const failureGuard = createLatestNavigationGuard();
+const staleExpansion = deferred();
+const staleExpansionStarted = deferred();
+let staleExpansionToast = false;
+const isLatestFailure = failureGuard.begin();
+const staleExpansionRun = navigateCluster({
+  source: {
+    getClusterLeaves: async () => { throw new Error('old leaves failed'); },
+    getClusterExpansionZoom: () => {
+      staleExpansionStarted.resolve();
+      return staleExpansion.promise;
+    },
+  },
+  clusterId: 22, feature, LngLatBounds: Bounds, map: {},
+  isCurrent: isLatestFailure,
+  onFailure: () => { staleExpansionToast = true; },
+});
+await staleExpansionStarted.promise;
+failureGuard.begin();
+staleExpansion.reject(new Error('old expansion failed'));
+await staleExpansionRun;
+check(!staleExpansionToast,
+  'a superseded expansion failure cannot raise a stale toast');
 
 console.log('\n■ Map error ownership');
 const fetchFailure = new Error('Failed to fetch');

@@ -6,7 +6,7 @@ Protocol** from Node (using the global `WebSocket`, Node ≥ 22) — no puppetee
 Each test opens the real app, runs an in-page probe, and asserts on the result,
 exiting non-zero on failure.
 
-There are currently **61 supported `test-*.mjs` suites: 37 browser suites and
+There are currently **62 supported `test-*.mjs` suites: 38 browser suites and
 24 pure-Node suites**, plus **25 retained `check-*.mjs` diagnostics**. Browser
 suites use `APP_BASE` to select the running app and exit non-zero on failure.
 The always-run `test-plan-check-parser.mjs` starts its own ephemeral loopback
@@ -65,7 +65,8 @@ the top.
 `HEAD`. It validates the request `Host`, rejects malformed encodings and path
 traversal, hides dot-prefixed repository files and directories, sends
 `X-Content-Type-Options: nosniff`, and negotiates Brotli or gzip for
-compressible responses (including `Vary: Accept-Encoding`). Unsupported
+compressible responses (including `Vary: Accept-Encoding`). Map glyph PBFs use
+the explicit `application/x-protobuf` media type. Unsupported
 methods return `405`; an unacceptable encoding set returns `406`.
 
 LAN access is deliberately opt-in. Bind explicitly and list every hostname or
@@ -102,7 +103,7 @@ inventory is `scripts/test-*.mjs`.
 | `test-plan-check-parser.mjs` | Always-run, self-serving parser golden. It verifies `RUNTIME-MANIFEST.json`, GPL/provenance metadata, runtime and fixture hashes; parses the bundled BBL fixture through the general file API; pins output and Worker termination; and asserts zero external requests. |
 | `test-plan-check.mjs` | End-to-end non-production Planprüfung contract: logged-out gate, validated deep context, picker/drop intake, invalid-file feedback, real fixture results, abort/retry/cleanup, contextual return, both skins, reduced motion and 320 px reflow. |
 | `test-room-booking.mjs` | Room Booking on the one-page, direct-booking surface (`docs/room-booking-redesign.md`): search and sort behavior, one process snapshot per redraw, action-time conflict checks, favourites, dialogs, process creation, personal bookings, the `?room=` deep link, and desktop/mobile containment. |
-| `test-building-create.mjs` | Building creation: neutral service-launch CTA/new-tab contract, stale address responses, selection invalidation, map/search state, required fields, and process creation. |
+| `test-building-create.mjs` | Building creation: neutral service-launch CTA/new-tab contract, stale address responses, selection invalidation, map/search state, blocked-MapLibre fallback that preserves the required address combobox, required fields, and process creation. |
 | `test-gallery-floorplan-state.mjs` | W-09/W-11 lifecycle regression: exact and stale gallery deep links, unknown image IDs, dialog focus, and tenancy floor-plan fullscreen/selection/focus preservation. |
 | `test-anchor-search-state.mjs` | W-15/W-16/K-03 navigation regression: document-relative anchor thresholds, cross-catalogue query preservation, and exact global-search targets for application details and filtered documents. |
 | `test-process-dates.mjs` | W-21/K-06 pure Node regression: local date/history/reference consistency plus concurrent process-file loading, independent failures, and successful retry. |
@@ -117,7 +118,7 @@ inventory is `scripts/test-*.mjs`.
 | `test-forms.mjs` | D3 form helpers (`C.field`/`C.select`/`C.val`/`C.readForm`) + the C5 fix across the three wizards: renders, a custom validation error attaches `input--error`+`aria-invalid`+badge to the previously class-less fields (`#org`/`#cc`/`#description`/`#booking-date`), and a valid submit creates a Vorgang. Logs in via the stub first. |
 | `test-content.mjs` | D4 download-item + contact-box unification: the pages rendering `C.downloadItem` (grundlagen, anleitungen, digitalisierung, application entries, my-cases attachments) and `C.contactBox` (application, services detail) render with the expected items / mailto links and no exceptions. |
 | `test-combobox.mjs` | Shared `createListboxController`: Arrow keys, active descendant, selection, Escape/Tab close behavior and cleanup for global suggestions and address search. |
-| `test-collections.mjs` · `test-format.mjs` · `test-fullscreen.mjs` · `test-map-cluster-navigation.mjs` | Pure helper contracts: immutable collection preparation, locale/date formatting and final-sink escaping, fullscreen success/failure feedback, and async cluster navigation errors. |
+| `test-collections.mjs` · `test-format.mjs` · `test-fullscreen.mjs` · `test-map-cluster-navigation.mjs` | Pure helper contracts: immutable collection preparation, locale/date formatting and final-sink escaping, fullscreen success/failure feedback, pinned map-style/glyph hashes, async cluster navigation errors, and latest-click ownership for reversed leaf/expansion completions. |
 | `test-catalogue-state.mjs` · `test-print-mode.mjs` · `test-shop-cart.mjs` | Pure lifecycle contracts for catalogue fold state, replaceable print ownership, and cross-tab-safe cart normalization/mutation. |
 | `test-search.mjs` · `test-search-log-security.mjs` | Pure search ranking/tokenisation plus quarantine of malformed or hostile locally stored diagnostic records. |
 | `test-data-integrity.mjs` · `test-data-resilience.mjs` | Cross-file references, strict data shapes, retry behavior, storage failures, duplicate identifiers, and safe fallback states. |
@@ -132,6 +133,7 @@ inventory is `scripts/test-*.mjs`.
 | `test-race.mjs` | A2 router render-race: rapid navigation between an awaiting page (application detail) and another must always land on the last-requested page (the `ctx.stale()` guard drops stale renders), across several timings and both directions. |
 | `test-dashboard.mjs` | Datenportal redesign and renderer boundary: exact seven-card routing, smoke coverage for all six generic dashboards, the specialized four-tab Immobilien route, Superset-style framing, dashboard/chart menus, fullscreen, and CSV/PNG export. Saves a screenshot to `$SHOT`. |
 | `test-estate.mjs` | Immobilienportfolio record-based dashboard (`js/apps/estate.js`): the four tabs (Gebäude/Grundstücke/Bodenbedeckung/Entwicklung), KPIs, runtime-aggregated charts, the worldwide CARTO map with markers, and live filtering (Land=CH shrinks the building count). Saves a screenshot to `$SHOT`. |
+| `test-map-rendering.mjs` | Focused real-WebGL map contract: same-origin glyph MIME/responses, all records represented across rendered clusters and points, visible count symbols, trusted CDP cluster clicks, isolated label-source failure, visible degraded state, retained geometry/navigation, and unsuppressed active diagnostics. |
 | `test-css-layers.mjs` | Static and lazy stylesheet order, route-level no-FOUC behavior, same-origin CSS availability, both brand skins, reduced motion, and 320 px reflow. |
 
 Run every functional suite in PowerShell:

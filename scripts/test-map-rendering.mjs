@@ -40,18 +40,11 @@ const mapProbe = `(async () => {
   const rect = map.getContainer().getBoundingClientRect();
   window.__mapBeforeClusterClick = { zoom: map.getZoom(), center: map.getCenter().toArray() };
   window.__mapClusterClickEvents = 0;
-  window.__mapCanvasClickEvents = 0;
-  window.__mapGenericClickEvents = 0;
-  window.__mapCanvasEvent = null;
-  window.__mapContainerClickEvents = 0;
+  window.__mapCanvasClickTrusted = false;
   map.on('click', 'clusters', () => { window.__mapClusterClickEvents += 1; });
-  map.on('click', () => { window.__mapGenericClickEvents += 1; });
   map.getCanvas().addEventListener('click', (event) => {
-    window.__mapCanvasClickEvents += 1;
-    window.__mapCanvasEvent = { trusted: event.isTrusted, clientX: event.clientX, clientY: event.clientY,
-      defaultPrevented: event.defaultPrevented, cancelBubble: event.cancelBubble };
+    window.__mapCanvasClickTrusted = event.isTrusted;
   }, { once: true });
-  map.getCanvasContainer().addEventListener('click', () => { window.__mapContainerClickEvents += 1; }, { once: true });
   return {
     represented: [...represented.values()].reduce((sum, value) => sum + value, 0),
     renderedClusters: map.queryRenderedFeatures({ layers: ['clusters'] }).length,
@@ -70,6 +63,24 @@ const mapProbe = `(async () => {
 async function clickCluster(cdp, page, point) {
   if (!point) return { moved: false, events: 0, reason: 'no rendered cluster' };
   await cdp.send('Page.bringToFront', {}, page.sessionId);
+  point = await page.evaluate(`(async () => {
+    const map = document.querySelector('#estate-map-el')?._map;
+    if (!map) return null;
+    document.documentElement.style.scrollBehavior = 'auto';
+    document.body.style.scrollBehavior = 'auto';
+    map.getContainer().scrollIntoView({ behavior: 'auto', block: 'center' });
+    await new Promise(resolve => setTimeout(resolve, 150));
+    map.resize();
+    const cluster = map.queryRenderedFeatures({ layers: ['clusters'] })[0];
+    if (!cluster) return null;
+    const projected = map.project(cluster.geometry.coordinates);
+    const rect = map.getContainer().getBoundingClientRect();
+    window.__mapBeforeClusterClick = { zoom: map.getZoom(), center: map.getCenter().toArray() };
+    const x = rect.left + projected.x;
+    const y = rect.top + projected.y;
+    return { x, y, hit: document.elementFromPoint(x, y) === map.getCanvas() };
+  })()`);
+  if (!point) return { moved: false, events: 0, reason: 'cluster disappeared after scroll' };
   await cdp.send('Input.dispatchMouseEvent', {
     type: 'mouseMoved', x: point.x, y: point.y, button: 'none', buttons: 0,
   }, page.sessionId);
@@ -90,34 +101,9 @@ async function clickCluster(cdp, page, point) {
       || Math.abs(center.lng - before.center[0]) > 0.0001
       || Math.abs(center.lat - before.center[1]) > 0.0001;
   })()`, { timeout: 3500 });
-  return page.evaluate(`(() => {
-    const map = document.querySelector('#estate-map-el')?._map;
-    const before = window.__mapBeforeClusterClick;
-    const center = map?.getCenter();
-    return {
-      moved: ${Boolean(moved)}, events: window.__mapClusterClickEvents || 0,
-      canvasEvents: window.__mapCanvasClickEvents || 0,
-      containerEvents: window.__mapContainerClickEvents || 0,
-      genericEvents: window.__mapGenericClickEvents || 0,
-      canvasEvent: window.__mapCanvasEvent,
-      listens: map?.listens?.('click') || false,
-      listenerCount: map?._listeners?.click?.length || 0,
-      delegatedCount: map?._delegatedListeners?.click?.length || 0,
-      moving: map?.isMoving?.() || false,
-      domListenerCount: typeof getEventListeners === 'function'
-        ? (getEventListeners(map?.getCanvasContainer()).click?.length || 0) : -1,
-      before, after: map && center ? { zoom: map.getZoom(), center: center.toArray() } : null,
-      target: document.elementFromPoint(${Number(point.x)}, ${Number(point.y)})?.className || '',
-      point: ${JSON.stringify(point)},
-      renderedAtPoint: map ? map.queryRenderedFeatures(
-        [${Number(point.localX)}, ${Number(point.localY)}], { layers: ['clusters'] }).length : 0,
-      handlerStates: map?.handlers?._handlers?.map?.(({ handlerName, handler }) => ({
-        name: handlerName, active: handler.isActive?.() || false,
-        enabled: handler.isEnabled?.() || false,
-        down: handler._mousedownPos ? [handler._mousedownPos.x, handler._mousedownPos.y] : null,
-      })) || [],
-    };
-  })()`);
+  return page.evaluate(`({ moved: ${Boolean(moved)}, hit: ${Boolean(point.hit)},
+    events: window.__mapClusterClickEvents || 0,
+    trusted: window.__mapCanvasClickTrusted === true })`);
 }
 
 const cdp = await launch({ webgl: true });
@@ -163,7 +149,7 @@ try {
       && entry.type === 'application/x-protobuf'),
   'MapLibre requests the glyphs from the portal origin');
   const clickResult = await clickCluster(cdp, page, result.click);
-  check(clickResult.events > 0 && clickResult.moved,
+  check(clickResult.hit && clickResult.trusted && clickResult.events > 0 && clickResult.moved,
     `a real pointer click on a rendered cluster changes the camera (${JSON.stringify(clickResult)})`);
   const normalProblems = await page.problems();
   check(normalProblems.length === 0,
@@ -200,18 +186,11 @@ try {
     const rect = map.getContainer().getBoundingClientRect();
     window.__mapBeforeClusterClick = { zoom: map.getZoom(), center: map.getCenter().toArray() };
     window.__mapClusterClickEvents = 0;
-    window.__mapCanvasClickEvents = 0;
-    window.__mapGenericClickEvents = 0;
-    window.__mapCanvasEvent = null;
-    window.__mapContainerClickEvents = 0;
+    window.__mapCanvasClickTrusted = false;
     map.on('click', 'clusters', () => { window.__mapClusterClickEvents += 1; });
-    map.on('click', () => { window.__mapGenericClickEvents += 1; });
     map.getCanvas().addEventListener('click', (event) => {
-      window.__mapCanvasClickEvents += 1;
-      window.__mapCanvasEvent = { trusted: event.isTrusted, clientX: event.clientX, clientY: event.clientY,
-        defaultPrevented: event.defaultPrevented, cancelBubble: event.cancelBubble };
+      window.__mapCanvasClickTrusted = event.isTrusted;
     }, { once: true });
-    map.getCanvasContainer().addEventListener('click', () => { window.__mapContainerClickEvents += 1; }, { once: true });
     const notice = map.getContainer().querySelector('.map-degraded');
     return {
       represented: [...represented.values()].reduce((sum, value) => sum + value, 0),
@@ -230,7 +209,7 @@ try {
   check(blockedResult.noticeVisible && blockedResult.notice.length > 0,
     'the degraded state includes a visible user-facing explanation');
   const blockedClick = await clickCluster(cdp, blocked, blockedResult.click);
-  check(blockedClick.events > 0 && blockedClick.moved,
+  check(blockedClick.hit && blockedClick.trusted && blockedClick.events > 0 && blockedClick.moved,
     `cluster navigation remains interactive without labels (${JSON.stringify(blockedClick)})`);
   await sleep(100);
   const blockedProblems = await blocked.problems();
