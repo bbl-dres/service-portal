@@ -73,11 +73,58 @@ const STATE = `JSON.stringify({
   originalHeadings: [...document.querySelectorAll('#mc-panel h2')]
     .filter((node) => node.textContent.trim() === 'Original').length,
   detailAsides: document.querySelectorAll('#mc-panel .detail-layout__aside').length,
-  contactHeading: document.querySelector('#mc-panel .detail-layout__aside .box > h2')?.textContent.trim() || '',
+  contactHeading: [...document.querySelectorAll('#mc-panel .detail-layout__aside .box > h2')]
+    .find((heading) => heading.textContent.trim() === 'Ansprechpersonen')?.textContent.trim() || '',
+  asideHeadings: [...document.querySelectorAll('#mc-panel .detail-layout__aside > .box > h2')]
+    .map((heading) => heading.textContent.trim()),
+  asideCards: document.querySelectorAll('#mc-panel .detail-layout__aside > .box').length,
+  asideKeys: [...document.querySelectorAll('#mc-panel .detail-layout__aside > .box > dl.kv--stack > dt')]
+    .map((term) => term.textContent.trim()),
+  systemAccess: (() => {
+    const card = [...document.querySelectorAll('#mc-panel .detail-layout__aside > .box')]
+      .find((box) => box.querySelector('h2')?.textContent.trim() === 'Systemzugang');
+    const link = card?.querySelector('a');
+    return link ? {
+      href: link.getAttribute('href') || '',
+      target: link.getAttribute('target') || '',
+      rel: link.getAttribute('rel') || '',
+      text: link.textContent.replace(/\s+/g, ' ').trim(),
+      description: card.querySelector('.fp-svc__description')?.textContent.trim() || '',
+    } : null;
+  })(),
+  mainSystemAccess: [...document.querySelectorAll(
+    '#mc-panel > .detail-layout > .vertical-spacing dl.kv > dt')]
+    .some((term) => term.textContent.trim() === 'Systemzugang'),
+  contactDirectKv: (() => {
+    const card = [...document.querySelectorAll('#mc-panel .detail-layout__aside > .box')]
+      .find((box) => box.querySelector('h2')?.textContent.trim() === 'Ansprechpersonen');
+    const children = [...(card?.querySelector(':scope > dl.kv--stack')?.children || [])];
+    return children.length > 0
+      && children.every((child, index) => child.tagName === (index % 2 ? 'DD' : 'DT'));
+  })(),
+  responsibilityAdmindir: document.querySelectorAll(
+    '#mc-panel .detail-layout__aside > .box a[href*="admindir"]').length,
+  responsibilityMissing: (() => {
+    const card = [...document.querySelectorAll('#mc-panel .detail-layout__aside > .box')]
+      .find((box) => box.querySelector('h2')?.textContent.trim() === 'Ansprechpersonen');
+    return /noch nicht erfasst/.test(card?.textContent || '');
+  })(),
   contactMailto: document.querySelector('#mc-panel .detail-layout__aside a[href^="mailto:"]')?.getAttribute('href') || '',
   mainMailtos: document.querySelectorAll('#mc-panel .detail-layout > .vertical-spacing a[href^="mailto:"]').length,
   directRecordKv: [...document.querySelectorAll('#mc-panel > .detail-layout > .vertical-spacing dl.kv')]
     .every((list) => [...list.children].every((child) => child.matches('dt, dd'))),
+  kvCodeTypography: (() => {
+    const codes = [...document.querySelectorAll('#mc-panel .kv dd code')];
+    const properties = ['fontFamily', 'fontSize', 'fontStyle', 'fontWeight', 'lineHeight', 'letterSpacing'];
+    return {
+      count: codes.length,
+      consistent: codes.every((code) => {
+        const codeStyle = getComputedStyle(code);
+        const valueStyle = getComputedStyle(code.parentElement);
+        return properties.every((property) => codeStyle[property] === valueStyle[property]);
+      }),
+    };
+  })(),
   filters: [...document.querySelectorAll('#mc-activefilters .active-filter, #mc-activefilters [data-remove]')]
     .map((node) => node.textContent.replace(/\\s+/g, ' ').trim()),
   cardLinks: [...document.querySelectorAll('#mc-panel .stats .card__link')].map(
@@ -231,12 +278,17 @@ try {
   check(o.tabs.join('/') === 'Übersicht/Attribute' && o.textTabs === 2,
     'record modes are descriptive APG tabs', o.tabs.join('/'));
   check(o.tabPanel === 'mc-tab-uebersicht', 'the active tab labels the shared panel', o.tabPanel);
-  check(o.sections.join('/') === 'Beschreibung/Kerndaten/Verantwortung',
-    'description and key metadata are the default content', o.sections.join('/'));
-  check(o.detail && o.recordDetail && !o.metadataDetail && o.factGroups === 2
-    && o.detailAsides === 1 && o.contactHeading === 'Ansprechpersonen' && o.directRecordKv,
-  'the record uses the shared detail layout, direct key/value grids and contact rail',
-  `${o.factGroups}/${o.detailAsides}/${o.contactHeading}`);
+  check(o.sections.join('/') === 'Beschreibung/Kerndaten',
+    'description and key metadata stay in the main content', o.sections.join('/'));
+  check(o.detail && o.recordDetail && !o.metadataDetail && o.factGroups === 1
+    && o.detailAsides === 1 && o.asideCards === 1 && o.asideHeadings.join('/') === 'Ansprechpersonen'
+    && o.directRecordKv && o.contactDirectKv && o.responsibilityAdmindir >= 2
+    && o.asideKeys.join('/') === 'Datenverantwortung/Dateneigner/Datenverwalter',
+  'the record uses direct key/value grids and one combined contact card',
+  `${o.factGroups}/${o.detailAsides}/${o.asideHeadings.join('/')}`);
+  check(o.kvCodeTypography.count > 0 && o.kvCodeTypography.consistent,
+    'technical values use the same typography as the rest of the key/value grid',
+    JSON.stringify(o.kvCodeTypography));
   check(o.keys.includes('Domäne') && o.keys.includes('ID'), 'key metadata names its axis and id', o.keys.join('/'));
   check(o.statusBadge?.text === 'Gültig' && /badge--success/.test(o.statusBadge.cls),
     'record status keeps its semantic badge variant', JSON.stringify(o.statusBadge));
@@ -424,12 +476,14 @@ try {
       original: [...detail.querySelectorAll('h2')].some((heading) => heading.textContent.trim() === 'Original'),
       wide: detail.querySelectorAll('.mc-detail__wide').length,
       mainBoxes: detail.querySelectorAll(':scope > .vertical-spacing .box').length,
-      contactHeading: detail.querySelector('.detail-layout__aside .box > h2')?.textContent.trim() || '',
+      asideHeadings: [...detail.querySelectorAll('.detail-layout__aside > .box > h2')]
+        .map((heading) => heading.textContent.trim()),
     });
   })()`));
-  check(objectProvenance.sections.join('/') === 'Beschreibung/Kerndaten/Verantwortung'
+  check(objectProvenance.sections.join('/') === 'Beschreibung/Kerndaten'
     && !objectProvenance.original && objectProvenance.wide === 0
-    && objectProvenance.mainBoxes === 0 && objectProvenance.contactHeading === 'Ansprechpersonen',
+    && objectProvenance.mainBoxes === 0
+    && objectProvenance.asideHeadings.join('/') === 'Ansprechpersonen',
   'the exact object route has no standalone Original or wide box', JSON.stringify(objectProvenance));
   check(/Architektur-Repository/.test(objectProvenance.source)
     && /Innovator \/ smartfacts/.test(objectProvenance.source)
@@ -521,9 +575,9 @@ try {
   o = await go(tableHref.slice(1));
   check(o.active === 'Übersicht' && o.tabs.join('/') === 'Übersicht/Felder',
     'a data table opens on information, with fields as a secondary tab', `${o.active} / ${o.tabs.join('/')}`);
-  check(o.rows === 0 && o.detail && o.factGroups === 3 && o.detailAsides === 1
-    && o.contactHeading === 'Ansprechpersonen',
-  'schema rows do not replace the default overview and its contact rail',
+  check(o.rows === 0 && o.detail && o.factGroups === 2 && o.detailAsides === 1
+    && o.asideCards === 1 && o.asideHeadings.join('/') === 'Ansprechpersonen',
+  'schema rows do not replace the default overview and its compact contact card',
   `${o.rows} rows / ${o.factGroups} groups / ${o.detailAsides} asides`);
   check(o.keys.includes('Technischer Name'), 'a table names its technical identity', o.keys.join('/'));
   // The DCAT bridge lives in metadata rather than a separate access box.
@@ -532,10 +586,22 @@ try {
   check(Number(dcat) >= 0, 'the published-dataset bridge resolves without error', 'links: ' + dcat);
 
   o = await go('#/app/metadata-catalog?table=gis-immo-building');
-  check(o.contactMailto === 'mailto:dres@bbl.admin.ch' && o.mainMailtos === 0,
-    'the GIS IMMO table overview puts its steward contact only in the aside', o.contactMailto);
+  check(o.contactMailto === 'mailto:dres@bbl.admin.ch' && o.mainMailtos === 0
+    && o.asideCards === 2 && o.asideHeadings.join('/') === 'Systemzugang/Ansprechpersonen'
+    && o.contactDirectKv && o.responsibilityAdmindir >= 2
+    && o.asideKeys.join('/') === 'Datenverantwortung/Dateneigner/Datenverwalter'
+    && o.systemAccess?.href === 'https://gis.bbl.admin.ch/arcgis/rest/services/BUILDING/FeatureServer/0'
+    && o.systemAccess.target === '_blank' && /noopener/.test(o.systemAccess.rel)
+    && /noreferrer/.test(o.systemAccess.rel) && /external/.test(o.systemAccess.rel)
+    && /GIS IMMO öffnen/.test(o.systemAccess.text)
+    && o.systemAccess.description === 'Öffnet in einem neuen Fenster.' && !o.mainSystemAccess,
+  'the GIS IMMO table combines its contacts and exposes system access as a separate card',
+  JSON.stringify({ headings: o.asideHeadings, access: o.systemAccess }));
 
   o = await go('#/app/metadata-catalog?table=sap-refx-vibdbe');
+  check(o.asideCards === 1 && o.asideHeadings.join('/') === 'Ansprechpersonen'
+    && !o.systemAccess && !o.mainSystemAccess,
+  'a data table without a source URL does not show an empty system-access card');
   const tableProvenance = JSON.parse(await p.evaluate(`(() => {
     const detail = document.querySelector('#mc-panel > .detail-layout');
     const terms = [...detail.querySelectorAll(':scope > .vertical-spacing dl.kv > dt')];
@@ -550,13 +616,14 @@ try {
       rows,
       original: [...detail.querySelectorAll('h2')].some((heading) => heading.textContent.trim() === 'Original'),
       wide: detail.querySelectorAll('.mc-detail__wide').length,
-      contactHeading: detail.querySelector('.detail-layout__aside h2')?.textContent.trim() || '',
+      asideHeadings: [...detail.querySelectorAll('.detail-layout__aside > .box > h2')]
+        .map((heading) => heading.textContent.trim()),
     });
   })()`));
   const tableFact = (key) => tableProvenance.rows.find((row) => row.key === key) || {};
-  check(tableProvenance.sections.join('/') === 'Beschreibung/Kerndaten/Verantwortung/Technische Angaben'
+  check(tableProvenance.sections.join('/') === 'Beschreibung/Kerndaten/Technische Angaben'
     && !tableProvenance.original && tableProvenance.wide === 0
-    && tableProvenance.contactHeading === 'Ansprechpersonen',
+    && tableProvenance.asideHeadings.join('/') === 'Ansprechpersonen',
   'the exact table route keeps provenance in the ordered fact stream', JSON.stringify(tableProvenance));
   check(tableFact('Führendes System').value === 'SAP RE-FX'
     && tableFact('Referenz').value === 'VIBD.VIBDBE'
@@ -824,8 +891,10 @@ try {
   check(o.vals.some((v) => /noch nicht erfasst/.test(v)), 'and are labelled as such');
   const objectStatusesHref = '#/app/metadata-catalog?list=objectStatuses';
   o = await go(objectStatusesHref);
-  check(o.recordDetail && o.contactHeading === 'Ansprechpersonen'
-    && o.contactMailto === 'mailto:dres@bbl.admin.ch' && o.mainMailtos === 0,
+  check(o.recordDetail && o.asideCards === 1 && o.asideHeadings.join('/') === 'Ansprechpersonen'
+    && o.contactMailto === 'mailto:dres@bbl.admin.ch' && o.mainMailtos === 0
+    && o.contactDirectKv && o.responsibilityMissing
+    && o.asideKeys.join('/') === 'Metadaten und Katalog/Verantwortung',
   'reference-data overview uses the catalogue contact fallback in its aside',
   `${o.contactHeading}/${o.contactMailto}`);
   o = await go(withTab(objectStatusesHref, 'tabelle'));

@@ -229,6 +229,8 @@ const expectedSteps = (file) => {
       const overviewMain = overviewLayout.querySelector(':scope > .vertical-spacing');
       const overviewAside = overviewLayout.querySelector(':scope > .detail-layout__aside');
       const overviewKvs = [...overviewMain.querySelectorAll('dl.kv')];
+      const contactBox = overviewAside.querySelector(':scope > .box');
+      const contactKvChildren = [...(contactBox?.querySelector('dl.kv--stack')?.children || [])];
       const initial = {
         h1: document.querySelector('h1').textContent.trim(),
         lead: document.querySelector('.page-header .lead')?.textContent.trim() || '',
@@ -244,13 +246,35 @@ const expectedSteps = (file) => {
           .map(h => h.textContent.trim()),
         directKv: overviewKvs.length > 0 && overviewKvs.every((list) =>
           [...list.children].every((child, index) => child.tagName === (index % 2 ? 'DD' : 'DT'))),
+        kvCodeTypography: (() => {
+          const codes = [...overviewMain.querySelectorAll('dl.kv dd code')];
+          const properties = ['fontFamily', 'fontSize', 'fontStyle', 'fontWeight', 'lineHeight', 'letterSpacing'];
+          return {
+            count: codes.length,
+            consistent: codes.every((code) => {
+              const codeStyle = getComputedStyle(code);
+              const valueStyle = getComputedStyle(code.parentElement);
+              return properties.every((property) => codeStyle[property] === valueStyle[property]);
+            }),
+          };
+        })(),
         nestedSubheadings: document.querySelectorAll('#pd-tab-panel-overview .detail-section h3').length,
         admindir: document.querySelectorAll('a[href*="admindir"]').length,
         statusPill: overviewMain.querySelector('dl.kv .badge')?.textContent || '',
         oldStatusText: overviewMain.textContent.includes('Freigegeben und aktiv bewirtschaftet'),
         contactHref: overviewAside.querySelector('a[href^="mailto:"]')?.getAttribute('href') || '',
         contactHeading: overviewAside.querySelector('h2')?.textContent.trim() || '',
+        asideHeadings: [...overviewAside.querySelectorAll(':scope > .box > h2')]
+          .map((heading) => heading.textContent.trim()),
+        asideCards: overviewAside.querySelectorAll(':scope > .box').length,
+        contactKeys: [...(contactBox?.querySelectorAll(':scope > dl.kv--stack > dt') || [])]
+          .map((term) => term.textContent.trim()),
+        contactDirectKv: contactKvChildren.length > 0
+          && contactKvChildren.every((child, index) => child.tagName === (index % 2 ? 'DD' : 'DT')),
+        responsibilityAdmindir: contactBox?.querySelectorAll('a[href*="admindir"]').length || 0,
+        responsibilityWindowCues: contactBox?.querySelectorAll('a[href*="admindir"] > .sr-only').length || 0,
         contactUnit: overviewAside.textContent.includes('Direktionsbereich Bauten'),
+        contactPhone: overviewAside.textContent.includes('+41 58 465 50 21'),
         mainContactLinks: overviewMain.querySelectorAll('a[href^="mailto:"]').length,
         visibleAsides: document.querySelectorAll('[role="tabpanel"]:not([hidden]) .detail-layout__aside').length,
         redundantChip: !!document.querySelector('.active-filter'),
@@ -287,21 +311,27 @@ const expectedSteps = (file) => {
     check(!o.bpmnHost && o.toolbar === 0, 'overview has no diagram');
     check(o.bpmnRequests === 0, 'overview does not fetch or parse BPMN merely to show a count', String(o.bpmnRequests));
     check(o.sections[0] === 'Beschreibung' && o.sections.includes('Einordnung')
-      && o.sections.includes('Verantwortung') && !o.sections.includes('Ablauf und Systeme')
+      && !o.sections.includes('Verantwortung') && !o.sections.includes('Ablauf und Systeme')
       && o.sections.includes('Schlagwörter') && !o.sections.includes('Grundlagen')
       && !o.sections.includes('Führende Quelle') && o.nestedSubheadings === 0,
     'the overview starts with Beschreibung and keeps a stable section hierarchy', o.sections.join(', '));
     check(o.directKv && o.dts.includes('Prozessbereich') && o.dts.includes('Prozessgruppe')
       && o.dts.includes('Status') && o.dts.includes('ID'),
     'classification facts use the shared direct-child kv anatomy', o.dts.join(', '));
+    check(o.kvCodeTypography.count > 0 && o.kvCodeTypography.consistent,
+      'technical values use the same typography as the rest of the key/value grid',
+      JSON.stringify(o.kvCodeTypography));
     check(o.admindir >= 2, 'responsible people link to AdminDir', String(o.admindir));
     check(/Gültig/.test(o.statusPill), 'status uses a pill tag', o.statusPill);
     check(!o.oldStatusText, 'status has no duplicate description');
     check(o.contactHref === 'mailto:immobilienmanagement@bbl.admin.ch'
-      && o.contactHeading === 'Ansprechpersonen' && o.contactUnit && o.mainContactLinks === 0
-      && o.visibleAsides === 1,
-    'contact is isolated in the Overview aside',
-    `${o.contactHeading}/${o.contactHref}/${o.visibleAsides}`);
+      && o.contactHeading === 'Ansprechpersonen' && o.contactUnit && o.contactPhone && o.mainContactLinks === 0
+      && o.asideCards === 1 && o.asideHeadings.join('/') === 'Ansprechpersonen'
+      && o.contactKeys.join('/') === 'Fachstelle/Prozesseigner/Prozessverantwortung/Fachexpertise'
+      && o.contactDirectKv && o.responsibilityAdmindir >= 2
+      && o.responsibilityWindowCues === o.responsibilityAdmindir && o.visibleAsides === 1,
+    'contact and responsibility share one Overview card',
+    `${o.asideHeadings.join('/')}/${o.contactHref}/${o.visibleAsides}`);
     check(!o.redundantChip && o.detailLayout && o.outerDetailLayout && o.detailTracks === 2
       && o.asidePosition === 'sticky' && Math.abs(o.asideWidth - 352) <= 1,
     'desktop uses the shared content-plus-22rem contact layout without a repeated record chip',
@@ -485,6 +515,7 @@ const expectedSteps = (file) => {
       const overviewLayout = document.querySelector('#pd-tab-panel-overview > .detail-layout');
       const overviewMain = overviewLayout.querySelector(':scope > .vertical-spacing');
       const overviewAside = overviewLayout.querySelector(':scope > .detail-layout__aside');
+      const contactBox = overviewAside.querySelector(':scope > .box');
       const overview = {
         lead: document.querySelector('.page-header .lead')?.textContent.trim() || '',
         sections: [...overviewMain.querySelectorAll(':scope > .detail-section > .detail-section__title')]
@@ -492,6 +523,11 @@ const expectedSteps = (file) => {
         factGroups: overviewMain.querySelectorAll(':scope > .detail-section:not(:first-child)').length,
         contactHref: overviewAside.querySelector('a[href^="mailto:"]')?.getAttribute('href') || '',
         contactHeading: overviewAside.querySelector('h2')?.textContent.trim() || '',
+        asideHeadings: [...overviewAside.querySelectorAll(':scope > .box > h2')]
+          .map((heading) => heading.textContent.trim()),
+        asideCards: overviewAside.querySelectorAll(':scope > .box').length,
+        contactKeys: [...(contactBox?.querySelectorAll(':scope > dl.kv--stack > dt') || [])]
+          .map((term) => term.textContent.trim()),
         mainContactLinks: overviewMain.querySelectorAll('a[href^="mailto:"]').length,
         visibleAside: !!document.querySelector('[role="tabpanel"]:not([hidden]) .detail-layout__aside'),
         bpmnHost: !!document.querySelector('#pd-tab-panel-overview #pd-bpmn'),
@@ -515,11 +551,13 @@ const expectedSteps = (file) => {
     check(/Kundenportal/.test(portal.overview.lead)
       && portal.overview.sections.includes('Beschreibung')
       && portal.overview.sections.includes('Einordnung')
-      && portal.overview.sections.includes('Verantwortung')
+      && !portal.overview.sections.includes('Verantwortung')
       && !portal.overview.sections.includes('Ablauf und Systeme')
-      && portal.overview.factGroups >= 2
+      && portal.overview.factGroups >= 1
       && portal.overview.contactHref === 'mailto:immobilienmanagement@bbl.admin.ch'
       && portal.overview.contactHeading === 'Ansprechpersonen'
+      && portal.overview.asideCards === 1 && portal.overview.asideHeadings.join('/') === 'Ansprechpersonen'
+      && portal.overview.contactKeys.join('/') === 'Fachstelle/Beteiligte Rollen'
       && portal.overview.mainContactLinks === 0 && portal.overview.visibleAside
       && !portal.overview.bpmnHost && !portal.diagramVisibleAside,
     'portal and domain records share the same Overview-only contact layout', JSON.stringify(portal.overview));

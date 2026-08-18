@@ -171,8 +171,8 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 }
 /* Spacing between aside cards. `.box + .box` would otherwise join them with a
    1px seam into ONE surface. That is correct for stacked boxes in flowing text,
-   but wrong here: “Actions” and “Contacts” are two offerings, not two sections
-   of the same offering. */
+   but wrong here: adjacent detail cards are separate offerings, not sections
+   of one surface. */
 .detail-layout__aside .box + .box { margin-top:var(--sp-6); }
 
 /* KPI row above contract details: four large figures, small labels, and a rule
@@ -232,7 +232,9 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 /* Use break-word rather than anywhere: long URLs may wrap, but ordinary words
    must not break in the middle. */
 .kv dd { margin:0; overflow-wrap:break-word; }
-.kv dd code { overflow-wrap:anywhere; }
+/* Technical identifiers keep their semantic <code> markup, but a property grid
+   uses one visual text style for every value. */
+.kv code { font:inherit; overflow-wrap:anywhere; }
 /* Ruled variant — retains the row separators from the former .data-rows
    (data-catalogue metadata and long distribution lists): one implementation,
    two surfaces (Design Review C7). */

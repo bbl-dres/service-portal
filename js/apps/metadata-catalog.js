@@ -9,7 +9,9 @@ import { runTableExport, slug } from '../ui/export-table.js';
 import {
   landscapeKey, landscapeState, wireLandscape,
 } from '../ui/landscape-state.js';
-import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
+import {
+  classifyUrl, newWindowAttrs, safeLinkUrl, safeMailto,
+} from '../security/urls.js';
 
 export const needs = ['businessObjects', 'dataTables', 'contacts'];
 
@@ -712,9 +714,14 @@ const kv = (rows) => `<dl class="kv kv--ruled mc-detail__list">${rows.filter(Boo
   .map(([k, v]) => `<div class="mc-detail__fact"><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
 const overviewKv = (rows) => `<dl class="kv">${rows.filter(Boolean)
   .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
+const contactCard = (rows) => `<div class="box">
+  <h2 id="mc-contacts-title">Ansprechpersonen</h2>
+  <dl class="kv kv--stack">${rows.filter(Boolean)
+    .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>
+</div>`;
 const personRows = (persons) => (persons || []).map((p) => [p.role,
-  `<a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(p.admindirId)}"
-     target="_blank" rel="noopener noreferrer external">AdminDir ${esc(p.admindirId)}</a>`]);
+  newWindowLink(`https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(p.admindirId)}`,
+    `AdminDir ${p.admindirId}`)]);
 const detailOverview = ({ description, facts }) => `<div class="mc-detail mc-detail--metadata">
   <section class="detail-section mc-detail__description">
     <h2 class="detail-section__title">Beschreibung</h2>
@@ -726,21 +733,32 @@ const detailOverview = ({ description, facts }) => `<div class="mc-detail mc-det
 </div>`;
 
 // Record overviews use the same operational anatomy as property details: a
-// readable stream of facts plus one stable contact rail. Governance roles and
-// AdminDir links remain facts; the card contains the team somebody can contact.
-const recordContactAside = (core, C, record) => {
+// readable stream of facts plus one stable aside. One compact card combines the
+// actionable team with governance roles and AdminDir links.
+const recordContactAside = (core, record, additionalCard = '') => {
   const stewardId = record.raw?.steward || '';
   const stewardContact = core.contacts().find((candidate) => candidate.contactId === stewardId);
   const contact = stewardContact
     || core.contacts().find((candidate) => candidate.contactId === CATALOG_CONTACT_ID);
   const label = stewardContact ? 'Datenverantwortung' : 'Metadaten und Katalog';
-  const card = C.contactCard({ contacts: [{
-    label,
-    name: contact?.name || record.steward || 'Kontaktdaten nicht verfügbar',
-    email: contact?.email || '',
-    phone: contact?.phone || '',
-  }] });
-  return `<aside class="detail-layout__aside" aria-label="Ansprechpersonen">${card}</aside>`;
+  const mailto = safeMailto(contact?.email || '');
+  const contactValue = [
+    esc(contact?.name || record.steward || 'Kontaktdaten nicht verfügbar'),
+    mailto ? `<a href="${esc(mailto)}">${esc(contact.email)}</a>` : '',
+    contact?.phone ? esc(contact.phone) : '',
+  ].filter(Boolean).join('<br>');
+  const rows = [
+    [label, contactValue],
+    ...personRows(record.persons),
+    !record.steward ? ['Verantwortung', TODO] : null,
+  ];
+  const labelAttribute = additionalCard
+    ? 'aria-label="Systemzugang und Ansprechpersonen"'
+    : 'aria-labelledby="mc-contacts-title"';
+  return `<aside class="detail-layout__aside" ${labelAttribute}>
+    ${additionalCard}
+    ${contactCard(rows)}
+  </aside>`;
 };
 
 const recordDetailOverview = ({ description, facts, aside }) => `<div class="detail-layout">
@@ -818,9 +836,18 @@ function recordOverview(core, C, s, unit) {
     ['Technischer Name', `<code>${esc(t.name)}</code>`],
     ['Art', esc(TABLE_TYPE[t.type] || t.type)],
     dataset ? ['Publiziert als', `<a href="${esc(links.dataset(dataset.id))}">${esc(core.t(dataset.title))}</a>`] : null,
-    sourceHref ? ['Systemzugang', newWindowLink(sourceHref, `${t.systemName || hostOf(sourceHref)} öffnen`)] : null,
     ...provenanceRows(core, t, { includeSystem: false }),
   ] : [];
+  const systemAccessCard = sourceHref ? C.actionCard({
+    title: 'Systemzugang',
+    items: [{
+      type: 'link',
+      label: `${t.systemName || hostOf(sourceHref)} öffnen`,
+      description: 'Öffnet in einem neuen Fenster.',
+      href: sourceHref,
+      newWindow: true,
+    }],
+  }) : '';
   return recordDetailOverview({
     description: r.def,
     facts: [
@@ -833,13 +860,9 @@ function recordOverview(core, C, s, unit) {
         ['ID', `<code>${esc(r.id)}</code>`],
         ...(r.kind === 'objekt' ? provenanceRows(core, t) : []),
       ]],
-      ['Verantwortung', [
-        ['Verantwortung', r.steward ? esc(r.steward) : TODO],
-        ...personRows(r.persons),
-      ]],
       ...(technical.length ? [['Technische Angaben', technical]] : []),
     ],
-    aside: recordContactAside(core, C, r),
+    aside: recordContactAside(core, r, systemAccessCard),
   });
 }
 

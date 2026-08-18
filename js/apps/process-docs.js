@@ -764,6 +764,11 @@ async function detail(ctx, rawId) {
     <h2 class="detail-section__title">${esc(title)}</h2>${body}</section>`;
   const detailFacts = (rows) => `<dl class="kv">${rows.filter(Boolean)
     .map(([label, value]) => `<dt>${esc(label)}</dt><dd>${value}</dd>`).join('')}</dl>`;
+  const processContactCard = (rows) => `<div class="box">
+    <h2 id="pd-contacts-title">Ansprechpersonen</h2>
+    <dl class="kv kv--stack">${rows
+    .map(([label, value]) => `<dt>${esc(label)}</dt><dd>${value}</dd>`).join('')}</dl>
+  </div>`;
   const audienceLabel = p.audience === 'external' ? 'Kundinnen und Kunden'
     : p.audience === 'internal' ? 'BBL-intern' : p.audience || '';
   const portalRoles = [...new Set((p.steps || []).map((step) => step.role).filter(Boolean))];
@@ -771,7 +776,8 @@ async function detail(ctx, rawId) {
     const responsibility = [
       ...(p.responsiblePersons || []).map((person) => [person.role,
         `<a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(person.admindirId)}"
-          target="_blank" rel="noopener noreferrer external">AdminDir ${esc(person.admindirId)}</a>`]),
+          target="_blank" rel="noopener noreferrer external">AdminDir ${esc(person.admindirId)}<span
+          class="sr-only"> (öffnet in neuem Fenster)</span></a>`]),
       portalRoles.length ? ['Beteiligte Rollen', portalRoles.map(esc).join('<br>')] : null,
     ].filter(Boolean);
     const related = (p.related || []).map((id) => {
@@ -784,13 +790,18 @@ async function detail(ctx, rawId) {
       p.tags?.length ? detailSection('Schlagwörter',
         `<p class="pill-row m-0">${p.tags.map((tag) => badge(tag, 'gray', 'sm')).join('')}</p>`) : '',
     ].filter(Boolean).join('');
-    const contactCard = C.contactBox({
-      role: 'Fachstelle',
-      name: contact?.name || CONTACT_ID,
-      unit: contact?.unit || '',
-      email: contact?.email || '',
-      phone: contact?.phone || '',
-    }, { title: 'Ansprechpersonen', heading: 'h2' });
+    const contactMailto = safeMailto(contact?.email || '');
+    const contactDetails = [
+      `<strong>${esc(contact?.name || CONTACT_ID)}</strong>`,
+      contact?.unit ? esc(contact.unit) : '',
+      contactMailto ? `<a href="${esc(contactMailto)}">${esc(contact.email)}</a>` : '',
+      contact?.phone ? esc(contact.phone) : '',
+    ].filter(Boolean).join('<br>');
+    const contactRows = [
+      ['Fachstelle', contactDetails],
+      ...(responsibility.length ? responsibility
+        : [['Verantwortung', '<span class="muted">Für diesen Prozess ist keine Verantwortung hinterlegt.</span>']]),
+    ];
 
     return `<div class="detail-layout">
       <div class="vertical-spacing">
@@ -806,12 +817,11 @@ async function detail(ctx, rawId) {
     audienceLabel ? ['Zielgruppe', esc(audienceLabel)] : null,
     ['ID', `<code>${esc(p.processId)}</code>`],
   ]))}
-        ${detailSection('Verantwortung', responsibility.length
-    ? detailFacts(responsibility)
-        : '<p class="muted m-0">Für diesen Prozess ist keine Verantwortung hinterlegt.</p>')}
         ${additional}
       </div>
-      <aside class="detail-layout__aside" aria-label="Ansprechpersonen">${contactCard}</aside>
+      <aside class="detail-layout__aside" aria-labelledby="pd-contacts-title">
+        ${processContactCard(contactRows)}
+      </aside>
     </div>`;
   };
 

@@ -236,9 +236,8 @@ body.body--banner-visible { padding-bottom:var(--banner-offset, 0px); }
    text-500): text-500 would fall below AA at ~4.1:1 on secondary-50 surfaces.
    .text--light itself uses the CD value in the CD utilities above. */
 .muted { color:var(--color-text-muted); }
-/* Identifiers, paths and schema names: ONE monospace recipe for every <code>.
-   Previously the family was API-scoped three times, while metadata-catalogue
-   <code> elements fell back to the user-agent monospace font (Design Review C13). */
+/* Identifiers, paths and schema names use one default monospace recipe. Property
+   grids intentionally override it so all values share the grid's typography. */
 code { font-family:var(--font-mono); }
 .text-center { text-align:center; }
 .text-right { text-align:right; }

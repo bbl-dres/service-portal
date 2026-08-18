@@ -305,9 +305,11 @@ the portfolio application:
   beginning with **Beschreibung**;
 - fact sections use direct `<dt>`/`<dd>` children in the shared plain `.kv`
   grid;
-- governance roles and AdminDir people remain in **Verantwortung**, while the
-  actionable team contact appears once in an **Ansprechpersonen** card inside
+- the actionable team contact, governance roles, and AdminDir people appear
+  together in one compact **Ansprechpersonen** card in the
   `.detail-layout__aside`;
+- a data table with a safe source URL adds a **Systemzugang** action card before
+  **Ansprechpersonen**; missing or rejected targets produce no empty card;
 - the aside exists only in Overview content; fields, attributes, values,
   diagrams, and process steps retain the full panel width; and
 - because these pages already have a hierarchy rail, the nested contact area
