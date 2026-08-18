@@ -705,10 +705,13 @@ function treeConfig(ctx, s) {
 }
 
 const TODO = badge('noch nicht erfasst', 'warning', 'sm');
+const CATALOG_CONTACT_ID = 'dres';
 const section = (title, body) =>
   `<section class="detail-section"><h2 class="detail-section__title">${esc(title)}</h2>${body}</section>`;
 const kv = (rows) => `<dl class="kv kv--ruled mc-detail__list">${rows.filter(Boolean)
   .map(([k, v]) => `<div class="mc-detail__fact"><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
+const overviewKv = (rows) => `<dl class="kv">${rows.filter(Boolean)
+  .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
 const personRows = (persons) => (persons || []).map((p) => [p.role,
   `<a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(p.admindirId)}"
      target="_blank" rel="noopener noreferrer external">AdminDir ${esc(p.admindirId)}</a>`]);
@@ -720,6 +723,32 @@ const detailOverview = ({ description, facts }) => `<div class="mc-detail mc-det
   <div class="mc-detail__facts">
     ${facts.map(([title, rows]) => section(title, kv(rows))).join('')}
   </div>
+</div>`;
+
+// Record overviews use the same operational anatomy as property details: a
+// readable stream of facts plus one stable contact rail. Governance roles and
+// AdminDir links remain facts; the card contains the team somebody can contact.
+const recordContactAside = (core, C, record) => {
+  const stewardId = record.raw?.steward || '';
+  const stewardContact = core.contacts().find((candidate) => candidate.contactId === stewardId);
+  const contact = stewardContact
+    || core.contacts().find((candidate) => candidate.contactId === CATALOG_CONTACT_ID);
+  const label = stewardContact ? 'Datenverantwortung' : 'Metadaten und Katalog';
+  const card = C.contactCard({ contacts: [{
+    label,
+    name: contact?.name || record.steward || 'Kontaktdaten nicht verfügbar',
+    email: contact?.email || '',
+    phone: contact?.phone || '',
+  }] });
+  return `<aside class="detail-layout__aside" aria-label="Ansprechpersonen">${card}</aside>`;
+};
+
+const recordDetailOverview = ({ description, facts, aside }) => `<div class="detail-layout">
+  <div class="vertical-spacing">
+    ${section('Beschreibung', `<p class="m-0">${description ? esc(description) : TODO}</p>`)}
+    ${facts.map(([title, rows]) => section(title, overviewKv(rows))).join('')}
+  </div>
+  ${aside}
 </div>`;
 
 function paneHtml(ctx, s, unit) {
@@ -735,7 +764,7 @@ function paneHtml(ctx, s, unit) {
   if (s.tab === 'tabelle') return '<div id="mc-table"></div>';
   if (s.tab === 'diagramm') return landscapeHtml(ctx, s);
   if (s.lvl === 4) return attrOverview(core, s, unit);
-  if (s.lvl === 3) return recordOverview(core, s, unit);
+  if (s.lvl === 3) return recordOverview(core, C, s, unit);
   return scopeOverview(s, unit);
 }
 
@@ -777,7 +806,7 @@ function attrOverview(core, s, unit) {
   });
 }
 
-function recordOverview(core, s, unit) {
+function recordOverview(core, C, s, unit) {
   const r = s.rec;
   const t = r.raw;
   const dataset = r.kind === 'tabelle' && t.datasetId ? core.dataset(t.datasetId) : null;
@@ -792,7 +821,7 @@ function recordOverview(core, s, unit) {
     sourceHref ? ['Systemzugang', newWindowLink(sourceHref, `${t.systemName || hostOf(sourceHref)} öffnen`)] : null,
     ...provenanceRows(core, t, { includeSystem: false }),
   ] : [];
-  return detailOverview({
+  return recordDetailOverview({
     description: r.def,
     facts: [
       ['Kerndaten', [
@@ -810,6 +839,7 @@ function recordOverview(core, s, unit) {
       ]],
       ...(technical.length ? [['Technische Angaben', technical]] : []),
     ],
+    aside: recordContactAside(core, C, r),
   });
 }
 
@@ -1001,7 +1031,8 @@ function mountPane(ctx, s, unit) {
         render: (r) => (r.steward ? esc(truncateText(r.steward, 34)) : TODO) },
       { key: 'def', label: 'Beschreibung',
         render: (r) => (r.def ? snippet(r.def, s.q, 95) : '<span class="muted">—</span>') },
-      { key: 'n', label: unit.kid, width: '6rem', render: (r) => String(r.n) },
+      ...(s.kind === 'tabelle' && s.leaf ? []
+        : [{ key: 'n', label: unit.kid, width: '6rem', render: (r) => String(r.n) }]),
       { key: 'status', label: 'Status', width: '8rem',
         render: (r) => (r.status ? esc(r.status) : TODO) },
     ],

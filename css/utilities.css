@@ -158,6 +158,17 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   .detail-layout { grid-template-columns:minmax(0,1fr) 22rem; align-items:start; }
   .detail-layout__aside { position:sticky; top:var(--sp-4); }
 }
+/* Catalogue records already sit beside an 18rem hierarchy rail. At the first
+   desktop breakpoint, splitting their remaining pane again would leave roughly
+   14rem for the description and key/value grid. Keep the contact below the
+   facts through that transition; from xl onward it becomes the same sticky
+   right rail used by portfolio details. */
+@media (min-width:1024px) and (max-width:1279.98px){
+  .mc-layout--detail .pf-main > .tab__container > .detail-layout,
+  .pd-detail-tabs > .tab__container > .detail-layout { grid-template-columns:minmax(0,1fr); }
+  .mc-layout--detail .pf-main > .tab__container > .detail-layout > .detail-layout__aside,
+  .pd-detail-tabs > .tab__container > .detail-layout > .detail-layout__aside { position:static; }
+}
 /* Spacing between aside cards. `.box + .box` would otherwise join them with a
    1px seam into ONE surface. That is correct for stacked boxes in flowing text,
    but wrong here: “Actions” and “Contacts” are two offerings, not two sections
@@ -275,4 +286,3 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   .accordion__drawer[hidden] { display:block !important; }
   .accordion__button .icon, .accordion__arrow { display:none !important; }
 }
-

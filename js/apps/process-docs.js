@@ -762,54 +762,40 @@ async function detail(ctx, rawId) {
 
   const detailSection = (title, body, className = '') => `<section class="detail-section${className ? ` ${className}` : ''}">
     <h2 class="detail-section__title">${esc(title)}</h2>${body}</section>`;
-  const detailFacts = (rows) => `<dl class="kv kv--ruled">${rows.filter(Boolean)
+  const detailFacts = (rows) => `<dl class="kv">${rows.filter(Boolean)
     .map(([label, value]) => `<dt>${esc(label)}</dt><dd>${value}</dd>`).join('')}</dl>`;
   const audienceLabel = p.audience === 'external' ? 'Kundinnen und Kunden'
     : p.audience === 'internal' ? 'BBL-intern' : p.audience || '';
   const portalRoles = [...new Set((p.steps || []).map((step) => step.role).filter(Boolean))];
-  const portalKinds = new Map();
-  (p.steps || []).forEach((step) => portalKinds.set(step.kind, (portalKinds.get(step.kind) || 0) + 1));
-  const kindWord = { user: 'durch Menschen', auto: 'automatisch', system: 'durch ein System' };
-  const contactHref = safeMailto(contact?.email || '');
-
   const overviewHTML = () => {
     const responsibility = [
       ...(p.responsiblePersons || []).map((person) => [person.role,
         `<a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(person.admindirId)}"
           target="_blank" rel="noopener noreferrer external">AdminDir ${esc(person.admindirId)}</a>`]),
       portalRoles.length ? ['Beteiligte Rollen', portalRoles.map(esc).join('<br>')] : null,
-      contact ? ['Fachstelle', `<strong>${esc(contact.name || CONTACT_ID)}</strong>${contact.unit ? `<br>${esc(contact.unit)}` : ''}`] : null,
-      contactHref ? ['Kontakt', `<a href="${esc(contactHref)}">${esc(contact.email)}</a>${contact.phone ? `<br>${esc(contact.phone)}` : ''}`] : null,
     ].filter(Boolean);
     const related = (p.related || []).map((id) => {
       const process = core.processDoc(id);
       return `<li><a href="${esc(links.processDocumentation(id, process?.branch))}">${esc(process?.name || id)}</a></li>`;
     });
-    const contextRows = [
-      ['Prozessmodell', p.bpmn ? 'BPMN-Diagramm' : '—'],
-      p.steps?.length ? ['Portal-Stationen', String(p.steps.length)] : null,
-      portalKinds.size ? ['Art der Stationen', [...portalKinds]
-        .map(([kind, count]) => esc(`${count} ${kindWord[kind] || kind}`)).join(' · ')] : null,
-      p.systems?.length ? ['Unterstützende Systeme', `<span class="pill-row">${p.systems
-        .map((system) => badge(system, 'gray', 'sm')).join('')}</span>`] : null,
-      p.serviceId ? ['Dienstleistung', `<a href="${esc(links.service(p.serviceId))}">${esc(p.serviceId)}</a>`] : null,
-    ];
-    const wide = [
+    const additional = [
       related.length ? detailSection('Verwandte Prozesse',
         `<ul class="list--default m-0">${related.join('')}</ul>`) : '',
       p.tags?.length ? detailSection('Schlagwörter',
         `<p class="pill-row m-0">${p.tags.map((tag) => badge(tag, 'gray', 'sm')).join('')}</p>`) : '',
-      p.standards?.length ? detailSection('Grundlagen', `<ul class="list--default m-0">${p.standards
-        .map((standard) => `<li>${esc(standard)}</li>`).join('')}</ul>`) : '',
-      C.sourceBox(p.source,
-        (core.ref().sourceRoles || []).find((role) => role.key === (p.source || {}).role),
-        { title: 'Führende Quelle', heading: 'h2' }),
     ].filter(Boolean).join('');
+    const contactCard = C.contactBox({
+      role: 'Fachstelle',
+      name: contact?.name || CONTACT_ID,
+      unit: contact?.unit || '',
+      email: contact?.email || '',
+      phone: contact?.phone || '',
+    }, { title: 'Ansprechpersonen', heading: 'h2' });
 
-    return `<div class="mc-detail">
+    return `<div class="detail-layout">
+      <div class="vertical-spacing">
       ${detailSection('Beschreibung', `<p class="m-0">${esc(p.description
-    || 'Für diesen Prozess ist noch keine Beschreibung hinterlegt.')}</p>`, 'mc-detail__description')}
-      <div class="mc-detail__facts">
+    || 'Für diesen Prozess ist noch keine Beschreibung hinterlegt.')}</p>`)}
         ${detailSection('Einordnung', detailFacts([
     ['Zweig', esc(p.branchLabel || (isPortal ? 'Kundenportal' : 'Fachliche Prozesse'))],
     p.areaLabel ? ['Prozessbereich', `${esc(p.areaLabel)}${p.areaCode ? ` <span class="muted">(${esc(p.areaCode)})</span>` : ''}`] : null,
@@ -823,9 +809,9 @@ async function detail(ctx, rawId) {
         ${detailSection('Verantwortung', responsibility.length
     ? detailFacts(responsibility)
         : '<p class="muted m-0">Für diesen Prozess ist keine Verantwortung hinterlegt.</p>')}
-        ${detailSection('Ablauf und Systeme', detailFacts(contextRows))}
+        ${additional}
       </div>
-      ${wide ? `<div class="mc-detail__wide vertical-spacing">${wide}</div>` : ''}
+      <aside class="detail-layout__aside" aria-label="Ansprechpersonen">${contactCard}</aside>
     </div>`;
   };
 

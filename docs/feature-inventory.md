@@ -1330,8 +1330,8 @@ Dokumentation der Geschäftsarchitektur als einheitlicher Explorer für Geschäf
 
 - Gemeinsamer Sidebar-Baum `C.sidebarTree`: Übersicht → Ast → Domäne/System/Thema → Eintrag → Bestandteil. Eintragszeilen trennen Navigation und Aufklappen; Bestandteile werden erst beim Öffnen erzeugt.
 - Jede Ebene besitzt einen kontextuellen H1, Lead, Brotkrumen und einen Zurück-Link genau eine Ebene nach oben.
-- Aggregate Ebenen bieten Übersicht, gruppierbare Landschaft und Tabelle. Tabellen zeigen Name, Verantwortung, Beschreibung, Umfang und Status; die Root-Suche gruppiert Treffer nach Ast.
-- Eintragsdetails verwenden echte Textregister nach APG-Muster: «Übersicht» plus «Attribute», «Felder» oder «Werte». Die Übersicht zeigt Beschreibung, Kerndaten, Verantwortung, technische Angaben und Quellen im vollen Inhaltsbereich ohne zweite Randspalte.
+- Aggregate Ebenen bieten Übersicht, gruppierbare Landschaft und Tabelle. Tabellen zeigen Name, Verantwortung, Beschreibung, Umfang und Status; in der auf ein System eingegrenzten Datentabellen-Sicht entfällt die Spalte «Felder». Die Root-Suche gruppiert Treffer nach Ast.
+- Eintragsdetails verwenden echte Textregister nach APG-Muster: «Übersicht» plus «Attribute», «Felder» oder «Werte». Die Übersicht zeigt Beschreibung, Kerndaten, Verantwortung sowie gegebenenfalls technische Angaben und Quellen links; die Karte «Ansprechpersonen» steht rechts.
 - Bestandteil-Details zeigen Typ/Schlüssel/Pflicht, geerbte Verantwortung und die Abbildung Geschäftsobjekt-Attribut ↔ Datentabellen-Feld inklusive Gütehinweis.
 - Startseite mit Bestandskennzahlen, zuletzt geänderten Einträgen und Domänentabelle; Referenzdaten sind ein gleichwertiger dritter Ast.
 - CSV-, Excel- und Druckexport beziehen sich auf den vollständigen gefilterten Umfang beziehungsweise alle Bestandteile des gewählten Eintrags, nicht nur auf eine sichtbare Tabellenseite.
@@ -1343,7 +1343,7 @@ Dokumentation der Geschäftsarchitektur als einheitlicher Explorer für Geschäf
 - Eine neue Eintrags- oder Bestandteil-Auswahl setzt die Darstellung auf Übersicht zurück; ein ausdrücklich gesetztes Detailregister bleibt direkt adressierbar.
 - Nur echte Volltextsuche erscheint als entfernbare Filterpille. Hierarchische Auswahl wird bereits durch H1, Brotkrumen und Baum kommuniziert.
 - Landschafts- und Baumfaltungen bleiben bei lokalen Neuzeichnungen erhalten; leere Tabellen und fehlende Governance-Angaben besitzen erklärende Zustände.
-- Detailansichten nutzen `pf-layout--detail` und ein responsives `mc-detail`-Raster; auf kleinen Viewports steht der Inhalt vor der sekundären Hierarchie und es gibt kein `detail-layout__aside`.
+- Eintragsübersichten nutzen innerhalb von `pf-layout--detail` ein `detail-layout`: links folgen Beschreibung und direkte `kv`-Raster in vertikalen Abschnitten, rechts steht nur in «Übersicht» die Karte «Ansprechpersonen». Auf kleinen Viewports und während des 1024–1279-px-Hierarchiewechsels folgt die Kontaktkarte unter dem Inhalt; ab 1280 px wird sie zur 22-rem-Randspalte.
 
 **Interaktionen**
 
@@ -1440,7 +1440,7 @@ Prozessdokumentation Bauten als gemeinsamer Explorer für fachliche Prozesse und
 - Gemeinsamer Sidebar-Baum `C.sidebarTree`: fachlich über Organisation → Prozessbereich → Prozessgruppe → Prozess; Kundenportal direkt über Gruppe → Ablauf. Split-Zeilen trennen Ziel und Aufklappen, Kinder werden lazy erzeugt.
 - Root-Übersicht über beide Zweige; in einem Umfang beschreiben Übersicht, Diagramm, Tabelle, Trefferzahl und Export stets dieselbe gefilterte Prozessmenge.
 - Landschaften gruppieren nach Bereich, Gruppe oder Status. Die Tabelle zeigt Zweig (nur bei gemischtem Bestand), Nummer, Prozess mit Kurzbeschreibung, Prozessgruppe und Status.
-- Beide Prozessarten verwenden dasselbe vollbreite Detailmuster ohne verschachtelte Randspalte: Beschreibung, Einordnung, Verantwortung, Ablauf/Systeme sowie — sofern vorhanden — Schlagwörter, Grundlagen und führende Quelle.
+- Beide Prozessarten verwenden in «Übersicht» dasselbe `detail-layout`: Beschreibung, Einordnung, Verantwortung sowie — sofern vorhanden — Schlagwörter stehen links; die Karte «Ansprechpersonen» steht rechts. Diagramm und Prozessschritte bleiben vollbreit.
 - Drei APG-Register «Übersicht», «Prozessdiagramm» und «Prozessschritte». Die Übersicht rendert ohne BPMN-Abruf; Diagramm und Schritttabelle teilen einen validierten und gecachten BPMN-Download.
 - `parseBpmnSteps` liest typisierte BPMN-Flusselemente in Dokumentreihenfolge, ordnet Lanes zu und berechnet Ein-/Ausgänge. Die zugängliche Tabelle bietet Suche, Sortierung sowie Facetten für Art und Rolle.
 - bpmn-js `NavigatedViewer` wird samt integritätsgeprüften Styles/Skript erst beim ersten sichtbaren Diagrammregister geladen; vertikale Overlay-Aktionen steuern Zoom und Einpassen.
@@ -1453,7 +1453,7 @@ Prozessdokumentation Bauten als gemeinsamer Explorer für fachliche Prozesse und
 - Ein neu gewählter Prozess beginnt immer in der Übersicht. Detailregister bleiben deeplink-fähig und synchronisieren die URL ohne neuen Verlaufseintrag.
 - BPMN-Dateipfad und XML-Namensraum werden validiert. Fetch-, Parser-, CDN- und Importfehler besitzen getrennte Meldungen; soweit Schritte verfügbar sind, bleibt die textuelle Alternative erreichbar.
 - Ladeanzeigen und deaktivierte Zoomaktionen decken den Viewer-Aufbau ab. Sichtwechsel während des Ladens verschiebt `fit-viewport`, bis der Container messbar ist; Route-Abbruch und Unmount verhindern stale Rendering und zerstören den Viewer.
-- `mc-detail` und `pf-layout--detail` ordnen auf schmalen Viewports den Prozessinhalt vor der sekundären Hierarchie; Detailregister scrollen intern und erzeugen keinen Dokument-Overflow.
+- `detail-layout` und `pf-layout--detail` ordnen auf schmalen Viewports Prozessinhalt, Kontaktkarte und sekundäre Hierarchie in dieser Reihenfolge; zwischen 1024 und 1279 px bleibt die Kontaktkarte gestapelt, ab 1280 px ist sie eine 22-rem-Randspalte. Detailregister scrollen intern und erzeugen keinen Dokument-Overflow.
 
 **Interaktionen**
 

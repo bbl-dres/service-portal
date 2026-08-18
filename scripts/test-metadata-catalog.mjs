@@ -62,14 +62,22 @@ const STATE = `JSON.stringify({
     b => b.textContent.replace(/\\s+/g, ' ').trim()),
   disabledExport: !!document.querySelector('#mc-tools button[disabled]'),
   sortMenu: !!document.querySelector('[data-menu="mc-sort"]'),
-  detail: !!document.querySelector('#mc-panel > .mc-detail'),
+  detail: !!document.querySelector('#mc-panel > :is(.mc-detail, .detail-layout)'),
+  recordDetail: !!document.querySelector('#mc-panel > .detail-layout'),
   metadataDetail: !!document.querySelector('#mc-panel > .mc-detail--metadata'),
-  factGroups: document.querySelectorAll('#mc-panel .mc-detail__facts > .detail-section').length,
-  factRows: document.querySelectorAll('#mc-panel .mc-detail__fact').length,
+  factGroups: document.querySelectorAll(
+    '#mc-panel .mc-detail__facts > .detail-section, #mc-panel > .detail-layout > .vertical-spacing > .detail-section:not(:first-child)').length,
+  factRows: document.querySelectorAll(
+    '#mc-panel .mc-detail__fact, #mc-panel > .detail-layout > .vertical-spacing > .detail-section .kv > dt').length,
   wideDetails: document.querySelectorAll('#mc-panel .mc-detail__wide').length,
   originalHeadings: [...document.querySelectorAll('#mc-panel h2')]
     .filter((node) => node.textContent.trim() === 'Original').length,
   detailAsides: document.querySelectorAll('#mc-panel .detail-layout__aside').length,
+  contactHeading: document.querySelector('#mc-panel .detail-layout__aside .box > h2')?.textContent.trim() || '',
+  contactMailto: document.querySelector('#mc-panel .detail-layout__aside a[href^="mailto:"]')?.getAttribute('href') || '',
+  mainMailtos: document.querySelectorAll('#mc-panel .detail-layout > .vertical-spacing a[href^="mailto:"]').length,
+  directRecordKv: [...document.querySelectorAll('#mc-panel > .detail-layout > .vertical-spacing dl.kv')]
+    .every((list) => [...list.children].every((child) => child.matches('dt, dd'))),
   filters: [...document.querySelectorAll('#mc-activefilters .active-filter, #mc-activefilters [data-remove]')]
     .map((node) => node.textContent.replace(/\\s+/g, ' ').trim()),
   cardLinks: [...document.querySelectorAll('#mc-panel .stats .card__link')].map(
@@ -225,8 +233,10 @@ try {
   check(o.tabPanel === 'mc-tab-uebersicht', 'the active tab labels the shared panel', o.tabPanel);
   check(o.sections.join('/') === 'Beschreibung/Kerndaten/Verantwortung',
     'description and key metadata are the default content', o.sections.join('/'));
-  check(o.detail && o.metadataDetail && o.factGroups === 2 && o.detailAsides === 0,
-    'the record uses the metadata-scoped full-width facts model without an aside');
+  check(o.detail && o.recordDetail && !o.metadataDetail && o.factGroups === 2
+    && o.detailAsides === 1 && o.contactHeading === 'Ansprechpersonen' && o.directRecordKv,
+  'the record uses the shared detail layout, direct key/value grids and contact rail',
+  `${o.factGroups}/${o.detailAsides}/${o.contactHeading}`);
   check(o.keys.includes('Domäne') && o.keys.includes('ID'), 'key metadata names its axis and id', o.keys.join('/'));
   check(o.statusBadge?.text === 'Gültig' && /badge--success/.test(o.statusBadge.cls),
     'record status keeps its semantic badge variant', JSON.stringify(o.statusBadge));
@@ -246,6 +256,7 @@ try {
   o = await go(withTab(idHref, 'tabelle'));
   check(o.active === 'Attribute' && o.rows > 0, 'the secondary tab lists attributes', `${o.active} / ${o.rows}`);
   check(o.cols.join('/') === 'Attribut/Beschreibung/Werttyp/Schlüssel', 'attribute columns', o.cols.join('/'));
+  check(o.detailAsides === 0, 'the contact rail is confined to Übersicht', String(o.detailAsides));
   await go(idHref.slice(1));
   const tabKeys = JSON.parse(await p.evaluate(`(async () => {
     const overview = document.querySelector('[data-tab="uebersicht"]');
@@ -263,7 +274,7 @@ try {
     return JSON.stringify({ next, home: {
       active: document.querySelector('.tab__control[aria-selected="true"]')?.textContent.trim(),
       focus: document.activeElement?.dataset?.tab || '',
-      detail: !!document.querySelector('#mc-panel > .mc-detail'),
+      detail: !!document.querySelector('#mc-panel > .detail-layout'),
       hash: location.hash,
     }});
   })()`));
@@ -277,17 +288,19 @@ try {
   const detailMetrics = async (width) => {
     await setViewport(width, width === 320 ? 760 : 900);
     return JSON.parse(await p.evaluate(`(() => {
-      const detail = document.querySelector('#mc-panel > .mc-detail--metadata');
-      const facts = detail.querySelector('.mc-detail__facts');
-      const sections = [...facts.children];
-      const row = detail.querySelector('.mc-detail__fact');
-      const term = row.querySelector('dt');
-      const value = row.querySelector('dd');
-      const rowStyle = getComputedStyle(row);
-      const rowRect = row.getBoundingClientRect();
+      const detail = document.querySelector('#mc-panel > .detail-layout');
+      const content = detail.querySelector(':scope > .vertical-spacing');
+      const aside = detail.querySelector(':scope > .detail-layout__aside');
+      const sections = [...content.querySelectorAll(':scope > .detail-section')];
+      const list = content.querySelector('dl.kv');
+      const term = list.querySelector('dt');
+      const value = term.nextElementSibling;
+      const detailStyle = getComputedStyle(detail);
+      const listStyle = getComputedStyle(list);
       const termRect = term.getBoundingClientRect();
       const valueRect = value.getBoundingClientRect();
-      const factsRect = facts.getBoundingClientRect();
+      const contentRect = content.getBoundingClientRect();
+      const asideRect = aside.getBoundingClientRect();
       const main = document.querySelector('.mc-layout--detail > .pf-main');
       const sidebar = document.querySelector('.mc-layout--detail > .pf-sidebar');
       const mainRect = main.getBoundingClientRect();
@@ -297,16 +310,19 @@ try {
       return JSON.stringify({
         width: ${width},
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        tracks: rowStyle.gridTemplateColumns.trim().split(/\\s+/).filter(Boolean).length,
-        ratio: termRect.width ? valueRect.width / termRect.width : 0,
+        detailTracks: detailStyle.gridTemplateColumns.trim().split(/\\s+/).filter(Boolean).length,
+        kvTracks: listStyle.gridTemplateColumns.trim().split(/\\s+/).filter(Boolean).length,
         stacked: valueRect.top >= termRect.bottom - 1,
-        fullSections: sections.every((section) => {
-          const rect = section.getBoundingClientRect();
-          return Math.abs(rect.left - factsRect.left) <= 1 && Math.abs(rect.width - factsRect.width) <= 1;
-        }),
+        firstSection: sections[0]?.querySelector('h2')?.textContent.trim() || '',
         orderedSections: sections.every((section, index) => !index
           || section.getBoundingClientRect().top > sections[index - 1].getBoundingClientRect().top),
-        rowOverflow: row.scrollWidth - rowRect.width,
+        directKv: [...content.querySelectorAll('dl.kv')]
+          .every((dl) => [...dl.children].every((child) => child.matches('dt, dd'))),
+        contentBeforeAsideDom: Boolean(content.compareDocumentPosition(aside) & Node.DOCUMENT_POSITION_FOLLOWING),
+        contentAboveAside: contentRect.bottom <= asideRect.top + 1,
+        asideRightOfContent: asideRect.left >= contentRect.right - 1,
+        asideWidth: asideRect.width,
+        asidePosition: getComputedStyle(aside).position,
         mainBeforeSidebarDom: Boolean(main.compareDocumentPosition(sidebar) & Node.DOCUMENT_POSITION_FOLLOWING),
         mainBeforeSidebarFocus: focusable.findIndex((node) => main.contains(node))
           < focusable.findIndex((node) => sidebar.contains(node)),
@@ -334,17 +350,19 @@ try {
   };
 
   let m = await detailMetrics(320);
-  check(m.overflow <= 1 && m.tracks === 1 && m.stacked && m.fullSections && m.orderedSections,
-    '320px: one full-width ordered stream with stacked rows and no overflow', JSON.stringify(m));
+  check(m.overflow <= 1 && m.detailTracks === 1 && m.kvTracks === 1 && m.stacked
+    && m.firstSection === 'Beschreibung' && m.orderedSections && m.directKv
+    && m.contentBeforeAsideDom && m.contentAboveAside,
+  '320px: description-first facts precede the stacked contact card without overflow', JSON.stringify(m));
   check(m.mainBeforeSidebarDom && m.mainBeforeSidebarFocus && m.mainAboveSidebar && m.treeCopies === 1,
     '320px: DOM, visual and keyboard order all put detail before the single tree', JSON.stringify(m));
   let tabOrder = await tabFromMainIntoTree(320);
   check(tabOrder.inTree, '320px: a real Tab after the last detail control enters the tree', JSON.stringify(tabOrder));
 
   m = await detailMetrics(768);
-  check(m.overflow <= 1 && m.tracks === 2 && !m.stacked && Math.abs(m.ratio - 1) < 0.03
-    && m.fullSections && m.orderedSections,
-  '768px: each fact row uses equal label and value tracks', JSON.stringify(m));
+  check(m.overflow <= 1 && m.detailTracks === 1 && m.kvTracks === 2 && !m.stacked
+    && m.contentAboveAside && m.orderedSections,
+  '768px: key/value rows use the shared grid while the contact card remains below', JSON.stringify(m));
   check(m.mainBeforeSidebarDom && m.mainBeforeSidebarFocus && m.mainAboveSidebar && m.treeCopies === 1,
     '768px: DOM, visual and keyboard order remain aligned', JSON.stringify(m));
   tabOrder = await tabFromMainIntoTree(768);
@@ -360,31 +378,37 @@ try {
     sameTree: window.__mcTreeProbe === document.querySelector('#mc-tree'),
     focused: document.activeElement.dataset.mcFocusProbe || '',
   })`));
-  check(m.overflow <= 1 && m.tracks === 2 && Math.abs(m.ratio - 2) < 0.03
+  check(m.overflow <= 1 && m.detailTracks === 1 && m.kvTracks === 2
+    && m.contentAboveAside && m.asidePosition === 'static'
     && m.sidebarLeftOfMain && m.treeCopies === 1,
-  '1024px: rows switch to one-third/two-thirds and the rail returns left', JSON.stringify(m));
+  '1024px: the hierarchy returns left while the nested contact rail stays stacked', JSON.stringify(m));
   check(stableDesktopFocus.sameTree && stableDesktopFocus.focused === 'stable',
     'the desktop grid change neither duplicates nor moves the focused tree', JSON.stringify(stableDesktopFocus));
 
   m = await detailMetrics(1440);
-  check(m.overflow <= 1 && m.tracks === 2 && Math.abs(m.ratio - 2) < 0.03
-    && m.fullSections && m.orderedSections && m.sidebarLeftOfMain,
-  '1440px: the same ordered stream keeps one-third/two-thirds rows', JSON.stringify(m));
+  check(m.overflow <= 1 && m.detailTracks === 2 && m.kvTracks === 2
+    && m.asideRightOfContent && Math.abs(m.asideWidth - 352) <= 2
+    && m.asidePosition === 'sticky' && m.orderedSections && m.sidebarLeftOfMain,
+  '1440px: the 22rem contact card becomes the sticky right rail', JSON.stringify(m));
+
+  o = await go('#/app/metadata-catalog?id=areal');
+  check(o.contactMailto === 'mailto:immobilienmanagement@bbl.admin.ch' && o.mainMailtos === 0,
+    'the Areal overview puts its steward contact only in the aside', o.contactMailto);
 
   head('Geschäftsobjekt — provenance is ordinary metadata');
   o = await go('#/app/metadata-catalog?id=heizzentrale');
   const objectProvenance = JSON.parse(await p.evaluate(`(() => {
-    const detail = document.querySelector('#mc-panel > .mc-detail--metadata');
-    const rows = [...detail.querySelectorAll('.mc-detail__fact')].map((row) => ({
-      key: row.querySelector('dt').textContent.trim(),
-      value: row.querySelector('dd').textContent.replace(/\\s+/g, ' ').trim(),
+    const detail = document.querySelector('#mc-panel > .detail-layout');
+    const terms = [...detail.querySelectorAll(':scope > .vertical-spacing dl.kv > dt')];
+    const rows = terms.map((term) => ({
+      key: term.textContent.trim(),
+      value: term.nextElementSibling.textContent.replace(/\\s+/g, ' ').trim(),
     }));
-    const row = (key) => [...detail.querySelectorAll('.mc-detail__fact')]
-      .find((candidate) => candidate.querySelector('dt').textContent.trim() === key);
-    const time = row('Abgeglichen')?.querySelector('time');
-    const repository = row('Repository')?.querySelector('a');
+    const valueFor = (key) => terms.find((term) => term.textContent.trim() === key)?.nextElementSibling;
+    const time = valueFor('Abgeglichen')?.querySelector('time');
+    const repository = valueFor('Repository')?.querySelector('a');
     return JSON.stringify({
-      sections: [...detail.querySelectorAll(':scope > .detail-section > h2, :scope > .mc-detail__facts > .detail-section > h2')]
+      sections: [...detail.querySelectorAll(':scope > .vertical-spacing > .detail-section > h2')]
         .map((heading) => heading.textContent.trim()),
       keys: rows.map(({ key }) => key),
       source: rows.find(({ key }) => key === 'Führendes System')?.value || '',
@@ -399,11 +423,13 @@ try {
       } : null,
       original: [...detail.querySelectorAll('h2')].some((heading) => heading.textContent.trim() === 'Original'),
       wide: detail.querySelectorAll('.mc-detail__wide').length,
-      boxes: detail.querySelectorAll('.box').length,
+      mainBoxes: detail.querySelectorAll(':scope > .vertical-spacing .box').length,
+      contactHeading: detail.querySelector('.detail-layout__aside .box > h2')?.textContent.trim() || '',
     });
   })()`));
   check(objectProvenance.sections.join('/') === 'Beschreibung/Kerndaten/Verantwortung'
-    && !objectProvenance.original && objectProvenance.wide === 0 && objectProvenance.boxes === 0,
+    && !objectProvenance.original && objectProvenance.wide === 0
+    && objectProvenance.mainBoxes === 0 && objectProvenance.contactHeading === 'Ansprechpersonen',
   'the exact object route has no standalone Original or wide box', JSON.stringify(objectProvenance));
   check(/Architektur-Repository/.test(objectProvenance.source)
     && /Innovator \/ smartfacts/.test(objectProvenance.source)
@@ -436,10 +462,10 @@ try {
     await go('#/app/metadata-catalog?id=heizzentrale');
     await setViewport(320, 760);
     const hostile = JSON.parse(await p.evaluate(`(() => {
-      const rows = [...document.querySelectorAll('#mc-panel .mc-detail__fact')];
-      const ref = rows.find((row) => row.querySelector('dt').textContent.trim() === 'Referenz');
-      const repository = rows.find((row) => row.querySelector('dt').textContent.trim() === 'Repository');
-      const value = ref.querySelector('dd');
+      const terms = [...document.querySelectorAll('#mc-panel > .detail-layout > .vertical-spacing dl.kv > dt')];
+      const ref = terms.find((term) => term.textContent.trim() === 'Referenz');
+      const repository = terms.find((term) => term.textContent.trim() === 'Repository');
+      const value = ref.nextElementSibling;
       return JSON.stringify({
         text: value.textContent,
         injected: !!value.querySelector('img, script'),
@@ -489,36 +515,48 @@ try {
     'systems are section headers, not a repeated column', o.groups.slice(0, 3).join(' | '));
   const tableHref = await linkIn('table=');
   check(/\?table=/.test(tableHref), 'the table links to ?table=', tableHref);
+  o = await go('#/app/metadata-catalog?kind=tabelle&leaf=GIS+IMMO&tab=tabelle');
+  check(o.rows > 0 && o.cols.join('/') === 'Name/Verantwortung/Beschreibung/Status',
+    'a system-scoped table omits the Felder column', o.cols.join('/'));
   o = await go(tableHref.slice(1));
   check(o.active === 'Übersicht' && o.tabs.join('/') === 'Übersicht/Felder',
     'a data table opens on information, with fields as a secondary tab', `${o.active} / ${o.tabs.join('/')}`);
-  check(o.rows === 0 && o.detail && o.factGroups === 3,
-    'schema rows do not replace the default overview', `${o.rows} rows / ${o.factGroups} groups`);
+  check(o.rows === 0 && o.detail && o.factGroups === 3 && o.detailAsides === 1
+    && o.contactHeading === 'Ansprechpersonen',
+  'schema rows do not replace the default overview and its contact rail',
+  `${o.rows} rows / ${o.factGroups} groups / ${o.detailAsides} asides`);
   check(o.keys.includes('Technischer Name'), 'a table names its technical identity', o.keys.join('/'));
   // The DCAT bridge lives in metadata rather than a separate access box.
   const dcat = await p.evaluate(
     '(() => document.querySelectorAll(\'#mc-panel .kv a[href*="#/data/"]\').length)()');
   check(Number(dcat) >= 0, 'the published-dataset bridge resolves without error', 'links: ' + dcat);
 
+  o = await go('#/app/metadata-catalog?table=gis-immo-building');
+  check(o.contactMailto === 'mailto:dres@bbl.admin.ch' && o.mainMailtos === 0,
+    'the GIS IMMO table overview puts its steward contact only in the aside', o.contactMailto);
+
   o = await go('#/app/metadata-catalog?table=sap-refx-vibdbe');
   const tableProvenance = JSON.parse(await p.evaluate(`(() => {
-    const detail = document.querySelector('#mc-panel > .mc-detail--metadata');
-    const rows = [...detail.querySelectorAll('.mc-detail__fact')].map((row) => ({
-      key: row.querySelector('dt').textContent.trim(),
-      value: row.querySelector('dd').textContent.replace(/\\s+/g, ' ').trim(),
-      datetime: row.querySelector('time')?.getAttribute('datetime') || '',
+    const detail = document.querySelector('#mc-panel > .detail-layout');
+    const terms = [...detail.querySelectorAll(':scope > .vertical-spacing dl.kv > dt')];
+    const rows = terms.map((term) => ({
+      key: term.textContent.trim(),
+      value: term.nextElementSibling.textContent.replace(/\\s+/g, ' ').trim(),
+      datetime: term.nextElementSibling.querySelector('time')?.getAttribute('datetime') || '',
     }));
     return JSON.stringify({
-      sections: [...detail.querySelectorAll(':scope > .detail-section > h2, :scope > .mc-detail__facts > .detail-section > h2')]
+      sections: [...detail.querySelectorAll(':scope > .vertical-spacing > .detail-section > h2')]
         .map((heading) => heading.textContent.trim()),
       rows,
       original: [...detail.querySelectorAll('h2')].some((heading) => heading.textContent.trim() === 'Original'),
       wide: detail.querySelectorAll('.mc-detail__wide').length,
+      contactHeading: detail.querySelector('.detail-layout__aside h2')?.textContent.trim() || '',
     });
   })()`));
   const tableFact = (key) => tableProvenance.rows.find((row) => row.key === key) || {};
   check(tableProvenance.sections.join('/') === 'Beschreibung/Kerndaten/Verantwortung/Technische Angaben'
-    && !tableProvenance.original && tableProvenance.wide === 0,
+    && !tableProvenance.original && tableProvenance.wide === 0
+    && tableProvenance.contactHeading === 'Ansprechpersonen',
   'the exact table route keeps provenance in the ordered fact stream', JSON.stringify(tableProvenance));
   check(tableFact('Führendes System').value === 'SAP RE-FX'
     && tableFact('Referenz').value === 'VIBD.VIBDBE'
@@ -528,7 +566,8 @@ try {
   'table provenance uses the concrete system, reference and semantic localized date',
   JSON.stringify(tableProvenance.rows));
   o = await go(withTab(tableHref, 'tabelle'));
-  check(o.rows > 0, 'the fields tab lists fields', String(o.rows));
+  check(o.rows > 0 && o.detailAsides === 0,
+    'the fields tab lists fields without retaining the overview aside', `${o.rows}/${o.detailAsides}`);
   check(o.cols.join('/') === 'Feld/Beschreibung/Datentyp/Schlüssel', 'field columns', o.cols.join('/'));
   await clean(p, 'Datentabelle');
 
@@ -783,8 +822,16 @@ try {
   check(o.keys.includes('Verantwortung') && o.keys.includes('Status'),
     'the not-yet-modelled fields are shown as gaps, not omitted', o.keys.join('/'));
   check(o.vals.some((v) => /noch nicht erfasst/.test(v)), 'and are labelled as such');
-  o = await go(withTab(listHref, 'tabelle'));
-  check(o.rows > 0, 'its values are listed in the secondary tab', String(o.rows));
+  const objectStatusesHref = '#/app/metadata-catalog?list=objectStatuses';
+  o = await go(objectStatusesHref);
+  check(o.recordDetail && o.contactHeading === 'Ansprechpersonen'
+    && o.contactMailto === 'mailto:dres@bbl.admin.ch' && o.mainMailtos === 0,
+  'reference-data overview uses the catalogue contact fallback in its aside',
+  `${o.contactHeading}/${o.contactMailto}`);
+  o = await go(withTab(objectStatusesHref, 'tabelle'));
+  check(o.rows > 0 && o.detailAsides === 0,
+    'its values are listed without the overview aside in the secondary tab',
+    `${o.rows}/${o.detailAsides}`);
   check(o.cols.join('/') === 'Bezeichnung/Beschreibung/Schlüssel',
     'a value list has no key-role column', o.cols.join('/'));
   await clean(p, 'Referenzdaten');

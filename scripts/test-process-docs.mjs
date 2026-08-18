@@ -218,10 +218,17 @@ const expectedSteps = (file) => {
 
     head('Detail overview (metadata without BPMN diagram)');
     p = await openPage(cdp, `${APP_BASE}/app/process-docs?id=TQ.21.00.00.02`);
+    await cdp.send('Emulation.setDeviceMetricsOverride',
+      { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }, p.sessionId);
     o = JSON.parse(await p.evaluate(`(async () => {
       const s = ms => new Promise(r => setTimeout(r, ms));
       await s(600);
       const firstTab = document.querySelector('.tab__control');
+      const overview = document.querySelector('#pd-tab-panel-overview');
+      const overviewLayout = overview.querySelector(':scope > .detail-layout');
+      const overviewMain = overviewLayout.querySelector(':scope > .vertical-spacing');
+      const overviewAside = overviewLayout.querySelector(':scope > .detail-layout__aside');
+      const overviewKvs = [...overviewMain.querySelectorAll('dl.kv')];
       const initial = {
         h1: document.querySelector('h1').textContent.trim(),
         lead: document.querySelector('.page-header .lead')?.textContent.trim() || '',
@@ -232,20 +239,27 @@ const expectedSteps = (file) => {
         tabStops: [...document.querySelectorAll('.tab__control')].filter((tab) => tab.tabIndex === 0).length,
         bpmnHost: !!document.querySelector('#pd-tab-panel-overview #pd-bpmn'),
         toolbar: document.querySelectorAll('#pd-tab-panel-overview [data-bpmn]').length,
-        dts: [...document.querySelectorAll('#pd-tab-panel-overview .mc-detail dl.kv--ruled dt')].map(d => d.textContent),
-        sections: [...document.querySelectorAll('#pd-tab-panel-overview .detail-section__title')].map(h => h.textContent.trim()),
+        dts: [...overviewMain.querySelectorAll('dl.kv > dt')].map(d => d.textContent),
+        sections: [...overviewMain.querySelectorAll(':scope > .detail-section > .detail-section__title')]
+          .map(h => h.textContent.trim()),
+        directKv: overviewKvs.length > 0 && overviewKvs.every((list) =>
+          [...list.children].every((child, index) => child.tagName === (index % 2 ? 'DD' : 'DT'))),
         nestedSubheadings: document.querySelectorAll('#pd-tab-panel-overview .detail-section h3').length,
         admindir: document.querySelectorAll('a[href*="admindir"]').length,
-        statusPill: document.querySelector('.mc-detail dl.kv--ruled .badge')?.textContent || '',
-        oldStatusText: document.querySelector('.mc-detail dl.kv--ruled')?.textContent.includes('Freigegeben und aktiv bewirtschaftet') || false,
-        contactLink: document.querySelector('.mc-detail a[href^="mailto:"]')?.textContent.trim() || '',
-        sourceWide: !!document.querySelector('.mc-detail__wide .box'),
-        nestedAside: !!document.querySelector('#pd-panel .detail-layout__aside'),
+        statusPill: overviewMain.querySelector('dl.kv .badge')?.textContent || '',
+        oldStatusText: overviewMain.textContent.includes('Freigegeben und aktiv bewirtschaftet'),
+        contactHref: overviewAside.querySelector('a[href^="mailto:"]')?.getAttribute('href') || '',
+        contactHeading: overviewAside.querySelector('h2')?.textContent.trim() || '',
+        contactUnit: overviewAside.textContent.includes('Direktionsbereich Bauten'),
+        mainContactLinks: overviewMain.querySelectorAll('a[href^="mailto:"]').length,
+        visibleAsides: document.querySelectorAll('[role="tabpanel"]:not([hidden]) .detail-layout__aside').length,
         redundantChip: !!document.querySelector('.active-filter'),
-        detailLayout: document.querySelector('.pf-layout')?.classList.contains('pf-layout--detail') || false,
+        detailLayout: !!overviewLayout,
+        outerDetailLayout: document.querySelector('.pf-layout')?.classList.contains('pf-layout--detail') || false,
+        detailTracks: getComputedStyle(overviewLayout).gridTemplateColumns.trim().split(/\\s+/).length,
+        asidePosition: getComputedStyle(overviewAside).position,
+        asideWidth: overviewAside.getBoundingClientRect().width,
         actionLabels: [...document.querySelectorAll('#pd-tools [data-action]')].map(item => item.textContent.trim()),
-        mainWidth: document.querySelector('.pf-main')?.getBoundingClientRect().width || 0,
-        detailWidth: document.querySelector('.mc-detail')?.getBoundingClientRect().width || 0,
         bpmnRequests: performance.getEntriesByType('resource')
           .filter((entry) => entry.name.includes('TQ.21.00.00.02.bpmn')).length,
       };
@@ -272,20 +286,26 @@ const expectedSteps = (file) => {
       'overview is the default APG tab and the only visible panel', `${o.active}/${o.visiblePanel}/${o.tabStops}`);
     check(!o.bpmnHost && o.toolbar === 0, 'overview has no diagram');
     check(o.bpmnRequests === 0, 'overview does not fetch or parse BPMN merely to show a count', String(o.bpmnRequests));
-    check(o.sections.includes('Beschreibung') && o.sections.includes('Einordnung')
-      && o.sections.includes('Verantwortung') && o.sections.includes('Ablauf und Systeme')
-      && o.sections.includes('Schlagwörter') && o.nestedSubheadings === 0,
-    'the full-width detail has a stable information hierarchy', o.sections.join(', '));
-    check(o.dts.includes('Prozessbereich') && o.dts.includes('Prozessgruppe') && o.dts.includes('Status') && o.dts.includes('ID'),
-      'classification facts remain complete', o.dts.join(', '));
+    check(o.sections[0] === 'Beschreibung' && o.sections.includes('Einordnung')
+      && o.sections.includes('Verantwortung') && !o.sections.includes('Ablauf und Systeme')
+      && o.sections.includes('Schlagwörter') && !o.sections.includes('Grundlagen')
+      && !o.sections.includes('Führende Quelle') && o.nestedSubheadings === 0,
+    'the overview starts with Beschreibung and keeps a stable section hierarchy', o.sections.join(', '));
+    check(o.directKv && o.dts.includes('Prozessbereich') && o.dts.includes('Prozessgruppe')
+      && o.dts.includes('Status') && o.dts.includes('ID'),
+    'classification facts use the shared direct-child kv anatomy', o.dts.join(', '));
     check(o.admindir >= 2, 'responsible people link to AdminDir', String(o.admindir));
     check(/Gültig/.test(o.statusPill), 'status uses a pill tag', o.statusPill);
     check(!o.oldStatusText, 'status has no duplicate description');
-    check(/immobilienmanagement@/.test(o.contactLink) && o.sourceWide,
-      'contact and leading-source context stay in the main content flow', `${o.contactLink}/${o.sourceWide}`);
-    check(!o.nestedAside && !o.redundantChip && o.detailLayout && o.detailWidth >= o.mainWidth * .95,
-      'there is no nested aside or repeated record chip and detail uses the content width',
-      `${o.nestedAside}/${o.redundantChip}/${o.detailLayout}/${Math.round(o.detailWidth)} of ${Math.round(o.mainWidth)}`);
+    check(o.contactHref === 'mailto:immobilienmanagement@bbl.admin.ch'
+      && o.contactHeading === 'Ansprechpersonen' && o.contactUnit && o.mainContactLinks === 0
+      && o.visibleAsides === 1,
+    'contact is isolated in the Overview aside',
+    `${o.contactHeading}/${o.contactHref}/${o.visibleAsides}`);
+    check(!o.redundantChip && o.detailLayout && o.outerDetailLayout && o.detailTracks === 2
+      && o.asidePosition === 'sticky' && Math.abs(o.asideWidth - 352) <= 1,
+    'desktop uses the shared content-plus-22rem contact layout without a repeated record chip',
+    `${o.detailTracks}/${o.asidePosition}/${Math.round(o.asideWidth)}px`);
     check(o.actionLabels.includes('Prozessschritte als CSV herunterladen')
       && o.actionLabels.includes('Prozessschritte als Excel herunterladen'),
     'record exports name the deferred process-step dataset', o.actionLabels.join(' | '));
@@ -297,23 +317,46 @@ const expectedSteps = (file) => {
     await cdp.send('Emulation.setDeviceMetricsOverride',
       { width: 320, height: 900, deviceScaleFactor: 1, mobile: false }, p.sessionId);
     await sleep(200);
-    const mobile = JSON.parse(await p.evaluate(`JSON.stringify({
-      overflow: Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
-      columns: getComputedStyle(document.querySelector('.mc-detail__facts')).gridTemplateColumns,
-      tabsClient: document.querySelector('.tab__controls').clientWidth,
-      tabsScroll: document.querySelector('.tab__controls').scrollWidth,
-      tabsOverflowMode: getComputedStyle(document.querySelector('.tab__controls')).overflowX,
-      mainTop: document.querySelector('.pf-main').getBoundingClientRect().top,
-      treeTop: document.querySelector('.pf-sidebar').getBoundingClientRect().top,
-    })`));
-    check(mobile.overflow <= 1 && !/ /.test(mobile.columns),
-      'the detail reflows to one fact column without document overflow at 320px',
-      `${mobile.overflow}px / ${mobile.columns}`);
+    const mobile = JSON.parse(await p.evaluate(`(() => {
+      const layout = document.querySelector('#pd-tab-panel-overview > .detail-layout');
+      const main = layout.querySelector(':scope > .vertical-spacing');
+      const aside = layout.querySelector(':scope > .detail-layout__aside');
+      return JSON.stringify({
+        overflow: Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
+        detailTracks: getComputedStyle(layout).gridTemplateColumns.trim().split(/\\s+/).length,
+        kvTracks: getComputedStyle(main.querySelector('dl.kv')).gridTemplateColumns.trim().split(/\\s+/).length,
+        contentBeforeAside: main.getBoundingClientRect().bottom <= aside.getBoundingClientRect().top,
+        asidePosition: getComputedStyle(aside).position,
+        tabsClient: document.querySelector('.tab__controls').clientWidth,
+        tabsScroll: document.querySelector('.tab__controls').scrollWidth,
+        tabsOverflowMode: getComputedStyle(document.querySelector('.tab__controls')).overflowX,
+        mainTop: document.querySelector('.pf-main').getBoundingClientRect().top,
+        treeTop: document.querySelector('.pf-sidebar').getBoundingClientRect().top,
+      });
+    })()`));
+    check(mobile.overflow <= 1 && mobile.detailTracks === 1 && mobile.kvTracks === 1
+      && mobile.contentBeforeAside && mobile.asidePosition === 'static',
+    'the overview stacks its facts before the contact card without overflow at 320px',
+    `${mobile.overflow}px / ${mobile.detailTracks}/${mobile.kvTracks}/${mobile.asidePosition}`);
     check(mobile.tabsClient > 0 && mobile.tabsScroll >= mobile.tabsClient
       && mobile.tabsOverflowMode === 'auto',
     'the tab strip remains an internally scrolling keyboard region', JSON.stringify(mobile));
     check(mobile.mainTop <= mobile.treeTop,
       'mobile detail presents record content before the secondary hierarchy rail', `${mobile.mainTop}/${mobile.treeTop}`);
+    await cdp.send('Emulation.setDeviceMetricsOverride',
+      { width: 1024, height: 900, deviceScaleFactor: 1, mobile: false }, p.sessionId);
+    await sleep(200);
+    const transition = JSON.parse(await p.evaluate(`(() => {
+      const layout = document.querySelector('#pd-tab-panel-overview > .detail-layout');
+      const aside = layout.querySelector(':scope > .detail-layout__aside');
+      return JSON.stringify({
+        overflow: Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
+        detailTracks: getComputedStyle(layout).gridTemplateColumns.trim().split(/\\s+/).length,
+        asidePosition: getComputedStyle(aside).position,
+      });
+    })()`));
+    check(transition.overflow <= 1 && transition.detailTracks === 1 && transition.asidePosition === 'static',
+      'the contact rail stays stacked through the 1024px hierarchy transition', JSON.stringify(transition));
     await cdp.send('Emulation.setDeviceMetricsOverride',
       { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }, p.sessionId);
 
@@ -361,7 +404,7 @@ const expectedSteps = (file) => {
         focusOutline,
         disabledOpacity,
         disabledCursor,
-        asideInPanel: !!document.querySelector('#pd-panel .detail-layout__aside'),
+        visibleAside: !!document.querySelector('[role="tabpanel"]:not([hidden]) .detail-layout__aside'),
         stepLabel: document.querySelector('[data-tab="steps"]')?.textContent.trim() || '',
       });
     })()`));
@@ -375,7 +418,7 @@ const expectedSteps = (file) => {
     check(o.sharedToolbar, 'viewer uses the shared toolbar anatomy');
     check(o.focusOutline !== 'none' && o.focusOutline !== '', 'viewer tool has a visible focus state', o.focusOutline);
     check(Number(o.disabledOpacity) < 1 && o.disabledCursor === 'not-allowed', 'disabled viewer state is visible', `${o.disabledOpacity}/${o.disabledCursor}`);
-    check(!o.asideInPanel, 'diagram uses the full panel width');
+    check(!o.visibleAside, 'diagram uses the full panel width without the Overview contact rail');
     await clean(p, 'diagram');
 
     const nextRecord = JSON.parse(await p.evaluate(`(async () => {
@@ -393,11 +436,16 @@ const expectedSteps = (file) => {
         hash: location.hash,
         h1: document.querySelector('h1')?.textContent.trim() || '',
         active: document.querySelector('.tab__control[aria-selected="true"]')?.dataset.tab || '',
+        firstSection: document.querySelector('#pd-tab-panel-overview .vertical-spacing > .detail-section h2')
+          ?.textContent.trim() || '',
+        contactHeading: document.querySelector('#pd-tab-panel-overview .detail-layout__aside h2')
+          ?.textContent.trim() || '',
       });
     })()`));
     check(nextRecord.found && nextRecord.h1 !== 'Machbarkeit Projektdefinition'
       && nextRecord.active === 'overview' && !/[?&]tab=/.test(nextRecord.href)
-      && !/[?&]tab=/.test(nextRecord.hash),
+      && !/[?&]tab=/.test(nextRecord.hash) && nextRecord.firstSection === 'Beschreibung'
+      && nextRecord.contactHeading === 'Ansprechpersonen',
     'choosing another process starts its information-first Overview instead of carrying the prior tab',
     JSON.stringify(nextRecord));
     await clean(p, 'next process overview');
@@ -414,6 +462,7 @@ const expectedSteps = (file) => {
       rows: document.querySelectorAll('#pd-steps tbody tr').length,
       facets: [...document.querySelectorAll('#pd-steps legend')].map(l => l.textContent.trim()),
       hasLanes: [...document.querySelectorAll('#pd-steps tbody tr')].some(tr => /TQ /.test(tr.textContent)),
+      visibleAside: !!document.querySelector('[role="tabpanel"]:not([hidden]) .detail-layout__aside'),
     })`));
     check(/Prozessschritte/.test(o.active || ''), 'tab is active through the deep link', o.active);
     check(o.cols.join('|') === 'Nr.|Schritt|Typ|Rolle', 'step-list columns', o.cols.join('|'));
@@ -421,6 +470,7 @@ const expectedSteps = (file) => {
     check(o.rows === Math.min(want, 15), 'rows on the first page', String(o.rows));
     check(o.facets.includes('Art') && o.facets.includes('Rolle'), 'type and role facets', o.facets.join(', '));
     check(o.hasLanes, 'lanes appear as roles in the rows');
+    check(!o.visibleAside, 'the steps tab uses the full panel width without the Overview contact rail');
     await clean(p, 'steps');
     await p.closeTarget();
 
@@ -432,13 +482,18 @@ const expectedSteps = (file) => {
     const portal = JSON.parse(await p.evaluate(`(async () => {
       const before = performance.getEntriesByType('resource')
         .filter((entry) => entry.name.includes('portal-raumbedarf.bpmn')).length;
+      const overviewLayout = document.querySelector('#pd-tab-panel-overview > .detail-layout');
+      const overviewMain = overviewLayout.querySelector(':scope > .vertical-spacing');
+      const overviewAside = overviewLayout.querySelector(':scope > .detail-layout__aside');
       const overview = {
         lead: document.querySelector('.page-header .lead')?.textContent.trim() || '',
-        sections: [...document.querySelectorAll('.mc-detail .detail-section__title')]
+        sections: [...overviewMain.querySelectorAll(':scope > .detail-section > .detail-section__title')]
           .map((heading) => heading.textContent.trim()),
-        factGroups: document.querySelectorAll('.mc-detail__facts > .detail-section').length,
-        contact: document.querySelector('.mc-detail a[href^="mailto:"]')?.textContent.trim() || '',
-        nestedAside: !!document.querySelector('.detail-layout__aside'),
+        factGroups: overviewMain.querySelectorAll(':scope > .detail-section:not(:first-child)').length,
+        contactHref: overviewAside.querySelector('a[href^="mailto:"]')?.getAttribute('href') || '',
+        contactHeading: overviewAside.querySelector('h2')?.textContent.trim() || '',
+        mainContactLinks: overviewMain.querySelectorAll('a[href^="mailto:"]').length,
+        visibleAside: !!document.querySelector('[role="tabpanel"]:not([hidden]) .detail-layout__aside'),
         bpmnHost: !!document.querySelector('#pd-tab-panel-overview #pd-bpmn'),
       };
       document.querySelector('[data-tab="diagram"]').click();
@@ -452,6 +507,7 @@ const expectedSteps = (file) => {
         before, after, overview, hash: location.hash,
         h1: document.querySelector('h1').textContent.trim(),
         active: document.querySelector('.tab__control[aria-selected="true"]')?.dataset.tab || '',
+        diagramVisibleAside: !!document.querySelector('[role="tabpanel"]:not([hidden]) .detail-layout__aside'),
         recoveryHref: recovery?.getAttribute('href') || '',
       });
     })()`));
@@ -460,10 +516,13 @@ const expectedSteps = (file) => {
       && portal.overview.sections.includes('Beschreibung')
       && portal.overview.sections.includes('Einordnung')
       && portal.overview.sections.includes('Verantwortung')
-      && portal.overview.sections.includes('Ablauf und Systeme')
-      && portal.overview.factGroups >= 3 && /immobilienmanagement@/.test(portal.overview.contact)
-      && !portal.overview.nestedAside && !portal.overview.bpmnHost,
-    'portal and domain records share the same full-width overview skeleton', JSON.stringify(portal.overview));
+      && !portal.overview.sections.includes('Ablauf und Systeme')
+      && portal.overview.factGroups >= 2
+      && portal.overview.contactHref === 'mailto:immobilienmanagement@bbl.admin.ch'
+      && portal.overview.contactHeading === 'Ansprechpersonen'
+      && portal.overview.mainContactLinks === 0 && portal.overview.visibleAside
+      && !portal.overview.bpmnHost && !portal.diagramVisibleAside,
+    'portal and domain records share the same Overview-only contact layout', JSON.stringify(portal.overview));
     check(/def=raumbedarf/.test(portal.hash) && portal.active === 'diagram',
       'tab navigation canonicalises a portal record to its definition selector', portal.hash);
     check(portal.before === 0 && portal.after === 1,

@@ -9,6 +9,11 @@ one-level Back navigation, shared landscape state, and URL-addressable views—b
 deliberately supersedes the old record-default and cross-record tab-persistence
 rules with the information-first model below.
 
+> **Follow-up, 2026-08-18:** explicit product direction restored the shared
+> `detail-layout` contact rail on record **Overview** tabs. The historical
+> no-aside decisions below remain useful rationale, but the current contract is
+> documented in the final section of this review and supersedes those passages.
+
 ## Outcome
 
 The two applications now follow one information-first detail model:
@@ -291,6 +296,26 @@ A final visual matrix covered root, record, table, and diagram routes at 320,
 768, and 1440 px. It confirmed whole-word heading wraps, a single-column detail
 flow before the secondary hierarchy on phones, and the restored desktop rail.
 
-## Follow-up principle
+## Follow-up implementation — Overview contact rail (2026-08-18)
 
-Use `.mc-detail` for future catalogue-style information pages that already have a hierarchy rail. Do not apply it mechanically to transactional details: a single persistent aside remains useful when it contains the page's primary action or an operational contact and does not create a second navigation column.
+Metadata record details and process details now use the same Overview anatomy as
+the portfolio application:
+
+- `.detail-layout` contains one DOM-ordered `.vertical-spacing` fact stream,
+  beginning with **Beschreibung**;
+- fact sections use direct `<dt>`/`<dd>` children in the shared plain `.kv`
+  grid;
+- governance roles and AdminDir people remain in **Verantwortung**, while the
+  actionable team contact appears once in an **Ansprechpersonen** card inside
+  `.detail-layout__aside`;
+- the aside exists only in Overview content; fields, attributes, values,
+  diagrams, and process steps retain the full panel width; and
+- because these pages already have a hierarchy rail, the nested contact area
+  stays below the facts from 1024 through 1279 px and becomes the sticky 22rem
+  right rail from 1280 px. This avoids the squeeze that motivated D9 while
+  preserving the requested desktop pattern.
+
+This decision supersedes Outcome item 5, the no-aside conclusions in D2 and D9,
+the final single-rail statement in D16, and the old validation assertion that a
+nested detail aside must be absent. The remaining information-first, routing,
+navigation, accessibility, and hierarchy decisions are unchanged.
