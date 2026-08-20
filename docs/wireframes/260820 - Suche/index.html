@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suche — arbeitender Prototyp</title>
+<!--
+  ARBEITENDER PROTOTYP der Portalsuche: Hero-Suche, Trefferseite, Nutzerfluss.
+
+  Er lädt die ECHTEN Daten aus data/*.json und sucht mit der ECHTEN Suchmaschine
+  des Portals (js/search/search-engine.js, unverändert importiert). Was hier
+  gefunden wird, findet das Portal auch.
+
+  DIE ANTWORT IST SIMULIERT, NICHT GENERIERT. Es gibt keinen Modellaufruf und
+  keinen Schlüssel — eine statische Seite kann beides nicht haben. js/answer.js
+  setzt die Antwort deterministisch aus den Beschreibungstexten der wirklich
+  gefundenen Datensätze zusammen. Das ist genau die Eigenschaft, die der
+  Renderer später erzwingen muss: jeder Satz stammt aus einem Datensatz und
+  trägt dessen Beleg. Es beweist die FORM, nicht die Antwortqualität.
+
+  Die Frageauflösung in js/query.js ist ebenfalls deterministisch: Stoppwörter
+  raus, Rest an die bestehende Suchmaschine. Sie steht für den Schritt, den
+  später ein Modell übernimmt — und zeigt, dass schon dieser einfache Schritt
+  aus 0 Treffern brauchbare macht.
+
+  BEDIENUNG: muss ausgeliefert werden, nicht per Doppelklick geöffnet.
+  ES-Module und fetch() sind über file:// gesperrt.
+
+      node scripts/serve.mjs
+      http://127.0.0.1:8848/docs/wireframes/260820%20-%20Suche/
+
+  Siehe README.md.
+-->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/cd.css">
+<link rel="stylesheet" href="css/suche.css">
+</head>
+<body class="body--intranet">
+
+  <!-- Studien-Leiste. Gehört NICHT zum Entwurf, sondern erklärt ihn. -->
+  <div class="mock-bar">
+    <div class="container mock-bar__inner">
+      <span class="mock-bar__title">Prototyp «Suche»</span>
+      <span class="mock-bar__note">Echte Daten · echte Suchmaschine · <strong>simulierte</strong> Antwort</span>
+      <label class="mock-toggle">
+        <input type="checkbox" id="ai-toggle" checked>
+        <span>Antworten anzeigen</span>
+      </label>
+    </div>
+  </div>
+
+  <header class="top-header">
+    <div class="container top-header__inner">
+      <a class="logo" href="#/">
+        <span class="logo__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26"><rect width="24" height="24" fill="#d8232a"/><path fill="#fff" d="M10 5h4v5h5v4h-5v5h-4v-5H5v-4h5z"/></svg>
+        </span>
+        <span class="logo__text">
+          <strong>Bundesamt für Bauten und Logistik</strong>
+          <span>Kundenportal</span>
+        </span>
+      </a>
+      <!-- Globale Suche: dasselbe Ziel wie die Hero-Suche, ohne Vorschläge —
+           genau wie heute (js/ui/shell/header.js). -->
+      <form class="header-search" role="search" id="header-search-form">
+        <label class="sr-only" for="global-search">Suche auf der Plattform</label>
+        <input type="search" id="global-search" placeholder="Suchen…" autocomplete="off">
+        <button class="header-search__submit" type="submit" aria-label="Suchen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13.3 12.8c1.9-2.2 1.7-5.6-.5-7.5s-5.6-1.7-7.5.5-1.7 5.6.5 7.5c2 1.7 4.9 1.7 6.9 0l6 6 .5-.5zm-4 1c-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5 4.5 2 4.5 4.5-2 4.5-4.5 4.5z"/></svg>
+        </button>
+      </form>
+    </div>
+    <nav class="main-navigation" aria-label="Hauptnavigation">
+      <div class="container">
+        <ul>
+          <li><a href="#/">Dienstleistungen</a></li>
+          <li><a href="#/">Daten und Digitalisierung</a></li>
+          <li><a href="#/">Wissen und Hilfsmittel</a></li>
+          <li><a href="#/">News</a></li>
+          <li><a href="#/">Meine Vorgänge</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main" class="site-main" tabindex="-1"></main>
+
+  <!-- Persistente Live-Region: die Antwort wird EINMAL am Ende angesagt,
+       nicht Wort für Wort (sonst unterbricht der Screenreader dauernd). -->
+  <div id="live" role="status" aria-live="polite" class="sr-only"></div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Prototyp zur Demonstration. Daten fiktiv oder öffentlich zugänglich.
+         Antworten sind simuliert und werden nicht von einem Sprachmodell erzeugt.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

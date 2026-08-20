@@ -1,0 +1,104 @@
+/* ==========================================================================
+   TOKENS — swiss/designsystem 1.0.5 (5f03f257)
+
+   Rampen aus css/skins/default.postcss + css/skins/intranet.postcss,
+   Skalen aus app/tailwind.config.js. Das Portal trägt body--intranet, also
+   ist die INTRANET-Rampe massgebend: primary ist Blau, nicht Bundesrot.
+   ========================================================================== */
+
+/* Dieselbe Schriftdatei, die das Portal ausliefert. Ohne @font-face nennt der
+   Prototyp «Noto Sans» nur und fällt still auf die System-Grotesk zurück. */
+@font-face { font-family:'Noto Sans'; font-style:normal; font-weight:100 900;
+  font-display:swap; src:url('../../../../assets/fonts/NotoSans-latin.woff2') format('woff2'); }
+@font-face { font-family:'Fallback-font'; src:local('Verdana');
+  size-adjust:94%; ascent-override:114%; descent-override:31%; line-gap-override:0%; }
+
+:root {
+  /* --- Neutrale Rampen (tailwind.config.js `text` / `gray`) --- */
+  --color-text-400:#9ca3af; --color-text-500:#6b7280; --color-text-600:#4b5563;
+  --color-text-700:#374151; --color-text-800:#1f2937; --color-text-900:#111827;
+  --color-gray-50:#f9fafb;  --color-gray-100:#f3f4f6; --color-gray-500:#6b7280;
+  --color-gray-600:#4b5563; --color-gray-700:#374151; --color-gray-800:#1f2937;
+
+  /* --- Semantische Rampen --- */
+  --color-blue-50:#eff6ff;   --color-blue-100:#dbeafe;  --color-blue-800:#1e40af;
+  --color-green-50:#ecfdf5;  --color-green-100:#d1fae5; --color-green-800:#065f46;
+  --color-orange-50:#fff7ed; --color-orange-100:#ffedd5;--color-orange-800:#9a3412;
+  --color-red-50:#ffedee;    --color-red-100:#fae1e2;   --color-red-800:#99191e;
+  --color-purple-500:#8655F6;
+  --color-federal-red:#d8232a;
+
+  --color-border:#e5e7eb;
+  --color-border-input:#6b7280;          /* CD input.postcss = gray-500 */
+  --color-bg:#ffffff;
+  --color-text:var(--color-text-800);
+  /* Bewusste Portal-Abweichung von CD (css/tokens.css): CD stellt Meta-Text auf
+     gray-500; text-600 besteht AA auf Weiss UND auf secondary-50. */
+  --color-text-muted:var(--color-text-600);
+  --color-text-negative:#ffffff;
+
+  /* --- Typografie --- */
+  --font-sans:'Noto Sans','Hind','Fallback-font',sans-serif;
+  --font-mono:Consolas,Menlo,monospace;
+  --fs-xs:.75rem;  --fs-sm:.875rem;  --fs-base:1rem;   --fs-lg:1.125rem;
+  --fs-xl:1.25rem; --fs-2xl:1.375rem;--fs-3xl:1.625rem;--fs-4xl:2rem;
+  --fs-5xl:2.5rem; --fs-6xl:3rem;    --fs-7xl:3.5rem;  --fs-8xl:4rem;
+  --lh-tight:1.25; --lh-snug:1.375;  --lh-normal:1.5;
+  /* CD setzt fontWeight.bold:400 und wechselt auf die Familie Font-Bold; die
+     eine variable Noto-Datei liefert dieselbe Schnitthaltung über wght. */
+  --fw-regular:400; --fw-bold:700;
+
+  /* CD `text--*` sind RESPONSIVE Rampen (typography.postcss:18-57):
+     `.text--base` = text-base xl:text-lg 3xl:text-xl. Wer skalieren soll,
+     konsumiert --text-*, nicht die festen --fs-*-Stufen. */
+  --text-xs:var(--fs-xs);   --text-sm:var(--fs-sm);   --text-base:var(--fs-base);
+  --text-lg:var(--fs-lg);   --text-xl:var(--fs-xl);   --text-2xl:var(--fs-2xl);
+  --text-3xl:var(--fs-3xl); --text-4xl:var(--fs-4xl);
+
+  /* --- Abstände --- */
+  --sp-0-5:.125rem; --sp-1:.25rem;  --sp-1-5:.375rem; --sp-2:.5rem;
+  --sp-2-5:.625rem; --sp-3:.75rem;  --sp-3-5:.875rem; --sp-4:1rem;
+  --sp-5:1.25rem;   --sp-6:1.5rem;  --sp-8:2rem;      --sp-10:2.5rem;
+  --sp-12:3rem;     --sp-14:3.5rem; --sp-16:4rem;     --sp-20:5rem;
+
+  /* --- Radien · Striche · Schatten --- */
+  --radius-sm:.125rem; --radius:.1875rem; --radius-lg:.3125rem; --radius-full:9999px;
+  --stroke-1:1px; --stroke-2:2px; --stroke-3:3px;
+  --shadow-sm:0 1px 2px 0 rgba(0,0,0,.05);
+  --shadow-lg:0 2px 6px -1px rgba(0,0,0,.06), 0 5px 20px -3px rgba(0,0,0,.08);
+
+  --target-min:2.75rem;
+  --container-max:76rem;
+  --container-px:1.25rem;
+  --z-header:100;
+}
+
+/* --- INTRANET-SKIN (css/skins/intranet.postcss). Massgebend im Portal. --- */
+.body--intranet {
+  --color-primary-50:#eff6ff;  --color-primary-100:#dbeafe; --color-primary-200:#bfdbfe;
+  --color-primary-300:#93c5fd; --color-primary-400:#60a5fa; --color-primary-500:#3b82f6;
+  --color-primary-600:#2563eb; --color-primary-700:#1d4ed8; --color-primary-800:#1e40af;
+  --color-primary-900:#1e3a8a;
+  --color-secondary-50:#f0f4f7;  --color-secondary-100:#dfe4e9;
+  --color-secondary-200:#acb4bd; --color-secondary-300:#828e9a;
+  --color-secondary-400:#5076b3; --color-secondary-500:#234dc2;
+  --color-secondary-600:#1e40af; --color-secondary-700:#1e3a8a;
+  --color-secondary-800:#1c3c7d; --color-secondary-900:#1c3c7d;
+  --color-placeholder:var(--color-secondary-400);
+}
+
+/* --- CD text--* Rampen, Stufen wie css/tokens.css sie im Portal setzt --- */
+@media (min-width:1024px) {
+  :root { --text-xl:var(--fs-2xl); --text-2xl:var(--fs-3xl); --text-3xl:var(--fs-4xl);
+          --text-4xl:var(--fs-5xl); --container-px:2.5rem; }
+}
+@media (min-width:1280px) {
+  :root { --text-xs:var(--fs-sm);   --text-sm:var(--fs-base); --text-base:var(--fs-lg);
+          --text-lg:var(--fs-xl);   --text-xl:var(--fs-3xl);  --text-2xl:var(--fs-4xl);
+          --text-3xl:var(--fs-5xl); --text-4xl:var(--fs-6xl); --container-px:3rem; }
+}
+@media (min-width:1920px) {
+  :root { --text-xs:var(--fs-base); --text-sm:var(--fs-lg);  --text-base:var(--fs-xl);
+          --text-lg:var(--fs-2xl);  --text-xl:var(--fs-4xl); --text-2xl:var(--fs-5xl);
+          --text-3xl:var(--fs-6xl); --text-4xl:var(--fs-7xl); --container-px:4rem; }
+}

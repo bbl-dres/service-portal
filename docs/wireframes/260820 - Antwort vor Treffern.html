@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Antwort vor Treffern — vier Varianten</title>
+<!--
+  Standalone-Studie für eine LLM-gestützte Antwort ÜBER der bestehenden Suche
+  (#/search?q=…). Kein Build-Schritt, keine Abhängigkeit, kein Netz.
+
+  CD-TREUE. Die Werte stammen aus dem Design System selbst (swiss/designsystem
+  1.0.5, 5f03f257), nicht aus dem Nachbau:
+
+    · css/skins/intranet.postcss   Farbrampen — das Portal trägt body--intranet
+    · app/tailwind.config.js       fontSize · borderRadius · boxShadow · Farben
+    · css/components/notification.postcss   der Antwortblock
+    · css/components/badge.postcss          die Marke «Automatisch erstellt»
+    · css/components/search.postcss         Suchfeld · Trefferkopf · Ergebnisseite
+    · css/components/meta-info.postcss      die Trefferzeile
+    · css/components/btn.postcss            Schalter
+    · css/components/link.postcss           Verweise
+    · css/foundations/global.postcss        Fokusring (ring-2 ring-purple-500)
+
+  KORREKTUR GEGENÜBER DEM ERSTEN ENTWURF. Der erste Entwurf war rot. Das ist
+  die DEFAULT-Rampe. Das Portal setzt <body class="body--intranet">, und die
+  Intranet-Rampe färbt primary auf Blau um (--color-primary-600 #2563eb) sowie
+  secondary-400…900 von Marineblau auf Blau. Ein roter Akzent käme im Portal
+  nirgends vor. Ebenso ersetzt sind:
+
+    · der erfundene Rahmenblock  → .notification--hint (Tönung, radius, shadow-lg,
+                                    Symbol, KEINE linke Kante)
+    · die eckige Mono-Marke      → .badge badge--blue (rounded-full, 400)
+    · versale Meta-Zeilen        → .meta-info mit «|»-Trennern
+    · font-weight 600            → CD kennt nur 400 und 700 (--fw-regular/--fw-bold)
+
+  AUSGANGSLAGE, GEMESSEN. js/search/search-engine.js gegen data/services.json:
+
+      «stoerung melden»                          → 1 Treffer  (exakt richtig)
+      «heizung»                                  → 1 Treffer  (Umgangssprache greift)
+      «raum buchen»                              → 1 Treffer  (exakt richtig)
+      «Wie melde ich eine defekte Heizung?»      → 0 Treffer
+      «Kann ich als Mieter einen Raum buchen?»   → 0 Treffer
+
+  Die Ursache ist strukturell, keine Feinabstimmung: score() verlangt, dass
+  JEDER Term trifft — «// AND: one absent term excludes the row» — also
+  streichen «wie», «ich» und «eine» den Index, bevor «Heizung» gewertet wird.
+  Der Retriever ist nicht schwach; ihm fehlt der Schritt DAVOR.
+
+  DIE DATEN SIND ECHT — Dienstleistungen aus data/services.json, Gebäude und
+  Kontakte aus data/buildings.geojson und data/building-contacts.json,
+  Portal-Abläufe aus data/processes.json, Routen aus js/links.js. Jeder Satz in
+  jeder Antwort ist durch einen dieser Datensätze gedeckt; wo die Daten
+  schweigen, schweigt die Antwort auch (Szenario 2). Eine Studie auf erfundenen
+  Daten würde jede Variante schmeicheln — und gerade die Fälle verstecken, für
+  die dieses Bauteil gebaut wird.
+
+  ZWEI REGELN, DIE ALLE VIER VARIANTEN TRAGEN:
+
+  1. Die Treffer werden NIE blockiert, ersetzt, eingeklappt oder verschoben.
+  2. Ein unbelegter Satz wird NICHT angezeigt — der Renderer setzt das durch,
+     nicht der Prompt. Bleibt nichts übrig, greift «keine Antwort».
+
+  WAS DIE VARIANTEN UNTERSCHEIDET, ist nicht die Optik, sondern was passiert,
+  wenn die Antwort NICHT kommt. Der Zustand «nicht verfügbar» ist der Test,
+  und die Tabelle unter der Bühne entscheidet.
+-->
+<style>
+  /* ================================================================== */
+  /*  SCHRIFT — dieselbe Datei, die das Portal ausliefert.              */
+  /*  Ohne @font-face nennt die Studie «Noto Sans» nur und fällt still  */
+  /*  auf die System-Grotesk zurück; die Metriken stammen aus           */
+  /*  css/foundations/typography.css (CD font-face.postcss:37-44).      */
+  /* ================================================================== */
+  @font-face { font-family:'Noto Sans'; font-style:normal; font-weight:100 900;
+    font-display:swap; src:url('../../assets/fonts/NotoSans-latin.woff2') format('woff2'); }
+  @font-face { font-family:'Fallback-font'; src:local('Verdana');
+    size-adjust:94%; ascent-override:114%; descent-override:31%; line-gap-override:0%; }
+
+  /* ================================================================== */
+  /*  TOKENS — swiss/designsystem 1.0.5                                 */
+  /*  Rampen: css/skins/default.postcss + css/skins/intranet.postcss     */
+  /*  Skalen: app/tailwind.config.js                                     */
+  /* ================================================================== */
+  :root {
+    /* Neutrale Rampen (tailwind.config.js `text` / `gray`) */
+    --color-text-500:#6b7280; --color-text-600:#4b5563; --color-text-700:#374151;
+    --color-text-800:#1f2937; --color-text-900:#111827;
+    --color-gray-50:#f9fafb; --color-gray-100:#f3f4f6; --color-gray-500:#6b7280;
+    --color-gray-700:#374151; --color-gray-800:#1f2937;
+
+    /* Semantische Rampen (tailwind.config.js) */
+    --color-blue-50:#eff6ff;   --color-blue-100:#dbeafe;  --color-blue-800:#1e40af;
+    --color-green-50:#ecfdf5;  --color-green-100:#d1fae5; --color-green-800:#065f46;
+    --color-orange-50:#fff7ed; --color-orange-100:#ffedd5;--color-orange-800:#9a3412;
+    --color-red-50:#ffedee;    --color-red-100:#fae1e2;   --color-red-800:#99191e;
+    --color-purple-500:#8655F6;
+
+    --color-border:#e5e7eb;
+    --color-border-input:#6b7280;   /* CD input.postcss — gray-500 */
+    --color-bg:#ffffff;
+    /* Bewusste Portal-Abweichung von CD (css/tokens.css): CD stellt Meta-Text
+       auf gray-500; text-600 besteht AA auf Weiss UND auf secondary-50. */
+    --color-text-muted:var(--color-text-600);
+
+    /* Typografie (tailwind.config.js fontSize · fontWeight · fontFamily) */
+    --font-sans:'Noto Sans','Hind','Fallback-font',sans-serif;
+    --font-mono:Consolas,Menlo,monospace;
+    --fs-xs:.75rem;  --fs-sm:.875rem;  --fs-base:1rem;   --fs-lg:1.125rem;
+    --fs-xl:1.25rem; --fs-2xl:1.375rem;--fs-3xl:1.625rem;--fs-4xl:2rem;
+    --fs-5xl:2.5rem; --fs-6xl:3rem;    --fs-7xl:3.5rem;  --fs-8xl:4rem;
+    --lh-tight:1.25; --lh-snug:1.375;  --lh-normal:1.5;
+    /* CD `text--*` sind RESPONSIVE Rampen (typography.postcss:18-57):
+       `.text--base` = text-base xl:text-lg 3xl:text-xl. Wer skalieren soll,
+       konsumiert --text-*, nicht die festen --fs-*-Stufen. Die drei Blöcke am
+       Ende dieser Datei setzen die Stufen um — genau wie css/tokens.css. */
+    --text-xs:var(--fs-xs);   --text-sm:var(--fs-sm);   --text-base:var(--fs-base);
+    --text-lg:var(--fs-lg);   --text-xl:var(--fs-xl);   --text-2xl:var(--fs-2xl);
+    --text-3xl:var(--fs-3xl); --text-4xl:var(--fs-4xl);
+    /* CD setzt fontWeight.bold:400 und wechselt auf die Familie Font-Bold.
+       Die eine variable Noto-Datei liefert dieselbe Schnitthaltung über die
+       wght-Achse — wie css/tokens.css im Portal es begründet. */
+    --fw-regular:400; --fw-bold:700;
+
+    /* Abstände (tailwind spacing) */
+    --sp-0-5:.125rem; --sp-1:.25rem; --sp-1-5:.375rem; --sp-2:.5rem;
+    --sp-2-5:.625rem; --sp-3:.75rem; --sp-4:1rem;  --sp-5:1.25rem; --sp-6:1.5rem;
+    --sp-8:2rem;  --sp-10:2.5rem; --sp-12:3rem; --sp-14:3.5rem; --sp-16:4rem;
+
+    /* Radien · Striche · Schatten (tailwind.config.js) */
+    --radius-sm:.125rem; --radius:.1875rem; --radius-lg:.3125rem; --radius-full:9999px;
+    --stroke-1:1px; --stroke-2:2px; --stroke-3:3px;
+    --shadow-sm:0 1px 2px 0 rgba(0,0,0,.05);
+    --shadow-lg:0 2px 6px -1px rgba(0,0,0,.06), 0 5px 20px -3px rgba(0,0,0,.08);
+    --target-min:2.75rem;
+  }
+
+  /* ---- INTRANET-SKIN. Das Portal trägt body--intranet; diese Rampe ist
+         massgebend (css/skins/intranet.postcss). ---- */
+  .body--intranet {
+    --color-primary-50:#eff6ff;  --color-primary-100:#dbeafe; --color-primary-200:#bfdbfe;
+    --color-primary-300:#93c5fd; --color-primary-400:#60a5fa; --color-primary-500:#3b82f6;
+    --color-primary-600:#2563eb; --color-primary-700:#1d4ed8; --color-primary-800:#1e40af;
+    --color-primary-900:#1e3a8a;
+    --color-secondary-50:#f0f4f7;  --color-secondary-100:#dfe4e9;
+    --color-secondary-200:#acb4bd; --color-secondary-300:#828e9a;
+    --color-secondary-400:#5076b3; --color-secondary-500:#234dc2;
+    --color-secondary-600:#1e40af; --color-secondary-700:#1e3a8a;
+    --color-secondary-800:#1c3c7d; --color-secondary-900:#1c3c7d;
+    --color-placeholder:var(--color-secondary-400);
+  }
+
+  /* ================================================================== */
+  /*  FOUNDATIONS                                                       */
+  /* ================================================================== */
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; -moz-osx-font-smoothing:grayscale;
+    -webkit-font-smoothing:antialiased; word-spacing:.0625em; }
+  body { margin:0; padding:var(--sp-8) var(--sp-5) var(--sp-16);
+    background:var(--color-secondary-50);
+    font-family:var(--font-sans); font-weight:var(--fw-regular);
+    font-size:var(--fs-base); line-height:var(--lh-normal); color:var(--color-text-800); }
+
+  /* CD global.postcss:75-86 — ring-2 ring-purple-500 */
+  *:focus-visible { outline:none; box-shadow:0 0 0 var(--stroke-2) var(--color-purple-500); position:relative; z-index:10; }
+
+  /* CD typography.postcss:106-129 — Überschriften auf den text--*-Rampen */
+  h1,h2,h3,h4 { margin:0 0 var(--sp-4); font-weight:var(--fw-bold); }
+  h1 { font-size:var(--text-3xl); line-height:var(--lh-tight); }
+  h2 { font-size:var(--text-2xl); line-height:var(--lh-tight); }
+  h3 { font-size:var(--text-xl);  line-height:var(--lh-tight); }
+  h4 { font-size:var(--text-lg);  line-height:var(--lh-normal); }
+  p  { margin:0 0 var(--sp-4); }
+  .legend { font-size:var(--text-xs); padding-top:var(--sp-2); color:var(--color-gray-500); }
+  .text--sm { font-size:var(--text-sm); }
+  .text--bold { font-weight:var(--fw-bold); }
+  code { font-family:var(--font-mono); font-size:.92em;
+    background:var(--color-secondary-100); padding:1px 4px; border-radius:var(--radius-sm); }
+
+  /* CD link.postcss:6-11 */
+  .link, main a { color:var(--color-primary-600); text-decoration:underline;
+    text-underline-offset:var(--stroke-2); cursor:pointer; overflow-wrap:break-word; }
+  .link:hover, main a:hover { color:var(--color-primary-800); }
+
+  /* CD container.postcss */
+  .container { width:100%; max-width:76rem; margin:0 auto; }
+
+  /* ================================================================== */
+  /*  BTN — css/components/btn.postcss                                  */
+  /* ================================================================== */
+  .btn { display:inline-flex; align-items:center; min-height:var(--target-min);
+    padding:0 var(--sp-4); border-radius:var(--radius-sm);
+    border:var(--stroke-1) solid transparent; font:inherit;
+    font-weight:var(--fw-regular); font-size:var(--fs-base);
+    line-height:1.25rem; cursor:pointer; text-decoration:none; }
+  .btn__text { padding-block:var(--sp-2); text-align:left; }
+  .btn--outline { background:transparent; border-color:var(--color-primary-600);
+    color:var(--color-primary-600); }
+  .btn--outline:hover { border-color:var(--color-primary-700); color:var(--color-primary-700); }
+  .btn--outline:active { background:var(--color-primary-50); }
+  .btn--filled { background:var(--color-secondary-500); border-color:var(--color-secondary-500);
+    color:#fff; font-weight:var(--fw-bold); }
+  .btn--filled:hover { color:var(--color-secondary-100); }
+  /* Studien-Schalter: CD-Umriss mit gefülltem Aktivzustand. */
+  .btn--sm { min-height:0; font-size:var(--fs-sm); padding:0 var(--sp-3); }
+  .btn--sm .btn__text { padding-block:var(--sp-1-5); }
+  .btn[aria-pressed="true"] { background:var(--color-primary-600);
+    border-color:var(--color-primary-600); color:#fff; }
+  .btn[aria-pressed="true"]:hover { background:var(--color-primary-700);
+    border-color:var(--color-primary-700); color:#fff; }
+  .btn small { display:block; font-size:var(--fs-xs); }
+
+  /* ================================================================== */
+  /*  BADGE — css/components/badge.postcss                              */
+  /* ================================================================== */
+  .badge { display:inline-flex; align-items:center; padding:.219em 1em;
+    border-radius:var(--radius-full); font-weight:var(--fw-regular);
+    font-size:var(--fs-sm);
+    background:var(--color-secondary-100); color:var(--color-gray-800); }
+  .badge--blue { background:var(--color-blue-100); color:var(--color-blue-800); }
+  .badge--gray { background:var(--color-secondary-100); color:var(--color-gray-800); }
+
+  /* ================================================================== */
+  /*  NOTIFICATION — css/components/notification.postcss                */
+  /*  KEINE linke Kante: Tönung, radius, shadow-lg, Symbol links.        */
+  /* ================================================================== */
+  .notification { display:flex; position:relative; gap:var(--sp-3);
+    align-items:flex-start; padding:var(--sp-2); border:0;
+    border-radius:var(--radius); background:var(--color-gray-50);
+    box-shadow:var(--shadow-lg); }
+  @media (min-width:480px)  { .notification { padding:var(--sp-4); } }
+  @media (min-width:1024px) { .notification { padding:var(--sp-6); } }
+  .notification__icon { flex:none; width:var(--sp-10); height:var(--sp-10); fill:currentColor; }
+  .notification__content { min-width:0; margin-block:var(--sp-2-5); flex:1; }
+  @media (min-width:1280px) { .notification__content { margin-block:var(--sp-2); } }
+  .notification__content > p { margin:0; overflow-wrap:anywhere; }
+  .notification__content > p + p { margin-top:var(--sp-2); }
+  .notification--hint    { background:var(--color-secondary-50); color:var(--color-gray-700); }
+  .notification--info    { background:var(--color-blue-50);      color:#1d4ed8; }
+  .notification--warning { background:var(--color-orange-50);    color:var(--color-orange-800); }
+  /* CD notification.postcss:11-27 — Verweise erben currentColor. */
+  .notification a, .notification .link { color:currentColor; text-decoration:underline;
+    text-underline-offset:var(--stroke-2); }
+  .notification a:hover { color:currentColor; filter:brightness(.5); }
+
+  /* ================================================================== */
+  /*  SEARCH — css/components/search.postcss + portal css/sections       */
+  /* ================================================================== */
+  .search--page-result { padding-top:var(--sp-4); }
+  .search--large .search__group { display:flex; align-items:stretch; position:relative;
+    height:var(--sp-16); max-width:52rem; }
+  .search__field { flex:1 1 auto; min-width:0; width:100%;
+    padding:var(--sp-3) var(--sp-14) var(--sp-3) var(--sp-4);
+    border:var(--stroke-1) solid var(--color-border-input); box-shadow:none;
+    background:var(--color-bg); font-family:inherit;
+    font-size:var(--fs-xl); font-weight:var(--fw-bold); color:var(--color-text-900); }
+  .search__field:focus { outline:none; box-shadow:0 0 0 var(--stroke-2) var(--color-purple-500); }
+  .search--large .search__submit { position:absolute; top:0; right:0; bottom:0;
+    display:inline-flex; align-items:center; justify-content:center; width:3.5rem;
+    border:0; background:none; color:var(--color-secondary-800); cursor:pointer; }
+  .search__submit svg { width:var(--sp-8); height:var(--sp-8); fill:currentColor; }
+
+  /* Trefferkopf. Im Portal heisst das Bauteil `.catbar`; gemessen an der
+     laufenden App: padding-top 0, padding-bottom --sp-2, Unterkante
+     secondary-300, Text text-800, --text-sm. CD-Regel `strong` = font-regular
+     (search.postcss:220-223). */
+  .search-results__header { display:flex; flex-wrap:wrap; gap:var(--sp-4);
+    align-items:center; justify-content:space-between;
+    font-size:var(--text-sm); color:var(--color-text-800);
+    padding-top:0; padding-bottom:var(--sp-2);
+    border-bottom:var(--stroke-1) solid var(--color-secondary-300); }
+  .search-results__header strong { font-weight:var(--fw-regular); }
+
+  /* CD meta-info.postcss — Trennzeichen «|», px-2 lg:px-3 */
+  .meta-info { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
+  .meta-info__item:not(:last-child)::after { content:'|'; padding:0 var(--sp-2); }
+  @media (min-width:1024px) { .meta-info__item:not(:last-child)::after { padding:0 var(--sp-3); } }
+
+  /* Trefferliste — portal css/sections/search.css, gebaut auf card--list */
+  .search-results-list { list-style:none; margin:0; padding:0; }
+  .search-result { border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
+  .search-result__link { display:block; padding:var(--sp-4) var(--sp-1);
+    color:inherit; text-decoration:none; }
+  @media (min-width:1024px) { .search-result__link { padding-top:var(--sp-6); padding-bottom:var(--sp-6); } }
+  .search-result__link:hover .search-result__title { color:var(--color-primary-700); }
+  .search-result__meta { margin:0 0 var(--sp-0-5); }
+  /* Der Titel ist Fliesstext-Tinte, NICHT Markenfarbe — erst beim Hover
+     primary-700. An der laufenden App gemessen: 18px/700/#1f2937 bei 1280. */
+  .search-result__title { font-size:var(--text-base); font-weight:var(--fw-bold);
+    line-height:var(--lh-snug); margin:0; color:var(--color-text-800); }
+  .search-result__desc { margin:var(--sp-1) 0 0; font-size:var(--text-sm);
+    color:var(--color-text-muted); overflow-wrap:anywhere; }
+
+  /* ================================================================== */
+  /*  ANTWORTBLOCK — Zusammensetzung aus CD-Bauteilen, kein neues        */
+  /* ================================================================== */
+  /* Der Antwortblock besitzt seinen eigenen Abstand — nicht die Aufrufstelle
+     (css/README.md: «Die Komponentenregel besitzt ihn, keine mt-Utility»).
+     Unten mehr als oben: der Trefferkopf setzt padding-top:0, bringt also
+     keinen eigenen Abstand mit, und der shadow-lg braucht Luft über der
+     Trennlinie. Wächst mit dem Viewport wie die übrige CD-Rhythmik. */
+  .answer-slot { margin-top:var(--sp-5); margin-bottom:var(--sp-6); }
+  @media (min-width:1024px) {
+    .answer-slot { margin-top:var(--sp-6); margin-bottom:var(--sp-8); }
+  }
+
+  .answer__head { display:flex; align-items:center; gap:var(--sp-3);
+    flex-wrap:wrap; margin:0 0 var(--sp-2); }
+  .answer__title { font-weight:var(--fw-bold); }
+  /* Ziffernbeleg. Im .notification erbt er currentColor (CD-Regel oben). */
+  .cite { font-size:var(--fs-xs); font-weight:var(--fw-bold);
+    padding:0 var(--sp-1); margin-left:var(--sp-0-5);
+    border:var(--stroke-1) solid currentColor; border-radius:var(--radius-sm);
+    text-decoration:none !important; vertical-align:.12em; }
+  .answer__sources { margin-top:var(--sp-4); padding-top:var(--sp-3);
+    border-top:var(--stroke-1) solid var(--color-secondary-200); }
+  .answer__sources-label { font-size:var(--fs-xs); color:var(--color-gray-500);
+    margin:0 0 var(--sp-2); }
+  .source { display:grid; grid-template-columns:1.5rem 1fr; gap:var(--sp-2);
+    font-size:var(--text-sm); align-items:baseline; margin-bottom:var(--sp-3); }
+  .source:last-child { margin-bottom:0; }
+  .source__n { color:var(--color-text-muted); font-size:var(--text-xs); }
+  .source .meta-info { line-height:var(--lh-normal); }
+  /* Variante C: Belegstreifen statt Ziffern */
+  .strip { display:flex; flex-wrap:wrap; gap:var(--sp-2); margin-top:var(--sp-4);
+    padding-top:var(--sp-3); border-top:var(--stroke-1) solid var(--color-secondary-200); }
+  .strip a { font-size:var(--fs-sm); }
+  .strip .meta-info__item::after { padding-inline:var(--sp-2); }
+
+  .skeleton { height:.7rem; background:var(--color-secondary-100);
+    border-radius:var(--radius-sm); margin-bottom:var(--sp-2); }
+  .skeleton.w1{width:92%} .skeleton.w2{width:78%} .skeleton.w3{width:56%}
+  @media (prefers-reduced-motion:no-preference) {
+    .skeleton { animation:pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
+  }
+
+  /* Variante B: Antwort als markierter erster Treffer.
+     --state-bar-primary aus css/tokens.css (inset 3px links, primary-600). */
+  .search-result--answer { box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600);
+    background:var(--color-secondary-50); }
+  .search-result--answer .search-result__link { padding-left:var(--sp-4); }
+
+  /* ================================================================== */
+  /*  STUDIEN-CHROME                                                    */
+  /* ================================================================== */
+  .lead { color:var(--color-text-600); max-width:74ch; }
+  .note { font-size:var(--fs-sm); color:var(--color-text-600); max-width:82ch; }
+  .panel { background:var(--color-bg); border:var(--stroke-1) solid var(--color-border);
+    border-radius:var(--radius); padding:var(--sp-4); margin-bottom:var(--sp-5); }
+  .ctrl-row { display:flex; flex-wrap:wrap; gap:var(--sp-2); align-items:center;
+    margin-bottom:var(--sp-3); }
+  .ctrl-row:last-child { margin-bottom:0; }
+  .ctrl-row > .ctrl-label { font-size:var(--fs-sm); color:var(--color-text-600);
+    min-width:7rem; }
+  .stage { background:var(--color-secondary-100);
+    border:var(--stroke-1) solid var(--color-secondary-200);
+    border-radius:var(--radius); padding:var(--sp-5); }
+  .viewport { background:var(--color-bg);
+    border:var(--stroke-1) solid var(--color-secondary-200);
+    border-radius:var(--radius); overflow:hidden; }
+  .viewport__bar { background:var(--color-secondary-800); color:#fff;
+    padding:var(--sp-2) var(--sp-4); font-family:var(--font-mono);
+    font-size:var(--fs-xs); display:flex; justify-content:space-between; gap:var(--sp-4); }
+  .viewport__body { padding:var(--sp-5); }
+
+  .tablewrap { overflow-x:auto; border:var(--stroke-1) solid var(--color-border);
+    border-radius:var(--radius); background:var(--color-bg); }
+  table { border-collapse:collapse; width:100%; font-size:var(--fs-sm); }
+  th, td { text-align:left; padding:var(--sp-2) var(--sp-3);
+    border-bottom:var(--stroke-1) solid var(--color-secondary-200); vertical-align:top; }
+  thead th { font-weight:var(--fw-bold); background:var(--color-secondary-50);
+    white-space:nowrap; }
+  tbody tr:last-child td { border-bottom:0; }
+  th[scope=row] { font-weight:var(--fw-bold); white-space:nowrap; }
+  ul.plain { max-width:82ch; }
+
+  /* ================================================================== */
+  /*  CD text--* Rampen (typography.postcss:18-57), Stufen wie           */
+  /*  css/tokens.css sie im Portal setzt.                                */
+  /* ================================================================== */
+  @media (min-width:1024px) {   /* lg */
+    :root { --text-xl:var(--fs-2xl); --text-2xl:var(--fs-3xl); --text-3xl:var(--fs-4xl);
+            --text-4xl:var(--fs-5xl); }
+  }
+  @media (min-width:1280px) {   /* xl */
+    :root { --text-xs:var(--fs-sm);  --text-sm:var(--fs-base); --text-base:var(--fs-lg);
+            --text-lg:var(--fs-xl);  --text-xl:var(--fs-3xl);  --text-2xl:var(--fs-4xl);
+            --text-3xl:var(--fs-5xl);--text-4xl:var(--fs-6xl); }
+  }
+  @media (min-width:1920px) {   /* 3xl */
+    :root { --text-xs:var(--fs-base); --text-sm:var(--fs-lg);  --text-base:var(--fs-xl);
+            --text-lg:var(--fs-2xl);  --text-xl:var(--fs-4xl); --text-2xl:var(--fs-5xl);
+            --text-3xl:var(--fs-6xl); --text-4xl:var(--fs-7xl); }
+  }
+</style>
+</head>
+<body class="body--intranet">
+<main class="container">
+
+  <h1>Antwort vor Treffern — vier Varianten</h1>
+  <p class="lead">
+    Eine LLM-gestützte Antwort über der bestehenden Suche. Frage, Variante und
+    Zustand sind schaltbar; die Daten sind echt. Entschieden wird nicht über die
+    Optik, sondern darüber, <strong class="text--bold">was passiert, wenn die
+    Antwort nicht kommt</strong> — dafür ist der Zustand «nicht verfügbar» da.
+  </p>
+
+  <!-- =============================================== STEUERUNG -->
+  <div class="panel">
+    <div class="ctrl-row" role="group" aria-label="Frage">
+      <span class="ctrl-label">Frage</span>
+      <span id="c-frage" style="display:flex;flex-wrap:wrap;gap:var(--sp-2)"></span>
+    </div>
+    <div class="ctrl-row" role="group" aria-label="Variante">
+      <span class="ctrl-label">Variante</span>
+      <span id="c-var" style="display:flex;flex-wrap:wrap;gap:var(--sp-2)"></span>
+    </div>
+    <div class="ctrl-row" role="group" aria-label="Zustand">
+      <span class="ctrl-label">Zustand</span>
+      <span id="c-zust" style="display:flex;flex-wrap:wrap;gap:var(--sp-2)"></span>
+    </div>
+  </div>
+
+  <!-- =============================================== BÜHNE -->
+  <div class="stage">
+    <div class="viewport">
+      <div class="viewport__bar">
+        <span id="url">#/search?q=…</span>
+        <span>BBL Kundenportal</span>
+      </div>
+      <div class="viewport__body">
+        <div class="search--large search--page-result">
+          <div class="search__group">
+            <input class="search__field" id="q" type="search" readonly aria-label="Suchbegriff">
+            <button class="search__submit" type="button" tabindex="-1" aria-label="Suchen">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13.3 12.8c1.9-2.2 1.7-5.6-.5-7.5s-5.6-1.7-7.5.5-1.7 5.6.5 7.5c2 1.7 4.9 1.7 6.9 0l6 6 .5-.5zm-4 1c-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5 4.5 2 4.5 4.5-2 4.5-4.5 4.5z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div id="oben"></div>
+        <div class="search-results__header">
+          <span id="count"></span>
+          <span>Sortierung: Relevanz</span>
+        </div>
+        <ul class="search-results-list" id="treffer"></ul>
+      </div>
+    </div>
+    <p class="note" id="hinweis" style="margin:var(--sp-3) 0 0"></p>
+  </div>
+
+  <!-- =============================================== AUSWERTUNG -->
+  <h2 style="margin-top:var(--sp-12)">Was jede Variante kostet</h2>
+  <p class="note">
+    Die letzte Spalte ist der Entscheid. Alles andere ist Geschmack; das Verhalten
+    im Ausfall ist es nicht — und der Ausfall ist der Normalfall, sobald ein
+    Dienst dazwischensteht.
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Variante</th>
+          <th scope="col">Ein Trefferstrom</th>
+          <th scope="col">Unbelegtes sichtbar</th>
+          <th scope="col">Klickkosten</th>
+          <th scope="col">Bei Ausfall</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">A — über der Leiste</th>
+          <td><span class="badge badge--gray">nein</span> eigener Block</td>
+          <td><span class="badge badge--blue">ja</span> Ziffer fehlt sichtbar</td>
+          <td>0</td>
+          <td><span class="badge badge--gray">Sprung</span> Block verschwindet, Treffer rutschen hoch</td>
+        </tr>
+        <tr>
+          <th scope="row">B — als erster Treffer</th>
+          <td><span class="badge badge--blue">ja</span> folgt der Seitenregel</td>
+          <td><span class="badge badge--blue">ja</span></td>
+          <td>0</td>
+          <td><span class="badge badge--blue">still</span> ein Listeneintrag weniger</td>
+        </tr>
+        <tr>
+          <th scope="row">C — belegte Phrasen</th>
+          <td><span class="badge badge--gray">nein</span></td>
+          <td><span class="badge badge--gray">nein</span> unbelegt liest sich wie belegt</td>
+          <td>0</td>
+          <td><span class="badge badge--gray">Sprung</span></td>
+        </tr>
+        <tr>
+          <th scope="row">D — nur auf Abruf</th>
+          <td><span class="badge badge--blue">ja</span></td>
+          <td><span class="badge badge--blue">ja</span></td>
+          <td>1 — und die meisten klicken nie</td>
+          <td><span class="badge badge--blue">still</span> nichts passiert</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="notification notification--info" style="margin-top:var(--sp-6)">
+    <svg class="notification__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m11.8042 10.05464h1.24121v7.26074h-1.24121z"/><path d="m12.43506 7.41108a.69272.69272 0 0 0 -.54688.208.74063.74063 0 0 0 -.18457.50977.71511.71511 0 0 0 .18457.50293.70351.70351 0 0 0 .54688.20214.6722.6722 0 0 0 .73779-.70507.73376.73376 0 0 0 -.1875-.50977.70459.70459 0 0 0 -.55029-.208z"/><path d="m12.375 4.079a8.29151 8.29151 0 1 0 8.291 8.292 8.30132 8.30132 0 0 0 -8.291-8.292zm0 15.833a7.54151 7.54151 0 1 1 7.5415-7.541 7.55 7.55 0 0 1 -7.5415 7.54106z"/></svg>
+    <div class="notification__content">
+      <p><strong class="text--bold">Beobachtung.</strong> Variante B ist die einzige, die die eigene
+      Regel der Suchseite einhält — «Use one result stream rather than groups by content type»
+      (js/pages/search.js) — und gleichzeitig ohne Sprung ausfällt. Variante A liest sich
+      prominenter, bricht aber beides. Variante C spart Ziffern und verliert dafür genau die
+      Eigenschaft, für die die Ziffern da sind: dass man einen unbelegten Satz <em>sieht</em>.
+      Variante D ist die konservativste und die einzige, bei der niemand eine Antwort bekommt,
+      die er nicht verlangt hat.</p>
+    </div>
+  </div>
+
+  <h2 style="margin-top:var(--sp-12)">Was in jeder Variante gleich bleibt</h2>
+  <ul class="note plain">
+    <li>Die Treffer stehen sofort und warten nie auf das Modell.</li>
+    <li>Ein unbelegter Satz wird nicht angezeigt; bleibt nichts übrig, greift «keine Antwort».</li>
+    <li>«Keine Antwort» und «nicht verfügbar» sind zwei Zustände, nie einer — dieselbe
+      Regel, die <code>C.empty()</code> im Portal schon durchhält.</li>
+    <li>Belege werden aus <code>source</code>-Werten gebaut und gegen die Routentabelle
+      geprüft, nie aus dem Antworttext geparst. Nicht auflösbare Belege werden verworfen.</li>
+    <li>Der Antworttext wird gestreamt <em>dargestellt</em>, aber nur einmal am Ende
+      über <code>#live</code> angesagt — sonst unterbricht der Screenreader dauernd.</li>
+    <li><code>#/search?q=…</code> behält seine Bedeutung. Die Antwort steht nie in der URL.</li>
+  </ul>
+
+  <p class="legend" style="margin-top:var(--sp-8)">
+    Bauteile: swiss/designsystem 1.0.5 (5f03f257) — notification · badge · search ·
+    meta-info · btn · link, Rampen aus skins/intranet.postcss, Skalen aus
+    app/tailwind.config.js. Daten: <code>data/services.json</code> ·
+    <code>data/buildings.geojson</code> · <code>data/building-contacts.json</code> ·
+    <code>data/processes.json</code>, Routen aus <code>js/links.js</code>.
+    Trefferzahlen gegen <code>js/search/search-engine.js</code> gemessen.
+  </p>
+
+</main>
+
+<script>
+/* ============================================================ DATEN ====
+   Echte Datensätze. Jeder Antwortabschnitt nennt den Beleg, der ihn deckt;
+   `beleg:null` heisst: durch die Daten NICHT gedeckt und daher nicht
+   gerendert — genau das, was der Renderer im Portal tun muss. */
+const SZENARIEN = [
+  {
+    id: 'heizung',
+    frage: 'Wie melde ich eine defekte Heizung im Guisanplatz?',
+    kurz: 'Störung',
+    heute: 0,
+    abschnitte: [
+      { t:'Störungen an Gebäude und Technik melden Sie über die ',
+        phrase:'Störungs-, Reinigungs- & Reparaturmeldung', rest:'.', beleg:1 },
+      { t:'Bereit halten müssen Sie ',
+        phrase:'Gebäude/Standort, den Ort (Stockwerk, Raum) und eine Beschreibung', rest:'.', beleg:1 },
+      { t:'Die Meldung wird anschliessend ',
+        phrase:'vom Objektbetrieb triagiert und bearbeitet', rest:'.', beleg:1 },
+      { t:'Für das Verwaltungszentrum Guisanplatz ist ',
+        phrase:'Peter Gerber, Hauswart, BBL Objektmanagement', rest:' als Kontakt hinterlegt.', beleg:2 },
+      /* Nicht gedeckt — wird verworfen, nicht gerendert: */
+      { t:'Die Bearbeitung erfolgt in der Regel innert 24 Stunden', phrase:'', rest:'.', beleg:null },
+    ],
+    quellen: [
+      { n:1, titel:'Störungs-, Reinigungs- & Reparaturmeldung', art:'Dienstleistung · Vorgang', href:'#/services/stoerung-melden' },
+      { n:2, titel:'Verwaltungszentrum Guisanplatz', art:'Liegenschaft', href:'#/app/portfolio?id=1080/4850/AG' },
+    ],
+    /* `art` und `meta` sind die zwei meta-info-Einträge, die buildIndex()
+       erzeugt — `type` und `meta`. Nur wo beide belegt sind, steht ein «|». */
+    treffer: [
+      { art:'Dienstleistung · Vorgang', meta:'', titel:'Störungs-, Reinigungs- & Reparaturmeldung',
+        desc:'Defekte, Reinigungs- oder Reparaturbedarf in einem Gebäude melden.' },
+      { art:'Portal-Ablauf · Objektbetrieb', meta:'', titel:'Störungsmeldung',
+        desc:'Ausführbarer Ablauf hinter der Störungsmeldung.' },
+      { art:'Liegenschaft', meta:'Verwaltungsgebäude', titel:'Verwaltungszentrum Guisanplatz',
+        desc:'Guisanplatz 1, 3014 Bern' },
+      { art:'Dienstleistung · Vorgang', meta:'', titel:'Umzug, Transport & Entsorgung',
+        desc:'Umzüge, Transporte und Entsorgungen beim Objektbetrieb anmelden.' },
+    ],
+    total: 14,
+  },
+  {
+    id: 'raum',
+    frage: 'Kann ich als Mieter einen Sitzungsraum reservieren?',
+    kurz: 'Raumbuchung',
+    heute: 0,
+    abschnitte: [
+      { t:'Sitzungs- und Besprechungsräume an BBL-Standorten reservieren Sie über die Dienstleistung ',
+        phrase:'Raum buchen', rest:'.', beleg:1 },
+      { t:'Der ausführbare Ablauf dahinter ist als Portal-Ablauf ',
+        phrase:'Raumbuchung', rest:' dokumentiert.', beleg:2 },
+      { t:'Ob für Mietende eine eigene Buchungsberechtigung besteht, geht aus den hinterlegten Angaben nicht hervor',
+        phrase:'', rest:'.', beleg:'offen' },
+    ],
+    quellen: [
+      { n:1, titel:'Raum buchen', art:'Dienstleistung · Vorgang', href:'#/services/raumbuchung' },
+      { n:2, titel:'Raumbuchung', art:'Portal-Ablauf · Büroausrüstung & Arbeitsplatz', href:'#/app/process-docs?def=buchung' },
+    ],
+    treffer: [
+      { art:'Dienstleistung · Vorgang', meta:'', titel:'Raum buchen',
+        desc:'Sitzungs- oder Besprechungsraum an einem BBL-Standort reservieren.' },
+      { art:'Portal-Ablauf · Büroausrüstung & Arbeitsplatz', meta:'', titel:'Raumbuchung',
+        desc:'Ausführbarer Ablauf hinter der Raumbuchung.' },
+      { art:'Anwendung', meta:'', titel:'Raumbuchung',
+        desc:'Räume suchen, prüfen und direkt buchen.' },
+    ],
+    total: 9,
+  },
+  {
+    id: 'ausserhalb',
+    frage: 'Wie viele Ferientage stehen mir zu?',
+    kurz: 'ausserhalb',
+    heute: 0,
+    abschnitte: [],          /* nichts gedeckt → «keine Antwort» */
+    quellen: [],
+    treffer: [
+      { art:'Unterlage · Merkblätter', meta:'Anleitungen und Schulungen', titel:'Merkblatt Arbeitszeit und Absenzen',
+        desc:'Nur als Beispiel eines schwachen Treffers — das Portal führt keine Personaldaten.' },
+    ],
+    total: 2,
+  },
+];
+
+const VARIANTEN = [
+  { id:'A', name:'A — über der Leiste', hint:'Eigener .notification--hint über dem Trefferkopf, Ziffern-Belege.' },
+  { id:'B', name:'B — erster Treffer',  hint:'Antwort als markierter erster Eintrag im einen Trefferstrom.' },
+  { id:'C', name:'C — belegte Phrasen', hint:'Keine Ziffern; die belegte Phrase ist der Verweis.' },
+  { id:'D', name:'D — nur auf Abruf',   hint:'Keine automatische Antwort; ein .btn--outline über den Treffern.' },
+];
+
+const ZUSTAENDE = [
+  { id:'antwort', name:'Antwort' },
+  { id:'laedt',   name:'lädt' },
+  { id:'keine',   name:'keine Antwort' },
+  { id:'weg',     name:'nicht verfügbar' },
+  { id:'aus',     name:'abgeschaltet' },
+];
+
+/* ============================================================ ZUSTAND == */
+let sz = SZENARIEN[0], vr = 'A', zu = 'antwort';
+
+const el = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
+  ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+const ICON_ANTWORT = '<svg class="notification__icon" viewBox="0 0 24 24" aria-hidden="true">'
+  + '<path d="m7.38763 19.46794v-3.458h-3.32129v-10.39454h16.583v10.39453h-8.186zm-2.57129-4.208h3.32129v2.79l'
+  + '4.09424-2.79h7.668v-8.89454h-15.08353z"/></svg>';
+
+/* ------------------------------------------------------------ Schalter -- */
+function knoepfe(host, liste, aktiv, onPick, label) {
+  host.innerHTML = '';
+  for (const item of liste) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn btn--outline btn--sm';
+    b.setAttribute('aria-pressed', String(aktiv(item)));
+    b.innerHTML = '<span class="btn__text">' + label(item) + '</span>';
+    b.addEventListener('click', () => { onPick(item); zeichnen(); });
+    host.appendChild(b);
+  }
+}
+
+/* ------------------------------------------------- Antwort-Bausteine --- */
+const gedeckt = (a) => a.beleg !== null;
+
+function satz(a, mitZiffer) {
+  const kern = a.phrase
+    ? (mitZiffer ? esc(a.phrase) : '<a href="#">' + esc(a.phrase) + '</a>')
+    : '';
+  const ziffer = (mitZiffer && typeof a.beleg === 'number')
+    ? '<a class="cite" href="#" aria-label="Beleg ' + a.beleg + '">' + a.beleg + '</a>' : '';
+  return '<p>' + esc(a.t) + kern + esc(a.rest) + ziffer + '</p>';
+}
+
+function koerper(mitZiffer) {
+  const gute = sz.abschnitte.filter(gedeckt);
+  return gute.length ? gute.map((a) => satz(a, mitZiffer)).join('') : '';
+}
+
+function quellenListe() {
+  if (!sz.quellen.length) return '';
+  return '<div class="answer__sources"><p class="answer__sources-label">Quellen</p>'
+    /* Zeilenanatomie wie ein Treffer: Meta über dem Titel, nicht dahinter.
+       Ein einzelner meta-info__item erzeugt kein «|», also stünden sonst zwei
+       Angaben ohne Trennung nebeneinander. */
+    + sz.quellen.map((q) =>
+        '<span class="source"><span class="source__n">' + q.n + '</span>'
+        + '<span><span class="meta-info"><span class="meta-info__item">' + esc(q.art)
+        + '</span></span><br><a href="#">' + esc(q.titel) + '</a></span></span>').join('')
+    + '</div>';
+}
+
+function quellenStreifen() {
+  if (!sz.quellen.length) return '';
+  return '<div class="strip"><span class="meta-info"><span class="meta-info__item">Quellen</span></span>'
+    + sz.quellen.map((q) => '<a href="#">' + esc(q.titel) + '</a>').join('') + '</div>';
+}
+
+const HINWEIS = '<p class="legend">Diese Antwort wurde automatisch erstellt und kann Fehler '
+  + 'enthalten. Massgebend sind die verlinkten Quellen.</p>';
+
+function kopf(titel) {
+  return '<p class="answer__head"><span class="answer__title">' + esc(titel) + '</span>'
+    + '<span class="badge badge--blue">Automatisch erstellt</span></p>';
+}
+
+/* Der Inhalt des Blocks, unabhängig von der Hülle. */
+function inhalt() {
+  if (zu === 'laedt') {
+    return kopf('Antwort wird erstellt …')
+      + '<div class="skeleton w1"></div><div class="skeleton w2"></div><div class="skeleton w3"></div>';
+  }
+  if (zu === 'keine') {
+    return kopf('Keine Antwort')
+      + '<p>Zu dieser Frage wurde im Portal nichts Passendes gefunden. '
+      + 'Die Treffer unten stammen aus der Stichwortsuche.</p>';
+  }
+  const mitZiffer = vr !== 'C';
+  const kern = koerper(mitZiffer);
+  if (!kern) {
+    /* Belegpflicht hat alles verworfen → derselbe Zustand wie «keine». */
+    return kopf('Keine Antwort') + '<p>Es blieb kein belegter Satz übrig.</p>';
+  }
+  return kopf('Antwort') + kern
+    + (mitZiffer ? quellenListe() : quellenStreifen()) + HINWEIS;
+}
+
+/* CD-Hülle: .notification--hint mit Symbol (notification.postcss). */
+function block() {
+  return '<div class="notification notification--hint answer-slot">'
+    + ICON_ANTWORT + '<div class="notification__content">' + inhalt() + '</div></div>';
+}
+
+/* ------------------------------------------------------------ Zeichnen -- */
+function zeichnen() {
+  el('q').value = sz.frage;
+  el('url').textContent = '#/search?q=' + encodeURIComponent(sz.frage).slice(0, 52);
+
+  const oben = el('oben');
+  oben.innerHTML = '';
+  const zeigen = zu !== 'aus' && zu !== 'weg';
+
+  if (zeigen && (vr === 'A' || vr === 'C')) oben.innerHTML = block();
+  if (zeigen && vr === 'D') {
+    oben.innerHTML = '<div class="notification notification--hint answer-slot">'
+      + ICON_ANTWORT + '<div class="notification__content">'
+      + '<p>Ihre Eingabe sieht nach einer Frage aus.</p>'
+      + '<p style="margin-top:var(--sp-3)"><button class="btn btn--outline" type="button" id="btn-ask">'
+      + '<span class="btn__text">Frage beantworten</span></button></p>'
+      + '</div></div>';
+  }
+  if (zu === 'weg') {
+    /* In B und D erscheint gar kein Block — der Ausfall bleibt still. */
+    oben.innerHTML = (vr === 'B' || vr === 'D') ? ''
+      : '<div class="notification notification--hint answer-slot">'
+        + ICON_ANTWORT + '<div class="notification__content">'
+        + kopf('Antwortfunktion nicht verfügbar')
+        + '<p>Die Antwortfunktion ist derzeit nicht verfügbar. '
+        + 'Die Treffer unten sind davon nicht betroffen.</p></div></div>';
+  }
+
+  el('count').innerHTML = '<strong>' + sz.total + '</strong> Treffer für «' + esc(sz.frage) + '»';
+
+  let html = '';
+  if (zeigen && vr === 'B') {
+    html += '<li class="search-result search-result--answer">'
+      + '<div class="search-result__link">' + inhalt() + '</div></li>';
+  }
+  /* Zeilenanatomie wie js/pages/search.js sie erzeugt: meta-info (ein Eintrag
+     je Angabe, «|» nur zwischen zweien), dann h3, dann Beschreibung. */
+  html += sz.treffer.map((t) =>
+    '<li class="search-result"><a class="search-result__link" href="#">'
+    + '<p class="meta-info search-result__meta">'
+    + '<span class="meta-info__item">' + esc(t.art) + '</span>'
+    + (t.meta ? '<span class="meta-info__item">' + esc(t.meta) + '</span>' : '')
+    + '</p>'
+    + '<h3 class="search-result__title">' + esc(t.titel) + '</h3>'
+    + '<p class="search-result__desc">' + esc(t.desc) + '</p></a></li>').join('');
+  el('treffer').innerHTML = html;
+
+  const btn = el('btn-ask');
+  if (btn) btn.addEventListener('click', () => { el('oben').innerHTML = block(); });
+
+  const v = VARIANTEN.find((x) => x.id === vr);
+  const verworfen = sz.abschnitte.filter((a) => a.beleg === null).length;
+  el('hinweis').innerHTML = esc(v.hint)
+    + ' · Heutige Stichwortsuche für diese Frage: <strong class="text--bold">' + sz.heute + ' Treffer</strong>.'
+    + (verworfen ? ' · <strong class="text--bold">' + verworfen + '</strong> unbelegter Abschnitt wurde verworfen und nicht gerendert.' : '');
+
+  bauen();
+}
+
+function bauen() {
+  knoepfe(el('c-frage'), SZENARIEN, (s) => s.id === sz.id,
+    (s) => { sz = s; }, (s) => esc(s.kurz));
+  knoepfe(el('c-var'), VARIANTEN, (v) => v.id === vr,
+    (v) => { vr = v.id; }, (v) => esc(v.name));
+  knoepfe(el('c-zust'), ZUSTAENDE, (z) => z.id === zu,
+    (z) => { zu = z.id; }, (z) => esc(z.name));
+}
+
+zeichnen();
+</script>
+</body>
+</html>
