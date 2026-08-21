@@ -332,18 +332,26 @@ body.body--standalone-app:has(.plan-check) > .site-main { height:auto; min-heigh
 .hero--main-image .hero__content { max-width:none; }
 @media (min-width:768px){
   /* NO align-items here, which is CD's own arrangement (hero.postcss:70-88):
-     the grid default `stretch` gives both columns the row height, and
-     `.hero__content` centres its children INSIDE that height. The portal used to
-     add `align-items:center`, which centres the two BOXES against each other —
-     fine while they are similar heights, wrong once one can grow: an opened
-     source selection made the content column the taller one and floated the
-     image halfway down beside it.
-     Stretching gets both states right without a margin anywhere. Short content
-     and a tall image: the row is image-height and the text centres beside it.
-     Open selection: the content is taller, defines the row, and the image sits
-     at the top of its own cell. */
+     the grid default `stretch` gives both columns the row height, so the image
+     sits at the TOP of its cell however tall the other column grows. The portal
+     used to add `align-items:center`, which centres the two BOXES against each
+     other — fine while they are similar heights, wrong once one can grow: an
+     opened source selection floated the image halfway down beside it.
+
+     And the content starts at the top too, for the same reason one step in:
+     `justify-content:center` centred the copy inside the stretched column, so
+     opening the selection pulled the TITLE up by 39px while the image stayed
+     put. Nothing on the page should move because a panel below it opened.
+
+     The margin is what centring used to supply by accident. Flush against the
+     image the title reads as fighting the photo edge — the cap already starts
+     17px below its own line-box top, and 1rem more puts it just under the image
+     edge, paired with it rather than butted against it. Two columns only exist
+     from this breakpoint up; stacked, the title follows the header and the
+     extra space would be dead. */
   .hero--main-image { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
-  .hero--main-image .hero__content { justify-content:center; }
+  .hero--main-image .hero__content { justify-content:flex-start; }
+  .hero--main-image .hero__title { margin-top:var(--sp-4); }
 }
 .hero__image { display:block; position:relative; overflow:hidden; width:100%; }
 /* Otherwise the <figure> in a hero carries the user-agent default

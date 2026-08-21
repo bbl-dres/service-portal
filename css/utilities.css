@@ -276,7 +276,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   /* btn--back + notification-banner: CD print.postcss:62,72 hides both. This was
      missing here, so every printed detail page included the back button (Review C19). */
   .btn--back, .back-link-row, .notification-banner,
-  .pf-map, video, audio, object, iframe { display:none !important; }
+  .pf-map, video, audio, object, iframe, .tutorial-video { display:none !important; }
   .top-header { border:0 !important; padding:0 0 var(--sp-4) !important; }
   .logo { align-items:flex-start !important; }
   .logo__name { display:block !important; }

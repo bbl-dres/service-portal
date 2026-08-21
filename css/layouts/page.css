@@ -68,7 +68,7 @@
 
 /* CD container.postcss:100-101 / :135-141 (detailPageAnchorNav.vue:48): on
    mobile, the table of contents comes BEFORE the content it indexes.
-   Adoption + collapsed mobile TOC: Item 7.4. */
+   The directory itself remains fully visible at every width. */
 .container--reverse-mobile .container__main  { order:2; }
 .container--reverse-mobile .container__aside { order:1; }
 @media (min-width:768px){
@@ -106,23 +106,6 @@
    col-start-2 main column, which this sheet DELIBERATELY places in column 1;
    the header must share that alignment or it appears offset. */
 .anchor-page__header { grid-column:1 / -1; }
-/* Table of contents as disclosure, only below 768px. The <summary> carries the
-   heading (HTML permits exactly one heading element there), so the document
-   outline stays the same at every width. */
-.anchor-nav__summary { display:flex; align-items:center; justify-content:space-between;
-  gap:var(--sp-2); cursor:pointer; list-style:none; min-height:var(--target-min); }
-.anchor-nav__summary::-webkit-details-marker { display:none; }
-.anchor-nav__chev { flex:none; color:var(--color-text-muted); transition:transform var(--duration-slow) var(--ease-in-out); }
-.anchor-nav__disclosure[open] .anchor-nav__chev { transform:rotate(180deg); }
-@media (min-width:768px){
-  /* From here it is no longer a disclosure: the trigger disappears and content
-     stays open. JS sets the `open` attribute (wireAnchorNav); CSS CANNOT do it:
-     modern browsers collapse <details> through `::details-content { content-
-     visibility:hidden }`, so a `display` rule on the child does not apply
-     (measured: the directory stayed collapsed to 103px at 1440px). */
-  .anchor-nav__summary { display:block; cursor:auto; min-height:0; }
-  .anchor-nav__chev { display:none; }
-}
 /* Clear topic sections (bk.admin.ch guidance): heading + visible list; spacing
    between sections comes from .vertical-spacing. */
 .anchor-section__title { margin-bottom:var(--sp-4); }

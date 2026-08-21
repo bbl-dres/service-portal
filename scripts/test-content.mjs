@@ -8,7 +8,7 @@ import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const ROUTES = [
   { name: 'knowledge/it (subject area)',        url: `${APP_BASE}/knowledge/it`,                items: 1 },
-  { name: 'knowledge/guides',                   url: `${APP_BASE}/knowledge/guides`,            items: 1 },
+  { name: 'knowledge/guides',                   url: `${APP_BASE}/knowledge/guides`,            items: 1, tutorial: true },
   // The downloads moved to their own page when the area became a drill-down branch: the
   // overview is a hub of cards now, and a hub carries no files.
   { name: 'knowledge/workspace/downloads',      url: `${APP_BASE}/knowledge/workspace/downloads`,
@@ -27,6 +27,8 @@ const PROBE = `(async () => {
   let n = 0; while (!document.querySelector('h1') && n++ < 120) await s(100);
   const h1 = (document.querySelector('h1') || {}).textContent || null;
   const heroMedia = document.querySelector('.hero__image .photo, .hero__image > img, .hero__image figure > img');
+  const tutorialImage = document.querySelector('.tutorial-video__image');
+  if (tutorialImage?.decode) { try { await tutorialImage.decode(); } catch {} }
   const headings = [...document.querySelectorAll('#main-content h1,#main-content h2,#main-content h3,#main-content h4,#main-content h5,#main-content h6')]
     .filter(el => { const s = getComputedStyle(el), r = el.getBoundingClientRect(); return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0; });
   const jumps = []; let prior = 0;
@@ -49,6 +51,24 @@ const PROBE = `(async () => {
       title: link.textContent.trim(),
     })),
     accordions: document.querySelectorAll('#main-content .accordion').length,
+    tutorial: (() => {
+      const figure = document.querySelector('.tutorial-video');
+      const main = document.querySelector('.container__main');
+      if (!figure) return null;
+      return {
+        firstInMain: main?.firstElementChild === figure,
+        imageSrc: tutorialImage?.getAttribute('src') || '',
+        imageSize: tutorialImage ? [tutorialImage.naturalWidth, tutorialImage.naturalHeight] : [],
+        aspectRatio: getComputedStyle(figure).aspectRatio,
+        title: figure.querySelector('.tutorial-video__title')?.textContent.trim() || '',
+        provider: figure.querySelector('.tutorial-video__provider')?.textContent.trim() || '',
+        hasPlay: !!figure.querySelector('.tutorial-video__play'),
+        imageAlt: tutorialImage?.getAttribute('alt'),
+        caption: figure.querySelector('figcaption')?.textContent.trim() || '',
+        interactive: figure.matches('a,button,iframe,video,[tabindex],[role="button"]')
+          || !!figure.querySelector('a,button,iframe,video,[tabindex],[role="button"]'),
+      };
+    })(),
   };
 })()`;
 
@@ -89,6 +109,19 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
         check(result.anchorSections.every((section) => section.directList),
           'each download H2 owns a direct download list');
         check(result.accordions === 0, 'downloads do not reintroduce accordion groups or counts');
+      }
+      if (route.tutorial) {
+        check(result.tutorial?.firstInMain, 'tutorial preview is the first block in the main content column');
+        check(result.tutorial?.imageSrc === 'assets/images/customer-portal-tutorial-placeholder.jpg'
+          && JSON.stringify(result.tutorial?.imageSize) === JSON.stringify([1672, 941]),
+        'tutorial uses the generated local 16:9 background image');
+        check(result.tutorial?.aspectRatio === '16 / 9', 'tutorial preview keeps a responsive 16:9 frame');
+        check(result.tutorial?.title === 'Einführung ins Kundenportal'
+          && result.tutorial?.provider === 'Auf YouTube ansehen' && result.tutorial?.hasPlay,
+        'title, provider treatment and play mark are HTML/CSS overlays');
+        check(result.tutorial?.imageAlt === '' && result.tutorial?.caption,
+          'decorative scene has empty alt text and the figure has a screen-reader caption');
+        check(result.tutorial?.interactive === false, 'placeholder exposes no false link or playback control');
       }
       check(result.headingJumps.length === 0, `unbroken heading hierarchy (${result.headingJumps.join(', ') || 'ok'})`);
       if (route.mailto) check(result.mailto === true, 'renders a contact mailto link');

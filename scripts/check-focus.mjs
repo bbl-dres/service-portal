@@ -1,9 +1,9 @@
-// Proves that seven removed :focus-visible blocks were duplicates. Insert one
+// Proves that six removed :focus-visible blocks were duplicates. Insert one
 // element per class and force focus through CDP CSS.forcePseudoState so the
 // check does not depend on current markup or native focusability.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
-const CLASSES = ['anchor-nav__summary', 'table-wrapper', 'pipeline-wrap',
+const CLASSES = ['table-wrapper', 'pipeline-wrap',
   'view-switch__btn', 'map-search__clear', 'pf-mosaic__cell', 'med-shot'];
 const RING = 'rgb(134, 85, 246)';   // --color-focus-ring #8655F6
 

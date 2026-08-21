@@ -153,7 +153,35 @@ function areaPage(ctx, area) {
     intro: area.intro,
     sections,
     back: { href: '#/knowledge', label: 'Wissen und Hilfsmittel' },
+    beforeSectionsHtml: area === AREAS.guides ? guidesTutorialPlaceholder() : '',
   });
+}
+
+// The tutorial is deliberately a non-interactive preview: the prototype has no
+// video destination yet, so a button or link would promise an action that does
+// not exist. Text, branding, play mark and provider pill remain HTML/CSS rather
+// than pixels, making the eventual title or destination change inexpensive.
+function guidesTutorialPlaceholder() {
+  return `<figure class="tutorial-video">
+    <img class="tutorial-video__image"
+         src="assets/images/customer-portal-tutorial-placeholder.jpg"
+         width="1672" height="941" alt="" loading="eager" decoding="async">
+    <span class="tutorial-video__brand" aria-hidden="true">
+      <span class="tutorial-video__crest">
+        <img src="assets/swiss-logo-flag.svg" alt="">
+      </span>
+      <span class="tutorial-video__copy">
+        <span class="tutorial-video__portal">BBL Kundenportal</span>
+        <span class="tutorial-video__title">Einführung ins Kundenportal</span>
+      </span>
+    </span>
+    <span class="tutorial-video__play" aria-hidden="true"></span>
+    <span class="tutorial-video__provider" aria-hidden="true">
+      <span class="tutorial-video__provider-mark"></span>
+      <span>Auf YouTube ansehen</span>
+    </span>
+    <figcaption class="sr-only">Videoplatzhalter: «Einführung ins Kundenportal», 8 Minuten. Die Vorschau ist im Prototyp noch nicht verlinkt.</figcaption>
+  </figure>`;
 }
 
 function notFound(ctx) {

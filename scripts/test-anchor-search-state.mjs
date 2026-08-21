@@ -25,6 +25,35 @@ const activeAnchor = `(document.querySelector('.anchor-nav [data-anchor].menu__i
     console.log('\n■ anchor navigation');
     const anchorPage = await openPage(cdp, `${APP_BASE}/knowledge/it`);
     await waitFor(anchorPage, `document.querySelectorAll('.anchor-section[id]').length >= 2`);
+    const tocAtWidth = async (width) => {
+      await cdp.send('Emulation.setDeviceMetricsOverride',
+        { width, height: 900, deviceScaleFactor: 1, mobile: false }, anchorPage.sessionId);
+      await anchorPage.evaluate('window.scrollTo(0, 0)');
+      await sleep(100);
+      return anchorPage.evaluate(`(() => {
+        const nav = document.querySelector('.anchor-nav');
+        const body = nav?.querySelector('.anchor-nav__body');
+        const heading = nav?.querySelector('.card__title');
+        const bodyStyle = body ? getComputedStyle(body) : null;
+        return {
+          heading: heading?.tagName || '',
+          links: nav?.querySelectorAll('[data-anchor]').length || 0,
+          disclosureControls: nav?.querySelectorAll(
+            'details,summary,.anchor-nav__chev,button,[aria-expanded]'
+          ).length || 0,
+          visible: !!body && bodyStyle.display !== 'none' && bodyStyle.visibility !== 'hidden'
+            && body.getBoundingClientRect().height > 0,
+        };
+      })()`);
+    };
+    const mobileToc = await tocAtWidth(320);
+    const desktopToc = await tocAtWidth(1440);
+    check(mobileToc.heading === 'H2' && mobileToc.links >= 2 && mobileToc.visible
+      && mobileToc.disclosureControls === 0,
+    'mobile table of contents is visible and has no collapse control', JSON.stringify(mobileToc));
+    check(desktopToc.heading === 'H2' && desktopToc.links === mobileToc.links && desktopToc.visible
+      && desktopToc.disclosureControls === 0,
+    'desktop table of contents uses the same permanently expanded markup', JSON.stringify(desktopToc));
     const positions = await anchorPage.evaluate(`(() => {
       const sections = [...document.querySelectorAll('.anchor-section[id]')];
       if (sections.length < 2) return null;

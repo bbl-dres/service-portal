@@ -300,6 +300,9 @@
   --scrim-chip:       rgba(19,27,34,.72);        /* secondary-900, chips on images */
   --scrim-chip-hover: rgba(19,27,34,.9);
   --scrim-gradient: linear-gradient(180deg, rgba(19,27,34,.15) 0%, rgba(19,27,34,.72) 100%);
+  /* Compact masthead scrim: fully clears within the upper third so controls
+     remain readable without muting the entire image. */
+  --scrim-gradient-top: linear-gradient(180deg, rgba(19,27,34,.78) 0%, rgba(19,27,34,.48) 14%, rgba(19,27,34,0) 34%);
 
   /* Print is deliberately device-black rather than a skin color. */
   --color-print: #000000;

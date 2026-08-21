@@ -10,6 +10,7 @@
 // not a separate location (sitemap §1.1).
 export function anchorNavPage(ctx, {
   title, lead, intro, sections, back, image = '', tags = '', detailHead = false,
+  beforeSectionsHtml = '',
 }) {
   const { mount, C } = ctx;
   // `detailHead` keeps the canonical detail anatomy even when a record has no image;
@@ -23,28 +24,22 @@ export function anchorNavPage(ctx, {
     </section>`).join('');
 
   // Table of contents (CD: card + menu). The angled arrow mirrors each anchor
-  // row in detailPageAnchorNav.vue; .menu__item--active marks the current section. Below 768px the table is
-  // a collapsed <details>. With container--reverse-mobile it appears BEFORE the
-  // content and costs ~48px rather than ~260px. From 768px, CSS hides <summary>
-  // and permanently expands the content, leaving the table open in the sidebar.
+  // row in detailPageAnchorNav.vue; .menu__item--active marks the current section.
+  // The directory remains visible at every width. On mobile,
+  // container--reverse-mobile places it before the content it indexes.
   const toc = `<nav class="anchor-nav sticky--top" aria-label="Inhaltsverzeichnis">
     <div class="card card--default">
       <div class="card__content"><div class="card__body">
-        <details class="anchor-nav__disclosure">
-          <summary class="anchor-nav__summary">
-            <h2 class="card__title">Inhaltsverzeichnis</h2>
-            ${C.icon('ChevronDown', 'anchor-nav__chev')}
-          </summary>
-          <div class="anchor-nav__body">
-            <ul class="menu">
-              ${sections.map(s => `<li>
-                <a class="menu__item menu__item--border menu__item--condensed" href="#${s.id}" data-anchor="${s.id}">
-                  <span>${C.markLang(s.title)}</span>
-                  ${C.icon('ArrowAngleBottomLeft', 'menu__item__icon')}
-                </a></li>`).join('')}
-            </ul>
-          </div>
-        </details>
+        <h2 class="card__title">Inhaltsverzeichnis</h2>
+        <div class="anchor-nav__body">
+          <ul class="menu">
+            ${sections.map(s => `<li>
+              <a class="menu__item menu__item--border menu__item--condensed" href="#${s.id}" data-anchor="${s.id}">
+                <span>${C.markLang(s.title)}</span>
+                ${C.icon('ArrowAngleBottomLeft', 'menu__item__icon')}
+              </a></li>`).join('')}
+          </ul>
+        </div>
       </div></div>
     </div>
   </nav>`;
@@ -71,6 +66,10 @@ export function anchorNavPage(ctx, {
       </div>`}
       <div class="container__main vertical-spacing">
         ${useDetailHead && intro ? `<p class="page-intro muted">${intro}</p>` : ''}
+        ${/* Trusted presentation slot for content that belongs before the
+              indexed H2 sections but is not itself a table-of-contents entry.
+              The explicit *Html name keeps that trust boundary visible. */''}
+        ${beforeSectionsHtml}
         ${sectionHtml}
       </div>
       <aside class="container__aside">${toc}</aside>
@@ -95,31 +94,16 @@ export function anchorNavPage(ctx, {
 // its heading; (2) scroll spy marks the current section with
 // .menu__item--active (CD detailPageAnchorNav JS example); (3) content accordions
 // are activated. `ctx` is passed through so global listeners are removed on
-// route exit. Without it, every anchor-navigation visit added one matchMedia and
-// one scroll listener (+1/+1 measured per call, without a limit), and the
-// matchMedia closure retained the replaced `mount` subtree
-// (docs/code-review.md §4). These are the app's most visited pages: six knowledge
-// and five digitalisation pages share this layout.
+// route exit. Without it, every anchor-navigation visit added another scroll
+// listener without a limit (docs/code-review.md §4). These are among the app's
+// most visited pages: knowledge, workspace and digitalisation pages share this
+// layout.
 function wireAnchorNav(mount, ctx) {
   // One AbortController per render, matching js/ui/shell/header.js. Every listener is
   // registered with `signal` and removed by one `abort()`.
   const ac = new AbortController();
   const { signal } = ac;
   if (ctx && ctx.onUnmount) ctx.onUnmount(() => ac.abort());
-
-  // The table of contents is collapsible ONLY below 768px. JS must own the state:
-  // browsers now collapse <details> through
-  // `::details-content { content-visibility:hidden }`, which a display rule on a
-  // child cannot override. Set `open` from 768px (CSS hides <summary> there) and
-  // close it below.
-  const details = mount.querySelector('.anchor-nav__disclosure');
-  if (details && window.matchMedia) {
-    const wide = window.matchMedia('(min-width:768px)');
-    const sync = () => { details.open = wide.matches; };
-    sync();
-    // Synchronise on width changes through `change`, not a resize storm.
-    wide.addEventListener('change', sync, { signal });
-  }
 
   const links = [...mount.querySelectorAll('.anchor-nav [data-anchor]')];
   links.forEach(link => {
