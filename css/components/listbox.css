@@ -80,3 +80,56 @@
 @media (forced-colors:active){
   .listbox__option.is-active { outline:var(--stroke-2) solid Highlight; outline-offset:calc(-1 * var(--stroke-2)); }
 }
+
+/* Grouped suggestions (js/search/search-suggest.js). Section headings per
+   content kind with a count, following map.geo.admin.ch: the grouping answers
+   «I only want services» before anyone looks for a control. */
+.suggest__group + .suggest__group { margin-top:var(--sp-1); }
+/* NOT sticky. A heading pinned to the top stayed put after its own group had
+   scrolled away, so it labelled rows it no longer covered and its count claimed
+   something about rows nobody could see; it also covered the first row of its
+   own group, and the listbox's own padding-block left a sliced row bleeding
+   above it. The size cap already prevents what sticky was for: at most four
+   groups of four rows, so a heading is never more than four rows away. */
+.suggest__grouptitle { display:flex; justify-content:space-between; gap:var(--sp-3);
+  padding:var(--sp-1-5) var(--sp-3-5);
+  background:var(--color-secondary-100); color:var(--color-text-700);
+  font-size:var(--text-xs); font-weight:var(--fw-bold); }
+.suggest__groupcount { color:var(--color-text-muted); font-weight:var(--fw-regular); }
+/* A group starts with a heading, not with a divider: the sibling rule above
+   would otherwise draw a second line under every section heading. */
+.suggest__group .listbox__option:first-of-type { border-top:0; }
+/* The meta line stays on ONE line. German UI: a row reading «Unterlage ·
+   Bedarfsmeldung und HBB-Prozess · Informatik und IKT-Beschaffung» wrapped and
+   made the row nearly twice as tall,
+   leaving four suggestions visible instead of seven — which is what made
+   scrolling necessary in the first place. Truncated at the end, where the most
+   general part sits; the distinguishing part comes first. */
+.suggest__group .listbox__meta {
+  max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* The popup shell. It carries border and shadow because the action row below
+   the list has to sit inside the same box, and because that row must remain
+   visible when the list itself is empty — which is the case the row exists for. */
+.suggest__shell { position:absolute; z-index:var(--z-header);
+  top:calc(100% + var(--sp-1)); left:0; right:0;
+  background:var(--color-bg); border:var(--stroke-1) solid var(--color-secondary-300);
+  border-radius:var(--radius); box-shadow:var(--shadow-lg); overflow:hidden; }
+.suggest__shell .listbox { position:static; border:0; border-radius:0;
+  box-shadow:none; max-height:22rem; }
+/* Without results the shell carries only the action row. An empty list would
+   otherwise keep its padding and leave a strip above it. */
+.suggest__shell .listbox:empty { display:none; }
+@media (max-width:639.98px){ .suggest__shell { position:static; margin-top:var(--sp-2); } }
+
+/* «… als Frage stellen»: not a result, a way out. It sits OUTSIDE the
+   role="listbox" element — an option may contain neither prose nor links, and
+   putting it inside would break the option contract. */
+.suggest__action { display:flex; align-items:center; gap:var(--sp-2);
+  width:100%; min-height:var(--target-min); padding:var(--sp-2-5) var(--sp-3-5);
+  border:0; border-top:var(--stroke-1) solid var(--color-secondary-200);
+  background:var(--color-secondary-50); color:var(--color-primary-700);
+  font:inherit; font-size:var(--text-sm); text-align:left; cursor:pointer; }
+.suggest__action:hover { background:var(--color-primary-50); }
+.suggest__action .icon { flex:none; }
+.suggest__action strong { font-weight:var(--fw-bold); }

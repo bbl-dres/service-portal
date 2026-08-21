@@ -8,6 +8,7 @@
 // deliberately does not follow the structure of public federal websites.
 
 import { attachSuggest } from '../search/search-suggest.js';
+import { sourcesControl, wireSources, restoreSourcesFocus } from '../search/search-ui.js';
 import { statusLabel } from '../domain.js';
 import { formatDate } from '../format.js';
 import * as links from '../links.js';
@@ -190,7 +191,8 @@ export default async function render(ctx) {
         <div class="hero__content">
           <h1 class="hero__title" tabindex="-1">Willkommen im BBL Kundenportal</h1>
           <p class="hero__description">Dienstleistungen, Anwendungen, Dokumente und Daten des Bundesamts für Bauten und Logistik — an einem Ort.</p>
-          <form class="home-search hero__cta" id="home-search" role="search">
+          <div class="hero__search">
+          <form class="home-search" id="home-search" role="search">
             <label class="sr-only" for="home-q">Im Portal suchen</label>
             ${/* The field gets a box of its own so the suggestion popup can be
                   anchored to IT. attachSuggest appends the listbox to the input's
@@ -202,6 +204,11 @@ export default async function render(ctx) {
             </span>
             <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
           </form>
+          ${/* The source selection belongs to the field, not to the hero column:
+                as a direct child of .hero__content it would pick up that
+                column's gap and stand an unrelated distance away. */''}
+          ${sourcesControl()}
+        </div>
         </div>
         <div class="hero__image">
           ${/* The source image is 2048×1258 and displays at no more than ~714px.
@@ -243,4 +250,9 @@ export default async function render(ctx) {
   // does not remain in the DOM after navigation.
   const detach = attachSuggest(mount.querySelector('#home-q'), searchForm, core, C);
   if (ctx.onUnmount) ctx.onUnmount(detach);
+
+  // A changed source selection changes what the field finds, so the page renders
+  // again; `restoreSourcesFocus` returns the caret to the control just used.
+  wireSources(mount, () => { void render(ctx); });
+  restoreSourcesFocus(mount);
 }

@@ -11,8 +11,28 @@
 // a hit is called, and where it leads). Search itself — folding, tokenising,
 // and scoring — lives in js/search/search-engine.js so it can be tested without a
 // browser (scripts/test-search.mjs).
+//
+// THREE STEPS SIT IN FRONT OF AND ABOVE THE RESULT LIST, each its own module so
+// none of them can quietly become part of the retriever:
+//
+//   js/search/query-resolve.js   turns a question into keywords BEFORE the
+//                                engine sees it. German UI: «Wie melde ich eine
+//                                defekte Heizung?» finds 0 literally, 20 resolved.
+//   js/search/search-sources.js  decides which kinds are searched at all, as a
+//                                lasting preference rather than a facet.
+//   js/search/answer.js          assembles a simulated, fully cited answer, and
+//                                withholds it when the question was not
+//                                understood.
+//
+// The engine itself is untouched: the finding behind all three is that the
+// retriever is not weak, it is missing the step in front of it.
 
 import { search as runSearch, fold, prepare as prepareRow } from '../search/search-engine.js';
+import { isQuestion, resolve } from '../search/query-resolve.js';
+import { build as buildAnswer } from '../search/answer.js';
+import * as searchSources from '../search/search-sources.js';
+import { answerBlock, sourcesControl, wireSources, restoreSourcesFocus } from '../search/search-ui.js';
+import { byKind } from '../search/search-kinds.js';
 import { domainLabel as domainLabelShared } from '../domain.js';
 import * as links from '../links.js';
 import { knowledgeIndex } from '../knowledge-content.js';
@@ -53,9 +73,49 @@ export default async function render(ctx) {
   const showLog = query.get('log') === '1';
 
   const index = buildIndex(core);
-  const hits = rawQ && !showLog ? runSearch(index, rawQ) : [];
+  // The source selection applies BEFORE the search, with the same call every
+  // other search path uses. Searching first and discarding afterwards would mean
+  // fetching the full set in order to shrink it — and on a real backend this is
+  // a WHERE clause, not a post-filter.
+  const pool = searchSources.filterRows(index);
+  const literalHits = rawQ && !showLog ? runSearch(pool, rawQ) : [];
+
+  // TWO SEPARATE FUNCTIONS, and that is the decision behind these lines:
+  //   question resolution → improves the RESULTS
+  //   answer building     → produces the BLOCK
+  // While both hung off one condition, hiding the answers also emptied the
+  // result list, because a literal search finds nothing for a question. Whoever
+  // switches the answers off wants no answer — not a broken search.
+  const question = !!rawQ && !showLog && isQuestion(rawQ);
+  const answer = question ? buildAnswer(rawQ, index) : null;
+
+  // The relevance gate (js/search/answer.js) decides WHETHER the question was
+  // understood, not how much is shown afterwards. The two sides need different
+  // things: an answer may only rest on strong results, while a LIST offers
+  // rather than claims, so related results are useful there. Narrowed to
+  // `strong`, «defekte Heizung» shrank from 20 rows to 2 — precision in the
+  // wrong place. If nothing is strong the question was not understood, and the
+  // list falls back to the literal search.
+  const resolved = !!(answer && answer.strong.length);
+  const hits = resolved ? answer.hits : literalHits;
   const total = hits.length;
-  if (rawQ && !showLog) logQuery(rawQ, total);
+
+  // Is the source selection to blame? ASKED ONLY when nothing was found, and as
+  // a yes/no. In the normal case nothing is counted at all — what is switched
+  // off is named beside the field, read from storage rather than computed from
+  // the index. On a real database this is a LIMIT 1, not an aggregate. The empty
+  // case is also the only moment the answer changes anything: while results are
+  // on screen nobody looks for an explanation.
+  const activeKinds = searchSources.activeKinds();
+  const hiddenElsewhere = !!(rawQ && !showLog && !total && activeKinds
+    && runSearch(index.filter((row) => !activeKinds.has(row.kind)), rawQ).length > 0);
+
+  // The log records the state as well. Without it «0 results» and «20 results»
+  // would stand next to each other for the same term as a contradiction.
+  const sourceRatio = searchSources.ratio();
+  if (rawQ && !showLog) {
+    logQuery(rawQ, total, `${resolved ? 'aufgelöst' : 'wörtlich'}${sourceRatio ? ` · ${sourceRatio} Quellen` : ''}`);
+  }
 
   const resultRow = (r) => {
     const href = safeLinkUrl(r.href);
@@ -93,9 +153,16 @@ export default async function render(ctx) {
 
   // Facet options with a hit count per content type, derived from HITS rather
   // than the index so no empty checkboxes appear.
+  // Derived from the HITS rather than the index, so no empty checkbox appears.
+  // Because `pool` is already filtered, a switched-off kind cannot show up here
+  // either — the two controls cannot contradict each other without a special
+  // rule saying so. Ordered by js/search/search-kinds.js, the one list the
+  // facets, the suggestions and the source panel share.
   const kindCounts = new Map();
   for (const r of hits) kindCounts.set(r.kind, (kindCounts.get(r.kind) || 0) + 1);
-  const kindOptions = [...kindCounts.entries()].map(([kind, count]) => ({ value: kind, label: `${kind} (${count})` }));
+  const kindOptions = [...kindCounts.entries()]
+    .sort((a, b) => byKind(a[0], b[0]))
+    .map(([kind, count]) => ({ value: kind, label: `${kind} (${count})` }));
 
   const listView = (items) => `<ul class="search-results-list">${items.map(resultRow).join('')}</ul>`;
   const card = (r) => C.card({
@@ -124,6 +191,22 @@ export default async function render(ctx) {
     resetHref: hash({ kind: [], page: 1 }),
   });
 
+  // The answer block stands above the list for EVERY query, not only for
+  // questions — its idle state is what makes the trigger condition visible at
+  // all, and it keeps the list from jumping by the block's height depending on
+  // the input. It disappears only when somebody switches it off.
+  const answerHtml = rawQ && !showLog && searchSources.answersAllowed()
+    ? answerBlock(answer, total)
+    : '';
+
+  const sourcesHint = hiddenElsewhere
+    ? C.notificationHtml(`<p><strong class="text--bold">Ihre Quellenauswahl blendet Treffer aus.</strong>
+        Ohne ${C.escape(searchSources.offKinds().join(', '))} findet diese Suche nichts —
+        mit allen Inhaltsarten gäbe es Treffer.</p>
+        <p><button type="button" class="btn btn--outline btn--sm" data-search-sources-all><span
+          class="btn__text">Alle Quellen einschalten</span></button></p>`, 'warning')
+    : '';
+
   const body = showLog
     ? logView(C, index.length)
     : !rawQ
@@ -136,7 +219,7 @@ export default async function render(ctx) {
             paginationInputId: 'sr-page', paginationLabel: 'Seitennavigation Suchergebnisse',
             paginationHref: (p) => hash({ page: p }),
           })}`
-        : noResults(C, rawQ, index);
+        : `${sourcesHint}${noResults(C, rawQ, pool)}`;
 
   // Bands through C.pageSection. This was the only page that hand-wrote the
   // section anatomy (B18); output is byte-identical.
@@ -152,17 +235,22 @@ export default async function render(ctx) {
               ${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span>
             </button>
           </div>
-        </form>`,
+        </form>
+        ${showLog ? '' : sourcesControl()}`,
   }) + C.pageSection({
     // No aria-live here: the node is created NEW on every render, and a newly
     // inserted live region does not fire. Announcements use the persistent
     // #live region through C.announce() (Item 3.8).
-    body: `<div class="search-results">${body}</div>`,
+    body: `<div class="search-results">${answerHtml}${body}</div>`,
   });
 
   // Announce the hit count; results were previously silent for screen readers.
   if (!showLog) C.announce(rawQ
-    ? (total ? `${total} Treffer für ${rawQ}` : `Keine Treffer für ${rawQ}`)
+    ? (answer && answer.state === 'answer'
+        ? `KI-Antwort verfügbar, ${answer.sources.length} Quellen. ${total} Treffer für ${rawQ}.`
+        : total
+          ? `${total} Treffer für ${rawQ}`
+          : `Keine Treffer für ${rawQ}.${hiddenElsewhere ? ' Ihre Quellenauswahl blendet Treffer aus.' : ''}`)
     : 'Suchbegriff eingeben');
 
   const form = mount.querySelector('#search-page-form');
@@ -173,6 +261,19 @@ export default async function render(ctx) {
   });
 
   mount.querySelector('#log-clear')?.addEventListener('click', () => { logClear(); location.reload(); });
+
+  // A changed source selection changes what the page finds, so the page renders
+  // again. `render` is idempotent for the same route, and `restoreSourcesFocus`
+  // puts the caret back on the control that was just used.
+  const redraw = () => { void render(ctx); };
+  wireSources(mount, redraw);
+  restoreSourcesFocus(mount);
+  // The off switch sits ON the block: whoever sees an answer is the only person
+  // who can decide whether they want it.
+  mount.querySelector('[data-answers-off]')?.addEventListener('click', () => {
+    searchSources.toggle(searchSources.ANSWERS);
+    redraw();
+  });
 
   // Sorting, facet, view switching, and pagination use the same result-bar
   // wiring as the catalogue pages.
@@ -195,6 +296,13 @@ export default async function render(ctx) {
 // small nudges, not ranking dictates.
 function buildIndex(core) {
   const t = core.t;
+  // `answerText` is the ONE field js/search/answer.js may turn into a cited
+  // sentence. It is a separate field rather than a reuse of `desc` because the
+  // two answer different questions: `desc` is the line under a result title and
+  // is written to be scanned, while this is the sentence a citation stands
+  // behind. Where a record has no prose it stays empty, and the record can then
+  // appear as a result but never as a source — a source with nothing to say
+  // would sit in the list with no citation pointing at it.
   // domainLabel comes from js/domain.js. The local copy was exactly the drift
   // that module was introduced to eliminate (B23).
   const domainLabel = (k) => domainLabelShared(core, k);
@@ -209,6 +317,10 @@ function buildIndex(core) {
       href: links.service(s.serviceId),
       extra: [domainLabel(s.domain), s.description, (s['voraussetzungen'] || []).join(' '),
         contactName(s.contact), s.serviceId.replace(/-/g, ' ')].join(' '),
+      answerText: s.description || s.short,
+      // What somebody has to know BEFORE starting — the most useful second line
+      // a service can offer. Raw field: `voraussetzungen`.
+      requires: s['voraussetzungen'] || [],
       // Rank 1 receives +18, rank 8 still +4; any case receives +12.
       boost: (s.type === 'action' ? 12 : 0) + (s.popular ? Math.max(0, 20 - s.popular * 2) : 0),
     });
@@ -217,6 +329,7 @@ function buildIndex(core) {
   for (const a of core.applications()) {
     rows.push({
       kind: 'Anwendungen', type: 'Anwendung', title: a.name, desc: a.description,
+      answerText: a.description,
       href: links.application(a.appId),
       extra: [a.group, a.area, (a.entries || []).map(e => e.label).join(' '),
         contactName(a.contact), a.appId.replace(/-/g, ' ')].join(' '),
@@ -231,7 +344,7 @@ function buildIndex(core) {
     rows.push({
       kind: 'Wissen und Hilfsmittel', type: k.sectionTitle ? `Unterlage · ${k.sectionTitle}` : 'Unterlage',
       title: k.title, desc: k.desc, href: k.href, external: k.external,
-      meta: k.area, extra: k.extra,
+      meta: k.area, extra: k.extra, answerText: k.desc,
     });
   }
 
@@ -252,6 +365,7 @@ function buildIndex(core) {
   for (const d of core.datasets()) {
     rows.push({
       kind: 'Datensätze', type: 'Datensatz', title: t(d.title), desc: t(d.description),
+      answerText: t(d.description),
       href: links.dataset(d.id),
       extra: [DATASET_CATEGORY, t(d.fullDescription), (d.tags || []).join(' '), t(d.meta && d.meta['thema'])].join(' '),
     });
@@ -270,6 +384,7 @@ function buildIndex(core) {
       kind: 'Datentabellen', type: table.systemName ? `Datentabelle · ${table.systemName}` : 'Datentabelle',
       title: table.displayName || table.name,
       desc: table.description,
+      answerText: table.description,
       href: links.dataTable(table.tableId),
       meta: table.systemName || '',
       extra: [
@@ -293,7 +408,7 @@ function buildIndex(core) {
       kind: 'Prozesse', type: portalWorkflow
         ? (p.groupLabel ? `Portal-Ablauf · ${p.groupLabel}` : 'Portal-Ablauf')
         : (p.groupLabel ? `Prozess · ${p.groupLabel}` : 'Prozess'),
-      title: p.name, desc: p.description,
+      title: p.name, desc: p.description, answerText: p.description,
       href: links.processDocumentation(p.processId, p.branch),
       meta: p.areaLabel || '',
       extra: [
@@ -312,7 +427,7 @@ function buildIndex(core) {
   for (const o of core.businessObjects()) {
     rows.push({
       kind: 'Geschäftsobjekte', type: 'Geschäftsobjekt',
-      title: o.name, desc: o.definition,
+      title: o.name, desc: o.definition, answerText: o.definition,
       href: links.businessObject(o.objectId),
       // A business object answers to `dataDomains`, NOT the service domains
       // `domainLabel` resolves — different vocabularies, same word.
@@ -340,6 +455,7 @@ function buildIndex(core) {
   for (const n of core.news()) {
     rows.push({
       kind: 'News', type: 'News', title: n.title, desc: n.teaser, meta: n.date,
+      answerText: n.teaser,
       href: links.news(n.id), extra: n.body || '',
     });
   }
@@ -350,6 +466,11 @@ function buildIndex(core) {
     rows.push({
       kind: 'Liegenschaften', type: 'Liegenschaft',
       title: b.name, desc: [b.street, [b.zip, b.city].filter(Boolean).join(' ')].filter(Boolean).join(', '),
+      // A property has no description text of its own; the one sentence it can
+      // support is where it stands, assembled from the fields that carry it.
+      answerText: [b.street, [b.zip, b.city].filter(Boolean).join(' ')].filter(Boolean).length
+        ? `${b.name} liegt an der Adresse ${[b.street, [b.zip, b.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')}.`
+        : '',
       href: links.portfolioItem(b.bbl_id),
       meta: b.portfolioCategory,
       extra: [String(b.bbl_id).replace(/\//g, ' '), b.city, b.canton, b.portfolioCategory,
@@ -364,6 +485,7 @@ function buildIndex(core) {
   for (const p of core.projects()) {
     rows.push({
       kind: 'Bauprojekte', type: 'Bauprojekt', title: p.name, desc: p.teaser || '',
+      answerText: p.teaser || '',
       href: links.constructionProject(p.projectId),
       meta: [p.projectNumber, p.status].filter(Boolean).join(' · '),
       extra: [p.projectId, p.projectNumber, p.status, p.siaPhaseLabel, p.subPortfolio,
@@ -422,8 +544,11 @@ function logView(C, indexSize) {
         zebra: true,
         columns: [
           { key: 'q', label: 'Suchbegriff', render: r => `<a href="#/search?q=${encodeURIComponent(r.q)}">${C.escape(r.q)}</a>` },
-          { key: 'count', label: 'Anfragen', render: r => C.escape(String(r.count)) },
-          { key: 'hits', label: 'Treffer', render: r => r.hits === 0 ? C.badge('0 Treffer', 'error') : C.escape(String(r.hits)) },
+          // Which search produced the count. Without this column the same term
+          // appears twice with different numbers and reads as a contradiction.
+          { key: 'mode', label: 'Zustand', render: r => C.escape(r.mode || '—') },
+          { key: 'count', label: 'Anfragen', align: 'right', render: r => C.escape(String(r.count)) },
+          { key: 'hits', label: 'Treffer', align: 'right', render: r => r.hits === 0 ? C.badge('0 Treffer', 'error') : C.escape(String(r.hits)) },
         ],
         rows,
       })
@@ -431,7 +556,7 @@ function logView(C, indexSize) {
 
   return `
     <h2>Suchprotokoll</h2>
-    <p class="muted">${total} Anfragen, ${rows.length} verschiedene Begriffe, davon <strong>${zero} ohne Treffer</strong>.
+    <p class="muted">${total} Anfragen, ${rows.length} verschiedene Kombinationen aus Begriff und Zustand, davon <strong>${zero} ohne Treffer</strong>.
       Index: ${indexSize} Einträge.</p>
     ${C.notificationHtml(`Nur auf diesem Gerät gespeichert (localStorage), ohne Kennung und ohne Übertragung —
       ein Notizblock, kein Tracking. Er beantwortet die Frage, welche Begriffe ins Leere laufen.

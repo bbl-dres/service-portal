@@ -331,8 +331,13 @@ body.body--standalone-app:has(.plan-check) > .site-main { height:auto; min-heigh
 .hero--main-image { display:grid; gap:var(--gap-responsive); }
 .hero--main-image .hero__content { max-width:none; }
 @media (min-width:768px){
-  .hero--main-image { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:center; }
-  .hero--main-image .hero__content { justify-content:center; }
+  /* TOP-ALIGNED, not centred. CD sets no alignment on this grid at all
+     (hero.postcss:70-88) — it only centres the content INSIDE its own column.
+     The centring here was a portal addition, and it holds only while both
+     columns are about equally tall. The home page's content column now grows by
+     the height of an opened source selection, and a centred image then floated
+     halfway down the page against a heading pinned to the top. */
+  .hero--main-image { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; }
 }
 .hero__image { display:block; position:relative; overflow:hidden; width:100%; }
 /* Otherwise the <figure> in a hero carries the user-agent default
