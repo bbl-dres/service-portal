@@ -1,0 +1,253 @@
+/* ==========================================================================
+   STUDIE — was diese Datei enthält, gehört NICHT zum Portal.
+
+   Zwei Sorten Regeln, streng getrennt:
+
+   1. Die STUDIEN-HÜLLE (.study-*): die Leiste über dem Portal, die erklärt, was
+      hier läuft, und die Schalter trägt. Sie ist Werkzeug, nicht Entwurf, und
+      sieht deshalb absichtlich nicht nach Portal aus.
+
+   2. Die VORSCHLÄGE der Studie (.suggest-*, .answer-*): das, was die Studie dem
+      Portal HINZUFÜGEN will. Steht hier, weil es im Portal noch nicht existiert
+      — nicht, weil es vom CD abweichen dürfte. Jedes Bauteil hier baut auf den
+      CD-Tokens aus css/tokens.css auf.
+
+   Alles, was im Portal schon existiert, steht in css/cd.css. Wenn hier etwas
+   auftaucht, das dort auch stünde, ist das ein Fehler und keine Variante.
+   ========================================================================== */
+
+/* ------------------------------------------------- 1 · STUDIEN-HÜLLE ----- */
+/* Eingeklappt ein schmaler Streifen mit einer Schaltfläche, aufgeklappt die
+   Offenlegung und die fünf Schalter. Sie sieht bewusst nicht nach Portal aus —
+   wer sie für ein Bauteil hält, hat sie missverstanden. */
+.study-bar { background:var(--color-gray-800); color:var(--color-text-negative);
+  font-size:var(--fs-sm); position:relative; z-index:calc(var(--z-skiplink) - 1); }
+.study-bar__inner { display:flex; justify-content:flex-end; padding-block:var(--sp-1); }
+.study-bar__trigger { display:inline-flex; align-items:center; gap:var(--sp-2);
+  min-height:var(--sp-8); padding:0 var(--sp-2); margin-right:calc(-1 * var(--sp-2));
+  background:none; border:0; color:var(--color-gray-300);
+  font:inherit; font-size:var(--fs-xs); cursor:pointer; white-space:nowrap; }
+.study-bar__trigger:hover { color:var(--color-text-negative); }
+.study-bar__trigger .icon { flex:none; }
+/* Auf den Auslöser beschränkt, sonst erwischt die Regel jeden Pfeil im Dokument. */
+.study-bar__chev { width:1em; height:1em; transition:transform var(--duration); }
+.study-bar__trigger[aria-expanded="true"] .study-bar__chev { transform:rotate(180deg); }
+.study-bar__panel { display:flex; flex-wrap:wrap; gap:var(--sp-2) var(--sp-5);
+  align-items:center; padding-bottom:var(--sp-3); }
+.study-bar__note { margin:0; color:var(--color-gray-400); }
+.study-bar__note strong { color:var(--color-text-negative); font-weight:var(--fw-bold); }
+.study-bar__switches { display:flex; flex-wrap:wrap; align-items:center;
+  gap:var(--sp-1) var(--sp-4); margin-left:auto; }
+.study-toggle { display:inline-flex; align-items:center; gap:var(--sp-2);
+  min-height:var(--target-min); cursor:pointer; white-space:nowrap; }
+/* Nur die Abweichungen von der CD-Regel: heller Rand auf dunklem Grund. Die
+   Grundform (Grösse, appearance:none, Häkchen) kommt aus css/cd.css. */
+.study-toggle input { margin:0; border-color:var(--color-gray-500); box-shadow:none; }
+.study-toggle input:checked { background-color:var(--color-primary-500); border-color:var(--color-primary-500); }
+.study-toggle--off { color:var(--color-gray-400); }
+.study-bar__link { color:var(--color-gray-300); text-decoration:underline;
+  text-underline-offset:var(--stroke-2); white-space:nowrap; }
+.study-bar__link:hover { color:var(--color-text-negative); }
+.study-sep { width:var(--stroke-1); height:var(--sp-5); background:var(--color-gray-600); flex:none; }
+
+/* Die Notiz unter der Trefferliste, die beide Zahlen nennt. Gehört zur Studie:
+   das Portal zeigt keine Diagnose, es zeigt Treffer. */
+.plan-note { margin-top:var(--sp-3); padding:var(--sp-2) var(--sp-3);
+  background:var(--color-secondary-50); border-left:var(--stroke-3) solid var(--color-secondary-300);
+  font-size:var(--text-xs); color:var(--color-text-muted); }
+.plan-note code { font-size:.95em; background:var(--color-secondary-100);
+  padding:1px 4px; border-radius:var(--radius-sm); }
+.plan-note strong { color:var(--color-text); }
+
+/* ------------------------------------ 2a · VORSCHLÄGE (gruppiert) -------- */
+/* VORBILD: map.geo.admin.ch — Abschnittsköpfe je Inhaltsart statt eines
+   Filterknopfs, dazu Hervorhebung der Fundstelle. Eine Bundesreferenz, die
+   genau die Frage «wie grenze ich Trefferarten ein» ohne zusätzliches
+   Bedienelement löst.
+   Nur sichtbar, wenn der Schalter «Gruppierte Vorschläge» an ist; sonst zeigt
+   das Feld die flache Portal-Liste. */
+.suggest__group + .suggest__group { margin-top:var(--sp-1); }
+/* KEIN position:sticky. Der Kopf klebte oben, damit man beim Scrollen die
+   Inhaltsart nicht aus dem Blick verliert — gemessen richtete er mehr Schaden
+   an, als er verhinderte:
+     · Er blieb stehen, NACHDEM seine Gruppe weggescrollt war. «Dienstleistungen
+       7» stand dann über Zeilen, die er nicht mehr beschriftete, und die Zahl
+       behauptete etwas über Unsichtbares.
+     · Er verdeckte die Zeilen seiner eigenen Gruppe.
+     · Über ihm blieben die 4px `padding-block` der .listbox stehen, durch die
+       eine angeschnittene Zeile blitzte — das sah nach Zeichenfehler aus.
+   Das Problem, das er lösen sollte, verhindert die Grösse schon: höchstens vier
+   Gruppen à vier Zeilen, man ist nie weiter als vier Zeilen von einem Kopf
+   entfernt. Die Tastaturnavigation war in beiden Fassungen unauffällig
+   (scrollIntoView block:'nearest'), es geht also nichts verloren. */
+.suggest__grouptitle {
+  display:flex; justify-content:space-between; gap:var(--sp-3);
+  padding:var(--sp-1-5) var(--sp-3-5);
+  background:var(--color-secondary-100); color:var(--color-text-700);
+  font-size:var(--text-xs); font-weight:var(--fw-bold); }
+.suggest__groupcount { color:var(--color-text-muted); font-weight:var(--fw-regular); }
+/* Die Metazeile bleibt EINZEILIG. «Unterlage · Bedarfsmeldung und HBB-Prozess ·
+   Informatik und IKT-Beschaffung» brach auf zwei Zeilen um und machte die Zeile
+   fast doppelt so hoch; im sichtbaren Ausschnitt blieben dann vier Vorschläge
+   statt sieben, was das Scrollen überhaupt erst nötig machte. Gekürzt wird am
+   Ende, wo die allgemeinste Angabe steht — der unterscheidende Teil steht vorn.
+   Nur in der gruppierten Fassung: die flache Portal-Liste bleibt, wie sie ist. */
+.suggest__group .listbox__meta {
+  max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* Eine Gruppe beginnt mit einem Kopf, nicht mit einer Trennlinie: die Regel aus
+   cd.css würde sonst unter jedem Abschnittskopf eine zweite Linie ziehen. */
+.suggest__group .listbox__option:first-of-type { border-top:0; }
+/* Fundstelle im Titel. `mark` erbt hier CDs Farbe, aber in der schmalen Zeile
+   ohne CDs Innenabstand — sonst springt die Zeilenhöhe je nach Treffer. */
+.listbox__option mark { background:var(--color-primary-100); color:var(--color-primary-800);
+  padding:0 1px; border-radius:var(--radius-sm); }
+
+/* --------------------------------- 2b · Aktionszeile «als Frage stellen» - */
+/* Kein Treffer, sondern ein Weg. Sitzt AUSSERHALB der role="listbox"-Liste:
+   eine Option darf keine Prosa und keine Verweise enthalten; wer sie
+   hineinlegt, bricht den Options-Vertrag und macht sie unbedienbar. */
+.suggest__shell { position:absolute; z-index:var(--z-header);
+  top:calc(100% + var(--sp-1)); left:0; right:0;
+  background:var(--color-bg); border:var(--stroke-1) solid var(--color-secondary-300);
+  border-radius:var(--radius); box-shadow:var(--shadow-lg); overflow:hidden; }
+.suggest__shell .listbox { position:static; border:0; border-radius:0; box-shadow:none; max-height:24rem; }
+/* Ohne Treffer trägt die Hülle nur die Aktionszeile. Die leere Liste behielte
+   sonst ihren Innenabstand und liesse einen 8px-Streifen darüber stehen. */
+.suggest__shell .listbox:empty { display:none; }
+@media (max-width:639.98px){ .suggest__shell { position:static; margin-top:var(--sp-2); } }
+.suggest__action { display:flex; align-items:center; gap:var(--sp-2);
+  width:100%; min-height:var(--target-min); padding:var(--sp-2-5) var(--sp-3-5);
+  border:0; border-top:var(--stroke-1) solid var(--color-secondary-200);
+  background:var(--color-secondary-50); color:var(--color-primary-700);
+  font:inherit; font-size:var(--text-sm); text-align:left; cursor:pointer; }
+/* `display:flex` aus der Regel oben schlägt das [hidden]{display:none} des
+   Browsers (Klassen- vor Attributselektor), sonst bleibt ein leerer grauer
+   Streifen unter den Beispielen stehen. cd.css setzt [hidden] mit !important —
+   diese Regel ist damit nur noch Dokumentation, bleibt aber als Warnung stehen. */
+.suggest__action[hidden] { display:none; }
+.suggest__action:hover { background:var(--color-primary-50); }
+.suggest__action .icon { flex:none; width:1.125rem; height:1.125rem; }
+.suggest__action strong { font-weight:var(--fw-bold); }
+
+/* ------------------------------------------- 2c · ANTWORTBLOCK ----------- */
+/* Der Block besitzt seinen eigenen Abstand — nicht die Aufrufstelle
+   (css/README.md des Portals: «Die Komponentenregel besitzt ihn, keine mt-Utility»). */
+.answer-slot { margin-top:var(--sp-5); margin-bottom:var(--sp-6); }
+@media (min-width:1024px){ .answer-slot { margin-top:var(--sp-6); margin-bottom:var(--sp-8); } }
+/* Steht der Block zuoberst, liegt der Abstand des Abschnittsbands schon darüber
+   (bis 8rem). Sein eigener Rand käme obendrauf und liesse ihn durchhängen. */
+.search-results > .answer-slot:first-child { margin-top:0; }
+.answer__head { display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap; margin:0 0 var(--sp-2); }
+.answer__title { font-weight:var(--fw-bold); }
+/* Ziffernbeleg. Erbt im .notification currentColor (CD-Regel). */
+.cite { font-size:var(--text-xs); font-weight:var(--fw-bold);
+  padding:0 var(--sp-1); margin-left:var(--sp-0-5);
+  border:var(--stroke-1) solid currentColor; border-radius:var(--radius-sm);
+  text-decoration:none !important; vertical-align:.12em; }
+/* RUHEZUSTAND: derselbe Block, leiser. Kein Rahmenwechsel und keine andere
+   Farbe — es ist dasselbe Bauteil in einem früheren Moment, nicht ein zweites. */
+.answer-slot--idle .muted { margin:0; font-size:var(--text-sm); }
+.answer__examples { display:flex; flex-wrap:wrap; gap:var(--sp-1) var(--sp-4);
+  margin:var(--sp-3) 0 0; font-size:var(--text-sm); }
+
+.answer__sources { margin-top:var(--sp-4); padding-top:var(--sp-3);
+  border-top:var(--stroke-1) solid var(--color-secondary-200); }
+.answer__sources-label { font-size:var(--text-xs); color:var(--color-text-muted); margin:0 0 var(--sp-2); }
+.source { display:grid; grid-template-columns:1.5rem 1fr; gap:var(--sp-2);
+  font-size:var(--text-sm); align-items:baseline; margin-bottom:var(--sp-3); }
+.source:last-child { margin-bottom:0; }
+.source__n { color:var(--color-text-muted); font-size:var(--text-xs); }
+.source .meta-info { line-height:var(--lh-normal); }
+.answer__foot { display:flex; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4);
+  align-items:center; margin-top:var(--sp-3); }
+.answer__foot .legend { padding-top:0; flex:1 1 20rem; color:currentColor; opacity:.85; }
+/* Der Ausschalter sitzt AM BLOCK: Wer eine Antwort sieht, ist der Einzige, der
+   entscheiden kann, ob er sie will. */
+.answer__off { background:none; border:0; padding:var(--sp-1) 0;
+  font:inherit; font-size:var(--text-xs); color:currentColor;
+  text-decoration:underline; text-underline-offset:var(--stroke-2); cursor:pointer; }
+
+/* ---------------------------------------------- 2d · Zielseiten-Attrappe - */
+.stub-note { margin-top:var(--sp-6); }
+
+/* ------------------------------------------- 2e · QUELLENAUSWAHL -------- */
+/* Zwei Bauformen derselben Sache, damit sie sich vergleichen lassen. Beide
+   öffnen DASSELBE Panel — die Frage ist der Auslöser, nicht der Inhalt. */
+
+/* ZEILE. Kein Bedienelement im Ruhezustand: ein Satz mit einer Schaltfläche
+   darin. Sie besetzt den Platz, den die Hero-Erklärzeile ohnehin belegt. */
+/* EIN Bauteil, ein Abstand, in beiden Zusammenhängen derselbe. Die Breite
+   erbt es von seinem Feld: im Hero begrenzt .hero__search auf 40rem (die Breite
+   von .home-search), auf der Trefferseite gelten die 52rem von
+   .search--large .search__group. Vorher war das Panel mit festen 52rem breiter
+   als die Hero-Suchzeile, unter der es stand. */
+.sources { margin-top:var(--sp-2); max-width:52rem; }
+.sources-line { margin:0; }
+/* `display:flex` mit `width:100%`, NICHT inline-flex. Als inline-flex richtete
+   sich der Knopf nach seinem Inhalt und wuchs mit dem Satz über die Breite des
+   Feldes hinaus, unter dem er steht — bei zehn aufgezählten Inhaltsarten quer
+   über die ganze Seite. Jetzt gibt der Elternteil die Breite vor und der Satz
+   bricht darin um. */
+.sources-line__toggle { display:flex; flex-wrap:wrap; align-items:baseline;
+  gap:var(--sp-1) var(--sp-2); width:100%; max-width:100%;
+  padding:var(--sp-1) 0; background:none; border:0;
+  font:inherit; font-size:var(--text-sm); color:var(--color-text-muted);
+  text-align:left; cursor:pointer; }
+/* `min-width:0` hebt die Mindestbreite auf, die ein Flex-Kind sonst behält;
+   ohne sie schiebt der längste Textabschnitt den Knopf wieder auf. */
+.sources-line__text { min-width:0; overflow-wrap:anywhere; }
+.sources-line__toggle:hover { color:var(--color-text); }
+.sources-line__toggle strong { color:var(--color-text); font-weight:var(--fw-bold); }
+.sources-line__action { display:inline-flex; align-items:center; gap:var(--sp-1);
+  flex:none; color:var(--color-primary-600); text-decoration:underline;
+  text-underline-offset:var(--stroke-2); white-space:nowrap; }
+.sources-line__toggle:hover .sources-line__action { color:var(--color-primary-800); }
+
+/* Der Pfeil dreht sich beim Öffnen — gleiche Geste wie am Filterknopf der
+   Katalogleiste (.catbar__chev), damit zwei Ausklapper nicht zwei Sprachen
+   sprechen. Auf den Knopfkontext beschränkt, sonst gewinnt `.btn .icon`. */
+.btn .sources__chev, .sources__chev { width:1em; height:1em; flex:none;
+  transition:transform var(--duration); }
+[aria-expanded="true"] .sources__chev { transform:rotate(180deg); }
+
+/* PANEL. Dieselbe Flächen-Rezeptur wie das Facettenpanel der Trefferseite
+   (.catbar__panel), damit die beiden als verwandt lesbar bleiben — verwandt,
+   nicht gleich: dieses hier hat keine Trefferzahlen, weil es keine haben kann. */
+.sources-panel { max-width:100%; padding:var(--sp-4) var(--sp-5); margin:var(--sp-3) 0 0;
+  background:var(--surface-bg-muted); border:var(--stroke-1) solid var(--surface-border);
+  border-radius:var(--surface-radius); box-shadow:var(--surface-elevation); }
+/* Der MEHRSPALTENSATZ sitzt auf dem fieldset, nicht auf dem Panel. Auf dem
+   Panel floss er ins Leere: dessen einziges inhaltliches Kind IST das fieldset,
+   und ein Block, der nicht umbrechen darf, bleibt in Spalte eins stehen — elf
+   Kontrollkästchen untereinander, obwohl drei Spalten deklariert waren.
+   Die Katalogleiste kommt damit durch, weil sie MEHRERE fieldsets nebeneinander
+   hat; hier gibt es nur eines mit elf Zeilen darin. */
+.sources-panel__group { margin:0; columns:14rem; column-gap:var(--sp-4); }
+/* SPALTENBREITE statt Spaltenzahl, und keine Medienabfrage: das Panel steht im
+   Hero in einer halbbreiten Rasterzelle und auf der Trefferseite über die volle
+   Feldbreite. Eine Regel nach Fensterbreite hätte im Hero drei Spalten
+   versprochen, wo zwei hinpassen. So entscheidet der Platz, den es wirklich hat. */
+.sources-panel__group .filter-group__legend { column-span:all; margin-bottom:var(--sp-2); }
+.sources-panel .filter-check { break-inside:avoid; }
+/* Die gesperrte letzte Quelle: CDs Deaktiviert-Rezeptur, plus ein Cursor, der
+   sagt, dass hier nichts kaputt ist, sondern etwas absichtlich feststeht. */
+.sources-panel .filter-check:has(input:disabled) { color:var(--color-text-muted);
+  cursor:not-allowed; opacity:.55; }
+/* EINE Trennlinie, nicht zwei. Vorher trennte je eine Linie die Schaltflächen
+   und die Antwortzeile ab — drei Bänder für zwei Fragen, und der einzelne Haken
+   ganz unten sah aus, als sei er übrig geblieben.
+   Jetzt hängen die Schaltflächen OHNE Linie an der Liste, auf die sie wirken;
+   die Linie darunter trennt die zweite Gruppe ab. Der Geltungsbereich der
+   beiden Schaltflächen ist damit sichtbar, statt erklärt werden zu müssen. */
+.sources-panel__actions { display:flex; flex-wrap:wrap; gap:var(--sp-2);
+  align-items:center; justify-content:flex-end; margin-top:var(--sp-2); }
+.sources-panel__extra { margin:var(--sp-3) 0 0; padding-top:var(--sp-3);
+  border-top:var(--stroke-1) solid var(--color-secondary-200); }
+/* Die Sprünge sind Textlinks, keine Flächen: ohne diese Zeile trügen sie CDs
+   Knopfhöhe (bis 44px an groben Zeigern) und das Band wäre doppelt so hoch wie
+   die Zeile, die es enthält. Das Ziel bleibt gross genug, weil die
+   Aussenabstände des Bandes mitzählen. */
+.sources-panel__actions .btn { min-height:0; padding-block:var(--sp-1); }
+
+/* Die Zahl neben dem Schalter in der Studien-Leiste: «8/11». */
+.study-toggle__n { font-variant-numeric:tabular-nums; color:var(--color-gray-400); }

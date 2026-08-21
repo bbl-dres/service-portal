@@ -1,7 +1,7 @@
 // Antwortbau — SIMULIERT, NICHT GENERIERT.
 //
-// Eine statische Seite kann keinen Modellschlüssel tragen, und ein Prototyp
-// soll nicht so tun als ob. Hier setzt sich die Antwort deterministisch aus den
+// Eine statische Seite kann keinen Modellschlüssel tragen, und eine Studie soll
+// nicht so tun als ob. Hier setzt sich die Antwort deterministisch aus den
 // Beschreibungstexten der WIRKLICH gefundenen Datensätze zusammen. Jeder Satz
 // stammt aus genau einem Datensatz und trägt dessen Beleg.
 //
@@ -15,32 +15,40 @@
 import { search } from '../../../../js/search/search-engine.js';
 import { index } from './data.js';
 import { plan } from './query.js';
+import { filterRows } from './sources.js';
 
 const MAX_QUELLEN = 3;
+const MAX_TREFFER = 20;
 
 /** Alle Planabfragen durchlaufen, Treffer vereinigen, nach href entdoppeln.
- *  `tier` merkt sich, aus welcher Planstufe ein Treffer stammt: 0 ist die
+ *  `_tier` merkt sich, aus welcher Planstufe ein Treffer stammt: 0 ist die
  *  vollständige Stichwortabfrage, alles darüber eine Rückfallebene. Für die
  *  TREFFERLISTE zählen alle; für die QUELLEN einer Antwort nur die beste
  *  Stufe — sonst zieht eine Einzelwort-Rückfallebene beliebig Verwandtes
  *  herein und die Antwort redet über etwas anderes als die Frage. */
 export function retrieve(raw) {
   const p = plan(raw);
-  const rows = index();
+  // Eine Antwort, die eine ausdrücklich abgewählte Quelle zitiert, wäre die
+  // unangenehmste Art, die Auswahl zu verraten: sauber belegt und trotzdem
+  // ungefragt. Deshalb filtert der Antwortbau mit derselben Funktion wie die
+  // Trefferliste, nicht mit einer eigenen Regel.
+  const rows = filterRows(index());
   const seen = new Set();
   const hits = [];
   p.queries.forEach((q, tier) => {
-    if (hits.length >= 20) return;
+    if (hits.length >= MAX_TREFFER) return;
     const words = q.split(' ').length;
     for (const r of search(rows, q)) {
       if (seen.has(r.href)) continue;
       seen.add(r.href);
-      hits.push(Object.assign(Object.create(Object.getPrototypeOf(r)), r,
-        { _tier: tier, _qWords: words }));
+      // search() gibt bereits flache Kopien zurück ({...row, _score}); ein
+      // Spread genügt und hält die Herkunft der beiden Merkfelder sichtbar.
+      hits.push({ ...r, _tier: tier, _qWords: words });
+      if (hits.length >= MAX_TREFFER) break;
     }
   });
-  // RELEVANZSCHRANKE. Eine Einzelwort-Rückfallebene findet IMMER etwas: das
-  // UND greift bei einem Wort nicht mehr. «Wie viele Ferientage stehen mir zu?»
+  // RELEVANZSCHRANKE. Eine Einzelwort-Rückfallebene findet IMMER etwas: das UND
+  // greift bei einem Wort nicht mehr. «Wie viele Ferientage stehen mir zu?»
   // lieferte darüber eine sauber belegte Antwort über Mietobjekte — der
   // gefährlichste Fehler, den dieses Bauteil machen kann, weil er sich richtig
   // liest. Zählen darf deshalb nur, was von einer MEHRWORT-Abfrage kam; sonst
@@ -72,8 +80,8 @@ const satz = (s) => {
 
 /**
  * Antwort bauen. Rückgabe:
- *   { state:'answer', abschnitte:[{text, beleg}], quellen:[{n,titel,art,href}], plan }
- *   { state:'none', plan }
+ *   { state:'answer', abschnitte:[{text, beleg}], quellen:[{n,titel,art,meta,href}], plan, hits, strong }
+ *   { state:'none', plan, hits, strong }
  *
  * `beleg` ist immer eine Zahl — ein Abschnitt ohne Beleg entsteht hier gar
  * nicht erst, und der Renderer prüft es trotzdem noch einmal.
@@ -86,7 +94,11 @@ export function build(raw) {
   // Danach: der beste Treffer, dann bis zu zwei weitere aus ANDEREN
   // Inhaltsarten, und keiner, der dasselbe sagt wie ein schon gewählter.
   const bestTier = Math.min(...strong.map((h) => h._tier ?? 0));
-  const kandidaten = strong.filter((h) => (h._tier ?? 0) === bestTier);
+  const kandidaten = strong
+    .filter((h) => (h._tier ?? 0) === bestTier)
+    // Ein Datensatz ohne Fliesstext kann keinen Satz tragen; als Quelle stünde
+    // er in der Liste, ohne dass ein Beleg auf ihn zeigte.
+    .filter((h) => h.answerText);
   const quellen = [];
   const kinds = new Set();
   for (const h of kandidaten) {
@@ -96,14 +108,13 @@ export function build(raw) {
     kinds.add(h.kind);
     quellen.push(h);
   }
+  if (!quellen.length) return { state: 'none', plan: p, hits, strong };
 
   const abschnitte = [];
   const beleg = (row) => quellen.indexOf(row) + 1;
 
   const erste = quellen[0];
-  if (erste.answerText) {
-    abschnitte.push({ text: satz(erste.answerText), beleg: beleg(erste) });
-  }
+  abschnitte.push({ text: satz(erste.answerText), beleg: beleg(erste) });
   // Voraussetzungen sind das, was jemand VOR dem Start wissen muss — die
   // nützlichste zweite Zeile, die eine Dienstleistung hergibt.
   if (Array.isArray(erste.requires) && erste.requires.length) {
@@ -113,11 +124,8 @@ export function build(raw) {
     });
   }
   for (const q of quellen.slice(1)) {
-    if (!q.answerText) continue;
     abschnitte.push({ text: satz(q.answerText), beleg: beleg(q) });
   }
-
-  if (!abschnitte.length) return { state: 'none', plan: p, hits, strong };
 
   return {
     state: 'answer',

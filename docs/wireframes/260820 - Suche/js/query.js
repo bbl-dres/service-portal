@@ -45,9 +45,12 @@ export function isQuestion(raw) {
   const s = String(raw || '').trim();
   if (!s) return false;
   if (s.endsWith('?')) return true;
-  const w = worte(s);
   if (FRAGEWORT.test(s)) return true;
-  return w.length >= 4;
+  // Gezählt werden nur WÖRTER, nicht Bruchstücke. Gemessen: «TQ.21.00.00.01»
+  // zerfiel in fünf Teile und galt damit als Frage — eine Prozessnummer löste
+  // den Antwortbau aus, der später ein Modellaufruf ist. Ein Teil muss deshalb
+  // einen Buchstaben enthalten und mindestens zwei Zeichen lang sein.
+  return worte(s).filter((w) => w.length > 1 && /[a-zäöüßà-ÿ]/i.test(w)).length >= 4;
 }
 
 /**

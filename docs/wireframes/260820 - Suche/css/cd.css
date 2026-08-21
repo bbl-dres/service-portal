@@ -1,174 +1,849 @@
 /* ==========================================================================
-   CD-BAUTEILE — swiss/designsystem 1.0.5, in Plain CSS übersetzt.
-   Jede Regel nennt ihre Quelle, damit ein Entscheid hier ins Portal übergeht.
+   CD-BAUTEILE — Kopie der Portal-Regeln, die diese Studie wirklich zeichnet.
+
+   Jeder Block nennt die Portal-Datei, aus der er stammt; die Portal-Dateien
+   nennen ihrerseits die CD-Quelle (swiss/designsystem 1.0.5, 5f03f257). Wer
+   hier etwas ändert, ändert es an ZWEI Stellen — das ist der Preis dafür, dass
+   die Studie eigenständig läuft und nichts am Portal anfasst.
+
+   NICHT übernommen, weil die Studie sie nicht zeichnet: Schublade (navy),
+   Modal, Karussell, Tabs, Mediathek, Karten. Wer sie braucht, holt sie aus der
+   genannten Portal-Datei, statt hier etwas Ähnliches zu erfinden.
    ========================================================================== */
 
-/* ------------------------------------------------------- Foundations ----- */
-*, *::before, *::after { box-sizing:border-box; }
-html { -webkit-text-size-adjust:100%; -moz-osx-font-smoothing:grayscale;
-  -webkit-font-smoothing:antialiased; word-spacing:.0625em; }
-body { margin:0; background:var(--color-bg); color:var(--color-text);
-  font-family:var(--font-sans); font-weight:var(--fw-regular);
-  font-size:var(--text-base); line-height:var(--lh-normal); }
+/* ============================================ css/foundations/reset.css === */
+*,*::before,*::after { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; height:100%; overflow-y:scroll; }
+body {
+  margin:0; font-family:var(--font-sans); font-size:var(--text-base);
+  line-height:var(--lh-normal); color:var(--color-text); background:var(--color-bg);
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; word-spacing:.0625em;
+  /* Kein synthetischer Fettschnitt (die variable Datei hat die echte wght-Achse),
+     aber Kursiv DARF synthetisiert werden: eine Kursivdatei gibt es nicht. */
+  font-synthesis:style;
+  min-height:100vh; display:flex; flex-direction:column;
+}
+/* Der HTML-hidden-Vertrag muss jede Bauteil-display-Regel schlagen. */
+[hidden] { display:none !important; }
+[id] { scroll-margin-top:var(--sp-8); }
 
-/* CD global.postcss:75-86 — ring-2 ring-purple-500 */
-*:focus-visible { outline:none; box-shadow:0 0 0 var(--stroke-2) var(--color-purple-500);
-  position:relative; z-index:10; }
+/* ======================================= css/foundations/typography.css === */
+h1,h2,h3,h4,h5,.h1,.h2,.h3,.h4,.h5 { margin:0 0 var(--sp-4); font-weight:var(--fw-bold); }
+h1,.h1 { font-size:var(--text-3xl); line-height:var(--lh-tight); overflow-wrap:anywhere; }
+h2,.h2 { font-size:var(--text-2xl); line-height:var(--lh-tight); }
+h3,.h3 { font-size:var(--text-xl);  line-height:var(--lh-tight); }
+h4,.h4 { font-size:var(--text-lg);  line-height:var(--lh-normal); }
+h5,.h5 { font-size:var(--text-base);line-height:var(--lh-normal); }
+p { margin:0 0 var(--sp-4); }
 
-/* CD typography.postcss:106-129 */
-h1,h2,h3,h4 { margin:0 0 var(--sp-4); font-weight:var(--fw-bold); }
-h1 { font-size:var(--text-3xl); line-height:var(--lh-tight); overflow-wrap:anywhere; }
-h2 { font-size:var(--text-2xl); line-height:var(--lh-tight); }
-h3 { font-size:var(--text-xl);  line-height:var(--lh-tight); }
-h4 { font-size:var(--text-lg);  line-height:var(--lh-normal); }
-p  { margin:0 0 var(--sp-4); }
-ul, ol { margin:0 0 var(--sp-4); padding-left:1.15rem; }
-.legend { font-size:var(--text-xs); padding-top:var(--sp-2); color:var(--color-gray-500); }
-.text--sm { font-size:var(--text-sm); }
+.text--xs { font-size:var(--text-xs); }
+.text--sm, .small { font-size:var(--text-sm); }
+.text--base { font-size:var(--text-base); }
+.text--lg { font-size:var(--text-lg); }
+.text--xl { font-size:var(--text-xl); line-height:var(--lh-tight); }
+.text--2xl { font-size:var(--text-2xl); line-height:var(--lh-tight); }
 .text--bold { font-weight:var(--fw-bold); }
-.text--muted { color:var(--color-text-muted); }
-code { font-family:var(--font-mono); font-size:.92em;
-  background:var(--color-secondary-100); padding:1px 4px; border-radius:var(--radius-sm); }
-.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px;
-  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+.text--regular { font-weight:var(--fw-regular); }
+.text--negative { color:var(--color-text-negative); }
+.text--light { color:var(--color-gray-500); }
+/* CD bindet `figcaption { @apply legend }`; ohne diese Bindung sähe jede
+   Bildunterschrift anders aus. Farbe ist text-500 (4.83:1 auf Weiss). */
+.legend, figcaption { font-size:var(--text-xs); padding-top:var(--sp-2); color:var(--color-gray-500); }
 
-/* CD link.postcss:6-11 */
-a { color:var(--color-primary-600); text-decoration:underline;
-  text-underline-offset:var(--stroke-2); cursor:pointer; overflow-wrap:break-word; }
-a:hover { color:var(--color-primary-800); }
-a.plain-link { text-decoration:none; color:inherit; }
+/* ========================================= css/foundations/elements.css === */
+a { color:var(--color-link); text-decoration:none; }
+/* CD unterstreicht jeden Inhaltsverweis in main (link.postcss:5-38). Die
+   Ausnahmeliste ist EIN :not(), damit die Spezifität (1,1,1) bleibt und spätere
+   Regeln nicht mit !important gegenhalten müssen. */
+:where(.site-main) a:not(:where(.btn, .card, .card--clickable, .tag-item, .active-filter,
+  .plain-link, .badge, .card__link, .notification a)),
+.link {
+  color:var(--color-primary-600); text-decoration:underline;
+  text-underline-offset:var(--stroke-2); overflow-wrap:break-word; cursor:pointer;
+}
+:where(.site-main) a:not(:where(.btn, .card, .card--clickable, .tag-item, .active-filter,
+  .plain-link, .badge, .card__link, .notification a)):is(:hover, :focus),
+.link:hover, .link:focus { color:var(--color-primary-800); }
 
-/* CD container.postcss */
+mark { background:var(--color-primary-200); padding:var(--sp-0-5) var(--sp-1); }
+img { max-width:100%; display:block; }
+ul,ol { margin:0; padding:0; }
+:where(.site-main) ul:not([class]), .list--default { list-style:disc outside; padding-left:var(--sp-5); }
+:where(.site-main) ul:not([class]) > li + li, .list--default > li + li { margin-top:var(--sp-2); }
+.list--bare { list-style:none; padding-left:0; }
+code { font-family:var(--font-mono); }
+
+/* EIN Fokusring für alles. ABWEICHUNG von CD: CD setzt einen anliegenden
+   box-shadow-Ring ohne Versatz; die 2px Versatz hier sind Absicht und auf
+   gefüllten Flächen deutlich besser lesbar. */
+:focus-visible { outline:var(--stroke-2) solid var(--focus-ring-color, var(--color-focus-ring)); outline-offset:var(--stroke-2); }
+/* Die Fokusfarbe gehört der FLÄCHE, nicht dem einzelnen Bedienelement. */
+:where(.top-bar, .footer-information, .footer-navigation, .study-bar,
+  [class*="bg--secondary-6"], [class*="bg--secondary-7"]) {
+  --focus-ring-color:var(--color-focus-ring-negative);
+}
+/* Routenwechsel-Fokusziele sind keine Bedienelemente: Fokus für Screenreader
+   bewegen, ohne der Maus einen Ring zu zeigen. */
+h1[tabindex="-1"]:focus, h1[tabindex="-1"]:focus-visible,
+.site-header:focus, .site-header:focus-visible,
+.site-main:focus, .site-main:focus-visible { outline:none; }
+
+.sr-only, .logo__title, .search__button__title, .btn--icon-only .btn__text, .table caption {
+  position:absolute; width:var(--stroke-1); height:var(--stroke-1); padding:0;
+  margin:calc(-1 * var(--stroke-1)); overflow:hidden; clip:rect(0,0,0,0);
+  white-space:nowrap; border:0; }
+.skip-to-content { position:absolute; left:50%; top:0; z-index:var(--z-skiplink);
+  background:var(--color-secondary-900); color:var(--color-text-negative);
+  border:var(--stroke-2) solid var(--color-bg); box-shadow:var(--shadow-md);
+  padding:var(--sp-2) var(--sp-4); font:inherit; cursor:pointer;
+  transform:translate(-50%,-200%); transition:transform var(--duration-fast); }
+.skip-to-content:focus { transform:translate(-50%,0); }
+
+/* ============================================== css/layouts/page.css ====== */
 .container { width:100%; max-width:var(--container-max); margin:0 auto;
-  padding-inline:var(--container-px); }
+  padding:0 var(--container-px); overflow-x:clip; }
+.container--flex { display:flex; justify-content:space-between; }
+.section { width:100%; }
+/* Seitenwurzel: jede Seite zeichnet <div class="container section">. Enger oben
+   als unten, genau wie CD selbst. */
+.container.section { padding-top:var(--section-pt); padding-bottom:var(--section-py); }
+.container.section > .hero:first-child { padding-top:0; }
+.section--default, .section--py, .section[class*="bg--"] { padding-block:var(--section-py); }
+.section--py-half { padding-block:var(--section-py-half); }
+.hero + .section--default:not([class*="bg--"]),
+.hero + .bg--white { padding-top:0; }
 
-/* Abschnittsbänder (CD section.postcss): Weiss / secondary-50 im Wechsel. */
-.section { padding-block:var(--sp-10); }
-@media (min-width:1024px) { .section { padding-block:var(--sp-16); } }
-.section--tint { background:var(--color-secondary-50); }
+.bg--white { background:var(--color-bg); }
+.bg--secondary-50 { background:var(--color-secondary-50); }
+.bg--secondary-100 { background:var(--color-secondary-100); }
+.bg--secondary-600 { background:var(--color-secondary-600); color:var(--color-text-negative); }
+.bg--secondary-700 { background:var(--color-secondary-700); color:var(--color-text-negative); }
 
-/* ------------------------------------------------------------- BTN ------- */
-/* CD btn.postcss:6-186 */
-.btn { display:inline-flex; align-items:center; gap:var(--sp-2);
+/* .muted ist BEWUSST dunkler als CDs .text--light (text-600 statt text-500):
+   text-500 fiele auf secondary-50-Flächen unter AA. */
+.muted { color:var(--color-text-muted); }
+.text-right { text-align:right; }
+.text-nowrap { white-space:nowrap; }
+.mt-4 { margin-top:var(--sp-4); }
+
+.grid { display:grid; gap:var(--gap-responsive); }
+:where(.grid) > * { min-width:0; }
+.gap--top { padding-top:var(--gap-responsive); }
+
+/* ============================================== css/layouts/grid.css ====== */
+.grid--responsive-cols-2, .grid--responsive-cols-3 { grid-template-columns:minmax(0,1fr); }
+@media (min-width:768px){
+  .grid--responsive-cols-2, .grid--responsive-cols-3 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (min-width:1024px){ .grid--responsive-cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+
+/* Symbole: einfarbige SVGs über CSS-Maske, damit sie currentColor annehmen.
+   CD hält width:auto, weil SvgIcon ein echtes SVG zeichnet. Maskenspannen haben
+   keine Eigenbox — deshalb hier bewusst ein Quadrat. */
+.icon { display:inline-block; width:var(--sp-4); height:var(--sp-4); vertical-align:-.125em;
+  background-color:currentColor; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+  -webkit-mask-position:center; mask-position:center;
+  -webkit-mask-size:contain; mask-size:contain; flex:none; }
+.icon--sm  { width:var(--sp-3); height:var(--sp-3); }
+.icon--base{ width:var(--sp-4); height:var(--sp-4); }
+.icon--md  { width:var(--sp-5); height:var(--sp-5); }
+.icon--lg  { width:var(--sp-6); height:var(--sp-6); }
+.icon--xl  { width:var(--sp-7); height:var(--sp-7); }
+@media (min-width:768px){
+  .icon--md { width:var(--sp-6); height:var(--sp-6); }
+  .icon--lg { width:var(--sp-7); height:var(--sp-7); }
+  .icon--xl { width:var(--sp-8); height:var(--sp-8); }
+}
+
+/* ========================================= css/components/button.css ====== */
+/* KEIN gap und KEIN Blockabstand auf .btn selbst (CD btn.postcss:6-13 px-4):
+   .btn__text allein liefert die Höhe, icon-left allein den Symbolabstand. */
+.btn { display:inline-flex; align-items:center;
   min-height:var(--target-min); padding:0 var(--sp-4);
   border-radius:var(--radius-sm); border:var(--stroke-1) solid transparent;
   font:inherit; font-weight:var(--fw-regular); font-size:var(--text-base);
-  line-height:1.25rem; cursor:pointer; text-decoration:none; }
+  cursor:pointer; text-decoration:none; line-height:var(--line-5);
+  transition:background var(--duration-fast),color var(--duration-fast),border-color var(--duration-fast); }
+.btn--icon-only, .btn--full-width { justify-content:center; }
 .btn__text { padding-block:var(--sp-2); text-align:left; overflow-wrap:anywhere; }
-.btn__icon { flex:none; width:1.25rem; height:1.25rem; fill:currentColor; }
-.btn--outline { background:transparent; border-color:var(--color-primary-600);
-  color:var(--color-primary-600); }
-.btn--outline:hover { border-color:var(--color-primary-700); color:var(--color-primary-700); }
+.btn:where(:hover,:active) { text-decoration:none; }
+.btn--outline { background:transparent; border-color:var(--color-primary-600); color:var(--color-primary-600); }
+.btn--outline:where(:hover,:active) { border-color:var(--color-primary-700); color:var(--color-primary-700); }
 .btn--outline:active { background:var(--color-primary-50); }
 .btn--filled { background:var(--color-secondary-500); border-color:var(--color-secondary-500);
   color:var(--color-text-negative); font-weight:var(--fw-bold); }
 .btn--filled:hover { color:var(--color-secondary-100); }
-.btn--filled:active { background:var(--color-secondary-600); border-color:var(--color-secondary-600); }
+.btn--filled:active { background:var(--color-secondary-600); border-color:var(--color-secondary-600); color:var(--color-text-negative); }
 .btn--bare { background:none; border:0; color:var(--color-secondary-800);
-  padding-inline:var(--sp-2); }
-.btn--bare:hover { color:var(--color-primary-600); }
-.btn--sm { min-height:0; font-size:var(--text-sm); padding-inline:var(--sp-3); }
-.btn--sm .btn__text { padding-block:var(--sp-1-5); }
+  padding-left:var(--sp-2); padding-right:var(--sp-2); }
+.btn--bare:where(:hover,:active) { color:var(--color-primary-600); }
+.btn--bare:active { color:var(--color-primary-700); }
+.btn--link { background:none; border:0; color:var(--color-primary-600); padding:0 var(--sp-2) 0 0; }
+.btn--link:hover { color:var(--color-primary-700); }
+.btn--link:active { color:var(--color-primary-800); }
+.btn--sm { min-height:var(--control-size-compact); font-size:var(--text-sm); line-height:var(--line-4); }
+.btn--lg { min-height:var(--sp-12); font-size:var(--text-lg); line-height:var(--line-6); }
+.btn--icon-left .btn__icon { position:relative; right:.1em; margin-right:.2em; }
+.btn--icon-right { flex-direction:row-reverse; }
+.btn--icon-right .btn__icon { position:relative; left:.1em; margin-left:.2em; }
+.btn--icon-only { padding-left:.625em; padding-right:.625em; }
+.btn--full-width { width:100%; }
+@media (min-width:1024px){ .btn, .btn--base { line-height:var(--line-6); } .btn--sm { line-height:var(--line-5); } }
+@media (min-width:1280px){ .btn, .btn--base { min-height:var(--control-size-md); } .btn--sm { min-height:var(--sp-10); } .btn--lg { min-height:var(--control-size-lg); } }
+@media (min-width:1920px){ .btn, .btn--base { min-height:var(--control-size-lg); } .btn--sm { min-height:var(--control-size-sm); } .btn--lg { min-height:var(--sp-14); } }
+/* Das kompakte CD-Mass bleibt nur am feinen Desktopzeiger. */
+@media (max-width:1023.98px), (pointer:coarse), (hover:none){ .btn--sm { min-height:var(--target-min); } }
+/* Symbole wachsen mit dem Knopf, absichtlich bei höherer Spezifität (0,2,0) als
+   jede .icon--*-Grössenklasse (0,1,0). */
+.btn .icon, .btn__icon { width:1.4em; height:1.4em; flex:none; transition:transform var(--duration); }
+.btn--outline:focus-visible { color:var(--color-primary-600); border-color:var(--color-primary-600); }
+.btn--filled:focus-visible { color:var(--color-text-negative); }
+.btn:is(:disabled,[aria-disabled="true"],.btn--disabled) { cursor:not-allowed; pointer-events:none; opacity:1; text-decoration:none; }
+.btn--outline:is(:disabled,[aria-disabled="true"]) { color:var(--color-secondary-300); border-color:var(--color-secondary-200); background:transparent; }
+.btn:where(.btn--bare,.btn--link):is(:disabled,[aria-disabled="true"]) { color:var(--color-secondary-300); background:transparent; }
+.interactive-control:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
 
-/* ----------------------------------------------------------- BADGE ------- */
-/* CD badge.postcss:6-60 — Pille, Gewicht 400 */
+/* =========================================== css/components/card.css ====== */
+/* Badge: Pille, Gewicht 400, KEIN gap und KEIN nowrap in der Basis — Pillen
+   dürfen überall umbrechen, auch bei 200 % Textzoom (WCAG 1.4.4). */
 .badge { display:inline-flex; align-items:center; padding:.219em 1em;
   border-radius:var(--radius-full); font-weight:var(--fw-regular);
-  font-size:var(--text-sm); white-space:nowrap;
   background:var(--color-secondary-100); color:var(--color-gray-800); }
-.badge--blue  { background:var(--color-blue-100);  color:var(--color-blue-800); }
-.badge--green { background:var(--color-green-100); color:var(--color-green-800); }
-.badge--gray  { background:var(--color-secondary-100); color:var(--color-gray-800); }
+.badge, .badge--base { font-size:var(--fs-xs); line-height:var(--line-5); }
+@media (min-width:768px) { .badge, .badge--base { font-size:var(--fs-sm); } }
+@media (min-width:1024px){ .badge, .badge--base { font-size:var(--fs-base); line-height:var(--line-6); } }
+.badge--sm { font-size:10px; line-height:var(--line-4); }
+@media (min-width:768px) { .badge--sm { font-size:var(--fs-xs); line-height:1.35rem; } }
+@media (min-width:1024px){ .badge--sm { font-size:var(--fs-sm); } }
+.badge--gray { background:var(--color-secondary-100); color:var(--color-gray-800); }
+.badge--green, .badge--success { background:var(--color-success-bg); color:var(--color-success-text); }
+.badge--orange, .badge--warning { background:var(--color-warning-bg); color:var(--color-warning-text); }
+.badge--red, .badge--error { background:var(--color-error-bg); color:var(--color-error-text); }
+.badge--blue, .badge--info { background:var(--color-info-bg); color:var(--color-info-text); }
+.pill-row { display:flex; flex-wrap:wrap; gap:var(--sp-2); }
+.pill-row .badge { overflow-wrap:anywhere; }
 
-/* ---------------------------------------------------- NOTIFICATION ------- */
-/* CD notification.postcss — Tönung, radius, shadow-lg, Symbol. KEINE linke Kante. */
-.notification { display:flex; position:relative; gap:var(--sp-3);
-  align-items:flex-start; padding:var(--sp-2); border:0;
-  border-radius:var(--radius); background:var(--color-gray-50);
-  box-shadow:var(--shadow-lg); }
-@media (min-width:480px)  { .notification { padding:var(--sp-4); } }
-@media (min-width:1024px) { .notification { padding:var(--sp-6); } }
-.notification__icon { flex:none; width:var(--sp-10); height:var(--sp-10); fill:currentColor; }
+/* Karte (Galerieansicht). KEIN overflow:hidden auf .card — nur .card__image
+   beschneidet, sonst würden Fokusringe 2px nach innen gedrückt. */
+.card { background:var(--surface-bg); border:0; border-radius:var(--radius-none);
+  box-shadow:var(--shadow-none); display:flex; flex-direction:column; height:100%;
+  position:relative; container-type:inline-size; }
+.card--default { box-shadow:var(--shadow-lg); }
+.card__content { display:flex; flex-direction:column; justify-content:space-between;
+  height:100%; background:transparent; }
+.card__body { padding:var(--sp-10) var(--sp-6); display:flex; flex-direction:column; gap:var(--sp-4); }
+.card__title { margin:0; font-size:var(--text-lg); font-weight:var(--fw-bold);
+  line-height:1.375; transition:color var(--duration) var(--ease-in-out); overflow-wrap:anywhere; }
+.card__description { color:var(--color-text-muted); overflow-wrap:anywhere; }
+/* Lange Beschreibungen werden geklemmt, damit eine Karte die Zeilenhöhe der
+   ganzen Rasterzeile nicht sprengt (card.postcss:226-234). */
+.card__description { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden; }
+@container (min-width:500px){ .card__description { -webkit-line-clamp:4; } }
+@container (max-width:499px){
+  .card__body { padding:var(--sp-6); }
+  .card__footer { padding:0 var(--sp-6) var(--sp-6); }
+}
+.card__footer { padding:0 var(--sp-6) var(--sp-6); border-top:0; display:flex;
+  align-items:center; justify-content:space-between; gap:var(--sp-2);
+  font-size:var(--text-sm); color:var(--color-text-muted); }
+.card__footer--icon-only { justify-content:flex-end; }
+.card__footer__info { min-width:0; padding-right:var(--sp-6); color:var(--color-secondary-500); }
+.card__footer__action { flex:none; }
+.card__footer__action > .btn { pointer-events:none; }
+.card--clickable { cursor:pointer; transition:box-shadow var(--duration-slow) var(--ease-in-out);
+  text-decoration:none; color:inherit; }
+/* Ausgedehnter Verweis: der Titel-<a> deckt die ganze Karte, ohne die Karte
+   selbst zu einem Verweis zu machen — Dokumentgliederung und gültige
+   Verschachtelung bleiben erhalten. */
+.card--clickable .card__link { text-decoration:none; color:inherit; }
+.card--clickable .card__link::after { content:""; position:absolute; inset:0; z-index:var(--z-local-content); }
+.card--clickable .card__link:focus-visible { outline:none; }
+.card--clickable .card__link:focus-visible::after { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
+.card--clickable:where(:hover,:focus-within) { box-shadow:var(--shadow-2xl); text-decoration:none; }
+.card--clickable:where(:hover,:focus-within) .card__title { color:var(--color-primary-700); }
+.card--clickable:active { box-shadow:var(--shadow-md); }
+
+/* Tag-Pille: CDs interaktives Filterelement, volle 44px-Rampe. */
+.tag-item { display:inline-flex; align-items:center; margin-right:var(--sp-3);
+  min-height:var(--control-h); font:inherit; font-size:var(--text-base); line-height:var(--line-5);
+  background:none; border:0; padding:0; color:inherit; text-decoration:none; cursor:pointer; }
+@media (min-width:768px){ .tag-item { margin-bottom:var(--sp-0-5); } }
+@media (min-width:1024px){ .tag-item { line-height:var(--line-6); margin-bottom:var(--sp-1); } }
+.tag-item:where(:hover,:active) { color:inherit; text-decoration:none; }
+.tag-item--sm { font-size:var(--text-sm); }
+.tag-item__inner { display:inline-flex; align-items:center; gap:var(--sp-2);
+  padding-inline:var(--sp-4); line-height:1.25; border-radius:var(--radius-full);
+  background:var(--color-gray-200); transition:background var(--duration-fast),color var(--duration-fast); }
+.tag-item__text { display:inline-block; padding-block:var(--sp-1-5); text-align:left; }
+@media (min-width:1280px){ .tag-item__text { padding-block:var(--sp-2); } }
+.tag-item:hover .tag-item__inner { background:var(--color-gray-300); }
+.tag-item:active .tag-item__inner { background:var(--color-gray-800); color:var(--color-text-negative); }
+.tag-item:focus-visible { outline:none; }
+/* Versatz 0: CDs Ring liegt AN der Pille an und folgt ihrer Rundung. */
+.tag-item:focus-visible .tag-item__inner { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:0; }
+.tag-item__icon { width:1.125em; height:1.125em; flex:none; }
+
+/* ======================================= css/components/feedback.css ====== */
+.notification { display:flex; position:relative; gap:var(--sp-3); align-items:flex-start;
+  padding:var(--sp-2); border:0; border-radius:var(--radius);
+  background:var(--color-gray-50); box-shadow:var(--shadow-lg); }
+@media (min-width:480px) { .notification { padding:var(--sp-4); } }
+@media (min-width:1024px){ .notification { padding:var(--sp-6); } }
+@media (min-width:1544px){ .notification { padding:var(--sp-8); } }
+.notification__icon { flex:none; width:var(--sp-10); height:var(--sp-10); }
 .notification__content { min-width:0; flex:1; margin-block:var(--sp-2-5); }
-@media (min-width:1280px) { .notification__content { margin-block:var(--sp-2); } }
+@media (min-width:1280px){ .notification__content { margin-block:var(--sp-2); } }
 .notification__content > p { margin:0; overflow-wrap:anywhere; }
-.notification__content > p + p { margin-top:var(--sp-2); }
-.notification--hint    { background:var(--color-secondary-50); color:var(--color-gray-700); }
-.notification--info    { background:var(--color-blue-50);      color:#1d4ed8; }
-.notification--warning { background:var(--color-orange-50);    color:var(--color-orange-800); }
-/* CD notification.postcss:11-27 — Verweise erben currentColor. */
-.notification a { color:currentColor; text-decoration:underline;
-  text-underline-offset:var(--stroke-2); }
-.notification a:hover { color:currentColor; filter:brightness(.5); }
+.notification__content > p + p { margin-top:var(--sp-1); }
+.notification--info    { background:var(--color-info-bg-subtle);    color:var(--color-info-text-subtle); }
+.notification--success { background:var(--color-success-bg-subtle); color:var(--color-success-text); }
+.notification--warning { background:var(--color-warning-bg-subtle); color:var(--color-warning-text); }
+.notification--error   { background:var(--color-error-bg-subtle);   color:var(--color-error-text); }
+.notification--hint    { background:var(--color-secondary-50);      color:var(--color-gray-700); }
+/* Verweise in einer Notification erben currentColor — nie die Markenfarbe. */
+.notification a, .notification .link { color:currentColor; text-decoration:underline; text-underline-offset:var(--stroke-2); }
+.notification a:hover, .notification a:focus { color:currentColor; filter:brightness(.5); }
+.notification .btn { color:currentColor; border-color:currentColor; }
+/* Leerzustand (C.empty im Portal). */
+.empty { display:flex; gap:var(--sp-3); align-items:flex-start; padding:var(--sp-8) 0; color:var(--color-text-muted); }
+.empty__body { min-width:0; }
+.empty__body > p { margin:0 0 var(--sp-2); }
 
-/* -------------------------------------------------------- META-INFO ------ */
-/* CD meta-info.postcss — Trennzeichen «|», px-2 lg:px-3 */
+/* ======================================== css/components/content.css ====== */
+/* Meta-Zeile: Trennzeichen «|», px-2 lg:px-3 (CD meta-info.postcss:5-18). */
 .meta-info { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
-.meta-info__item:not(:last-child)::after { content:'|'; padding:0 var(--sp-2); }
-@media (min-width:1024px) { .meta-info__item:not(:last-child)::after { padding:0 var(--sp-3); } }
+.meta-info__item:not(:last-child)::after { content:"|"; padding:0 var(--sp-2); }
+@media (min-width:1024px){ .meta-info__item:not(:last-child)::after { padding:0 var(--sp-3); } }
 
-/* ----------------------------------------------------------- SUCHE ------- */
-/* CD search.postcss:135-152 + portal css/sections/search.css */
-.search--large .search__group { display:flex; align-items:stretch; position:relative;
-  height:var(--sp-16); max-width:52rem; }
-.search__field { flex:1 1 auto; min-width:0; width:100%;
-  padding:var(--sp-3) var(--sp-14) var(--sp-3) var(--sp-4);
-  border:var(--stroke-1) solid var(--color-border-input); box-shadow:none;
-  background:var(--color-bg); font-family:inherit;
-  font-size:var(--fs-xl); font-weight:var(--fw-bold); color:var(--color-text-900); }
-.search__field::placeholder { color:var(--color-placeholder); font-weight:var(--fw-regular); }
-.search--large .search__submit { position:absolute; top:0; right:0; bottom:0;
-  display:inline-flex; align-items:center; justify-content:center; width:3.5rem;
-  border:0; background:none; color:var(--color-secondary-800); cursor:pointer; }
-.search__submit svg { width:var(--sp-8); height:var(--sp-8); fill:currentColor; }
+/* Ansichtswechsel. Der Zustand darf NICHT allein über Farbe sprechen
+   (WCAG 1.4.1): die Unterkante trägt ihn als Form. */
+.view-switch { display:flex; align-items:center; gap:var(--sp-1);
+  border-left:var(--stroke-1) solid var(--color-secondary-300);
+  margin-left:var(--sp-3); padding-left:var(--sp-4); }
+.view-switch__btn { display:inline-flex; align-items:center; justify-content:center;
+  min-width:var(--target-min); min-height:var(--target-min); padding:0;
+  background:none; border:0; border-radius:var(--radius-none);
+  color:var(--color-secondary-500); cursor:pointer;
+  transition:color var(--duration), background var(--duration); }
+.view-switch__btn:hover { color:var(--color-primary-700); }
+.view-switch__btn:active { background:var(--color-secondary-100); color:var(--color-primary-700); }
+.view-switch__btn:focus-visible { position:relative; z-index:var(--z-local-content);
+  outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-2)); }
+.view-switch__btn[aria-pressed="true"] { color:var(--color-text); background:var(--color-secondary-100);
+  box-shadow:inset 0 calc(-1 * var(--stroke-3)) 0 var(--color-text-light); }
 
-/* Trefferkopf. Im Portal heisst das Bauteil `.catbar`; an der laufenden App
-   gemessen: padding-top 0, padding-bottom --sp-2, Unterkante secondary-300. */
-.catbar { display:flex; flex-wrap:wrap; gap:var(--sp-4); align-items:center;
-  justify-content:space-between; font-size:var(--text-sm); color:var(--color-text-800);
-  padding-bottom:var(--sp-2);
-  border-bottom:var(--stroke-1) solid var(--color-secondary-300); }
-.catbar strong { font-weight:var(--fw-regular); }   /* CD search.postcss:220-223 */
-.catbar__actions { display:flex; gap:var(--sp-2); align-items:center; }
+/* ========================================== css/components/form.css ======= */
+/* Felder folgen der FELD-Rampe (--input-h: 44 → 48 erst bei 2xl), nicht der
+   Knopf-Rampe. Eine Vereinheitlichung machte Felder auf 1280-1543er Laptops
+   4px höher als CD. */
+input, select, textarea { box-sizing:border-box; font:inherit; width:100%; max-width:100%;
+  min-height:var(--input-h); padding:var(--sp-2-5) var(--sp-4); line-height:1;
+  border:var(--stroke-1) solid var(--color-border-input); border-radius:var(--radius-xs);
+  background:var(--color-bg); color:var(--color-text); box-shadow:var(--shadow); }
+input::placeholder { color:var(--color-placeholder); }
+input:focus, select:focus { outline:none; }
+input:focus-visible, select:focus-visible {
+  outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
+input[type='search']::-webkit-search-decoration { display:none; }
+/* Das native Löschkreuz bleibt SICHTBAR, in CD-Optik. BEWUSSTE ABWEICHUNG von
+   CD input.postcss:165-171, wo es unterdrückt wird; der reservierte rechte
+   Innenabstand verhindert die Kollision mit dem überlagerten Suchknopf.
+   Nur WebKit: Firefox kennt dieses Pseudoelement nicht und zeigt kein Kreuz. */
+input[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance:none; appearance:none; width:var(--sp-4); height:var(--sp-4);
+  margin-left:var(--sp-2); cursor:pointer; background-color:var(--color-text-muted);
+  -webkit-mask:url('../../../../assets/icons/Cancel.svg') center/contain no-repeat;
+  mask:url('../../../../assets/icons/Cancel.svg') center/contain no-repeat; }
 
-/* Trefferliste — portal css/sections/search.css, gebaut auf card--list */
-.search-results-list { list-style:none; margin:0; padding:0; }
-.search-result { border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
-.search-result__link { display:block; padding:var(--sp-4) var(--sp-1);
-  color:inherit; text-decoration:none; }
-@media (min-width:1024px) { .search-result__link { padding-block:var(--sp-6); } }
-.search-result__link:hover .search-result__title,
-.search-result__link:focus-visible .search-result__title { color:var(--color-primary-700); }
-.search-result__meta { margin:0 0 var(--sp-0-5); }
-/* Titel ist Fliesstext-Tinte, NICHT Markenfarbe — erst beim Hover primary-700.
-   An der laufenden App gemessen: 18px/700/#1f2937 bei 1280. */
-.search-result__title { font-size:var(--text-base); font-weight:var(--fw-bold);
-  line-height:var(--lh-snug); margin:0; color:var(--color-text-800); }
-.search-result__desc { margin:var(--sp-1) 0 0; font-size:var(--text-sm);
-  color:var(--color-text-muted); overflow-wrap:anywhere; }
+/* Kontrollkästchen (input.postcss:78-152). FEHLTE in der ersten Fassung dieser
+   Datei — und das fiel erst auf, als die Quellenauswahl welche brauchte: die
+   generische Feldregel oben setzt `min-height:var(--input-h)`, also 2.75rem, und
+   ein Kästchen erbte das. Es stand dann als 44px hohe Fläche neben seiner
+   Beschriftung, mit dem eigentlichen Kästchen darin. `min-height:0` hier ist
+   deshalb kein Detail, sondern der Grund, warum die Regel gebraucht wird. */
+input[type='checkbox'], input[type='radio'] {
+  width:var(--sp-3-5); height:var(--sp-3-5); min-height:0; flex-shrink:0;
+  margin:0 var(--sp-2) 0 0; padding:0;
+  -webkit-appearance:none; -moz-appearance:none; appearance:none;
+  background-color:var(--color-text-negative);
+  border:var(--stroke-1) solid var(--color-border-input);
+  border-radius:var(--radius-xs); box-shadow:var(--shadow); }
+input[type='radio'] { border-radius:var(--radius-full); }
+input[type='checkbox']:checked, input[type='radio']:checked {
+  background-color:var(--color-gray-700); background-repeat:no-repeat; background-position:center; }
+input[type='checkbox']:checked { background-image:url("data:image/svg+xml,%3Csvg width='10' height='7' viewBox='0 0 10 7' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9.2.29A1 1 0 0 1 9.2 1.7l-5 5a1 1 0 0 1-1.42 0l-2-2A1 1 0 0 1 2.2 3.29L3.5 4.59 7.79.29a1 1 0 0 1 1.41 0Z' fill='white'/%3E%3C/svg%3E"); }
+input:is([type='checkbox'],[type='radio']):not(:where(:disabled,[aria-disabled="true"])):where(:hover,:active) {
+  border-color:var(--color-primary-600); }
+input:is([type='checkbox'],[type='radio']):is(:disabled,[aria-disabled="true"]) {
+  background-color:var(--color-gray-50); border-color:var(--color-border-strong); opacity:.4; }
+input:is([type='checkbox'],[type='radio']):checked:is(:disabled,[aria-disabled="true"]) {
+  background-color:var(--color-gray-700); }
+/* Muss DIREKT nach der Basisregel stehen: `appearance:none` oben und
+   `appearance:auto` hier haben gleiche Spezifität, es gewinnt die spätere.
+   Grund: forced-colors macht die Fläche zu Canvas, behält aber das weisse
+   SVG-Häkchen — auf hellen Themen weiss auf weiss, der Zustand verschwindet. */
+@media (forced-colors: active) {
+  input[type='checkbox'], input[type='radio'] {
+    -webkit-appearance:auto; appearance:auto; background-image:none; box-shadow:none; }
+}
 
-/* --------------------------------------------------------- LISTBOX ------- */
-/* Portal css/components/listbox.css — geteiltes ARIA-Combobox-Popup */
+.select { position:relative; width:100%; min-width:0; }
+.select select { box-sizing:border-box; -webkit-appearance:none; appearance:none; padding-right:var(--sp-20); }
+.select__icon { position:absolute; top:0; right:0; width:var(--sp-12); height:100%;
+  display:flex; align-items:center; justify-content:center;
+  border-left:var(--stroke-1) solid var(--color-border-input);
+  pointer-events:none; background:transparent; color:var(--color-text); }
+.select__icon svg { width:var(--sp-8); height:100%; fill:currentColor; display:block; }
+.select--bare { width:auto; max-width:100%; display:inline-block; }
+.select--bare select { display:inline-block; width:auto; padding-right:var(--sp-6);
+  box-shadow:none; border-color:transparent; background-color:transparent; }
+.select--bare .select__icon { width:var(--sp-6); border-left:0; }
+
+/* ==================================== css/sections/filter-panel.css ======= */
+.filter-group { border:0; margin:0 0 var(--sp-5); padding:0; }
+.filter-group__legend { margin:0 0 var(--sp-2); padding:0; color:var(--color-text);
+  font-size:var(--text-sm); font-weight:var(--fw-bold); }
+.filter-check { display:flex; align-items:flex-start; gap:var(--sp-2); min-width:0;
+  min-height:var(--target-min); padding:var(--sp-1-5) var(--sp-1); margin:0 calc(-1 * var(--sp-1));
+  border-radius:var(--radius-xs); color:var(--color-text); cursor:pointer; font-size:var(--text-sm); }
+.filter-check input { flex:none; width:var(--check-size); height:var(--check-size); margin:var(--sp-1) 0 0; }
+.filter-check > :last-child { min-width:0; overflow-wrap:anywhere; }
+.filter-check:hover { color:var(--color-primary-700); background:var(--color-secondary-100); }
+.filter-check:active { background:var(--color-secondary-200); }
+.filter-check:focus-within { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
+/* Dichte Desktop-Facetten sind zeigergebunden; grobe Eingabe behält 44px. */
+@media (min-width:1024px) and (hover:hover) and (pointer:fine){ .filter-check { min-height:var(--sp-9); } }
+
+/* ========================================== css/components/listbox.css ==== */
 .listbox-anchor { position:relative; }
 .listbox { margin:0; padding:var(--sp-1); list-style:none; overflow-y:auto;
   background:var(--color-bg); border:var(--stroke-1) solid var(--color-secondary-300);
   border-radius:var(--radius); box-shadow:var(--shadow-lg); }
-.listbox--suggest { position:absolute; z-index:var(--z-header);
-  top:calc(100% + var(--sp-1)); left:0; right:0; max-height:26rem; padding-inline:0; }
-.listbox__option { display:flex; flex-direction:column; align-items:flex-start;
-  gap:var(--sp-0-5); min-height:var(--target-min);
-  padding:var(--sp-2) var(--sp-3-5); color:var(--color-text);
-  font-size:var(--text-sm); line-height:var(--lh-snug); cursor:pointer; }
+.listbox--suggest { position:absolute; z-index:var(--z-header); top:calc(100% + var(--sp-1));
+  left:0; right:0; max-height:22rem; padding-inline:0; }
+.listbox__option { display:flex; align-items:center; gap:var(--sp-2);
+  min-height:var(--target-min); padding:var(--sp-2) var(--sp-3);
+  color:var(--color-text); font-size:var(--text-sm); line-height:var(--lh-snug); cursor:pointer; }
+.listbox--suggest .listbox__option { flex-direction:column; align-items:flex-start;
+  gap:var(--sp-0-5); padding-inline:var(--sp-3-5); }
+/* Die Trennlinie zwischen zwei Vorschlägen — im Portal sichtbar, in der
+   früheren Fassung dieser Studie nicht. */
+.listbox--suggest .listbox__option + .listbox__option { border-top:var(--stroke-1) solid var(--color-secondary-200); }
 .listbox__option:hover { background:var(--color-secondary-50); }
+.listbox__option:active { background:var(--color-primary-200); }
+.listbox__option[aria-selected="true"] { background:var(--color-primary-100); }
+/* .is-active ist der sichtbare Tastaturfokus: der Fokus bleibt im Feld, die
+   Auswahl spricht über aria-activedescendant. */
 .listbox__option.is-active { background:var(--color-gray-600); color:var(--color-text-negative); }
-.listbox__option.is-active :is(.listbox__title, .listbox__meta, mark) { color:inherit; }
+.listbox__option.is-active :is(.listbox__title, .listbox__meta, .icon, mark) { color:inherit; }
 .listbox__title { font-weight:var(--fw-bold); color:var(--color-text); }
 .listbox__meta { font-size:var(--text-xs); color:var(--color-text-muted); }
+@media (max-width:639.98px){ .listbox--suggest { position:static; margin-top:var(--sp-2); max-height:none; } }
+@media (forced-colors:active){
+  .listbox__option.is-active { outline:var(--stroke-2) solid Highlight; outline-offset:calc(-1 * var(--stroke-2)); }
+}
 
-@media (max-width:639.98px) {
-  .listbox--suggest { position:static; margin-top:var(--sp-2); max-height:none; }
+/* ========================================== css/sections/search.css ======= */
+.search--large .search__group { display:flex; align-items:stretch; position:relative;
+  height:var(--sp-16); max-width:52rem; }
+/* CD search.postcss:135-152: statisches text-xl (KEINE responsive Rampe —
+   fett 2rem bei 1920 wiche sichtbar von CD ab), Feldrand, kein Feldschatten;
+   3.5rem rechts halten Text und natives Löschkreuz vom Suchknopf frei. */
+.search__field { flex:1 1 auto; min-width:0; width:100%;
+  padding:var(--sp-3) var(--sp-14) var(--sp-3) var(--sp-4);
+  border:var(--stroke-1) solid var(--color-border-input); box-shadow:none;
+  background:var(--color-bg); font-size:var(--fs-xl); font-weight:var(--fw-bold); }
+.search__field::placeholder { color:var(--color-placeholder); font-weight:var(--fw-regular); }
+.search--large .search__submit { position:absolute; top:0; right:0; bottom:0; z-index:var(--z-local-control); }
+.search--large .search__submit .icon { width:var(--sp-10); height:var(--sp-10); }
+.search--page-result { padding-top:var(--sp-4); }
+@media (min-width:1024px){ .search--page-result { width:80%; } }
+@media (min-width:1280px){ .search--page-result { width:66.6667%; } }
+@media (min-width:1544px){ .search--page-result { padding-top:var(--sp-8); } }
+
+/* Trefferliste. Nur UNTEN eine Linie, wie die CD-Karte, die diese Zeilen trägt
+   (card.postcss:106-112 `.card--list`). */
+.search-results-list { list-style:none; margin:0; padding:0; }
+.search-result { border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
+.search-result__link { display:block; padding:var(--sp-4) var(--sp-1); color:inherit; text-decoration:none; }
+@media (min-width:1024px){ .search-result__link { padding-top:var(--sp-6); padding-bottom:var(--sp-6); } }
+@media (min-width:1544px){ .search-result__link { padding-top:var(--sp-8); padding-bottom:var(--sp-8); } }
+.search-result__link:hover .search-result__title,
+.search-result__link:focus-visible .search-result__title { color:var(--color-primary-700); }
+.search-result__meta { margin:0 0 var(--sp-0-5); }
+/* Der Titel ist Fliesstext-Tinte, NICHT Markenfarbe — erst beim Überfahren primary-700. */
+.search-result__title { font-size:var(--text-base); font-weight:var(--fw-bold);
+  line-height:var(--lh-snug); margin:0; }
+.search-result__desc { margin:var(--sp-1) 0 0; font-size:var(--text-sm);
+  color:var(--color-text-muted); overflow-wrap:anywhere; }
+
+.search-results__no-results { padding-top:var(--sp-8); padding-bottom:var(--sp-8); }
+@media (min-width:1024px){ .search-results__no-results { padding-top:var(--sp-12); padding-bottom:var(--sp-12); } }
+.search-results__no-results h2, .search-results__no-results ul { margin-bottom:var(--sp-6); }
+@media (min-width:1024px){ .search-results__no-results h2, .search-results__no-results ul { margin-bottom:var(--sp-8); } }
+.search-results__no-results h3 { margin-top:var(--sp-8); }
+/* Das Hinweisband steht bewusst FÜR SICH, statt der Tippliste hinterherzulaufen. */
+.search-results .notification { margin-top:var(--sp-16); margin-bottom:var(--sp-16); }
+
+/* Aktive Filterpillen — eine Portal-Zusammensetzung aus CD-Bauteilen. CD liefert
+   badge-filter, aber das ist ein Filter-WÄHLER; eine entfernbare Pille hat es nicht. */
+.active-filters { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2); padding-top:var(--sp-4); }
+@media (min-width:640px){ .active-filters { padding-top:var(--sp-6); } }
+.active-filter { text-decoration:none; }
+.active-filter .tag-item__inner { background:var(--color-secondary-100); }
+.active-filter:hover .tag-item__inner { background:var(--color-secondary-200); }
+
+/* ========================================== css/sections/catbar.css ======= */
+.catbar { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
+  margin-top:var(--sp-5); padding-bottom:var(--sp-2);
+  border-bottom:var(--stroke-1) solid var(--color-secondary-300); font-size:var(--text-sm); }
+.catbar--flush { margin-top:0; }
+.catbar__count { color:var(--color-text-muted); white-space:nowrap; }
+/* CD hält die Trefferzahl regulär (search.postcss:215-217); nur ihre Tinte
+   bleibt dunkler als der Zusatz. */
+.catbar__count strong { font-weight:var(--fw-regular); color:var(--color-text); }
+.catbar--no-search .catbar__count { flex:1 1 auto; }
+.catbar__controls { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-1);
+  margin-left:auto; min-width:0; max-width:100%; }
+.catbar__sort { position:relative; min-width:0; max-width:100%; }
+.catbar__sort select { max-width:100%; text-overflow:ellipsis; text-align:right;
+  min-height:var(--target-min); padding-left:var(--sp-4); padding-right:var(--sp-7);
+  font-size:var(--text-sm); color:var(--color-text); }
+@media (max-width:767.98px){ .catbar__sort select { text-align:left; } }
+.catbar__sort select option { padding-right:var(--sp-3); color:var(--color-text); background:var(--color-bg); }
+.catbar__sort .select__icon { color:var(--color-text-muted); }
+.catbar__filter { min-height:var(--target-min); white-space:nowrap; }
+.catbar__fcount { margin-left:var(--sp-1); font-weight:var(--fw-bold); }
+/* Auf den Knopfkontext beschränkt; sonst gewinnt `.btn .icon` (0,2,0) und macht
+   den 1.4em-Pfeil neben der Beschriftung deutlich zu gross. */
+.btn .catbar__chev, .catbar__chev { width:1em; height:1em; transition:transform var(--duration); }
+.catbar__filter[aria-expanded="true"] .catbar__chev { transform:rotate(180deg); }
+.catbar .view-switch__btn { min-height:var(--target-min); }
+/* MEHRSPALTIG, KEIN GRID: ein Grid setzt jede Gruppe in die nächste Zelle, also
+   bestimmt die höchste Gruppe ihre ganze Zeile. Mehrspaltensatz FLIESST. */
+.catbar__panel { display:block; columns:1; column-gap:var(--sp-3);
+  padding:var(--sp-4) var(--sp-5); margin:var(--sp-3) 0 var(--sp-6);
+  background:var(--surface-bg-muted); border:var(--stroke-1) solid var(--surface-border);
+  border-radius:var(--surface-radius); box-shadow:var(--surface-elevation); }
+@media (min-width:768px){ .catbar__panel { columns:2; } }
+@media (min-width:1024px){ .catbar__panel { columns:3; column-gap:var(--sp-4); } }
+.catbar__panel .filter-group { margin:0 0 var(--sp-3); break-inside:avoid; }
+@media (min-width:1024px){ .catbar__panel .filter-group { margin-bottom:var(--sp-4); } }
+.catbar__panel .filter-group:last-of-type { margin-bottom:0; }
+.catbar__panel-actions { column-span:all; display:flex; justify-content:flex-end;
+  margin-top:var(--sp-3); padding-top:var(--sp-3);
+  border-top:var(--stroke-1) solid var(--color-secondary-200); }
+@media (max-width:767.98px){
+  .catbar__count { flex:0 1 auto; }
+  .catbar__controls { flex:1 1 100%; margin-left:0; justify-content:space-between; }
+  .catbar__sort { flex:1 1 8rem; }
+  .catbar__sort select { width:100%; }
+  .catbar__controls .view-switch { margin-left:auto; }
 }
-@media (forced-colors:active) {
-  .listbox__option.is-active { outline:var(--stroke-2) solid Highlight;
-    outline-offset:calc(-1 * var(--stroke-2)); }
+@media (max-width:479.98px){
+  .catbar__count { flex:1 1 100%; }
+  .catbar__controls .view-switch { border-left:0; padding-left:0; }
 }
+
+/* ========================================== css/navigations/tabs.css ====== */
+.pagination-wrap { display:flex; padding-block:var(--sp-6); }
+@media (min-width:1024px){ .pagination-wrap { padding-block:var(--sp-7); } }
+.pagination { display:flex; align-items:stretch; gap:var(--sp-3); flex-wrap:wrap; list-style:none; }
+/* CD gibt dem Seitenfeld die KNOPF-Rampe (pagination.postcss:8-11). */
+.pagination__input { width:var(--sp-12); min-height:var(--control-h); text-align:center; padding:var(--sp-2); }
+.pagination__text { display:flex; align-items:center; white-space:nowrap; }
+.pagination__items { display:flex; align-items:center; gap:var(--sp-1); list-style:none;
+  flex-wrap:wrap; white-space:nowrap; height:100%; }
+@media (min-width:1024px){ .pagination__items { gap:var(--sp-2); } }
+
+/* ========================================== css/components/table.css ===== */
+.table-wrapper { position:relative; overflow-x:auto; }
+.table { width:100%; border-collapse:collapse; background:var(--surface-bg);
+  box-shadow:var(--shadow-md); border:var(--stroke-1) solid var(--color-border); }
+.table--caption caption { position:static; width:auto; height:auto; clip:auto; white-space:pre-line;
+  display:table-caption; caption-side:bottom; text-align:left; padding-top:var(--sp-2);
+  font-size:var(--text-xs); color:var(--color-text-muted); }
+.table thead th { background:var(--color-secondary-50); text-align:left;
+  padding:var(--sp-4) var(--sp-6); font-size:var(--text-sm); text-transform:uppercase;
+  color:var(--color-gray-700); border-bottom:var(--stroke-1) solid var(--color-border-strong);
+  vertical-align:top; }
+.table td, .table tbody th { padding:var(--sp-4) var(--sp-6);
+  border-bottom:var(--stroke-1) solid var(--color-border-strong);
+  vertical-align:top; font-size:var(--text-base); color:var(--color-gray-600); }
+/* EIN Schriftgewicht pro Zeile. Der erste Wert bleibt semantisch
+   `<th scope="row">` — er ist nur nicht mehr fett: in Listenansichten liess
+   Fettdruck jede Tabelle gewertet aussehen. */
+.table tbody th { text-align:left; font-weight:var(--fw-regular); color:var(--color-gray-600); }
+.table tbody tr:last-child td, .table tbody tr:last-child th { border-bottom:0; }
+.table--zebra tbody tr:nth-child(even) { background:var(--color-secondary-50); }
+.bg--secondary-50 .table thead th { background:var(--color-secondary-100); }
+
+/* ==================================== css/navigations/header.css ========== */
+.site-header { position:relative; z-index:var(--header-z); }
+/* Prototyp-Chip: BEWUSST nicht hautgefärbt — unter der Intranet-Haut ist
+   primary blau und verschwände auf dem blauen Band. Weiss auf #d8232a = 5.01:1. */
+.demo-chip { display:inline-flex; align-items:center; padding:.219em 1em;
+  font-size:var(--text-xs); font-weight:var(--fw-bold);
+  background:var(--color-federal-red); color:var(--color-text-negative);
+  border-radius:var(--radius-full); white-space:nowrap; }
+
+.top-bar { background:var(--color-secondary-600); color:var(--color-text-negative); font-size:var(--fs-sm); }
+@media (min-width:1544px){ .top-bar { font-size:var(--fs-base); } }
+.top-bar .container--flex { min-height:var(--target-min); align-items:center; gap:var(--sp-4); }
+.top-bar__btn { display:inline-flex; align-items:center; gap:var(--sp-2);
+  min-height:var(--target-min); min-width:var(--target-min); background:none; border:0;
+  color:var(--color-text-negative); cursor:pointer; font:inherit;
+  padding:var(--sp-1) 0 var(--sp-1) var(--sp-4); margin-left:calc(-1 * var(--sp-4));
+  text-decoration:none; transition:color var(--duration-fast); }
+.top-bar__btn:hover, .top-bar__btn:focus { color:var(--color-gray-300); text-decoration:none; }
+/* Die Beschriftung bleibt bei JEDER Breite sichtbar: unter 640 wird sie eine
+   min-content-Spalte und bricht um, statt zu verschwinden. */
+.top-bar__btn > span:not(.icon) { width:min-content; text-align:left; }
+@media (min-width:640px){ .top-bar__btn > span:not(.icon) { width:auto; } }
+.top-bar__right { display:flex; align-items:stretch; }
+.top-bar__right > .demo-chip { align-self:center; margin-right:var(--sp-2); }
+.top-bar-navigation { display:none; height:100%; }
+.top-bar-navigation ul { list-style:none; display:flex; }
+.top-bar-navigation a { display:flex; align-items:center; height:100%; min-height:var(--target-min);
+  padding-inline:var(--sp-1); color:var(--color-text-negative); text-decoration:none;
+  transition:color var(--duration-fast); }
+.top-bar-navigation a:hover, .top-bar-navigation a:focus { color:var(--color-gray-300); text-decoration:none; }
+@media (min-width:1024px){
+  .top-bar-navigation { display:flex; }
+  .top-bar-navigation a { padding-inline:var(--sp-2); }
+  .top-bar-navigation a > span:not(.icon) { padding-left:var(--sp-4); padding-right:var(--sp-2); }
+}
+
+/* Sprachwahl (language-switcher.postcss:5-59). Sie steht hier BEWUSST, obwohl
+   sie nichts tut: Mehrsprachigkeit ist die grösste offene Frage an dieser Suche.
+   Der Index faltet und stemmt deutsch (search-engine.js SUFFIXES, COLLOQUIAL),
+   `core.t()` nimmt aus mehrsprachigen Feldern die deutsche Fassung, und die
+   Stoppwortliste in js/query.js ist eine deutsche. Ein leeres Bedienelement an
+   der richtigen Stelle hält die Frage sichtbar; ohne es sähe die Studie so aus,
+   als gäbe es sie nicht. Deaktiviert nach CDs eigener Rezeptur — nur opacity-40
+   (select.postcss:28-35), NICHT die graue Fläche der generischen Feldregeln,
+   die auf dem blauen Band unlesbar wäre. */
+.language-switcher { display:flex; align-self:stretch; height:auto; cursor:pointer; }
+.language-switcher .select { display:flex; align-items:stretch; position:relative; height:auto; width:auto; }
+.language-switcher select { appearance:none; -webkit-appearance:none; height:100%;
+  min-height:var(--control-h); width:3.5em; padding:var(--sp-2) var(--sp-6) var(--sp-2) var(--sp-1);
+  background:transparent; border:var(--stroke-1) solid transparent; box-shadow:none;
+  color:var(--color-text-negative); font:inherit; font-size:var(--text-sm);
+  cursor:pointer; transition:color var(--duration-fast); }
+@media (min-width:1024px){ .language-switcher select { width:4.5em; padding-left:var(--sp-4); } }
+.language-switcher select option { color:var(--color-text); background:var(--color-bg); }
+/* pointer-events bleiben AN, sonst verschluckt das deaktivierte Feld seinen
+   eigenen title — und der ist hier die ganze Erklärung. */
+.language-switcher select:disabled { color:var(--color-text-negative); opacity:.4;
+  pointer-events:auto; cursor:default; }
+.language-switcher .select__icon { position:absolute; top:0; right:0; width:var(--sp-6);
+  height:100%; display:flex; align-items:center; justify-content:center;
+  border-left:0; background:transparent; color:var(--color-text-negative);
+  pointer-events:none; }
+.language-switcher select:disabled + .select__icon { opacity:.4; }
+
+.top-header { background:var(--color-bg); border-bottom:var(--stroke-1) solid var(--color-border);
+  position:relative; padding:var(--sp-3) 0; font-size:var(--fs-sm); }
+@media (min-width:768px){ .top-header { padding:var(--sp-4) 0; } }
+@media (min-width:1024px){ .top-header { padding:var(--sp-6) 0; } }
+@media (min-width:1280px){ .top-header { padding:var(--sp-8) 0; } }
+@media (min-width:1920px){ .top-header { padding:var(--sp-10) 0; font-size:var(--fs-base); } }
+.top-header .container--flex { min-height:0; align-items:center; gap:var(--sp-4); }
+.logo { display:flex; align-items:center; flex-wrap:nowrap; text-decoration:none; }
+@media (min-width:768px){ .logo { align-items:flex-start; } }
+.logo__flag { flex:none; display:block; width:30px; height:33px; }
+@media (min-width:1024px){ .logo__flag { width:32px; height:34px; } }
+.logo__name { flex:none; display:none; width:174px; height:50px; overflow:visible; }
+@media (min-width:1280px){ .logo__name { display:block; } }
+.logo__separator { flex:none; width:var(--stroke-1); height:var(--sp-10);
+  background:var(--color-border-strong); margin-inline:var(--sp-2); }
+@media (min-width:640px){ .logo__separator { margin-inline:var(--sp-4); } }
+@media (min-width:768px){ .logo__separator { height:var(--sp-14); } }
+@media (min-width:1024px){ .logo__separator { margin-inline:var(--sp-6); } }
+.logo-title__container { display:flex; flex-direction:column; min-width:0; }
+.logo__accronym { font-weight:var(--fw-bold); line-height:var(--lh-snug); color:var(--color-text); }
+@media (min-width:480px){
+  .logo__accronym { display:none; }
+  /* Der negative Rand ist CDs optische Korrektur gegen die Oberkante der Fahne
+     (logo.postcss:81), sichtbar ab md, wo .logo auf flex-start ausrichtet. */
+  .logo__title { position:static; width:auto; height:auto; margin:-.16rem 0 0; overflow:visible; clip:auto;
+    font-size:var(--fs-xs); font-weight:var(--fw-bold); color:var(--color-text); line-height:1.375; }
+}
+@media (min-width:640px){ .logo__title { font-size:var(--fs-sm); } }
+@media (min-width:768px){ .logo__title { white-space:nowrap; } }
+@media (min-width:1280px){ .logo__title { font-size:var(--fs-base); } }
+.logo__title span { display:block; font-weight:var(--fw-regular); color:var(--color-text-muted); }
+/* Die Intranet-Haut stempelt ihre eigene Pille hinter den Titel. */
+.body--intranet .logo__title::after, .body--intranet .logo__accronym::after {
+  content:'Intranet'; display:block; width:fit-content; margin-top:var(--sp-1);
+  margin-left:calc(-1 * var(--stroke-1)); padding:.219em 1em; border-radius:var(--radius-full);
+  background:var(--color-info-bg); color:var(--color-info-text);
+  font-size:var(--fs-xs); font-weight:var(--fw-regular); line-height:var(--line-5); }
+@media (min-width:768px){ .body--intranet .logo__title::after { font-size:var(--fs-sm); } }
+@media (min-width:1024px){ .body--intranet .logo__title::after { font-size:var(--fs-base); line-height:var(--line-6); } }
+
+.top-header__mobile-title { position:relative; overflow:hidden;
+  background:var(--color-secondary-100); color:var(--color-text-muted);
+  font-size:var(--fs-xs); line-height:1.4; }
+.top-header__mobile-title .container { padding-block:var(--sp-2); }
+@media (min-width:480px){ .top-header__mobile-title { display:none; } }
+
+.top-header__right { display:flex; align-items:center; }
+@media (min-width:1024px){ .top-header__right { flex-direction:column; align-items:flex-end; margin-right:calc(-1 * var(--sp-3)); } }
+.top-header__container-flex { display:flex; align-items:center; }
+.meta-navigation a, .meta-navigation__auth { min-height:var(--control-h); }
+.meta-navigation ul { list-style:none; display:flex; align-items:center; }
+.meta-navigation a { display:flex; align-items:center; padding-inline:var(--sp-3);
+  color:var(--color-text); text-decoration:none; }
+.meta-navigation a:hover { color:var(--color-primary-600); text-decoration:none; }
+.meta-navigation--desktop { display:none; }
+@media (min-width:1024px){ .meta-navigation--desktop { display:flex; margin-bottom:var(--sp-3); } }
+@media (min-width:1280px){ .meta-navigation--desktop { margin-bottom:var(--sp-4); } }
+.meta-navigation__auth { display:flex; align-items:center; gap:var(--sp-2);
+  background:none; border:0; font:inherit; color:var(--color-text);
+  padding-inline:var(--sp-3); cursor:pointer; }
+.meta-navigation__auth:hover { color:var(--color-primary-600); }
+
+/* Kopfsuche: dasselbe Ziel wie die Hero-Suche, ohne Vorschläge — genau wie
+   heute im Portal (js/ui/shell/header.js). Die Studie zeigt sie IMMER offen,
+   statt CDs Aufklapp-Choreografie nachzubauen: sie ist hier ein zweiter
+   Eingang zur selben Route, kein Gegenstand der Studie. */
+.search--main { position:relative; display:flex; align-items:center; justify-content:flex-end;
+  min-height:var(--target-min); }
+.search--main .search__group { display:flex; align-items:stretch; position:relative; }
+.search--main .search__form { display:flex; align-items:stretch; position:relative; width:16rem; max-width:50vw; }
+.search--main .search__form input { width:100%; min-height:var(--input-h);
+  padding:var(--sp-2-5) var(--sp-12) var(--sp-2-5) var(--sp-4);
+  border:var(--stroke-1) solid var(--color-border-input); border-radius:var(--radius-xs);
+  background:var(--color-bg); box-shadow:none; font-size:var(--text-sm); }
+.search--main .search__submit { position:absolute; right:0; top:0; bottom:0; width:var(--sp-12);
+  background:none; border:0; cursor:pointer; color:var(--color-secondary-700);
+  display:inline-flex; align-items:center; justify-content:center; }
+.search--main .search__submit:hover { color:var(--color-primary-600); }
+.search--main .search__submit .icon { width:var(--sp-6); height:var(--sp-6); }
+@media (max-width:1023.98px){ .search--main { display:none; } }
+
+.burger { display:flex; align-items:center; justify-content:center;
+  min-height:var(--target-min); min-width:var(--target-min);
+  padding:0 var(--sp-4); margin-right:calc(-1 * var(--sp-4));
+  background:none; border:0; cursor:pointer; }
+@media (min-width:1024px){ .burger { display:none; } }
+.burger__icon { display:block; position:relative; width:var(--sp-7); height:var(--sp-5);
+  color:var(--color-text-500); transition:color var(--duration-fast); }
+.burger:hover .burger__icon { color:var(--color-primary-600); }
+.burger__bar { display:block; position:absolute; width:100%; height:100%; color:inherit; }
+.burger__bar::after { content:""; display:block; position:absolute; width:100%; height:var(--stroke-2); border-color:currentColor; }
+.burger__bar:nth-of-type(1)::after { top:calc(-1 * var(--stroke-1)); border-top:var(--stroke-2) solid; }
+.burger__bar:nth-of-type(2) { top:50%; height:var(--stroke-2); background-color:currentColor; transform:translateY(-50%); }
+.burger__bar:nth-of-type(3)::after { bottom:calc(-1 * var(--stroke-1)); border-bottom:var(--stroke-2) solid; }
+
+/* ==================================== css/navigations/drawer.css ========== */
+.desktop-menu { background:var(--color-bg); border-bottom:var(--stroke-1) solid var(--color-border);
+  position:relative; z-index:var(--z-nav); }
+.desktop-menu .main-navigation { border-bottom:0; }
+.main-navigation { width:100%; background:var(--color-bg);
+  border-bottom:var(--stroke-1) solid var(--color-border); position:relative; }
+/* ABWEICHUNG von CD, wie im Portal: CD löst überzählige L1-Einträge mit einem
+   «Mehr»-Ausklapper, nie mit einer zweiten Zeile. Hier dürfen die Einträge
+   umbrechen, mit demselben dichteren 0.75rem-Rhythmus. */
+.main-navigation > ul { list-style:none; display:flex; flex-wrap:wrap;
+  margin-left:calc(-1 * var(--sp-3)); min-height:var(--sp-14); }
+@media (max-width:1023.98px){ .desktop-menu { display:none; } }
+@media (min-width:1280px){ .main-navigation > ul { min-height:var(--sp-16); } }
+.main-navigation > ul > li > a {
+  position:relative; display:flex; align-items:center; gap:var(--sp-2);
+  color:var(--color-text); height:100%; min-height:var(--sp-14);
+  padding:var(--sp-4) var(--sp-3); font:inherit; font-size:var(--text-base);
+  line-height:var(--lh-tight); white-space:nowrap; background:none; border:0;
+  cursor:pointer; text-decoration:none; transition:color var(--duration-fast); }
+@media (min-width:1280px){ .main-navigation > ul > li > a { min-height:var(--sp-16); } }
+.main-navigation > ul > li > a::after { content:""; position:absolute;
+  left:var(--sp-3); right:var(--sp-3); bottom:0; height:var(--stroke-3);
+  background:transparent; transition:background var(--duration-fast); }
+.main-navigation > ul > li > a:hover { color:var(--color-primary-600); text-decoration:none; }
+.main-navigation > ul > li > a:hover::after,
+.main-navigation > ul > li > a.active::after { background:var(--color-primary-500); }
+/* CD markiert den aktiven L1-Eintrag NUR mit der Unterkante, nicht mit Fettdruck. */
+.main-navigation > ul > li > a:focus-visible { outline-offset:calc(-1 * var(--stroke-2)); }
+
+/* ============================================ css/layouts/shell.css ======= */
+.site-main { min-height:50vh; flex:1 0 auto; position:relative; z-index:var(--z-content); }
+/* ABWEICHUNG vom Portal, und zwar eine nötige: dort trägt der Fusszeilenbereich
+   `z-index:var(--z-footer)` (20), damit der «Nach oben»-Knopf über dem Inhalt
+   schwebt. Diese Studie baut diesen Knopf nicht — und weil .site-main mit
+   `z-index:var(--z-content)` (10) einen eigenen Stapelkontext aufmacht, kann das
+   Vorschlagsfeld darin die 20 der Fusszeile NICHT überschreiten, egal wie hoch
+   sein eigener z-index ist. Gemessen: auf der kurzen Startseite der Studie
+   schnitt das blaue Fussband die Vorschlagsliste ab der vierten Zeile ab.
+   Im Portal fällt das nicht auf, weil dessen Startseite lang genug ist, dass die
+   Liste die Fusszeile nie erreicht — der Fehler ist dort latent, nicht abwesend. */
+.site-footer { position:relative; }
+.footer-information { display:flex; flex-direction:column; color:var(--color-text-negative);
+  padding-block:var(--section-py); }
+@media (min-width:1024px){ .footer-information { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--sp-16); } }
+@media (min-width:1280px){ .footer-information { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media (min-width:1280px){ .footer-information__entry--big { grid-column:span 2; } }
+.footer-information__entry { color:var(--color-text-negative); margin-bottom:var(--sp-16); }
+.footer-information__entry:last-child { margin-bottom:0; }
+@media (min-width:1024px){ .footer-information__entry { margin-bottom:0; } }
+.footer-information__entry h3 { font-size:var(--text-xl); color:var(--color-text-negative); margin-bottom:var(--sp-6); }
+@media (min-width:1024px){ .footer-information__entry h3 { margin-bottom:var(--sp-10); } }
+.footer-information__entry p { margin-bottom:var(--sp-3); }
+.footer-information__entry p:last-child { margin-bottom:0; }
+/* Fussnotenstimme auf dem dunklen Band: eine Stufe kleiner, eine Spur leiser.
+   secondary-100, nicht -200 — -200 misst auf dem Intranet-Band nur 4.16:1. */
+.footer-information__note { font-size:var(--text-sm); color:var(--color-secondary-100); }
+.footer__link { display:inline-flex; align-items:center; padding-block:var(--sp-2);
+  color:var(--color-text-negative); cursor:pointer; text-decoration:none; }
+.footer__link:hover { color:var(--color-gray-300); text-decoration:none; }
+.footer-information__icon { display:inline-block; margin-right:var(--sp-1); width:1.4em; height:1.4em; flex:none; }
+.footer-information__links { display:flex; flex-direction:column; margin-top:calc(-1 * var(--sp-4)); }
+@media (min-width:640px){ .footer-information__links { flex-direction:row; gap:var(--sp-16); } }
+@media (min-width:1024px){ .footer-information__links { flex-direction:column; gap:0; } }
+.footer-information__links-column { flex:1; }
+.footer-information__links .footer__link { width:100%; display:flex; justify-content:space-between;
+  padding:var(--sp-4) var(--sp-2); border-bottom:var(--stroke-1) solid var(--color-secondary-300); }
+.footer-information__links .footer__link:hover { background:var(--color-secondary-700); color:var(--color-text-negative); }
+.footer-information__links .footer-information__icon { height:var(--sp-6); }
+.footer-information__link--icon-right { flex-direction:row-reverse; }
+.footer-information__link--icon-right .footer-information__icon { position:relative; left:.1em; margin-left:.2em; margin-right:0; }
+.footer-navigation { list-style:none; display:flex; flex-wrap:wrap; padding-block:var(--sp-3);
+  gap:var(--sp-2); font-size:var(--text-xs); color:var(--color-secondary-100); }
+@media (min-width:640px){ .footer-navigation { gap:var(--sp-4); } }
+
+/* Hero (hero.postcss:5-90) */
+.hero { padding-top:var(--section-pt); padding-bottom:var(--section-py); background:none; border-bottom:0; }
+.hero__content { display:flex; flex-direction:column; gap:var(--sp-6); max-width:60rem; }
+@media (min-width:1024px){ .hero__content { gap:var(--sp-8); } }
+.hero:not(.hero--main-image) .hero__content { max-width:42rem; }
+.hero__title { font-size:var(--text-3xl); font-weight:var(--fw-bold); line-height:var(--lh-tight); margin:0; }
+.hero__description { font-size:var(--text-lg); line-height:var(--lh-snug); color:var(--color-text-muted); margin:0; }
+.hero__cta { display:flex; flex-wrap:wrap; gap:var(--sp-4); }
+/* Der CTA-Platz des Hero, hier von Suchzeile PLUS Quellenauswahl besetzt. Er
+   begrenzt beide auf dieselbe Breite wie .home-search und fasst sie zu einem
+   Kind von .hero__content zusammen. */
+.hero__search { max-width:40rem; }
+@media (min-width:768px){ .hero__cta { gap:var(--sp-5); } }
+@media (min-width:1280px){ .hero__cta { gap:var(--sp-6); } }
+.hero--main-image { display:grid; gap:var(--gap-responsive); }
+.hero--main-image .hero__content { max-width:none; }
+@media (min-width:768px){
+  .hero--main-image { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:center; }
+  .hero--main-image .hero__content { justify-content:center; }
+}
+.hero__image { display:block; position:relative; overflow:hidden; width:100%; }
+.hero__figure { margin:0; }
+.hero__image figure > img { display:block; width:100%; height:auto; background:var(--color-secondary-50); }
+
+/* ============================================== css/utilities.css ========= */
+/* `nowrap` schlägt das flex-wrap:wrap der .hero__cta-Basis: das Feld hat
+   width:100% und schöbe den Knopf sonst in eine zweite Zeile. */
+.home-search { display:flex; flex-wrap:nowrap; gap:var(--sp-2); align-items:stretch; max-width:40rem; }
+/* Das Feld bekommt eine eigene Box, damit das Vorschlagsfeld an IHM hängt und
+   nicht an der Zeile aus Feld PLUS Knopf. */
+.home-search__field { flex:1 1 auto; min-width:0; display:flex; }
+.home-search input { flex:1 1 auto; min-width:0; min-height:var(--input-h); font-size:var(--text-base); }
+/* Der Knopf darf NICHT schrumpfen: .btn__text trägt CDs overflow-wrap:anywhere,
+   was seine min-content-Breite auf ein Zeichen senkt. */
+.home-search .btn { flex:0 0 auto; }
+@media (max-width:639.98px){ .home-search { flex-direction:column; } }

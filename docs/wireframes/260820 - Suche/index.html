@@ -1,29 +1,46 @@
-<!DOCTYPE html>
-<html lang="de">
+<!doctype html>
+<html lang="de-CH">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Suche — arbeitender Prototyp</title>
+<title>Suche — arbeitende Studie</title>
 <!--
-  ARBEITENDER PROTOTYP der Portalsuche: Hero-Suche, Trefferseite, Nutzerfluss.
+  ARBEITENDE STUDIE der Portalsuche: Hero-Suche, Vorschlagsfeld, Trefferseite.
 
-  Er lädt die ECHTEN Daten aus data/*.json und sucht mit der ECHTEN Suchmaschine
-  des Portals (js/search/search-engine.js, unverändert importiert). Was hier
-  gefunden wird, findet das Portal auch.
+  ZWEI ZUSTÄNDE, und der erste ist der wichtigere.
 
-  DIE ANTWORT IST SIMULIERT, NICHT GENERIERT. Es gibt keinen Modellaufruf und
+  ALLE SCHALTER AUS = DAS PORTAL. Dann ist diese Seite eine Nachbildung von
+  #/search und der Startseite: derselbe Index (elf Inhaltsarten, inklusive der
+  113 Unterlagen aus Wissen und Hilfsmitteln), dieselbe Suchmaschine
+  (js/search/search-engine.js, UNVERÄNDERT importiert), dasselbe Vorschlagsfeld
+  (flach, ab dem zweiten Zeichen, vier Inhaltsarten, höchstens sieben Zeilen),
+  dieselbe Trefferseite (Sortierung, Facetten, Ansichtswechsel, zehn je Seite).
+  Was hier gefunden wird, findet das Portal auch — das ist die Bedingung dafür,
+  dass eine Messung hier etwas über das Portal aussagt.
+
+  SCHALTER AN = DER VORSCHLAG. Vier Dinge, einzeln zuschaltbar, damit sichtbar
+  bleibt, welches davon gewirkt hat:
+    · Frageauflösung  — Stoppwörter raus, Rest an die unveränderte Maschine
+    · Gruppierte Vorschläge — Abschnittsköpfe je Inhaltsart statt flacher Liste
+    · «… als Frage stellen» — ein Weg dort, wo das Feld heute still zugeht
+    · KI-Antworten — ein simulierter Antwortblock über der Trefferliste
+
+  DIE KI-ANTWORT IST SIMULIERT, NICHT GENERIERT. Es gibt keinen Modellaufruf und
   keinen Schlüssel — eine statische Seite kann beides nicht haben. js/answer.js
   setzt die Antwort deterministisch aus den Beschreibungstexten der wirklich
   gefundenen Datensätze zusammen. Das ist genau die Eigenschaft, die der
   Renderer später erzwingen muss: jeder Satz stammt aus einem Datensatz und
   trägt dessen Beleg. Es beweist die FORM, nicht die Antwortqualität.
 
-  Die Frageauflösung in js/query.js ist ebenfalls deterministisch: Stoppwörter
-  raus, Rest an die bestehende Suchmaschine. Sie steht für den Schritt, den
-  später ein Modell übernimmt — und zeigt, dass schon dieser einfache Schritt
-  aus 0 Treffern brauchbare macht.
+  EIGENSTÄNDIG. Diese Studie ändert NICHTS am Portal. Token und CD-Bauteile in
+  css/ sind Kopien der Portal-Dateien (jede Regel nennt ihre Quelle), der
+  Suchindex in js/data.js spiegelt buildIndex() aus js/pages/search.js. Nur
+  ZWEI Module werden gelesen statt kopiert: die Suchmaschine — sie ist der
+  Gegenstand der Studie und darf keine Zweitfassung haben — und
+  js/knowledge-content.js, weil das der Bestand selbst ist und eine Kopie nach
+  der ersten Redaktion falsch wäre.
 
-  BEDIENUNG: muss ausgeliefert werden, nicht per Doppelklick geöffnet.
+  BEDIENUNG: muss AUSGELIEFERT werden, nicht per Doppelklick geöffnet.
   ES-Module und fetch() sind über file:// gesperrt.
 
       node scripts/serve.mjs
@@ -31,71 +48,185 @@
 
   Siehe README.md.
 -->
+<link rel="preload" href="../../../assets/fonts/NotoSans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<!-- Ausdrückliche Kaskadenreihenfolge, wie index.html des Portals sie setzt:
+     Token → CD-Bauteile → Studie. Die Studie steht zuletzt und darf deshalb
+     ergänzen, ohne mit !important gegen das CD anzukämpfen. -->
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/cd.css">
-<link rel="stylesheet" href="css/suche.css">
+<link rel="stylesheet" href="css/study.css">
 </head>
 <body class="body--intranet">
 
-  <!-- Studien-Leiste. Gehört NICHT zum Entwurf, sondern erklärt ihn. -->
-  <div class="mock-bar">
-    <div class="container mock-bar__inner">
-      <span class="mock-bar__title">Prototyp «Suche»</span>
-      <span class="mock-bar__note">Echte Daten · echte Suchmaschine · <strong>simulierte</strong> Antwort</span>
-      <label class="mock-toggle">
-        <input type="checkbox" id="ai-toggle" checked>
-        <span>Antworten anzeigen</span>
-      </label>
+<!-- Der Sprunglink steht VOR der Studien-Leiste. Sonst führt der erste Tabstopp
+     durch sieben Studienschalter, bevor «Zum Inhalt springen» erreichbar ist —
+     und ausgerechnet das Werkzeug stünde dem Inhalt im Weg. -->
+<a class="skip-to-content" href="#main-content">Zum Inhalt springen</a>
+
+<!-- STUDIEN-LEISTE. Gehört NICHT zum Entwurf: sie erklärt ihn und schaltet ihn.
+     Sie sitzt ÜBER dem Portalchrom und sieht bewusst nicht danach aus — wer sie
+     für ein Bauteil hält, hat sie missverstanden. js/main.js füllt sie. -->
+<div class="study-bar" id="study-bar"></div>
+
+<header id="main-header" class="site-header">
+  <!-- Bundesleiste (CD top-bar.postcss + top-bar-navigation.postcss). -->
+  <div class="top-bar">
+    <div class="container container--flex">
+      <a class="top-bar__btn" href="https://www.admin.ch/de/bundesverwaltung" target="_blank" rel="noopener noreferrer external">
+        <span>Alle Schweizer Bundesbehörden</span>
+        <span class="icon icon--md" style="-webkit-mask-image:url('../../../assets/icons/External.svg');mask-image:url('../../../assets/icons/External.svg')" aria-hidden="true"></span>
+      </a>
+      <div class="top-bar__right">
+        <span class="demo-chip">Prototyp</span>
+        <nav class="top-bar-navigation" aria-label="Bundesangebote">
+          <ul><li><a href="https://www.egate.admin.ch/" target="_blank" rel="noopener noreferrer external"><span>eGate</span>
+            <span class="icon" style="-webkit-mask-image:url('../../../assets/icons/External.svg');mask-image:url('../../../assets/icons/External.svg')" aria-hidden="true"></span></a></li></ul>
+        </nav>
+        <!-- Sprachwahl. Sie funktioniert NICHT und soll es auch nicht: sie steht
+             da, damit die offene Frage sichtbar bleibt. Die Suche ist heute
+             durchgehend deutsch gebaut — Faltung und Stemming in
+             js/search/search-engine.js, die Stoppwörter in js/query.js, und
+             core.t() nimmt aus mehrsprachigen Feldern immer die deutsche
+             Fassung. Was Mehrsprachigkeit für Index, Vorschläge und
+             Frageauflösung bedeutet, ist ungeklärt; ein leeres Bedienelement an
+             der richtigen Stelle erinnert bei jedem Entscheid daran. -->
+        <div class="language-switcher">
+          <label class="sr-only" for="lang">Sprache: Deutsch — weitere Sprachen sind in dieser Studie nicht verfügbar</label>
+          <div class="select select--bare">
+            <select id="lang" disabled title="In dieser Studie ist nur Deutsch verfügbar. Mehrsprachigkeit ist für die Suche noch nicht entschieden.">
+              <option>DE</option>
+            </select>
+            <div class="select__icon"><svg role="presentation" aria-hidden="true" viewBox="0 0 24 24"><path d="m5.706 10.015 6.669 3.85 6.669-3.85.375.649-7.044 4.067-7.044-4.067z"/></svg></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <header class="top-header">
-    <div class="container top-header__inner">
+  <!-- CD verbirgt den langen Amtsnamen unter 480 (logo.postcss:76) und gleicht
+       das mit diesem getönten Streifen aus. Ohne ihn bestünde die sichtbare
+       Marke bei 320/390 nur aus «BBL» plus Intranet-Pille und nennte weder Amt
+       noch Produkt. aria-hidden, weil .logo__title denselben Text schon trägt. -->
+  <div class="top-header__mobile-title" aria-hidden="true">
+    <div class="container">Bundesamt für Bauten und Logistik — Kundenportal</div>
+  </div>
+
+  <div class="top-header">
+    <div class="container container--flex">
       <a class="logo" href="#/">
-        <span class="logo__mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="26" height="26"><rect width="24" height="24" fill="#d8232a"/><path fill="#fff" d="M10 5h4v5h5v4h-5v5h-4v-5H5v-4h5z"/></svg>
+        <img class="logo__flag" src="../../../assets/swiss-logo-flag.svg" alt="" aria-hidden="true">
+        <img class="logo__name" src="../../../assets/swiss-logo-name.svg" alt="" aria-hidden="true">
+        <span class="logo__separator" aria-hidden="true"></span>
+        <span class="logo-title__container">
+          <span class="logo__accronym" aria-hidden="true">BBL</span>
+          <span class="logo__title">Bundesamt für Bauten und Logistik <span>Kundenportal</span></span>
         </span>
-        <span class="logo__text">
-          <strong>Bundesamt für Bauten und Logistik</strong>
-          <span>Kundenportal</span>
-        </span>
+        <span class="sr-only"> — Startseite</span>
       </a>
-      <!-- Globale Suche: dasselbe Ziel wie die Hero-Suche, ohne Vorschläge —
-           genau wie heute (js/ui/shell/header.js). -->
-      <form class="header-search" role="search" id="header-search-form">
-        <label class="sr-only" for="global-search">Suche auf der Plattform</label>
-        <input type="search" id="global-search" placeholder="Suchen…" autocomplete="off">
-        <button class="header-search__submit" type="submit" aria-label="Suchen">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13.3 12.8c1.9-2.2 1.7-5.6-.5-7.5s-5.6-1.7-7.5.5-1.7 5.6.5 7.5c2 1.7 4.9 1.7 6.9 0l6 6 .5-.5zm-4 1c-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5 4.5 2 4.5 4.5-2 4.5-4.5 4.5z"/></svg>
-        </button>
-      </form>
-    </div>
-    <nav class="main-navigation" aria-label="Hauptnavigation">
-      <div class="container">
-        <ul>
-          <li><a href="#/">Dienstleistungen</a></li>
-          <li><a href="#/">Daten und Digitalisierung</a></li>
-          <li><a href="#/">Wissen und Hilfsmittel</a></li>
-          <li><a href="#/">News</a></li>
-          <li><a href="#/">Meine Vorgänge</a></li>
-        </ul>
+      <div class="top-header__right">
+        <nav class="meta-navigation meta-navigation--desktop" aria-label="Meta">
+          <ul>
+            <li><a href="#/stub/notfall">Notfall &amp; Vorfälle</a></li>
+            <li><a href="#/stub/hilfe">Hilfe</a></li>
+            <li><button type="button" class="meta-navigation__auth" data-stub="Anmelden">
+              <span class="icon icon--md" style="-webkit-mask-image:url('../../../assets/icons/User.svg');mask-image:url('../../../assets/icons/User.svg')" aria-hidden="true"></span> Anmelden</button></li>
+          </ul>
+        </nav>
+        <div class="top-header__container-flex">
+          <!-- Globale Kopfsuche: dasselbe Ziel wie die Hero-Suche, OHNE
+               Vorschläge — genau wie heute (js/ui/shell/header.js). Sie steht
+               hier immer offen, statt CDs Aufklapp-Choreografie nachzubauen:
+               sie ist ein zweiter Eingang zur selben Route, kein Gegenstand
+               dieser Studie. -->
+          <div class="search search--main">
+            <div class="search__group">
+              <form class="search__form" role="search" id="header-search-form" aria-label="Suche auf der Plattform">
+                <label class="sr-only" for="global-search">Suche auf der Plattform</label>
+                <input type="search" id="global-search" placeholder="Suchen…" autocomplete="off">
+                <button class="search__submit" type="submit" aria-label="Suchen">
+                  <span class="icon" style="-webkit-mask-image:url('../../../assets/icons/Search.svg');mask-image:url('../../../assets/icons/Search.svg')" aria-hidden="true"></span>
+                </button>
+              </form>
+            </div>
+          </div>
+          <button class="burger" type="button" data-stub="Menü" aria-label="Menü öffnen">
+            <span class="burger__icon">
+              <span class="burger__bar"></span><span class="burger__bar"></span><span class="burger__bar"></span>
+            </span>
+          </button>
+        </div>
       </div>
-    </nav>
-  </header>
-
-  <main id="main" class="site-main" tabindex="-1"></main>
-
-  <!-- Persistente Live-Region: die Antwort wird EINMAL am Ende angesagt,
-       nicht Wort für Wort (sonst unterbricht der Screenreader dauernd). -->
-  <div id="live" role="status" aria-live="polite" class="sr-only"></div>
-
-  <footer class="site-footer">
-    <div class="container">
-      <p>Prototyp zur Demonstration. Daten fiktiv oder öffentlich zugänglich.
-         Antworten sind simuliert und werden nicht von einem Sprachmodell erzeugt.</p>
     </div>
-  </footer>
+  </div>
 
-  <script type="module" src="js/main.js"></script>
+  <!-- Hauptnavigation. Die Einträge sind ECHT, ihre Schubladen nicht: diese
+       Studie baut die Suche, nicht die Navigation. Jeder Eintrag führt auf die
+       Hinweisseite, statt ins Nichts zu klicken. -->
+  <div class="desktop-menu">
+    <div class="container container--flex">
+      <nav class="main-navigation main-navigation--desktop" aria-label="Hauptnavigation">
+        <ul>
+          <li><a href="#/stub/services"><span>Dienstleistungen</span></a></li>
+          <li><a href="#/stub/data"><span>Daten und Digitalisierung</span></a></li>
+          <li><a href="#/stub/knowledge"><span>Wissen und Hilfsmittel</span></a></li>
+          <li><a href="#/stub/news"><span>News</span></a></li>
+          <li><a href="#/stub/my-cases"><span>Meine Vorgänge</span></a></li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main id="main-content" class="site-main" tabindex="-1"></main>
+
+<!-- DAUERHAFTE Live-Region: der Router und die Trefferseite melden hier
+     Trefferzahl und Antwortzustand. Eine frisch eingefügte Live-Region feuert
+     NICHT — deshalb steht sie hier und wird nur beschrieben (WCAG 4.1.3). -->
+<div id="live" role="status" aria-live="polite" class="sr-only"></div>
+
+<footer id="main-footer" class="site-footer">
+  <div class="bg--secondary-600">
+    <div class="container">
+      <div class="footer-information">
+        <div class="footer-information__entry">
+          <h3>Über das BBL</h3>
+          <p>Bundesamt für Bauten und Logistik — nachhaltig, partnerschaftlich und vorbildlich.</p>
+          <p class="footer-information__note">Diese Anwendung ist ein Prototyp. Darstellung, Funktionalität und Inhalte dienen ausschliesslich der Demonstration; die verwendeten Daten sind fiktiv oder öffentlich zugänglich.</p>
+        </div>
+        <div class="footer-information__entry footer-information__entry--big">
+          <h3>Weitere Informationen</h3>
+          <div class="footer-information__links">
+            <div class="footer-information__links-column">
+              <a class="footer__link footer-information__link--icon-right" href="#/stub/knowledge"><span class="icon footer-information__icon" style="-webkit-mask-image:url('../../../assets/icons/ArrowRight.svg');mask-image:url('../../../assets/icons/ArrowRight.svg')" aria-hidden="true"></span>Wissen und Hilfsmittel</a><a class="footer__link footer-information__link--icon-right" href="#/stub/news"><span class="icon footer-information__icon" style="-webkit-mask-image:url('../../../assets/icons/ArrowRight.svg');mask-image:url('../../../assets/icons/ArrowRight.svg')" aria-hidden="true"></span>News</a><a class="footer__link footer-information__link--icon-right" href="#/stub/applications"><span class="icon footer-information__icon" style="-webkit-mask-image:url('../../../assets/icons/ArrowRight.svg');mask-image:url('../../../assets/icons/ArrowRight.svg')" aria-hidden="true"></span>Anwendungen</a><a class="footer__link footer-information__link--icon-right" href="#/stub/data"><span class="icon footer-information__icon" style="-webkit-mask-image:url('../../../assets/icons/ArrowRight.svg');mask-image:url('../../../assets/icons/ArrowRight.svg')" aria-hidden="true"></span>Daten und Digitalisierung</a>
+            </div>
+            <div class="footer-information__links-column">
+              <a class="footer__link footer-information__link--icon-right" href="#/stub/my-cases"><span class="icon footer-information__icon" style="-webkit-mask-image:url('../../../assets/icons/ArrowRight.svg');mask-image:url('../../../assets/icons/ArrowRight.svg')" aria-hidden="true"></span>Meine Vorgänge</a><a class="footer__link footer-information__link--icon-right" href="#/stub/notfall"><span class="icon footer-information__icon" style="-webkit-mask-image:url('../../../assets/icons/ArrowRight.svg');mask-image:url('../../../assets/icons/ArrowRight.svg')" aria-hidden="true"></span>Notfall &amp; Vorfälle</a><a class="footer__link footer-information__link--icon-right" href="#/stub/services"><span class="icon footer-information__icon" style="-webkit-mask-image:url('../../../assets/icons/ArrowRight.svg');mask-image:url('../../../assets/icons/ArrowRight.svg')" aria-hidden="true"></span>Dienstleistungen</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-information__entry">
+          <h3>Prototyp</h3>
+          <div class="footer-information__links">
+            <div class="footer-information__links-column">
+              <a class="footer__link footer-information__link--icon-right" href="https://github.com/bbl-dres/service-portal" target="_blank" rel="noopener noreferrer external"><span class="icon footer-information__icon" style="-webkit-mask-image:url('../../../assets/icons/External.svg');mask-image:url('../../../assets/icons/External.svg')" aria-hidden="true"></span>Quellcode auf GitHub</a><a class="footer__link footer-information__link--icon-right" href="https://www.bk.admin.ch/de/webauftritt-der-bundesverwaltung" target="_blank" rel="noopener noreferrer external"><span class="icon footer-information__icon" style="-webkit-mask-image:url('../../../assets/icons/External.svg');mask-image:url('../../../assets/icons/External.svg')" aria-hidden="true"></span>Webauftritt der Bundesverwaltung</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bg--secondary-700">
+    <nav class="container" aria-label="Rechtliches">
+      <ul class="footer-navigation">
+        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches/impressum.html" target="_blank" rel="noopener noreferrer external">Impressum</a></li>
+        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches.html" target="_blank" rel="noopener noreferrer external">Rechtliches</a></li>
+        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches/datenschutzerklaerung.html" target="_blank" rel="noopener noreferrer external">Datenschutz</a></li>
+        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches/barrierefreiheit-bund.html" target="_blank" rel="noopener noreferrer external">Barrierefreiheit</a></li>
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+<script type="module" src="js/main.js"></script>
 </body>
 </html>

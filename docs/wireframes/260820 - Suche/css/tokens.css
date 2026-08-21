@@ -1,104 +1,226 @@
 /* ==========================================================================
-   TOKENS — swiss/designsystem 1.0.5 (5f03f257)
+   TOKENS — Kopie des Portal-Tokensatzes (css/tokens.css + css/skins/intranet.css),
+   der seinerseits swiss/designsystem 1.0.5 (5f03f257) übersetzt.
 
-   Rampen aus css/skins/default.postcss + css/skins/intranet.postcss,
-   Skalen aus app/tailwind.config.js. Das Portal trägt body--intranet, also
-   ist die INTRANET-Rampe massgebend: primary ist Blau, nicht Bundesrot.
+   WARUM KOPIERT UND NICHT VERLINKT: Diese Studie ist eigenständig; sie ändert
+   nichts am Portal und hängt an nichts, was sich unter ihr wegbewegen kann.
+   Der Preis ist Pflege — deshalb steht bei jedem Block, WOHER er stammt, damit
+   ein Abgleich eine Suche und kein Rätselraten ist.
+
+   ABWEICHUNGEN GEGENÜBER DER FRÜHEREN FASSUNG DIESER DATEI, gemessen an der
+   laufenden Anwendung: Der Container war 76rem statt 1544px, der Innenabstand
+   1.25rem statt 1rem, --z-header 100 statt 30, und die text--*-Rampe stufte bei
+   1280/1920 statt bei 1024/1280/1920. Die Studie sah dadurch bei jeder Breite
+   anders aus als das Portal.
    ========================================================================== */
 
-/* Dieselbe Schriftdatei, die das Portal ausliefert. Ohne @font-face nennt der
-   Prototyp «Noto Sans» nur und fällt still auf die System-Grotesk zurück. */
-@font-face { font-family:'Noto Sans'; font-style:normal; font-weight:100 900;
-  font-display:swap; src:url('../../../../assets/fonts/NotoSans-latin.woff2') format('woff2'); }
+/* Dieselbe Schriftdatei, die das Portal ausliefert (css/foundations/typography.css).
+   Ohne @font-face nennt die Studie «Noto Sans» nur und fällt still auf die
+   System-Grotesk zurück. Der Pfad ist relativ zu DIESER Datei. */
+@font-face { font-family:'Noto Sans'; font-style:normal; font-weight:100 900; font-display:swap;
+  src:url('../../../../assets/fonts/NotoSans-latin.woff2') format('woff2'); }
+/* Metrisch angepasster Ersatz, wie CD font-face.postcss:37-44. */
 @font-face { font-family:'Fallback-font'; src:local('Verdana');
   size-adjust:94%; ascent-override:114%; descent-override:31%; line-gap-override:0%; }
 
 :root {
-  /* --- Neutrale Rampen (tailwind.config.js `text` / `gray`) --- */
-  --color-text-400:#9ca3af; --color-text-500:#6b7280; --color-text-600:#4b5563;
-  --color-text-700:#374151; --color-text-800:#1f2937; --color-text-900:#111827;
-  --color-gray-50:#f9fafb;  --color-gray-100:#f3f4f6; --color-gray-500:#6b7280;
-  --color-gray-600:#4b5563; --color-gray-700:#374151; --color-gray-800:#1f2937;
-
-  /* --- Semantische Rampen --- */
-  --color-blue-50:#eff6ff;   --color-blue-100:#dbeafe;  --color-blue-800:#1e40af;
-  --color-green-50:#ecfdf5;  --color-green-100:#d1fae5; --color-green-800:#065f46;
-  --color-orange-50:#fff7ed; --color-orange-100:#ffedd5;--color-orange-800:#9a3412;
-  --color-red-50:#ffedee;    --color-red-100:#fae1e2;   --color-red-800:#99191e;
-  --color-purple-500:#8655F6;
+  /* --- Primär: DEFAULT-Rampe (Bundesrot). Die Intranet-Rampe unten schlägt sie;
+     beide bleiben stehen, weil das Portal es genauso hält. --- */
+  --color-primary-50:#ffedee;  --color-primary-100:#fae1e2; --color-primary-200:#ffccce;
+  --color-primary-300:#fa9da1; --color-primary-400:#fc656b; --color-primary-500:#e53940;
+  --color-primary-600:#d8232a; --color-primary-700:#bf1f25; --color-primary-800:#99191e;
+  --color-primary-900:#801519;
   --color-federal-red:#d8232a;
 
-  --color-border:#e5e7eb;
-  --color-border-input:#6b7280;          /* CD input.postcss = gray-500 */
-  --color-bg:#ffffff;
+  /* --- Sekundär: DEFAULT-Rampe (Marineblau). --- */
+  --color-secondary-50:#f0f4f7;  --color-secondary-100:#dfe4e9; --color-secondary-200:#acb4bd;
+  --color-secondary-300:#828e9a; --color-secondary-400:#596978; --color-secondary-500:#46596b;
+  --color-secondary-600:#2f4356; --color-secondary-700:#263645; --color-secondary-800:#1c2834;
+  --color-secondary-900:#131b22;
+
+  /* --- Neutral (Tailwind gray) --- */
+  --color-gray-50:#f9fafb;  --color-gray-100:#f3f4f6; --color-gray-200:#e5e7eb;
+  --color-gray-300:#d1d5db; --color-gray-400:#9ca3af; --color-gray-500:#6b7280;
+  --color-gray-600:#4b5563; --color-gray-700:#374151; --color-gray-800:#1f2937;
+  --color-gray-900:#111827;
+
+  /* CD nennt die neutrale Rampe `text-*`. Alias, damit CD-Regeln das kanonische
+     Vokabular benutzen können. */
+  --color-text-50:#f9fafb;  --color-text-100:#f3f4f6; --color-text-200:#e5e7eb; --color-text-300:#d1d5db;
+  --color-text-400:#9ca3af; --color-text-500:#6b7280; --color-text-600:#4b5563; --color-text-700:#374151;
+  --color-text-800:#1f2937; --color-text-900:#111827;
+
+  /* --- Semantisch. CD kennt ZWEI Paare: Badge 100/800, Notification 50/700-800
+     (badge.postcss:23-50 vs. notification.postcss:29-58). --- */
+  --color-success:#10b981;
+  --color-success-bg:#d1fae5; --color-success-bg-subtle:#ecfdf5; --color-success-text:#065f46;
+  --color-warning:#f97316;
+  --color-warning-bg:#ffedd5; --color-warning-bg-subtle:#fff7ed; --color-warning-text:#9a3412;
+  --color-error:#e53940;
+  --color-error-bg:#fae1e2;   --color-error-bg-subtle:#ffedee;   --color-error-text:#99191e;
+  --color-info:#3b82f6;
+  --color-info-bg:#dbeafe;    --color-info-bg-subtle:#eff6ff;    --color-info-text:#1e40af;
+  --color-info-text-subtle:#1d4ed8;
+  /* Eigene Rottöne für Fehlerzustände, vom hautwechselnden primary entkoppelt:
+     unter .body--intranet bliebe ein Fehler sonst blau. */
+  --color-error-200:#ffccce; --color-error-300:#fa9da1; --color-error-400:#fc656b; --color-error-700:#bf1f25;
+
+  /* --- Rollen --- */
   --color-text:var(--color-text-800);
-  /* Bewusste Portal-Abweichung von CD (css/tokens.css): CD stellt Meta-Text auf
-     gray-500; text-600 besteht AA auf Weiss UND auf secondary-50. */
-  --color-text-muted:var(--color-text-600);
+  --color-text-muted:var(--color-text-600);    /* besteht AA auf Weiss UND auf secondary-50 */
+  --color-text-light:var(--color-text-500);
   --color-text-negative:#ffffff;
+  --color-link:var(--color-primary-600);
+  --color-border:#e5e7eb;
+  --color-border-strong:#d1d5db;
+  --color-border-input:#6b7280;                /* CD input.postcss = gray-500 */
+  --color-placeholder:var(--color-secondary-400);
+  --color-bg:#ffffff;
+  --color-bg-subtle:var(--color-secondary-50);
+  --color-bg-muted:var(--color-secondary-100);
+
+  /* Die EINE Flächen-Rezeptur des Portals (Filterpanel, Studien-Kacheln). */
+  --surface-bg:var(--color-bg);
+  --surface-bg-muted:var(--color-bg-subtle);
+  --surface-border:var(--color-secondary-100);
+  --surface-radius:var(--radius-lg);
+  --surface-elevation:var(--shadow-sm);
+  --color-focus-ring:#8655F6;
+  --color-focus-ring-negative:#c4b5fd;
+
+  /* --- Steuerelement-Höhen. Zwei Rampen, absichtlich: Knöpfe wachsen bei
+     xl/3xl, Felder erst bei 2xl (CD btn.postcss:112-127 vs. input.postcss:1-16). --- */
+  --control-size-compact:2.125rem; --control-size-sm:2.75rem;
+  --control-size-md:3rem;          --control-size-lg:3.25rem;
+  --control-h:var(--control-size-sm);
+  --target-min:var(--control-size-sm);
+  --input-h:var(--control-size-sm);
+  --check-size:1.125rem;
 
   /* --- Typografie --- */
   --font-sans:'Noto Sans','Hind','Fallback-font',sans-serif;
   --font-mono:Consolas,Menlo,monospace;
-  --fs-xs:.75rem;  --fs-sm:.875rem;  --fs-base:1rem;   --fs-lg:1.125rem;
-  --fs-xl:1.25rem; --fs-2xl:1.375rem;--fs-3xl:1.625rem;--fs-4xl:2rem;
-  --fs-5xl:2.5rem; --fs-6xl:3rem;    --fs-7xl:3.5rem;  --fs-8xl:4rem;
-  --lh-tight:1.25; --lh-snug:1.375;  --lh-normal:1.5;
-  /* CD setzt fontWeight.bold:400 und wechselt auf die Familie Font-Bold; die
-     eine variable Noto-Datei liefert dieselbe Schnitthaltung über wght. */
+  --fs-xs:.75rem;  --fs-sm:.875rem;  --fs-base:1rem;    --fs-lg:1.125rem;
+  --fs-xl:1.25rem; --fs-2xl:1.375rem;--fs-3xl:1.625rem; --fs-4xl:2rem;
+  --fs-5xl:2.5rem; --fs-6xl:3rem;    --fs-7xl:3.5rem;   --fs-8xl:4rem; --fs-9xl:5rem;
+  --lh-tight:1.25; --lh-snug:1.375;  --lh-normal:1.5;   --lh-relaxed:1.625;
+  /* CD setzt fontWeight.bold:400 und wechselt auf die Familie Font-Bold; die eine
+     variable Noto-Datei liefert dieselbe Schnitthaltung über die wght-Achse. */
   --fw-regular:400; --fw-bold:700;
 
-  /* CD `text--*` sind RESPONSIVE Rampen (typography.postcss:18-57):
-     `.text--base` = text-base xl:text-lg 3xl:text-xl. Wer skalieren soll,
-     konsumiert --text-*, nicht die festen --fs-*-Stufen. */
+  /* CD `text--*` sind RESPONSIVE Rampen (typography.postcss:18-57). Wer skalieren
+     soll, konsumiert --text-*, nicht die festen --fs-*-Stufen. */
   --text-xs:var(--fs-xs);   --text-sm:var(--fs-sm);   --text-base:var(--fs-base);
   --text-lg:var(--fs-lg);   --text-xl:var(--fs-xl);   --text-2xl:var(--fs-2xl);
-  --text-3xl:var(--fs-3xl); --text-4xl:var(--fs-4xl);
+  --text-3xl:var(--fs-3xl); --text-4xl:var(--fs-4xl); --text-5xl:var(--fs-5xl);
 
   /* --- Abstände --- */
-  --sp-0-5:.125rem; --sp-1:.25rem;  --sp-1-5:.375rem; --sp-2:.5rem;
-  --sp-2-5:.625rem; --sp-3:.75rem;  --sp-3-5:.875rem; --sp-4:1rem;
-  --sp-5:1.25rem;   --sp-6:1.5rem;  --sp-8:2rem;      --sp-10:2.5rem;
-  --sp-12:3rem;     --sp-14:3.5rem; --sp-16:4rem;     --sp-20:5rem;
+  --sp-0:0;         --sp-0-5:.125rem; --sp-1:.25rem;    --sp-1-5:.375rem; --sp-2:.5rem;
+  --sp-2-5:.625rem; --sp-3:.75rem;    --sp-3-5:.875rem;
+  --sp-4:1rem;      --sp-5:1.25rem;   --sp-6:1.5rem;    --sp-7:1.75rem;
+  --sp-8:2rem;      --sp-9:2.25rem;   --sp-10:2.5rem;   --sp-12:3rem;
+  --sp-14:3.5rem;   --sp-16:4rem;     --sp-20:5rem;     --sp-24:6rem;
+  --sp-28:7rem;     --sp-32:8rem;
 
-  /* --- Radien · Striche · Schatten --- */
-  --radius-sm:.125rem; --radius:.1875rem; --radius-lg:.3125rem; --radius-full:9999px;
-  --stroke-1:1px; --stroke-2:2px; --stroke-3:3px;
+  /* --- Radien · Striche · Zeilenhöhen --- */
+  --radius-none:0;       --radius-xs:.0625rem; --radius-sm:.125rem;  --radius:.1875rem;
+  --radius-lg:.3125rem;  --radius-xl:.375rem;  --radius-2xl:.5rem;   --radius-3xl:.625rem;
+  --radius-full:9999px;
+  --stroke-1:1px; --stroke-2:2px; --stroke-3:3px; --stroke-4:4px;
+  --line-4:1rem; --line-5:1.25rem; --line-6:1.5rem; --line-7:1.75rem;
+
+  /* --- Schatten --- */
+  --shadow-none:0 0 0 0 rgba(0,0,0,0);
   --shadow-sm:0 1px 2px 0 rgba(0,0,0,.05);
+  --shadow:   0 1px 2px 0 rgba(0,0,0,.06), 0 1px 5px 0 rgba(0,0,0,.08);
+  --shadow-md:0 2px 4px -1px rgba(0,0,0,.06), 0 4px 10px -1px rgba(0,0,0,.08);
   --shadow-lg:0 2px 6px -1px rgba(0,0,0,.06), 0 5px 20px -3px rgba(0,0,0,.08);
+  --shadow-xl:0 6px 10px -5px rgba(0,0,0,.06), 0 15px 25px -3px rgba(0,0,0,.09);
+  --shadow-2xl:0 10px 20px 0 rgba(0,0,0,.06), 1px 10px 70px -8px rgba(0,0,0,.13);
+  --state-ring-primary-soft:0 0 0 var(--stroke-3) var(--color-primary-100);
+  --scrim-navigation:linear-gradient(to bottom, rgba(17,24,39,.2) 0%, rgba(17,24,39,.2) 50%, rgba(17,24,39,0) 100%);
 
-  --target-min:2.75rem;
-  --container-max:76rem;
-  --container-px:1.25rem;
-  --z-header:100;
+  /* --- Bewegung: eine Quelle, damit `prefers-reduced-motion` unten EINE Regel ist --- */
+  --duration-fast:150ms; --duration:200ms; --duration-slow:300ms;
+  --duration-spin:500ms; --duration-slowest:700ms;
+  --ease-out:cubic-bezier(0,0,.2,1); --ease-in-out:cubic-bezier(.4,0,.2,1);
+  --scale-hover:1.02;
+
+  /* --- Responsive Abstandsrampen (CD grids.postcss:25-56, container.postcss:29-49) --- */
+  --gap-responsive:1.25rem;
+  --container-px:1rem;
+  --section-py:3.5rem;
+  --section-py-half:1.75rem;
+  --section-pt:3rem;
+
+  /* --- Layout --- */
+  --container-max-2xl:1544px;
+  --container-max-3xl:1676px;
+  --container-max:var(--container-max-2xl);
+
+  /* --- Stapelordnung. Lokale Stufen zuerst, dann Seitenchrom. --- */
+  --z-local-base:0; --z-local-content:1; --z-local-control:2; --z-local-chrome:3;
+  --z-local-popover:5; --z-local-floating:6;
+  --z-content:10; --z-dropdown:10; --z-footer:20;
+  --z-header:30; --z-nav:40; --z-nav-active:50;
+  --z-modal:100; --z-skiplink:2000;
+  --header-z:var(--z-header);
 }
 
-/* --- INTRANET-SKIN (css/skins/intranet.postcss). Massgebend im Portal. --- */
+/* --- INTRANET-SKIN (css/skins/intranet.css). Massgebend: das Portal setzt
+   <body class="body--intranet">, primary ist also BLAU, nicht Bundesrot. --- */
 .body--intranet {
   --color-primary-50:#eff6ff;  --color-primary-100:#dbeafe; --color-primary-200:#bfdbfe;
   --color-primary-300:#93c5fd; --color-primary-400:#60a5fa; --color-primary-500:#3b82f6;
   --color-primary-600:#2563eb; --color-primary-700:#1d4ed8; --color-primary-800:#1e40af;
   --color-primary-900:#1e3a8a;
+
   --color-secondary-50:#f0f4f7;  --color-secondary-100:#dfe4e9;
   --color-secondary-200:#acb4bd; --color-secondary-300:#828e9a;
+  /* Rolle neu erklären, damit ihr Rechenwert der körpergebundenen Rampe folgt. */
+  --color-placeholder:var(--color-secondary-400);
   --color-secondary-400:#5076b3; --color-secondary-500:#234dc2;
   --color-secondary-600:#1e40af; --color-secondary-700:#1e3a8a;
   --color-secondary-800:#1c3c7d; --color-secondary-900:#1c3c7d;
-  --color-placeholder:var(--color-secondary-400);
 }
 
-/* --- CD text--* Rampen, Stufen wie css/tokens.css sie im Portal setzt --- */
+/* --- Responsive Rampen — CD-Stufen bei xs 480 / sm 640 / lg 1024 / xl 1280 /
+   2xl 1544 / 3xl 1920. Genau wie css/tokens.css im Portal. --- */
+@media (min-width:480px)  { :root { --gap-responsive:1.75rem; --container-px:1.75rem; } }
+@media (min-width:640px)  { :root { --gap-responsive:2.25rem; --container-px:2.25rem; } }
 @media (min-width:1024px) {
-  :root { --text-xl:var(--fs-2xl); --text-2xl:var(--fs-3xl); --text-3xl:var(--fs-4xl);
-          --text-4xl:var(--fs-5xl); --container-px:2.5rem; }
+  :root {
+    --gap-responsive:2.5rem; --container-px:2.5rem;
+    --section-py:5rem; --section-py-half:2.5rem; --section-pt:3.5rem;
+    --text-xl:var(--fs-2xl);  --text-2xl:var(--fs-3xl); --text-3xl:var(--fs-4xl);
+    --text-4xl:var(--fs-5xl); --text-5xl:var(--fs-6xl);
+  }
 }
 @media (min-width:1280px) {
-  :root { --text-xs:var(--fs-sm);   --text-sm:var(--fs-base); --text-base:var(--fs-lg);
-          --text-lg:var(--fs-xl);   --text-xl:var(--fs-3xl);  --text-2xl:var(--fs-4xl);
-          --text-3xl:var(--fs-5xl); --text-4xl:var(--fs-6xl); --container-px:3rem; }
+  :root {
+    --control-h:var(--control-size-md);
+    --gap-responsive:3rem; --container-px:3rem;
+    --text-xs:var(--fs-sm);   --text-sm:var(--fs-base); --text-base:var(--fs-lg);
+    --text-lg:var(--fs-xl);   --text-xl:var(--fs-3xl);  --text-2xl:var(--fs-4xl);
+    --text-3xl:var(--fs-5xl); --text-4xl:var(--fs-6xl); --text-5xl:var(--fs-7xl);
+  }
 }
+@media (min-width:1544px) { :root { --input-h:var(--control-size-md); } }
 @media (min-width:1920px) {
-  :root { --text-xs:var(--fs-base); --text-sm:var(--fs-lg);  --text-base:var(--fs-xl);
-          --text-lg:var(--fs-2xl);  --text-xl:var(--fs-4xl); --text-2xl:var(--fs-5xl);
-          --text-3xl:var(--fs-6xl); --text-4xl:var(--fs-7xl); --container-px:4rem; }
+  :root {
+    --control-h:var(--control-size-lg);
+    --gap-responsive:4rem; --container-px:4rem;
+    --section-py:8rem; --section-py-half:4rem; --section-pt:5rem;
+    --text-xs:var(--fs-base); --text-sm:var(--fs-lg);  --text-base:var(--fs-xl);
+    --text-lg:var(--fs-2xl);  --text-xl:var(--fs-4xl); --text-2xl:var(--fs-5xl);
+    --text-3xl:var(--fs-6xl); --text-4xl:var(--fs-7xl); --text-5xl:var(--fs-8xl);
+    --container-max:var(--container-max-3xl);
+  }
+}
+
+/* Der versprochene Nutzen von Bewegungstoken: EINE Regel schaltet sie ab.
+   Nicht 0s — eine messbar kurze Dauer feuert `transitionend` weiterhin. */
+@media (prefers-reduced-motion:reduce) {
+  :root { --duration-fast:.01ms; --duration:.01ms; --duration-slow:.01ms;
+          --duration-spin:.01ms; --duration-slowest:.01ms; }
 }
