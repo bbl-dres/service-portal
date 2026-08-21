@@ -78,8 +78,15 @@
 /* Disabled (prototype: German only): CD's disabled recipe is ONLY opacity-40
    (select.postcss:28-35). The generic [disabled] field rules below would
    otherwise paint light gray-on-gray on the navy bar and pointer-events:none
-   would kill the explanatory title tooltip. */
-.language-switcher select:disabled { color:var(--color-text-negative); opacity:.4;
+   would kill the explanatory title tooltip.
+   `background:transparent` re-asserted here: `.input--negative:disabled`
+   (form.css, two classes) outranks the resting `.language-switcher select`
+   rule above and painted a filled secondary-300 BOX behind «DE» on the top
+   bar — the exact leak this comment already intended to prevent (user
+   finding 2026-08-21; docs/design-alignment.md D2). */
+.language-switcher select:disabled,
+.language-switcher select.input--negative:disabled { background:transparent; box-shadow:none;
+  color:var(--color-text-negative); opacity:.4;
   pointer-events:auto; cursor:default; }
 .language-switcher .select__icon { position:absolute; top:0; right:0; width:var(--sp-6); height:100%;
   display:flex; align-items:center; justify-content:center; border-left:0; background:transparent;
@@ -183,9 +190,18 @@
 /* Meta navigation (meta-navigation.postcss:5-42): the sign-in slot lives HERE
    (shell.js renders it in the meta ul); the former .top-header__auth block was
    the dead shell of an abandoned markup structure. */
-/* The sign-in/out button, the only entry to every personal flow, measured
-   109x23px because no height was set here (Item 2.5b). */
-.meta-navigation a, .meta-navigation__auth, .meta-navigation__user { min-height:var(--control-h); }
+/* Touch target vs chrome height (Item 2.5b revisited, 2026-08 alignment
+   D8): the 44/48px min-height guaranteed the target but inflated the whole
+   brand bar ~25px over CD's (whose meta rows are text-height + mb-12/16,
+   meta-navigation.postcss:27) and over the tenant portal's. The hit area is
+   now supplied by BLOCK PADDING with matching negative margins — the
+   clickable box stays ≥44px while the LAYOUT height returns to CD's
+   text-row. (Negative margins shrink the flow box, not the padding's hit
+   area.) */
+.meta-navigation--desktop a,
+.meta-navigation--desktop .meta-navigation__auth,
+.meta-navigation--desktop .meta-navigation__user {
+  padding-block:var(--sp-3); margin-block:calc(-1 * var(--sp-3)); }
 .meta-navigation ul { list-style:none; display:flex; align-items:center; }
 .meta-navigation a { display:flex; align-items:center; padding-inline:var(--sp-3); color:var(--color-text); text-decoration:none; }
 .meta-navigation a:hover { color:var(--color-primary-600); text-decoration:none; }
@@ -197,14 +213,13 @@
    MetaNavigation.vue:4-20: uniform entries, no accent variant). The entry's
    user icon carries emphasis, not a second link color. Icon gap .5rem as in CD's ml-2. */
 .meta-navigation__auth { display:flex; align-items:center; gap:var(--sp-2);
-  min-height:var(--control-h);
   background:none; border:0; font:inherit; color:var(--color-text);
   padding-inline:var(--sp-3); cursor:pointer; }
 .meta-navigation__auth:hover { color:var(--color-primary-600); }
 /* .separator--vertical in markup provides the divider (Item 4.2); a bare
    hairline at the line start reads as a typo. */
 .meta-navigation__user { display:flex; align-items:center; gap:var(--sp-2); padding-inline:var(--sp-3);
-  min-height:var(--control-h); border-left:0; }
+  border-left:0; }
 .meta-navigation__name { display:flex; align-items:center; gap:var(--sp-1-5); color:var(--color-text-muted); }
 .meta-navigation__name .icon { color:var(--color-primary-600); }
 

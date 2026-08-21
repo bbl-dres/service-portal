@@ -16,7 +16,7 @@
    breaks while long lines continue to wrap normally. */
 .table--caption caption { position:static; width:auto; height:auto; clip:auto; white-space:pre-line;
   display:table-caption; caption-side:bottom; text-align:left; padding-top:var(--sp-2);
-  font-size:var(--text-xs); color:var(--color-text-muted); }
+  font-size:var(--text-xs); color:var(--color-text-light); }   /* CD .legend text-500 (was text-600; 2026-08 alignment D27) */
 /* No nowrap: CD header cells may wrap (table.postcss:37-42 sets align-top
    PRECISELY for this); .text-nowrap pins identifier columns selectively.
    Divider below the header uses text-300 like ALL row dividers

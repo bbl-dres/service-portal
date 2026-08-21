@@ -431,6 +431,19 @@ export function renderHeader(el) {
     if (!overlay) return;
     overlay.classList.toggle('hidden', !(open && desktopQuery.matches));
   };
+  // CD Navy.js drawer placement (app/scripts/Navy.js:137-146): the drawer
+  // lands at the trigger's x pulled left by the `.with-offset` step — 16 /
+  // 32 @1280 / 80 @1920 (desktop-menu.postcss:36-38) — so the drawer's own
+  // padding (32/48/96) leaves its rows flush with the trigger's text
+  // (net +16 = the trigger's px-4). The former padding-based subtraction
+  // (item 4.9) overshot by ~28px and clamped the first drawer to the
+  // viewport edge; the tenant portal runs this same rule (2026-08
+  // alignment D12).
+  const navMenuOffset = () => {
+    if (window.innerWidth >= 1920) return 80;
+    if (window.innerWidth >= 1280) return 32;
+    return 16;
+  };
   const positionPanel = (button, panel) => {
     if (!desktopQuery.matches) { panel.style.left = ''; panel.style.right = ''; return; }
     const nav = button.closest('.main-navigation');
@@ -438,13 +451,13 @@ export function renderHeader(el) {
     const navRect = nav.getBoundingClientRect();
     const buttonRect = button.getBoundingClientRect();
     const panelWidth = panel.offsetWidth || 450;
-    // CD desktop-menu.postcss:33 (.with-offset): subtract panel padding so the
-    // first menu row aligns with the trigger label. Drawer content was previously
-    // shifted about 49px right (item 4.9).
-    const pad = parseFloat(getComputedStyle(panel).paddingLeft || '0') + 12;
-    let left = buttonRect.left - navRect.left - pad;
+    let left = buttonRect.left - navRect.left - navMenuOffset();
     if (navRect.left + left < 0) left = -navRect.left;                            // Keep within the viewport.
-    if (left + panelWidth > navRect.width - 12) left = Math.max(-navRect.left, navRect.width - panelWidth - 12);
+    // CD's overflow branch: right edge of the drawer to the trigger's right
+    // edge (Navy.js:139-141).
+    if (left + panelWidth > navRect.width - 12) {
+      left = Math.max(-navRect.left, buttonRect.right - navRect.left - panelWidth);
+    }
     panel.style.left = `${left}px`;
     panel.style.right = 'auto';
     // Measured height cap (item 4.7): the CSS rule from 2.9d uses --shell-top as

@@ -42,7 +42,10 @@
    for `message`; a hint is prose and comes BEFORE the control. */
 /* margin:0: the field group's flex gap already supplies the 0.5rem rhythm
    (CD form.postcss:12-15 space-y-2); an independent margin would accumulate. */
-.form__group__hint { margin:0; font-size:var(--text-sm); color:var(--color-text-muted); }
+/* Hint = the CD `.legend` recipe (typography.postcss:131-137: text--xs on
+   text-500) — the shared cross-portal hint ink/size (2026-08 alignment
+   D26; was text-sm on text-600). */
+.form__group__hint { margin:0; font-size:var(--text-xs); color:var(--color-text-light); }
 /* (d) Message size. `.badge--sm` starts at 10px (CD badge.postcss:76), the
    application's smallest type carrying its most consequential microcopy. Raise
    it only where a badge is prose; the global badge scale and decorative counts
@@ -54,9 +57,10 @@
 /* (e) Fieldset grouping (Item 3.14): fully styled, currently without consumers. */
 .form > .form__group > * + * { margin-top:var(--sp-6); }
 .form__group__legend { font-size:var(--text-lg); font-weight:var(--fw-bold); }
-/* Space between field groups: a following group's legend otherwise touched the
-   preceding group's last field. */
-.form__group + .form__group { margin-top:var(--sp-10); }
+/* Space between field groups — CD `.form { space-y-6 }` = 24px
+   (form.postcss:1-3); the former 40px exceeded CD and the tenant portal's
+   rhythm (2026-08 alignment D26). */
+.form__group + .form__group { margin-top:var(--sp-6); }
 
 /* Inputs use the FIELD ramp (--input-h, 44 → 48 only at 2xl/1544, then stop;
    CD input.postcss:1-4,16). The button ramp --control-h (44/48/52 at xl/3xl)
@@ -106,10 +110,10 @@ input[type='search']::-webkit-search-cancel-button:hover { background-color:var(
    is the default form state; data-empty denotes an empty data-backed control,
    not a validation failure. Error and disabled rules follow hover/active so
    those semantic states always win the cascade. */
-:where(input,select,textarea):not(:where(:disabled,[aria-disabled="true"],[readonly],.input--disabled,.input--loading,[aria-busy="true"],.input--error,[aria-invalid="true"])):hover {
-  border-color:var(--color-primary-600); }
-:where(input,select,textarea):not(:where(:disabled,[aria-disabled="true"],[readonly],.input--disabled,.input--loading,[aria-busy="true"],.input--error,[aria-invalid="true"])):active {
-  border-color:var(--color-primary-700); }
+/* (Resting fields have NO hover/active border tint: CD defines none on
+   inputs — input.postcss:6-19 — and the red border it painted preempted the
+   error signal; removed in the 2026-08 cross-portal alignment D26. The
+   tenant portal renders none either.) */
 :where(input,select,textarea):is(.input--empty,[data-empty="true"]) {
   color:var(--color-text-muted); background:var(--color-bg-subtle); }
 :where(input,select,textarea):is(.input--loading,[aria-busy="true"]) {

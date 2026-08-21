@@ -195,9 +195,11 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .kpi-strip__value small { font-size:var(--text-sm); font-weight:var(--fw-regular); color:var(--color-text-muted); }
 
 /* Eyebrow above the page heading: identifiers users scan for (lease number,
-   business entity, EGID) rather than read as body text. */
-.eyebrow { margin:0 0 var(--sp-1); font-size:var(--text-xs); text-transform:uppercase;
-  letter-spacing:.08em; color:var(--color-text-muted); }
+   business entity, EGID) rather than read as body text. Tracking .06em and
+   8px bottom — the shared cross-portal kicker recipe (tenant .overtitle;
+   2026-08 alignment D20). */
+.eyebrow { margin:0 0 var(--sp-2); font-size:var(--text-xs); text-transform:uppercase;
+  letter-spacing:.06em; color:var(--color-text-muted); }
 
 /* Reading-width caps. Five different `style="max-width:…"` values served this
    purpose in js/; classes make them named, reusable, and discoverable here. */

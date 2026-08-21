@@ -116,16 +116,23 @@
 /* Page root: every page renders <div class="container section">. In CD, a bare
    .section intentionally has no spacing; a hero or .section--default supplies
    it. Because container and section are the same element here, this combination
-   receives the values directly. Tighter above than below, as in CD itself:
-     top    = .hero            → pt-12 lg:pt-14 3xl:pt-20   (3 / 3.5 / 5rem)
-     bottom = .container--pb   → pb-14 lg:pb-20 3xl:pb-32   (3.5 / 5 / 8rem)
-   The breadcrumb deliberately creates no spacing
-   (container.postcss:20 `.container:not(.breadcrumb) + .container`). */
-.container.section { padding-top:var(--section-pt); padding-bottom:var(--section-py); }
+   receives the values directly.
+   SYMMETRIC 56/80/128 — CD gives content after the breadcrumb the FULL
+   `pt-14 lg:pt-20 3xl:pt-32` (container.postcss:19-21); only `.hero` itself
+   is tighter (pt-12 lg:pt-14 3xl:pt-20). The former asymmetric top
+   (--section-pt) applied the hero ramp to every page and sat 24px above the
+   tenant portal's page starts at ≥1024 (2026-08 alignment D21). Hero pages
+   keep the hero ramp via the negative margin below. */
+.container.section { padding-top:var(--section-py); padding-bottom:var(--section-py); }
 /* At the page start, including directly below the back button, the hero no
-   longer needs its own top spacing; the page root already supplies it. */
+   longer needs its own top spacing; the page root already supplies it — and
+   the difference between the page ramp (56/80/128) and the hero ramp
+   (48/56/80) is taken back so a hero page still starts at CD's hero top. */
 .container.section > .hero:first-child,
-.container.section > .back-link-row:first-child + .hero { padding-top:0; }
+.container.section > .back-link-row:first-child + .hero {
+  padding-top:0;
+  margin-top:calc(var(--section-pt) - var(--section-py));
+}
 
 .section--default, .section--py, .section[class*="bg--"] { padding-block:var(--section-py); }
 .section--py-half { padding-block:var(--section-py-half); }

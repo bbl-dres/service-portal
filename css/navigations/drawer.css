@@ -9,28 +9,25 @@
 .desktop-menu__overlay.hidden { height:0; overflow:hidden; opacity:0; pointer-events:none; }
 .desktop-menu .main-navigation, .mobile-menu .main-navigation { border-bottom:0; }
 .main-navigation { width:100%; background:var(--color-bg); border-bottom:var(--stroke-1) solid var(--color-border); position:relative; }
-/* DELIBERATE DEVIATION from CD (Review 2026-07, nav/l1-1): CD handles excess
-   L1 entries with the "More" overflow flyout (MainNavigation.vue MenuMore,
-   navy.postcss:25-27), never a second row. Here the nine entries may wrap: a
-   More flyout would need width measurement on every resize and would hide
-   entries that are equal peers in an intranet context. Rows retain CD's fixed
-   height and wrap only between 1024-1280px. No overflow:hidden, or entries
-   would be swallowed. The same decision includes the denser 0.7rem rhythm
-   (padding, negative margin, underline insets; CD: 1rem,
-   main-navigation.postcss:16,29,38), which keeps nine entries on one row for
-   longer (nav/l1-2). */
-.main-navigation > ul { list-style:none; display:flex; flex-wrap:wrap; margin-left:calc(-1 * var(--sp-3)); min-height:var(--sp-14); }
+/* PARTIALLY RETIRED DEVIATION (Review 2026-07, nav/l1-1/l1-2 → 2026-08
+   alignment D11): the wrap-instead-of-More-flyout decision STAYS (a More
+   flyout would need width measurement on every resize), but the denser
+   0.7rem rhythm existed for NINE L1 entries and the row now carries five —
+   which fit at 1024 on CD's own 1rem rhythm. Padding, negative margin and
+   underline insets are back on CD's `px-4 / -ml-4 / inset-4`
+   (main-navigation.postcss:16,29,38), matching the tenant portal. */
+.main-navigation > ul { list-style:none; display:flex; flex-wrap:wrap; margin-left:calc(-1 * var(--sp-4)); min-height:var(--sp-14); }
 @media (max-width:1023.98px){ .desktop-menu { display:none; } }
 @media (min-width:1280px){ .main-navigation > ul { min-height:var(--sp-16); } }
 @media (min-width:1920px){ .main-navigation > ul { min-height:var(--sp-20); } }
 .main-navigation > ul > li > a,
 .main-navigation > ul > li > button { position:relative; display:flex; align-items:center; gap:var(--sp-2); color:var(--color-text);
-  height:100%; min-height:var(--sp-14); padding:var(--sp-4) var(--sp-3); font:inherit; font-size:var(--text-base); line-height:var(--lh-tight); white-space:nowrap;
+  height:100%; min-height:var(--sp-14); padding:var(--sp-4); font:inherit; font-size:var(--text-base); line-height:var(--lh-tight); white-space:nowrap;
   background:none; border:0; cursor:pointer; text-decoration:none; transition:color var(--duration-fast),box-shadow var(--duration); }
 @media (min-width:1280px){ .main-navigation > ul > li > a, .main-navigation > ul > li > button { min-height:var(--sp-16); } }
 @media (min-width:1920px){ .main-navigation > ul > li > a, .main-navigation > ul > li > button { min-height:var(--sp-20); } }
 .main-navigation > ul > li > a::after,
-.main-navigation > ul > li > button::after { content:""; position:absolute; left:var(--sp-3); right:var(--sp-3); bottom:0; height:var(--stroke-3);
+.main-navigation > ul > li > button::after { content:""; position:absolute; left:var(--sp-4); right:var(--sp-4); bottom:0; height:var(--stroke-3);
   background:transparent; transition:background var(--duration-fast); }
 .main-navigation > ul > li > a:hover,
 .main-navigation > ul > li > button:hover { color:var(--color-primary-600); text-decoration:none; }
@@ -69,6 +66,11 @@
   padding:var(--sp-16) var(--sp-8) var(--sp-8); z-index:var(--z-drawer); background:var(--color-bg); overflow:hidden;
   max-height:calc(100vh - var(--shell-top, 14rem) - var(--sp-6)); overflow-y:auto; overscroll-behavior:contain;
   box-shadow:var(--shadow-2xl); opacity:1; animation:navMenuIn var(--duration) var(--ease-out); }
+/* The drawer's x is set inline by positionPanel (ui/shell/header.js): CD's
+   Navy.js places it under its trigger pulled left by the `.with-offset`
+   step (16/32/80 — desktop-menu.postcss:36-38), so the drawer's padding
+   leaves its rows flush with the trigger's text. Same rule as the tenant
+   portal (2026-08 alignment D12). */
 @media (min-width:1280px){ .desktop-menu__drawer { width:650px; padding:var(--sp-20) var(--sp-12) var(--sp-12); } }
 @media (min-width:1920px){ .desktop-menu__drawer { width:850px; padding:var(--sp-24); } }
 /* Only a subtle slide-in; the hidden attribute controls visibility. No opacity
@@ -121,8 +123,12 @@
 .navy__level-0 { list-style:none; margin:0; padding:0; }
 /* CD navy.postcss:69-73: the panel title is `menu__item--title`: base size,
    INHERITED ink, row indentation px-4 with lg:px-0 (menu.postcss:68-71); only
-   bold remains. The former fs-lg/secondary-700 version was a separate voice. */
-.navy__title { display:block; margin:0 0 var(--sp-2); padding:0 var(--sp-4); font-size:var(--fs-base); font-weight:var(--fw-bold);
+   bold remains. The former fs-lg/secondary-700 version was a separate voice.
+   Size is the RESPONSIVE body step (`--text-base` 16/18 @1280/20 @1920) —
+   CD's menu title declares no size and inherits `.text--base`; the fixed
+   16 px sat 2 px under the tenant portal's drawer heading at ≥1280
+   (2026-08 alignment D30). */
+.navy__title { display:block; margin:0 0 var(--sp-2); padding:0 var(--sp-4); font-size:var(--text-base); font-weight:var(--fw-bold);
   line-height:var(--lh-tight); color:inherit; cursor:default; }
 @media (min-width:1024px){ .navy__title { padding:0; } }
 /* Item 4.10 reverted: CD's drawer has no section titles. The class

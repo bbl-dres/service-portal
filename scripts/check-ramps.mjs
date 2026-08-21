@@ -3,10 +3,13 @@
 import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
 const WIDTHS = [375, 480, 640, 768, 1024, 1280, 1544, 1920];
-// Expected values are the pre-refactor declarations, in pixels.
+// Expected values in pixels. sectionPt: since the 2026-08 cross-portal
+// alignment (docs/design-alignment.md D21) page roots take CD's SYMMETRIC
+// `container--py` 56/80/128 — the tighter 48/56/80 ramp belongs to `.hero`
+// alone (page.css compensates hero pages with a negative margin).
 const EXPECTED = {
   gap:       { 375: 20, 480: 28, 640: 36, 768: 36, 1024: 40, 1280: 48, 1544: 48, 1920: 64 },
-  sectionPt: { 375: 48, 480: 48, 640: 48, 768: 48, 1024: 56, 1280: 56, 1544: 56, 1920: 80 },
+  sectionPt: { 375: 56, 480: 56, 640: 56, 768: 56, 1024: 80, 1280: 80, 1544: 80, 1920: 128 },
   sectionPb: { 375: 56, 480: 56, 640: 56, 768: 56, 1024: 80, 1280: 80, 1544: 80, 1920: 128 },
   targetMin: { 375: 44, 480: 44, 640: 44, 768: 44, 1024: 44, 1280: 44, 1544: 44, 1920: 44 },
   controlH:  { 375: 44, 480: 44, 640: 44, 768: 44, 1024: 44, 1280: 48, 1544: 48, 1920: 52 },

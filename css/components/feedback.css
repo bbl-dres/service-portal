@@ -24,7 +24,18 @@
 .notification__content { min-width:0; margin-block:var(--sp-2-5); }
 @media (min-width:1280px){ .notification__content { margin-block:var(--sp-2); } }
 .notification__content > p { margin:0; overflow-wrap:anywhere; }
-.notification__content > p + p { margin-top:var(--sp-1); }
+/* CD rhythm: 4px below the FIRST child only (`> *:first-child { mb-1 }`,
+   notification.postcss:85-87) — the former `p + p` variant spaced every
+   pair; tenant-portal parity (2026-08 alignment D31). */
+.notification__content > :first-child { margin-bottom:var(--sp-1); }
+/* DS notification button spacing (notification.postcss:89-92): below lg the
+   button drops under the copy, from lg it moves beside it. Was absent —
+   buttons sat flush against the copy at every width. */
+.notification .btn { margin-top:var(--sp-4); }
+@media (min-width:640px)  { .notification .btn { margin-top:var(--sp-8); } }
+@media (min-width:1024px) { .notification .btn { margin-top:0; margin-left:var(--sp-6); } }
+.notification-banner__actions .btn,
+.banner-host .notification .btn { margin-top:0; margin-left:0; }
 /* NO .notification__title rule: nothing emits the class, and CD's title anatomy
    is larger (__header + --with-title + __content-offset,
    notification.postcss:98-112). A partial implementation would be a trap; add
@@ -37,11 +48,19 @@
 
 /* Consent/banner variant follows the base notification in source order, so a
    single BEM class is enough; no doubled-class specificity bump is required. */
+/* SHARED DELIBERATE DEVIATION from CD's py-4 sm:py-8 lg:py-10
+   (notification-banner.postcss:8): held at 16 → 24 @640. The tenant portal
+   documented the reason first — a bar that greets EVERY session of a dense
+   application must not take 40px paddings — and both portals now render the
+   same compact strip (2026-08 alignment D32). */
 .notification-banner { padding:var(--sp-4) 0; font-size:var(--text-sm); box-shadow:none; }
-@media (min-width:640px){ .notification-banner { padding:var(--sp-8) 0; } }
-@media (min-width:1024px){ .notification-banner { padding:var(--sp-10) 0; } }
-.notification-banner--fixed { position:fixed; z-index:var(--z-toast); right:0; bottom:0; left:0; width:100%;
-  border-top:var(--stroke-1) solid var(--color-bg); box-shadow:var(--shadow-2xl); }
+@media (min-width:640px){ .notification-banner { padding:var(--sp-6) 0; } }
+/* Full 1px white frame (CD `border border-t border-white`,
+   notification-banner.postcss:13-17 — not only the top edge), and BELOW the
+   toast layer: a confirmation toast must never hide behind the standing
+   disclaimer (tenant-portal parity; 2026-08 alignment D31). */
+.notification-banner--fixed { position:fixed; z-index:var(--z-overlay); right:0; bottom:0; left:0; width:100%;
+  border:var(--stroke-1) solid var(--color-bg); box-shadow:var(--shadow-2xl); }
 /* --alert (danger to life, notification.postcss:29-58) DELIBERATELY has NO
    portal consumer. The variant remains as CD canon because --color-alert-bg
    and the notification() role branch reference it; deleting it would orphan
@@ -174,6 +193,9 @@
   text-align:left; cursor:pointer; transition:color var(--duration); }
 @media (min-width:1544px){ .accordion__button { padding:var(--sp-5) var(--sp-3); } }
 .accordion__button:hover { background:none; color:var(--color-primary-500); }
+/* Touch guard — no sticky hover colour after a tap (CD accordion.postcss:31-35
+   `@media (hover:none)`; the tenant portal carries the same guard). */
+@media (hover:none){ .accordion__button:hover { color:inherit; } }
 .accordion__button:active { background:var(--color-secondary-50); color:var(--color-primary-700); }
 .accordion__button:focus-visible { position:relative; z-index:var(--z-local-content);
   outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-2)); }

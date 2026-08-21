@@ -118,7 +118,11 @@
 .footer-information__entry:last-child { margin-bottom:0; }
 @media (min-width:1024px){ .footer-information__entry { margin-bottom:0; } }
 @media (min-width:1280px){ .footer-information__entry--big { grid-column:span 2; } }
-.footer-information__entry h3 { font-size:var(--text-xl); color:var(--color-text-negative); margin-bottom:var(--sp-6); }
+/* REGULAR weight: CD's footer heading is text--xl with NO bold — Preflight
+   resets h3 and footer.postcss:49-52 adds only size and margin. The global
+   `h1…h5 { font-weight:bold }` (foundations/typography.css) leaked 700 in
+   here; the tenant portal renders regular (2026-08 alignment D16). */
+.footer-information__entry h3 { font-size:var(--text-xl); font-weight:var(--fw-regular); color:var(--color-text-negative); margin-bottom:var(--sp-6); }
 @media (min-width:1024px){ .footer-information__entry h3 { margin-bottom:var(--sp-10); } }
 .footer-information__entry p { margin-bottom:var(--sp-3); }   /* CD footer.postcss:54-60 mb-3 xl:mb-4 */
 @media (min-width:1280px){ .footer-information__entry p { margin-bottom:var(--sp-4); } }
@@ -204,15 +208,25 @@ body.body--standalone-app:has(.plan-check) > .site-main { height:auto; min-heigh
    surrounding container was much wider, making the wrap look arbitrary. The
    column containing the header now controls measure alone (CD does the same:
    no max-width on text classes, but container__center--* around content). */
+/* Page-header spacing = the tenant portal's shared values (2026-08 alignment
+   D24): title→sub gap 8px, bottom space 24 → 32 @1024 → 48 @1280. The h1
+   keeps the FIXED CD step ramp — the former `clamp(…, 7.5vw, …)` dropped
+   page titles to 22px below ~347px viewports, off the CD scale; CD holds
+   text--3xl at 26px on every phone (hyphens+wrap already handle the long
+   compounds). */
 .page-header { padding:var(--sp-1) 0 var(--sp-6); }
+@media (min-width:1024px){ .page-header { padding-bottom:var(--sp-8); } }
+@media (min-width:1280px){ .page-header { padding-bottom:var(--sp-12); } }
 .page-header h1 {
-  margin-bottom:var(--sp-1);
-  font-size:clamp(var(--text-2xl),7.5vw,var(--text-3xl));
+  margin-bottom:var(--sp-2);
+  font-size:var(--text-3xl);
   overflow-wrap:break-word;
   hyphens:auto;
 }
-/* ONE unscoped lead recipe, instead of one copy per context. */
-.lead { font-size:var(--text-lg); color:var(--color-text-muted); }
+/* ONE unscoped lead recipe, instead of one copy per context. `lh-snug` —
+   the CD hero-description leading (hero.postcss:30-34), shared with the
+   tenant portal's leads (2026-08 alignment D18). */
+.lead { font-size:var(--text-lg); line-height:var(--lh-snug); color:var(--color-text-muted); }
 /* No more max-width caps on lead, page header or lead notice: they wrapped text
    in mid-flow while the surrounding container was wider. Measure now comes
    exclusively from the column containing the text, exactly as in CD, which

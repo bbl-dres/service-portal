@@ -3,14 +3,19 @@
    the visible keyboard-focus state. Positioning belongs to named modifiers. */
 .listbox-anchor { position:relative; }
 
+/* Surface = the ONE cross-portal dropdown recipe (2026-08 alignment D26):
+   SQUARE box on the text-500 field border — CD's multiselect dropdown skin
+   (multiselect.postcss `--vs-border-radius: 0`, `--vs-border-color:
+   text.500`). Was 3px radius on secondary-300, a third recipe beside the
+   tenant portal's two. */
 .listbox {
   margin:0;
   padding:var(--sp-1);
   list-style:none;
   overflow-y:auto;
   background:var(--color-bg);
-  border:var(--stroke-1) solid var(--color-secondary-300);
-  border-radius:var(--radius);
+  border:var(--stroke-1) solid var(--color-border-input);
+  border-radius:var(--radius-none);
   box-shadow:var(--shadow-lg);
 }
 .listbox--suggest {
@@ -113,8 +118,8 @@
    visible when the list itself is empty — which is the case the row exists for. */
 .suggest__shell { position:absolute; z-index:var(--z-header);
   top:calc(100% + var(--sp-1)); left:0; right:0;
-  background:var(--color-bg); border:var(--stroke-1) solid var(--color-secondary-300);
-  border-radius:var(--radius); box-shadow:var(--shadow-lg); overflow:hidden; }
+  background:var(--color-bg); border:var(--stroke-1) solid var(--color-border-input);
+  border-radius:var(--radius-none); box-shadow:var(--shadow-lg); overflow:hidden; }
 .suggest__shell .listbox { position:static; border:0; border-radius:0;
   box-shadow:none; max-height:22rem; }
 /* Without results the shell carries only the action row. An empty list would
