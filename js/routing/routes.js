@@ -173,6 +173,9 @@ export const PAGES = {
   'news':        '../pages/news.js',
   'my-cases':    '../pages/my-cases.js',
   'search':      '../pages/search.js',
+  // Behind the signed-in name in the meta bar (alignment D43); gated in-page
+  // like my-cases, no L1 entry — the name is the way in, as in the tenant portal.
+  'profile':     '../pages/profile.js',
 };
 export const APPS = {
   'space-request':   '../apps/space-request.js',

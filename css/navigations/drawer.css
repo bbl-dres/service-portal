@@ -293,9 +293,11 @@
 .mobile-menu .meta-navigation .meta-navigation__user {
   display:flex; flex-direction:column; align-items:stretch; gap:0; padding-inline:0; min-height:0; }
 .mobile-menu .meta-navigation .meta-navigation__user > .separator--vertical { display:none; }
-/* The name is a label, not a control: it keeps the row shape but neither the
-   pointer nor the hover surface, which would promise an action it does not have. */
-.mobile-menu .meta-navigation .meta-navigation__name { cursor:default; gap:var(--sp-2); justify-content:flex-start; }
+/* The name IS a control since alignment D43 — a link to #/profile, as in the
+   tenant portal's drawer. As an <a> it takes the shared row anatomy and hover
+   from the `li > a` rules above; only the icon gap and left alignment stay
+   local. */
+.mobile-menu .meta-navigation .meta-navigation__name { gap:var(--sp-2); justify-content:flex-start; }
 /* No padding-bottom: it painted an empty dark strip below the last row (user
    finding). Rows carry their own surface. */
 .mobile-menu .top-bar-navigation--mobile { background:var(--color-secondary-500); }

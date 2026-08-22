@@ -56,6 +56,13 @@
 .form__group__select > .badge--sm { font-size:var(--fs-sm); line-height:1.35rem; padding:.219em .75em; }
 /* (e) Fieldset grouping (Item 3.14): fully styled, currently without consumers. */
 .form > .form__group > * + * { margin-top:var(--sp-6); }
+/* Settings option rows (profile page) — label beside the federal
+   checkbox/radio on a 44px row; mirrors the tenant portal's .option-group
+   anatomy so the two profile pages render identically (alignment D43). */
+.option-list { border:0; margin:0; padding:0; display:flex; flex-direction:column; gap:var(--sp-1-5); }
+.option-list__item { display:inline-flex; align-items:center; gap:var(--sp-2);
+  min-height:var(--target-min); cursor:pointer; }
+.option-list__item:has(input:disabled) { cursor:not-allowed; color:var(--color-text-muted); }
 .form__group__legend { font-size:var(--text-lg); font-weight:var(--fw-bold); }
 /* Space between field groups — CD `.form { space-y-6 }` = 24px
    (form.postcss:1-3); the former 40px exceeded CD and the tenant portal's

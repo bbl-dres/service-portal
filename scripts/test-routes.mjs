@@ -37,6 +37,7 @@ const ROUTES = [
   // signpost and is asserted in the redirect table below (2026-08-13).
   ['/news',                         'News'],
   ['/my-cases',                     'Meine Vorgänge'],
+  ['/profile',                      'Mein Profil'],
   ['/search?q=bau',                 'Suche'],
   ['/app/portfolio',                ''],
   ['/app/media-library',            ''],

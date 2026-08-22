@@ -209,8 +209,13 @@ function headerHTML() {
   // diacritic beside the text. When logged in, a bare hairline separated the name
   // and «Abmelden», resembling a typo. It now uses CD's md size and a real
   // .separator--vertical. The 44px height comes from item 2.5b.
+  // The NAME is a link to the profile page (#/profile) since the 2026-08
+  // alignment D43 — the tenant portal's pattern. It keeps the quiet
+  // label look at rest (muted text, primary icon) and takes the shared
+  // meta hover; a dedicated rule in header.css zeroes the anchor padding so
+  // the geometry inside the __user cluster is unchanged.
   const authNav = user
-    ? `<li class="meta-navigation__user"><span class="meta-navigation__name">${icon('User', 'icon--md')} ${escapeHtml(user.name)}</span>
+    ? `<li class="meta-navigation__user"><a class="meta-navigation__name" href="#/profile" aria-label="Profil von ${escapeHtml(user.name)}">${icon('User', 'icon--md')} ${escapeHtml(user.name)}</a>
         <span class="separator separator--vertical" aria-hidden="true"></span>
         <button type="button" class="meta-navigation__item meta-navigation__auth" data-logout>Abmelden</button></li>`
     // No target: the header does not know the user's intent, so it redraws the

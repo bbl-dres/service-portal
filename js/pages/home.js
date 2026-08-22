@@ -22,6 +22,10 @@ import * as links from '../links.js';
 export const needs = ['news', 'applications'];   // Tile images come from application records.
 const CLOSED = ['abgeschlossen', 'erledigt', 'geliefert'];
 
+// «Aktuell» carousel page — module-scoped so paging survives re-renders
+// without leaking to window (the tenant portal keeps its page the same way).
+let aktuellPage = 0;
+
 // Topic tiles (construction projects · accommodation · building operations ·
 // security) once formed a separate home-page block. They were removed because
 // the service drawer (router.js, `childrenFrom: 'topics'`) and the catalogue at
@@ -36,7 +40,7 @@ export default async function render(ctx) {
   setCrumbs([]);
 
   const services = core.services();
-  const news = core.news().slice(0, 3);
+  const news = core.news();
   const cases = engine.instances();
   const open = cases.filter(i => !CLOSED.includes(i.status));
 
@@ -51,24 +55,39 @@ export default async function render(ctx) {
   // copy was the only place that constructed the CD section anatomy correctly.
   const section = ({ title, body, more }, alt) => C.pageSection({ title, body, more, alt });
 
-  // Frequently used service — a text tile without an image, because the
-  // destination matters here rather than the illustration.
+  // Frequently used service — the SHARED cross-portal quick card (2026-08
+  // alignment D41): white CD card--default/clickable anatomy with the corner
+  // arrow, identical classes and geometry to the tenant portal's home band.
+  // Verified against CD source: no grey icon tile exists there (.box is a
+  // stacked commerce box), so the former tinted icon tile retired here; the
+  // service icons stay in the catalogue and drawers where they lead rows.
   // The tile label is a real <h3>. It was a <span>, so it was absent from the
   // document outline and the home page offered no heading jump within
   // the frequently-used section. <a> has a transparent HTML5 content model, so a heading
   // inside it is valid.
   const serviceTile = (s) => `
-    <a class="quick-tile plain-link" href="#/services/${encodeURIComponent(s.serviceId)}">
-      ${C.icon(s.icon || 'ArrowRight', 'icon--md')}
-      <div class="quick-tile__text">
-        <h3 class="quick-tile__label">${C.escape(s.title)}</h3>
-        <span class="quick-tile__meta">${C.escape(s.short)}</span>
-      </div>
+    <a class="card--quick plain-link" href="#/services/${encodeURIComponent(s.serviceId)}">
+      <h3 class="card--quick__title">${C.escape(s.title)}</h3>
+      <p class="card--quick__desc">${C.escape(s.short)}</p>
+      <span class="arrow-btn card--quick__arrow-btn" aria-hidden="true">${C.icon('ArrowRight', 'icon--base')}</span>
     </a>`;
 
   /* ------------------------------------------------------------- BLOCKS -- */
 
   const blocks = [];
+
+  // Greeting strip — one line of personal context above the case preview,
+  // ported from the tenant portal (alignment D44): time-of-day greeting,
+  // first name, and the open-case count as an inline link; a Rückfrage count
+  // follows when one exists, because that is the state waiting on the reader.
+  const greetingFor = (hour) => hour < 11 ? 'Guten Morgen' : hour < 18 ? 'Guten Tag' : 'Guten Abend';
+  const greetingStrip = (user) => {
+    const rueckfragen = open.filter(i => i.status === 'rueckfrage').length;
+    const sentence = open.length
+      ? `Sie haben <a href="#/my-cases" class="greeting-strip__count"><strong>${open.length} ${open.length === 1 ? 'laufenden Vorgang' : 'laufende Vorgänge'}</strong></a>${rueckfragen ? `, <strong>${rueckfragen}</strong> mit Rückfrage` : ''}.`
+      : 'Sie haben derzeit keine laufenden Vorgänge.';
+    return `<p class="greeting-strip">${greetingFor(new Date().getHours())}, <strong>${C.escape(user.name.split(' ')[0])}</strong>. ${sentence}</p>`;
+  };
 
   // 1 · Open cases — only when signed in and when any exist.
   if (session.isLoggedIn() && open.length) blocks.push({
@@ -79,6 +98,8 @@ export default async function render(ctx) {
     // the heading is where every other counted collection in the portal carries
     // it.
     title: `Meine offenen Vorgänge (${open.length})`,
+    // The strip precedes the table inside ONE band so greeting and preview
+    // read as a single personal block, exactly as on the tenant home.
     // Use C.table rather than hand-built markup. The home page alone had custom
     // table markup, making its padding, separators, and scroll hint differ from
     // every other view.
@@ -89,7 +110,7 @@ export default async function render(ctx) {
     // and the longer status badges each broke onto a second line — while the
     // title column absorbed everything left over. Auto layout sizes each column
     // to what is in it; `nowrap` pins the identifier (see C.table).
-    body: C.table({
+    body: greetingStrip(session.user()) + C.table({
       caption: 'Meine offenen Vorgänge', zebra: true, rowsClickable: true,
       columns: [
         { key: 'reference', label: 'Referenz', nowrap: true,
@@ -114,8 +135,14 @@ export default async function render(ctx) {
   // hence frequency rather than editorial prominence.
   const popular = services.filter(s => s.popular).sort((a, b) => a.popular - b.popular);
   if (popular.length) blocks.push({
-    title: 'Häufig gebraucht',
-    body: `<div class="grid grid--responsive-cols-3">${popular.map(serviceTile).join('')}</div>`,
+    // The SHARED band heading (alignment D41): both portals name the band by
+    // the noun their nav and CTA already use — «Dienstleistungen» — instead of
+    // two different shorthands («Häufig gebraucht» here, «Häufig genutzte
+    // Dienste» in the tenant portal).
+    title: 'Häufig genutzte Dienstleistungen',
+    // .card-grid — the shared auto-fit quick-card grid (same column breaks as
+    // the tenant portal's band at every width).
+    body: `<div class="card-grid">${popular.map(serviceTile).join('')}</div>`,
     more: { href: '#/services', label: 'Alle Dienstleistungen anzeigen' },
   });
 
@@ -166,18 +193,56 @@ export default async function render(ctx) {
     })).join('')}</div>`,
   });
 
-  // 5 · News — image gallery (CD TopNewsSection). Use «News», matching navigation
-  // and destination; the click path previously used three names for one place (D3).
-  if (news.length) blocks.push({
-    title: 'News',
-    body: `<div class="grid grid--responsive-cols-3">${news.map(n => C.card({
-      title: n.title, desc: n.teaser,
-      href: links.news(n.id),
-      photo: { src: n['bild'] && n['bild'].src, color: n.color, alt: '' },
-      footerInfo: `${C.escape(formatDate(n.date))} · ${C.escape(n.source)}`, footerAction: C.cardAction(),
-    })).join('')}</div>`,
-    more: { href: '#/news', label: 'Alle News anzeigen' },
-  });
+  // 5 · Aktuell — the news carousel, byte-matching the tenant portal's home
+  // band (2026-08 alignment D51; user decision): «Aktuell» heading, three
+  // card--profile teasers per page, prev/next arrows at the CD carousel sizes
+  // (carousel.postcss:74-76 — 48px svg, 56 from lg), CD bullet dots
+  // (carousel.postcss:36-47) and a «Weitere News» link in the footer. It
+  // replaced a static three-card «News» grid. Rendered OUTSIDE the blocks
+  // list: it owns its band colour (secondary-100, one shade darker than the
+  // alternating secondary-50 bands) and its footer replaces the section
+  // more-link.
+  const aktuellCard = (n) => `
+    <a class="card--profile news-card" href="${links.news(n.id)}">
+      ${n.bild && n.bild.src ? `<img class="card--profile__image" src="${C.escape(n.bild.src)}" alt="" loading="lazy" decoding="async" width="400" height="200">` : ''}
+      <div class="card--profile__body">
+        <p class="card--profile__date"><strong>${C.escape(n.source)}</strong> &nbsp;|&nbsp; ${C.escape(formatDate(n.date))}</p>
+        <h3 class="card--profile__title">${C.escape(n.title)}</h3>
+        <p class="card--profile__desc">${C.escape(n.teaser.length > 160 ? n.teaser.slice(0, 157) + '…' : n.teaser)}</p>
+      </div>
+      <span class="arrow-btn card--profile__arrow" aria-hidden="true">${C.icon('ArrowRight', 'icon--base')}</span>
+    </a>`;
+  const AKTUELL_PER_PAGE = 3;
+  const aktuellSection = () => {
+    const totalPages = Math.max(1, Math.ceil(news.length / AKTUELL_PER_PAGE));
+    if (aktuellPage >= totalPages) aktuellPage = 0;
+    const page = aktuellPage;
+    const visible = news.slice(page * AKTUELL_PER_PAGE, page * AKTUELL_PER_PAGE + AKTUELL_PER_PAGE);
+    return `
+    <section class="news-section section section--default" aria-labelledby="newsSectionTitle">
+      <div class="container">
+        <h2 class="section__title" id="newsSectionTitle">Aktuell</h2>
+        <div class="news-section__viewport">
+          <button class="news-section__nav news-section__nav--prev" type="button" aria-label="Vorherige Nachrichten"
+                  data-news-page="${page - 1}" ${page === 0 ? 'disabled' : ''}>${C.icon('ChevronLeft')}</button>
+          <div class="news-section__track">${visible.map(aktuellCard).join('')}</div>
+          <button class="news-section__nav news-section__nav--next" type="button" aria-label="Nächste Nachrichten"
+                  data-news-page="${page + 1}" ${page >= totalPages - 1 ? 'disabled' : ''}>${C.icon('ChevronRight')}</button>
+        </div>
+        <div class="news-section__footer">
+          <div class="news-section__dots" role="tablist" aria-label="Seiten">
+            ${Array.from({ length: totalPages }, (_, i) => `
+              <button class="news-section__dot ${i === page ? 'news-section__dot--active' : ''}"
+                      aria-label="Seite ${i + 1}${i === page ? ', aktiv' : ''}"
+                      ${i === page ? 'aria-current="true"' : ''}
+                      data-news-page="${i}"></button>
+            `).join('')}
+          </div>
+          <a class="news-section__more" href="#/news">Weitere News ${C.icon('ArrowRight')}</a>
+        </div>
+      </div>
+    </section>`;
+  };
 
   // The hero is white; bands alternate after it, starting with grey.
   const sections = blocks.map((b, i) => section(b, i % 2 === 0)).join('');
@@ -231,7 +296,20 @@ export default async function render(ctx) {
         </div>
       </div>
     </div>
-    ${sections}`;
+    ${sections}${news.length ? aktuellSection() : ''}`;
+
+  // Carousel paging — delegated to `mount` so the handler survives the
+  // section swap; only the carousel repaints, the rest of the page keeps its
+  // state (search input, open menus).
+  mount.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-news-page]');
+    if (!btn || btn.disabled) return;
+    const next = parseInt(btn.getAttribute('data-news-page'), 10);
+    if (Number.isNaN(next)) return;
+    aktuellPage = Math.max(0, next);
+    const sec = mount.querySelector('.news-section');
+    if (sec) sec.outerHTML = aktuellSection();
+  });
 
   // Row clicks in the cases table (C.table `rowsClickable`).
   const unwireRows = C.wireTableRows(mount);

@@ -117,20 +117,27 @@ export default async function render(ctx) {
     logQuery(rawQ, total, `${resolved ? 'aufgelöst' : 'wörtlich'}${sourceRatio ? ` · ${sourceRatio} Quellen` : ''}`);
   }
 
+  // Rows carry the record's IMAGE where one exists (alignment D47) — the CD
+  // SearchResultsList passes each item's image into the card--list slot; the
+  // thumbnail sits on the right and disappears on phones
+  // (`.search-result__link--media` in sections/search.css).
   const resultRow = (r) => {
     const href = safeLinkUrl(r.href);
     const body = `
+        <div class="search-result__body">
         <p class="meta-info search-result__meta">
           <span class="meta-info__item">${C.escape(r.type)}</span>
           ${r.meta ? `<span class="meta-info__item">${C.escape(r.meta)}</span>` : ''}
         </p>
         <h3 class="search-result__title">${C.escape(r.title)}${
           r.external ? ' ' + C.icon('External', 'icon--sm') : ''}</h3>
-        ${r.desc ? `<p class="search-result__desc">${C.escape(r.desc)}</p>` : ''}`;
+        ${r.desc ? `<p class="search-result__desc">${C.escape(r.desc)}</p>` : ''}
+        </div>
+        ${r.image ? `<img class="search-result__image" src="${C.escape(r.image)}" alt="" loading="lazy" decoding="async" width="180" height="120">` : ''}`;
     return `<li class="search-result">${href
-      ? `<a class="search-result__link plain-link" href="${C.escape(href)}"${
+      ? `<a class="search-result__link plain-link search-result__link--media" href="${C.escape(href)}"${
         r.external ? newWindowAttrs(href, { external: classifyUrl(href) === 'external' }) : ''}>${body}</a>`
-      : `<div class="search-result__link plain-link" aria-disabled="true">${body}</div>`}</li>`;
+      : `<div class="search-result__link plain-link search-result__link--media" aria-disabled="true">${body}</div>`}</li>`;
   };
 
   // --- State from the shareable hash, as in the three catalogues ---
@@ -168,6 +175,8 @@ export default async function render(ctx) {
   const card = (r) => C.card({
     title: r.title, desc: r.desc, href: r.href, titleTag: 'h3',
     badges: [C.badge(r.kind, 'blue')],
+    // Gallery cards show the record's image where one exists (alignment D47).
+    photo: r.image ? { src: r.image, alt: '' } : undefined,
     footerInfo: C.escape(r.type) + (r.meta ? ` · ${C.escape(r.meta)}` : ''),
     footerAction: C.cardAction(r.external),
   });
@@ -333,6 +342,7 @@ function buildIndex(core) {
       href: links.application(a.appId),
       extra: [a.group, a.area, (a.entries || []).map(e => e.label).join(' '),
         contactName(a.contact), a.appId.replace(/-/g, ' ')].join(' '),
+      image: a.bild && a.bild.src,
     });
   }
 
@@ -457,6 +467,9 @@ function buildIndex(core) {
       kind: 'News', type: 'News', title: n.title, desc: n.teaser, meta: n.date,
       answerText: n.teaser,
       href: links.news(n.id), extra: n.body || '',
+      // Results carry the record's image where one exists (alignment D47) —
+      // the CD SearchResultsList shows thumbnails in both display types.
+      image: n.bild && n.bild.src,
     });
   }
 
@@ -465,6 +478,7 @@ function buildIndex(core) {
   for (const b of core.buildings()) {
     rows.push({
       kind: 'Liegenschaften', type: 'Liegenschaft',
+      image: (b.images && b.images[0] && b.images[0].src) || undefined,
       title: b.name, desc: [b.street, [b.zip, b.city].filter(Boolean).join(' ')].filter(Boolean).join(', '),
       // A property has no description text of its own; the one sentence it can
       // support is where it stands, assembled from the fields that carry it.

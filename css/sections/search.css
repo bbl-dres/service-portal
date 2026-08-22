@@ -184,3 +184,57 @@
 .answer-slot--idle .muted { margin:0; font-size:var(--text-sm); }
 .answer__examples { display:flex; flex-wrap:wrap; gap:var(--sp-1) var(--sp-4);
   margin:var(--sp-3) 0 0; font-size:var(--text-sm); }
+
+/* ── CD RESULTS CHROME (news + search; alignment D46/D47) ───────────────────
+   Verified against the design-system source: the filter drawer is
+   search.postcss:249-269 (md:2/lg:3 column grid, gap 12→16; the CD's
+   toggle-row/[hidden] machinery is deliberately not used — see below) and the
+   results header is search.postcss:204-234 (flex wrap gap-16, text--sm,
+   pt 16/24@640/32@1544 + pb 8/12/16, secondary-300 bottom rule, right cluster
+   with a right-aligned bare select). The tenant portal renders the same
+   classes. */
+.search__filters { margin-top:var(--sp-4); }
+/* No `__actions` toggle row and no [hidden]/border-top drawer states: the CD
+   collapses the drawer behind a «Filter anzeigen» button (newsList.vue:60-88);
+   here the filters are ALWAYS visible (user decision, 2026-08 — kept-deviation
+   under D46; the tenant portal matches). The field grid itself is unchanged. */
+.search__filters__drawer { display:grid; gap:var(--sp-3);
+  padding:var(--sp-2) 0; }
+@media (min-width:640px){ .search__filters__drawer { padding:var(--sp-3) 0; } }
+@media (min-width:768px){ .search__filters__drawer { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (min-width:1024px){ .search__filters__drawer { grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--sp-4); } }
+@media (min-width:1544px){ .search__filters__drawer { padding:var(--sp-4) 0; } }
+/* The apply action sits at the end of the field grid, bottom-aligned with the
+   fields (a submit is part of the drawer: filters apply on request, not on
+   every keystroke — and Enter in any field submits). */
+.search__filters__apply { display:flex; align-items:flex-end; }
+.search__filters__tags { display:flex; flex-wrap:wrap; align-items:center; padding-top:var(--sp-4); }
+@media (min-width:640px){ .search__filters__tags { padding-top:var(--sp-6); } }
+@media (min-width:1544px){ .search__filters__tags { padding-top:var(--sp-8); } }
+.search__filters__tags .tag-item { text-decoration:none; color:inherit; }
+
+.search-results__header { display:flex; flex-wrap:wrap; gap:var(--sp-4); align-items:center;
+  justify-content:space-between; font-size:var(--text-sm);
+  padding:var(--sp-4) 0 var(--sp-2); border-bottom:var(--stroke-1) solid var(--color-secondary-300); }
+@media (min-width:640px){ .search-results__header { padding:var(--sp-6) 0 var(--sp-3); } }
+@media (min-width:1544px){ .search-results__header { padding:var(--sp-8) 0 var(--sp-4); } }
+.search-results__header__left { display:flex; align-items:center; gap:var(--sp-3); }
+.search-results__occurences { display:flex; align-items:center; }
+.search-results__header__right { display:flex; align-items:center; gap:var(--sp-2); margin-left:auto; }
+.search-results__header__right select { text-align:right; }
+/* Display toggle — the portal-wide `.view-switch` control (components/
+   content.css) since the 2026-08 view-toggle unification: one active style
+   (tint + ink + bottom rail) everywhere. Only the phone behaviour is local:
+   the results pages hide the whole switch below 640 — the list view works
+   everywhere, the gallery is a preference (the tenant portal does the same). */
+@media (max-width:640px){ .search-results__views { display:none; } }
+
+/* List rows WITH a right-hand thumbnail (CD card--list image slot,
+   card.postcss:352-373; hidden below md as in CD). object-cover at a fixed
+   180×120 is the shared cross-portal recipe — both portals crop photographic
+   thumbnails identically. */
+.search-result__link--media { display:flex; align-items:flex-start; gap:var(--sp-6); }
+.search-result__link--media .search-result__body { flex:1 1 auto; min-width:0; }
+.search-result__image { flex:none; width:180px; height:120px; object-fit:cover; }
+@media (max-width:767.98px){ .search-result__image { width:96px; height:72px; } }
+@media (max-width:479.98px){ .search-result__image { display:none; } }

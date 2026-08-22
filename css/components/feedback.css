@@ -36,6 +36,11 @@
 @media (min-width:1024px) { .notification .btn { margin-top:0; margin-left:var(--sp-6); } }
 .notification-banner__actions .btn,
 .banner-host .notification .btn { margin-top:0; margin-left:0; }
+/* …but the CD's `lg:ml-6` guarantee returns from lg (notification-banner.
+   postcss:24-27): with a long copy line, space-between alone would let the
+   text run into the button. 24px — the tenant banner's action offset
+   (alignment D42). */
+@media (min-width:1024px){ .banner-host .notification .btn { margin-left:var(--sp-6); } }
 /* NO .notification__title rule: nothing emits the class, and CD's title anatomy
    is larger (__header + --with-title + __content-offset,
    notification.postcss:98-112). A partial implementation would be a trap; add

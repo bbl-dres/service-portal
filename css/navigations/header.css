@@ -220,7 +220,16 @@
    hairline at the line start reads as a typo. */
 .meta-navigation__user { display:flex; align-items:center; gap:var(--sp-2); padding-inline:var(--sp-3);
   border-left:0; }
-.meta-navigation__name { display:flex; align-items:center; gap:var(--sp-1-5); color:var(--color-text-muted); }
+/* The name is a LINK to #/profile (alignment D43, tenant-portal pattern):
+   quiet label look at rest, shared meta hover for the affordance. Anchor
+   padding zeroed — the __user cluster already carries the sp-3 inline
+   padding, and the generic `.meta-navigation a` rule (0,1,1) would double
+   it; the descendant selector (0,2,0) outweighs it. The mobile drawer's own
+   (0,3,0)/(0,2,2) row rules in drawer.css still win there, so the name is a
+   full-width row in the drawer and a quiet inline link on the desktop bar. */
+.meta-navigation .meta-navigation__name { display:flex; align-items:center; gap:var(--sp-1-5);
+  color:var(--color-text-muted); padding-inline:0; text-decoration:none; }
+.meta-navigation a.meta-navigation__name:hover { color:var(--color-primary-600); text-decoration:none; }
 .meta-navigation__name .icon { color:var(--color-primary-600); }
 
 /* Sign-in notice where an operation would be started. */

@@ -178,6 +178,10 @@ body.body--banner-visible { padding-bottom:var(--banner-offset, 0px); }
    ramp as .container. */
 .notification-banner__wrapper { width:100%; max-width:var(--container-max); margin:0 auto;
   padding:0 var(--container-px);
+  /* 16px between the copy and the action while the wrapper is a column —
+     the tenant portal's banner gap; without it the button sat flush under
+     the text (user finding 2026-08-22; alignment D42). */
+  gap:var(--sp-4);
   display:flex; flex-direction:column; align-items:flex-start; }
 @media (min-width:1024px){
   .notification-banner__wrapper { flex-direction:row; flex-wrap:nowrap; align-items:flex-start;

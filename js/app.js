@@ -79,7 +79,10 @@ async function boot() {
     // dismissible and the footer is not, so the same caveat has to survive in
     // both places — and a reader who meets it twice should not have to work out
     // whether the second version says something new.
-    html: 'Diese Anwendung ist ein <strong>Prototyp</strong>. Darstellung, Funktionalität und Inhalte dienen ausschliesslich der Demonstration; die verwendeten Daten sind fiktiv oder öffentlich zugänglich.',
+    // Emphasis on the WHOLE lead sentence — the tenant portal's strip bolds
+    // «Diese Anwendung ist ein Prototyp.» as the notice's title sentence, and
+    // the two strips should read identically (alignment D42).
+    html: '<strong>Diese Anwendung ist ein Prototyp.</strong> Darstellung, Funktionalität und Inhalte dienen ausschliesslich der Demonstration; die verwendeten Daten sind fiktiv oder öffentlich zugänglich.',
     actionLabel: 'Verstanden',
     variant: 'info',   // CD requirement for this component (NotificationBanner.vue:51)
     label: 'Hinweis zum Prototyp',

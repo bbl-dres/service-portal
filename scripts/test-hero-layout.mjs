@@ -89,14 +89,17 @@ try {
     'and stays there when the selection opens',
     `${mobile.closed.title} → ${mobile.open.title}`);
 
-  console.log('\n■ Columns and margin switch at the same width');
+  console.log('\n■ Columns switch at 768; the margin belongs to the widest tier only (D45)');
   const narrow = await measure(760, 900, false);
   check(!twoColumns(narrow.closed) && parseFloat(narrow.closed.titleMargin) === 0,
     'just below the breakpoint: one column, no margin',
     `${narrow.closed.columns} / ${narrow.closed.titleMargin}`);
+  // Since the 2026-08 alignment (docs/design-alignment.md D45, user decision)
+  // the offset applies ONLY from 1280: the compact two-column tier keeps the
+  // title flush — so just above 768 there are two columns and STILL no margin.
   const wide = await measure(780, 900, false);
-  check(twoColumns(wide.closed) && parseFloat(wide.closed.titleMargin) > 0,
-    'just above it: two columns, margin',
+  check(twoColumns(wide.closed) && parseFloat(wide.closed.titleMargin) === 0,
+    'just above it: two columns, still no margin (compact tier)',
     `${wide.closed.columns} / ${wide.closed.titleMargin}`);
 
   const problems = [...desktop.problems, ...mobile.problems, ...narrow.problems, ...wide.problems];

@@ -103,7 +103,11 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .home-search .btn { flex:0 0 auto; }
 @media (max-width:639.98px){ .home-search { flex-direction:column; } }
 
-/* Quick links — text before image: the destination matters more than illustration. */
+/* Quick links — text before image: the destination matters more than illustration.
+   Since the 2026-08 alignment (D41) the HOME band uses the shared white
+   `.card--quick` (components/card.css); `.quick-tile` remains the compact icon
+   tile of the my-cases bookmark band, which sits on a TINTED section where the
+   white surface + shadow below is the intended rendering. */
 /* Use min(20rem,100%) rather than 20rem as the minimum column size: below a
    320px viewport, a fixed 20rem minimum would make the tile wider than the
    screen and cause horizontal page scrolling. */
@@ -130,15 +134,13 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   font-weight:var(--fw-bold); line-height:var(--lh-snug); overflow-wrap:anywhere; }
 .quick-tile:hover .quick-tile__label { color:var(--color-primary-700); }
 .quick-tile__meta { display:block; margin-top:var(--sp-0-5); font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
-/* White tiles stand out on gray sections; on white sections they need a slight
-   tint so their surface remains discernible. */
-.section--default:not([class*="bg--"]) .quick-tile { background:var(--color-secondary-50); box-shadow:none; }
-.section--default:not([class*="bg--"]) .quick-tile:hover { background:var(--color-secondary-100); box-shadow:none; }
+/* (The former white-section TINT variant is gone with its only consumer —
+   the home band, now `.card--quick` per D41. Bookmark tiles live on tinted
+   bands, where the white surface above is the rendering.) */
 /* Without a pointer, hover otherwise persists after a touch. This must follow
    the hover rules above: specificity is equal, so the later rule wins. */
 @media (hover:none){
   .quick-tile:hover { box-shadow:var(--shadow-lg); border-left-color:transparent; }
-  .section--default:not([class*="bg--"]) .quick-tile:hover { background:var(--color-secondary-50); }
 }
 .gap-sm { gap:var(--sp-2); }
 .py-1-5 { padding-block:var(--sp-1-5); }   /* Row link in the services aside box, replacing an inline style */

@@ -58,7 +58,9 @@
   /* Checkboxes are NOT handled here, but directly after their base rule (see
      "Checkboxes in high contrast" below): both rules have equal specificity;
      here the correction would occur 1,000 lines too early and lose. */
-  /* A pressed view switch needs a shape, not only a filled surface */
-  .view-switch__btn[aria-pressed="true"] { outline:var(--stroke-2) solid CanvasText; outline-offset:calc(-1 * var(--stroke-2)); }
+  /* A pressed view switch needs a shape, not only a filled surface.
+     `--active` = the marker on link toggles (news page), same treatment. */
+  .view-switch__btn[aria-pressed="true"],
+  .view-switch__btn--active { outline:var(--stroke-2) solid CanvasText; outline-offset:calc(-1 * var(--stroke-2)); }
 }
 

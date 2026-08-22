@@ -342,7 +342,13 @@ body.body--standalone-app:has(.plan-check) > .site-main { height:auto; min-heigh
    top; .heros var(--section-py) applies below, following CD's container--py
    rhythm. Column spacing is CD's gap--responsive
    (hero.postcss:79 grid--responsive-cols-2). */
-.hero--main-image { display:grid; gap:var(--gap-responsive); }
+.hero--main-image { display:grid; gap:var(--gap-responsive);
+  /* CD gives THIS variant symmetric container--py — 56/80@1024/128@1920,
+     5rem at lg exactly as bbl.admin.ch renders it — overriding the base
+     hero's tighter 48/56/80 top (hero.postcss:73-74 `@apply container--py`
+     vs :7 `pt-12 lg:pt-14 3xl:pt-20`). Verified in CD source; alignment
+     D54 (user finding 2026-08-22). */
+  padding-top:var(--section-py); }
 .hero--main-image .hero__content { max-width:none; }
 @media (min-width:768px){
   /* NO align-items here, which is CD's own arrangement (hero.postcss:70-88):
@@ -365,8 +371,13 @@ body.body--standalone-app:has(.plan-check) > .site-main { height:auto; min-heigh
      extra space would be dead. */
   .hero--main-image { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
   .hero--main-image .hero__content { justify-content:flex-start; }
-  .hero--main-image .hero__title { margin-top:var(--sp-4); }
 }
+/* The optical offset applies ONLY on the widest tier (user decision
+   2026-08-22, alignment D45; same 2rem as the tenant portal — the value
+   bbl.admin.ch itself uses: its hero column is Tailwind space-y-8 = 2rem,
+   i.e. margins of calc(2rem*var(--tw-space-y-reverse))). In the compact
+   two-column tier (768–1279) the offset read as dead space — none there. */
+@media (min-width:1280px){ .hero--main-image .hero__title { margin-top:var(--sp-8); } }
 .hero__image { display:block; position:relative; overflow:hidden; width:100%; }
 /* Otherwise the <figure> in a hero carries the user-agent default
    `margin:1em 40px`: the image did not fill its grid column, sat 40px inset on
