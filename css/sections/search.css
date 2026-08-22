@@ -227,7 +227,7 @@
    (tint + ink + bottom rail) everywhere. Only the phone behaviour is local:
    the results pages hide the whole switch below 640 — the list view works
    everywhere, the gallery is a preference (the tenant portal does the same). */
-@media (max-width:640px){ .search-results__views { display:none; } }
+@media (max-width:639.98px){ .search-results__views { display:none; } }
 
 /* List rows WITH a right-hand thumbnail (CD card--list image slot,
    card.postcss:352-373; hidden below md as in CD). object-cover at a fixed

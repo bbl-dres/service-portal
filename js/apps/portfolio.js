@@ -198,7 +198,7 @@ export default async function render(ctx) {
     if (state.view === 'map') {
 
       if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> ${list.length === 1 ? 'Objekt' : 'Objekte'}`;
-      main.innerHTML = `<div class="pf-map dash-map" id="pf-map-el" role="group" aria-label="Karte der Liegenschaften"></div>`;
+      main.innerHTML = `<div class="pf-map dash-map" id="pf-map-el" role="group" aria-label="Karte der Liegenschaften">${C.loading({ label: 'Karte wird geladen…' })}</div>`;
       mountMap(list, state.focus);
     } else if (!list.length) {
 

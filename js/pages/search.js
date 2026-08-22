@@ -58,6 +58,18 @@ import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
 export const needs = ['applications', 'datasets', 'documents', 'news', 'contacts', 'buildings', 'projects',
   'dataTables', 'processes', 'businessObjects'];
 
+// The index folds, tokenises and stems three text fields for every one of
+// several hundred rows — and it used to be rebuilt on EVERY render, i.e. on
+// each source-checkbox tick and answers toggle (code review 2026-08, F-S3).
+// One module cache, invalidated when deferred data arrives, mirrors the
+// suggest index's documented pattern (js/search/search-suggest.js).
+let INDEX_CACHE = null;
+document.addEventListener('core:data-loaded', () => { INDEX_CACHE = null; });
+function cachedIndex(core) {
+  if (!INDEX_CACHE) INDEX_CACHE = buildIndex(core);
+  return INDEX_CACHE;
+}
+
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   const state = C.catalogueState(query, {
@@ -72,7 +84,7 @@ export default async function render(ctx) {
   // Diagnostic view instead of results (#/search?log=1); see js/search/search-log.js.
   const showLog = query.get('log') === '1';
 
-  const index = buildIndex(core);
+  const index = cachedIndex(core);
   // The source selection applies BEFORE the search, with the same call every
   // other search path uses. Searching first and discarding afterwards would mean
   // fetching the full set in order to shrink it — and on a real backend this is

@@ -331,11 +331,7 @@ body.body--standalone-app:has(.plan-check) > .site-main { height:auto; min-heigh
    portal-wide convention: .page-header .lead and the home-page lead share the
    same muted text-lg voice; ONE lead treatment across the product. */
 .hero__description { font-size:var(--text-lg); line-height:var(--lh-snug); color:var(--color-text-muted); margin:0; }
-/* CD spacing ramp for the CTA row (hero.postcss:36-39 mr/mb-4 md:5 xl:6 on
-   buttons; represented here as flex-gap at the same measure). */
-.hero__cta { display:flex; flex-wrap:wrap; gap:var(--sp-4); }
-@media (min-width:768px){ .hero__cta { gap:var(--sp-5); } }
-@media (min-width:1280px){ .hero__cta { gap:var(--sp-6); } }
+/* (Dead rules removed in the 2026-08 code review, F-S30 — no emitter in any template.) */
 /* hero--main-image (hero.postcss:70-88): content and image share the 12-col
    grid from md up; below that the content stacks above the image. */
 /* No independent padding: the .detail-bar rule (Detail pages below) resets the

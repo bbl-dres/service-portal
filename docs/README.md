@@ -26,7 +26,8 @@ Konzept- und Review-Dokumente des Service-Portal-Prototyps. Leseordnung:
 14. **[design-review.md](design-review.md)** — die AKTUELLE Design-Review (August 2026): Konsistenz, Komplexität, Sprache — Kanon, 130 Befunde, Umsetzungsstand, bewusste Abweichungen.
 15. **[code-review-2026-08-16.md](code-review-2026-08-16.md)** — aktueller JavaScript-Review: Bugs, Nebenläufigkeit, Sicherheit, Performance, Vereinfachung und umgesetzte Korrekturen.
 16. **[design-review-metadata-process-docs-2026-08-17.md](design-review-metadata-process-docs-2026-08-17.md)** — fokussierter UX-Review für Metadatenkatalog und Prozessdokumentation: informationsorientierte Details, konsistente Tabs und responsive Einspalten-Anatomie.
-17. **[design-alignment.md](design-alignment.md)** — Cross-Portal-Abgleich (August 2026, geteiltes Dokument mit dem Mieterportal): Drei-Wege-Gap-Analyse gegen `swiss/designsystem`, 53 Angleichungsentscheide (D1–D53), umgesetzte Änderungen in beiden Prototypen, verbleibende dokumentierte Abweichungen.
+17. **[design-alignment.md](design-alignment.md)** — Cross-Portal-Abgleich (August 2026, geteiltes Dokument mit dem Mieterportal): Drei-Wege-Gap-Analyse gegen `swiss/designsystem`, 57 Angleichungsentscheide (D1–D57), umgesetzte Änderungen in beiden Prototypen, verbleibende dokumentierte Abweichungen.
+18. **[code-quality-review.md](code-quality-review.md)** — Cross-Portal-Code-Review (August 2026, geteiltes Dokument mit dem Mieterportal): Bugs, Race Conditions, Performance, einheitliches Lade-Feedback (grauer Spinner), Dead Code und Deduplizierung — Befunde F-T1–F-T35 / F-S1–F-S37 mit Umsetzungsstatus.
 
 ## Status
 

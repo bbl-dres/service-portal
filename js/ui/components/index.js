@@ -5,7 +5,7 @@
 import {
   actionCard, activeFilters, card, cardAction, contactBox, contactCard, detailBar,
   detailHead, detailSection, domainTile, downloadItem, downloadLink, empty,
-  heroFigure, landscape, pageHeader, pageSection, renderNotFound, sourceBox, table,
+  heroFigure, landscape, pageHeader, pageSection, renderNotFound, table,
 } from './content.js';
 import {
   announce, flashError, mountBanner, notification, notificationHtml, processDone, toast,
@@ -38,7 +38,7 @@ export {
   contactCard, contextLine, detailBar, detailHead, detailSection, domainTile, landscape,
   downloadItem, downloadLink, empty, errorSummary, escape, field, filterGroup,
   flashError, focusProcessDone, focusWizardStep, heroFigure, icon, loading,
-  loginGate, markLang, menu, mountBanner, mountDataTable, notification, openModal,
+  loginGate, markLang, menu, mountBanner, mountDataTable, notification, notificationHtml, openModal,
   openShareModal, pageHeader, pageSection, pagination, panelReset, photo,
   photoUrl, pipeline, preserveFocus, processDone, readForm, registerOverlay,
   renderNotFound, safeDecode, select, selectBox, sidebarTree, statusBadge, tabBar, table,
@@ -61,6 +61,6 @@ const C = {
   actionCard, contactCard,
   pagination, wirePagination, loginGate, accessCard,
   preserveFocus, wireScrollRegions, errorSummary, wireErrorSummary, processDone,
-  mountDataTable, wireTableRows, cardAction, pageSection, heroFigure, sourceBox,
+  mountDataTable, wireTableRows, cardAction, pageSection, heroFigure,
 };
 export default C;

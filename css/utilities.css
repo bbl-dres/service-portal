@@ -36,13 +36,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 /* ---- CD alignment (Design Review Stage 5/6) ------------------------------ */
 /* Separator (separator.postcss): vertical rule + spacing/negative variants */
 .separator--vertical { display:inline-block; align-self:stretch; width:0; border-right:var(--stroke-1) solid var(--color-secondary-400); margin-inline:var(--sp-4); }
-.separator--xl { display:block; height:var(--sp-4); }
-.separator--negative { border-color:var(--color-secondary-300); }
-/* Stacked link list (.link--block). `.section__action` previously appeared here
-   a second time byte-for-byte; the single definition now lives below in the
-   home-page block (Item 1.12). */
-.link--block { display:block; }
-.link--block + .link--block { margin-top:var(--sp-3); }
+/* (Dead rules removed in the 2026-08 code review, F-S30 — no emitter in any template.) */
 /* Right-aligned pagination below results lists (CD) */
 .pagination-wrap--right { justify-content:flex-end; }
 
@@ -54,7 +48,6 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .row > .icon { flex:none; }
 .break-all { overflow-wrap:anywhere; word-break:break-word; }
 
-.row--end { justify-content:flex-end; }
 
 /* ===================== Home page (workspace) ===================== */
 /* CD section heading and action (section.postcss:55,89 · ServicesSection.vue):
@@ -284,7 +277,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   .top-header { border:0 !important; padding:0 0 var(--sp-4) !important; }
   .logo { align-items:flex-start !important; }
   .logo__name { display:block !important; }
-  .grid, .grid--auto, .stats, .container--grid { display:block !important; }
+  .grid, .stats, .container--grid { display:block !important; }
   p, img, ul, ol, .card, .notification, .box, .table { position:relative; display:block; break-inside:avoid; }
   .table { display:table; }
   .card { margin-bottom:2em; box-shadow:none !important; border:var(--stroke-1) solid var(--color-border-strong); }

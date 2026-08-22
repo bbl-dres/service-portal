@@ -4,7 +4,7 @@
 /* min(260px,100%) instead of 260px: nested in a narrow column (or below a 320px
    viewport), a fixed minimum would make the track wider than its container.
    This is the same safeguard used by the home-page tile grid. */
-.grid--auto { grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr)); }
+/* (Dead rules removed in the 2026-08 code review, F-S30 — no emitter in any template.) */
 .grid--items-4 { grid-template-columns:minmax(0,1fr); }
 @media (min-width:768px) {
   .grid--responsive-cols-2, .grid--responsive-cols-3, .grid--responsive-cols-4 { grid-template-columns:repeat(2,minmax(0,1fr)); }

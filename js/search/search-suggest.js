@@ -81,6 +81,12 @@ const MAX = 7;
 const TYPE_BOOST = { service: 24, application: 16, dataset: 6, knowledge: -12 };
 
 let CACHE = null;
+// If applications/datasets fail on the FIRST keystroke (the ensure below
+// swallows the rejection by design), the index is built from empty accessors
+// — without this it stayed empty for the whole session even after the data
+// recovered. core dispatches this event on late/recovered loads
+// (code review 2026-08, F-S18).
+document.addEventListener('core:data-loaded', () => { CACHE = null; });
 async function suggestIndex(core) {
   if (CACHE) return CACHE;
   // Both requests are shared with the rest of the app through core.ensure, so a

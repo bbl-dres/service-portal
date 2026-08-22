@@ -15,7 +15,7 @@ const PER_PAGE = 12;
 // router only reaches this module through its delegate. This delegated module
 // therefore has no `needs` export of its own.
 
-export function catalog(ctx) {
+function catalog(ctx) {
   const { params } = ctx;
   return params[1] ? detail(ctx, params[1]) : list(ctx);
 }
@@ -48,11 +48,14 @@ function list(ctx) {
   // publication date is German text («10. Mai 2025»), so parse its month for sorting.
   const GERMAN_MONTH_NUMBER = { 'Januar': 1, 'Februar': 2, 'März': 3, 'April': 4, 'Mai': 5, 'Juni': 6, 'Juli': 7, 'August': 8, 'September': 9, 'Oktober': 10, 'November': 11, 'Dezember': 12 };
   const dateKey = (s) => { const m = String(s || '').match(/(\d+)\.\s*([A-Za-zäöü]+)\s*(\d{4})/); return m ? Number(m[3]) * 10000 + (GERMAN_MONTH_NUMBER[m[2]] || 0) * 100 + Number(m[1]) : 0; };
+  // Regex-parse each record's date ONCE, not ~2·n·log n times inside the
+  // comparator (code review 2026-08, F-S16).
+  const DATE_KEYS = new Map(all.map(d => [d, dateKey(d.meta['ausgabedatum'])]));
   const SORT_OPTIONS = [{ value: 'title', label: 'Titel (A–Z)' }, { value: 'thema', label: 'Thema' }, { value: 'date', label: 'Ausgabedatum (neuste zuerst)' }];
   const SORTS = {
     title: (a, b) => t(a.title).localeCompare(t(b.title), 'de'),
     thema: (a, b) => t(a.meta['thema']).localeCompare(t(b.meta['thema']), 'de') || t(a.title).localeCompare(t(b.title), 'de'),
-    date: (a, b) => dateKey(b.meta['ausgabedatum']) - dateKey(a.meta['ausgabedatum']) || t(a.title).localeCompare(t(b.title), 'de'),
+    date: (a, b) => DATE_KEYS.get(b) - DATE_KEYS.get(a) || t(a.title).localeCompare(t(b.title), 'de'),
   };
   const sortKey = state.sort;
 
@@ -248,7 +251,7 @@ function detail(ctx, id) {
       backHref: '#/data/catalog', backLabel: 'Datenbezug und API Verzeichnis',
       title: t(d.title), lead: t(d.description),
       tags: tagPills,
-      image: img ? `<img class="hero-media hero-media--16x9" src="${img}" alt="" loading="lazy">` : '',
+      image: img ? `<img class="hero-media hero-media--16x9" src="${img}" alt="" loading="eager" decoding="async">` : '',
       // The dataset catalogue was the first surface to carry «merken» (user
       // decision) and is now one of three with the same star in the same corner.
       // It is the only one whose picture is optional — one dataset in twenty has

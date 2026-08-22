@@ -224,7 +224,21 @@ export function openGallery(items, start, C, options = {}) {
     el.sub.textContent = `${it.meta || ''}${multi ? ` · Bild ${idx + 1} von ${items.length}` : ''}`;
     zoom = 'fit';
     el.img.style.width = ''; el.img.style.height = '';
-    if (imageUrl) el.img.src = imageUrl; else el.img.removeAttribute('src');
+    if (imageUrl) {
+      // Busy ring while a cold image decodes — assigning src clears the stage,
+      // which used to sit blank with no feedback until the network delivered
+      // (code review 2026-08, F-S20). The ±1 pre-warm keeps warm swaps
+      // instant; `complete` clears the state synchronously for those.
+      el.stage?.setAttribute('aria-busy', 'true');
+      const settle = () => el.stage?.removeAttribute('aria-busy');
+      el.img.addEventListener('load', settle, { once: true });
+      el.img.addEventListener('error', settle, { once: true });
+      el.img.src = imageUrl;
+      if (el.img.complete) settle();
+    } else {
+      el.img.removeAttribute('src');
+      el.stage?.removeAttribute('aria-busy');
+    }
     el.img.alt = it.alt || it.title || '';
     // naturalWidth is known only after loading; fit-mode percentage needs it, so
     // update after the load event.

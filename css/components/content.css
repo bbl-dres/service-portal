@@ -74,9 +74,7 @@
 .separator { display:block; height:auto; border:0; margin:0; background:none; }
 .separator::before { content:""; display:block; width:100%; border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
 .box .separator::before { border-bottom-color:var(--color-secondary-300); }
-.separator--md::before, .separator--md::after { content:""; display:block; width:100%; height:var(--sp-2); }
-@media (min-width:768px){ .separator--md::before, .separator--md::after { height:var(--sp-3); } }
-@media (min-width:1024px){ .separator--md::before, .separator--md::after { height:var(--sp-4); } }
+/* (Dead rules removed in the 2026-08 code review, F-S30 — no emitter in any template.) */
 
 /* Back to top: while scrolling, the button floats at bottom right and docks at
    the footer information's top-right corner at the page end (CD requirement).
@@ -296,7 +294,7 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 .news-section__nav[disabled] { opacity:.3; cursor:default; }
 .news-section__nav .icon { width:48px; height:48px; }
 @media (min-width:1024px) { .news-section__nav .icon { width:56px; height:56px; } }
-@media (max-width:767px)  { .news-section__nav { display:none; } }
+@media (max-width:767.98px){ .news-section__nav { display:none; } }
 .news-section__footer { display:flex; align-items:center; justify-content:space-between;
   margin-top:var(--sp-12); flex-wrap:wrap; gap:var(--sp-4); }
 .news-section__dots { display:flex; gap:var(--sp-2); flex:1; justify-content:center; }

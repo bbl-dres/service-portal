@@ -34,8 +34,7 @@
 .notification .btn { margin-top:var(--sp-4); }
 @media (min-width:640px)  { .notification .btn { margin-top:var(--sp-8); } }
 @media (min-width:1024px) { .notification .btn { margin-top:0; margin-left:var(--sp-6); } }
-.notification-banner__actions .btn,
-.banner-host .notification .btn { margin-top:0; margin-left:0; }
+.banner-host .notification .btn { margin-top:0; margin-left:0; }   /* (dead __actions selector removed, F-S30) */
 /* …but the CD's `lg:ml-6` guarantee returns from lg (notification-banner.
    postcss:24-27): with a long copy line, space-between alone would let the
    text run into the button. 24px — the tenant banner's action offset

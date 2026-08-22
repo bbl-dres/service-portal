@@ -195,8 +195,12 @@ function headerHTML() {
   const desktopNavItems = NAV.map(item => renderNavItem(item, 'desktop')).join('');
   const mobileNavItems = NAV.map(item => renderNavItem(item, 'mobile')).join('');
 
+  // icon--md, not --base: the authorities link beside it carries md (24px from
+  // 768), and a 16px glyph next to it read as a different control family —
+  // one External size across the bar (2026-08 alignment D56; the tenant
+  // portal's bar matches).
   const topBarNav = TOP_BAR_LINKS.map(l =>
-    `<li><a href="${l.href}"${l.external ? ' target="_blank" rel="noopener noreferrer external"' : ''}><span>${escapeHtml(l.label)}</span>${icon(l.icon, 'icon--base')}</a></li>`
+    `<li><a href="${l.href}"${l.external ? ' target="_blank" rel="noopener noreferrer external"' : ''}><span>${escapeHtml(l.label)}</span>${icon(l.icon, 'icon--md')}</a></li>`
   ).join('');
   const metaNav = META_LINKS.map(l =>
     `<li><a class="meta-navigation__item" href="${l.href}">${escapeHtml(l.label)}</a></li>`

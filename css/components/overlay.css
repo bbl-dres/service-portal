@@ -82,6 +82,13 @@
 .pf-lightbox__btn:disabled:hover { background:none; }
 .pf-lightbox__body { position:absolute; inset:0; display:flex; flex-direction:column; min-height:0; }
 .pf-lightbox__stage { position:relative; flex:1 1 auto; min-width:0; min-height:0; overflow:hidden; }
+/* Busy ring while a cold image decodes (code review 2026-08, F-S20): the
+   stage is dark, so the shared grey spinner recipe renders as a light ring;
+   pointer-events stay live (the chevrons keep working during the load). */
+.pf-lightbox__stage[aria-busy="true"]::after { content:''; position:absolute; top:50%; left:50%;
+  width:var(--sp-8); height:var(--sp-8); margin:calc(-1 * var(--sp-4)) 0 0 calc(-1 * var(--sp-4));
+  border:var(--stroke-3) solid var(--color-secondary-300); border-top-color:transparent;
+  border-radius:var(--radius-full); animation:spin var(--duration-spin) linear infinite; }
 .pf-lightbox__scroll { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   min-width:0; min-height:0;
   padding:calc(var(--lb-top) + var(--sp-4)) var(--sp-4) calc(var(--lb-bottom) + var(--sp-4));

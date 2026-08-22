@@ -284,7 +284,7 @@ function catalogue(ctx, objects) {
     };
     if (state.view === 'map') {
       setCount();
-      main.innerHTML = '<div class="pf-map dash-map" id="workspace-map" role="group" aria-label="Karte der Workspace-Objekte"></div>';
+      main.innerHTML = `<div class="pf-map dash-map" id="workspace-map" role="group" aria-label="Karte der Workspace-Objekte">${C.loading({ label: 'Karte wird geladen…' })}</div>`;
       mountMap(list);
       C.announceCatalogue({ count: list.length, total: objects.length, unit: 'Objekten', view: 'map' });
       return;

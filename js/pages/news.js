@@ -182,7 +182,7 @@ function newsList(ctx) {
       <div class="search-results ${state.view === 'galerie' ? 'search-results--grid' : 'search-results--list'}">
         <div class="search-results__header">
           <div class="search-results__header__left">
-            <div class="search-results__occurences"><strong>${rows.length}</strong>&nbsp;${rows.length === 1 ? 'Treffer' : 'Treffer'}</div>
+            <div class="search-results__occurences"><strong>${rows.length}</strong>&nbsp;Treffer</div>
           </div>
           <div class="search-results__header__right">
             ${C.select({
@@ -208,11 +208,17 @@ function newsList(ctx) {
         ${totalPages > 1 ? `
           <nav class="pagination-wrap pagination-wrap--right" aria-label="Seitennavigation">
             <div class="pagination">
-              <a class="btn btn--bare btn--icon-only" href="${hashFor(state, { seite: Math.max(1, seite - 1) })}"
-                 ${seite === 1 ? 'aria-disabled="true"' : ''} aria-label="Vorherige Seite">${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></a>
+              ${/* A REAL disabled button on the edge pages, not an
+                    aria-disabled link: the link stayed keyboard-reachable and
+                    navigable — C.pagination documents the same rule
+                    (code review 2026-08, F-S12). */''}
+              ${seite === 1
+                ? `<button type="button" class="btn btn--bare btn--icon-only" disabled aria-label="Vorherige Seite">${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button>`
+                : `<a class="btn btn--bare btn--icon-only" href="${hashFor(state, { seite: seite - 1 })}" aria-label="Vorherige Seite">${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></a>`}
               <span class="pagination__text">Seite ${seite} von ${totalPages}</span>
-              <a class="btn btn--bare btn--icon-only" href="${hashFor(state, { seite: Math.min(totalPages, seite + 1) })}"
-                 ${seite === totalPages ? 'aria-disabled="true"' : ''} aria-label="Nächste Seite">${C.icon('ChevronRight', 'btn__icon')}<span class="btn__text">Weiter</span></a>
+              ${seite === totalPages
+                ? `<button type="button" class="btn btn--bare btn--icon-only" disabled aria-label="Nächste Seite">${C.icon('ChevronRight', 'btn__icon')}<span class="btn__text">Weiter</span></button>`
+                : `<a class="btn btn--bare btn--icon-only" href="${hashFor(state, { seite: seite + 1 })}" aria-label="Nächste Seite">${C.icon('ChevronRight', 'btn__icon')}<span class="btn__text">Weiter</span></a>`}
             </div>
           </nav>` : ''}
       </div>

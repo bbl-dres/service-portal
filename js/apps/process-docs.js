@@ -394,7 +394,7 @@ function list(ctx) {
   const listColumns = [
     ...(mixedBranches ? [{ key: 'branch', label: 'Zweig', width: '11rem', render: (p) => esc(p.branchLabel) }] : []),
     { key: 'number', label: 'Nr.', width: '10rem', render: (p) => `<code>${esc(p.processId)}</code>` },
-    { key: 'name', label: 'Prozess', render: (p) => `<a href="${recordHref(p)}">${esc(p.name)}</a><br><span class="small muted">${esc(truncateText(p.description, 90))}</span>` },
+    { key: 'name', label: 'Prozess', render: (p) => `<a href="${esc(recordHref(p))}">${esc(p.name)}</a><br><span class="small muted">${esc(truncateText(p.description, 90))}</span>` },
     { key: 'group', label: 'Prozessgruppe', width: '13rem', render: (p) => esc(p.groupLabel) },
     { key: 'status', label: 'Status', width: '8rem', render: (p) => { const st = statusOf(core, p.status); return badge(st.label, st.variant); } },
   ];

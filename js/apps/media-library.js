@@ -137,7 +137,7 @@ export default async function render(ctx) {
   const mapView = () => {
     const n = mapPoints().length;
     return `<div class="pf-map dash-map mt-4" id="med-map" role="group"
-        aria-label="Karte der Aufnahmeorte"></div>
+        aria-label="Karte der Aufnahmeorte">${C.loading({ label: 'Karte wird geladen…' })}</div>
       <p class="small muted mt-2">${n} von ${sorted.length} Aufnahmen sind georeferenziert.`
       + ` Demo-Daten: die Positionen liegen bis rund 30 m um das abgebildete Objekt.</p>`;
   };
@@ -312,7 +312,7 @@ function detail(ctx, id) {
     </dl>
     ${
 ''}
-    ${hasGeo ? '<div class="pf-map dash-map mt-4" id="med-detail-map" role="group" aria-label="Aufnahmeort auf der Karte"></div>' : ''}`;
+    ${hasGeo ? `<div class="pf-map dash-map mt-4" id="med-detail-map" role="group" aria-label="Aufnahmeort auf der Karte">${C.loading({ label: 'Karte wird geladen…' })}</div>` : ''}`;
 
   const panels = { overview: overviewPanel, metadata: metadataPanel };
   const panelHtml = (panelId) => (panels[panelId] || overviewPanel)();

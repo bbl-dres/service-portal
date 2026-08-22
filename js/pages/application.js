@@ -8,6 +8,7 @@
 // Applications differ in entry point (embedded micro-app vs external system),
 // access and contact; users need that context before opening it.
 
+import { APPLICATIONS } from '../crumbs.js';
 import { audienceTags } from '../domain.js';
 import { bookmarkButton } from '../ui/bookmark.js';
 
@@ -136,13 +137,10 @@ export default function render(ctx, appId) {
 function heroImage(C, application) {
   const image = application['bild'];
   if (!image || !image.src) return '';
-  return C.photo({ src: image.src, alt: image['titel'] || application.name, w: 800, cls: 'photo--16x9' });
+  return C.photo({ src: image.src, alt: image['titel'] || application.name, w: 800, cls: 'photo--16x9', loading: 'eager' });   // LCP element (F-S21)
 }
 
-function crumbs() {
-  return [
-    { label: 'Startseite', href: '#/' },
-    { label: 'Daten und Digitalisierung', href: '#/data' },
-    { label: 'Anwendungen', href: '#/applications' },
-  ];
-}
+// Trail comes from the shared prefix registry — this was a character-for-
+// character private copy of crumbs.js APPLICATIONS (code review 2026-08,
+// F-S14).
+const crumbs = () => APPLICATIONS;

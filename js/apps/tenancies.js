@@ -202,7 +202,7 @@ function overview(ctx) {
     if (state.view === 'map') {
 
       updateCount(list.length);
-      main.innerHTML = `<div class="pf-map dash-map" id="mt-map-el" role="group" aria-label="Karte der Mietverhältnisse"></div>`;
+      main.innerHTML = `<div class="pf-map dash-map" id="mt-map-el" role="group" aria-label="Karte der Mietverhältnisse">${C.loading({ label: 'Karte wird geladen…' })}</div>`;
       mountMap(list);
       C.announceCatalogue({ count: list.length, total: all.length,
         unit: { nom: 'Mietverhältnisse', dat: 'Mietverhältnissen' },

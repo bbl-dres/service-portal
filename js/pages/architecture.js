@@ -112,7 +112,8 @@ export default function render(ctx) {
   // A736 and the repository. The table repeated the cards outright; the
   // provenance is genuinely new information but not what someone opening an
   // overview came for. Where the leading version of a record lives is still
-  // stated where it is actually needed: on the record, via C.sourceBox.
+  // stated where it is actually needed: on the record itself. (A dedicated
+  // source box was drafted but never adopted; removed in the 2026-08 review.)
   mount.innerHTML = `
     ${C.pageSection({
       body: C.pageHeader({

@@ -48,8 +48,14 @@
    (user decision, 2026-08-12). DELIBERATE DEVIATION: CD keeps its bar links
    as icons below lg (top-bar-navigation.postcss:7-11) and treats the drawer copy
    as an addition rather than a replacement. */
-.top-bar-navigation { display:none; height:100%; }
-.top-bar-navigation ul { list-style:none; display:flex; }
+/* align-self:stretch, NOT height:100%: the right cluster's height is auto
+   (the container centres it), so a percentage height resolved to auto and the
+   nav shrank to its 44px content — its glyph then sat 2px above the bar's
+   centre line. Stretch gives it the cluster's full 48px and the inner chain
+   (ul 100% → a 100%) follows, exactly CD's h-full chain
+   (top-bar-navigation.postcss:6-23 — alignment D56). */
+.top-bar-navigation { display:none; align-self:stretch; }
+.top-bar-navigation ul { list-style:none; display:flex; height:100%; }
 .top-bar-navigation a { display:flex; align-items:center; height:100%; min-height:var(--target-min);
   padding-inline:var(--sp-1); color:var(--color-text-negative); text-decoration:none; transition:color var(--duration-fast); }
 .top-bar-navigation a:hover, .top-bar-navigation a:focus { color:var(--color-gray-300); text-decoration:none; }

@@ -61,9 +61,6 @@ function overview(ctx) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${
-
-''}
     ${C.pageHeader({
       title: 'Datenportal',
       leadHtml: 'Auswertungen zu den Kennzahlen des BBL — Energie und Klima, Immobilienportfolio, Bauprojekte und Investitionen, Beschaffung, Logistik, Mobilität und Personal. '

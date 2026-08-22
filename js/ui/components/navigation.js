@@ -195,6 +195,11 @@ export function wireTabs(root, { onSelect, syncHash } = {}) {
 // caller for typed page jumps.
 export function pagination({ page, totalPages, href, inputId, label = 'Seitennavigation', align }) {
   if (totalPages <= 1) return '';
+  // A missing inputId used to render id="undefined"/for="undefined" — and two
+  // paginations on one page then collided on that id (code review 2026-08,
+  // F-S26). The field id also goes through escape like every other
+  // interpolation in this function.
+  inputId = inputId || `pagination-${Math.abs(String(label).split('').reduce((a, c) => a * 31 + c.charCodeAt(0) | 0, 7))}`;
   const control = (target, text, iconName, disabled, key) => {
     const inner = `${icon(iconName, 'btn__icon')}<span class="btn__text">${text}</span>`;
     const id = inputId ? ` id="${escape(inputId)}-${key}"` : '';   // Focus restoration (Item 3.3).
@@ -216,8 +221,8 @@ export function pagination({ page, totalPages, href, inputId, label = 'Seitennav
         ${/* ONE name per control (CD Pagination.vue uses exactly one source): the
               sr-only label names the field. An additional aria-label would
               silently override it and could drift. */''}
-        <label class="sr-only" for="${inputId}">Seite</label>
-        <input id="${inputId}" class="pagination__input input--outline input--base" type="text" inputmode="numeric"
+        <label class="sr-only" for="${escape(inputId)}">Seite</label>
+        <input id="${escape(inputId)}" class="pagination__input input--outline input--base" type="text" inputmode="numeric"
           value="${page}" autocomplete="off">
         <div class="pagination__text">von ${totalPages} Seiten</div>
         <ul class="pagination__items">

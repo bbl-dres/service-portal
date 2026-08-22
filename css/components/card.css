@@ -136,16 +136,12 @@
 .photo { position:relative; overflow:hidden; }
 .photo > img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
 .photo > :not(img) { position:relative; z-index:var(--z-local-content); }
-.photo--scrim::before { content:""; position:absolute; inset:0; z-index:var(--z-local-base);
-  background:var(--scrim-gradient); }
+/* (Dead rules removed in the 2026-08 code review, F-S30 — no emitter in any template.) */
 .photo--16x9 { aspect-ratio:16/9; } .photo--4x3 { aspect-ratio:4/3; }
 .photo--21x9 { aspect-ratio:21/9; max-height:22rem; }
 /* SQUARE — CD article media carries no radius anywhere (card.postcss,
    hero.postcss); the 5px was this photo's lone rounding (alignment D46). */
 .news-detail__photo { aspect-ratio:21/9; max-height:20rem; }
-.photo--fill { height:100%; }
-.photo--overlay-bottom { display:flex; align-items:flex-end; justify-content:space-between; padding:var(--sp-3); }
-.photo--overlay-center { display:flex; align-items:center; justify-content:center; color:var(--color-text-negative); }
 /* No image zoom on card hover: CD defines no transform on card images (the only
    scale in the system is card--highlight's background layer, scale-102). */
 /* image-not-available (image-not-available.postcss:5-17) */
@@ -163,16 +159,7 @@
 /* Dynamic badge--${variant} producers can opt into the CD clickable badge.
    The portal raises its target to 44px and supplies the same state contract as
    other controls without changing each semantic colour variant. */
-.badge--clickable { min-height:var(--target-min); cursor:pointer; }
-.badge--clickable:hover { filter:brightness(.95); }
-.badge--clickable:active { filter:brightness(.85); }
-.badge--clickable:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
-.badge--clickable:is(:disabled,[aria-disabled="true"],.badge--disabled) {
-  cursor:not-allowed; opacity:.55; pointer-events:none; }
-.badge--clickable:is([aria-busy="true"],.badge--loading) {
-  cursor:progress; opacity:.7; pointer-events:none; }
-.badge--clickable:is([aria-invalid="true"],.badge--error) { outline:var(--stroke-2) solid var(--color-error); }
-.badge--clickable:is([data-empty="true"],.badge--empty) { cursor:default; opacity:.55; }
+/* (Dead rules removed in the 2026-08 code review, F-S30 — no emitter in any template.) */
 /* Card pills (.pill-row) must be allowed to wrap at 200% text zoom (WCAG 1.4.4).
    Measured on #/data/katalog: a long German compound topic badge grew to 439px
    inside a 347px card and was clipped by its `overflow:hidden`. Merely allowing

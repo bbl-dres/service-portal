@@ -88,11 +88,21 @@ function withoutSeededShadows(records) {
   return records.filter((record) => !seededIds.has(record.instanceId));
 }
 
+// Memoised: parsing + normalising + two Set builds ran on EVERY instances()
+// call — several per render on some routes (code review 2026-08, F-S27).
+// Any write path and the cross-tab `storage` event drop the memo; a stale
+// read from another tab's write between events is impossible because the
+// event fires for every localStorage change from other tabs, and same-tab
+// writes go through saveLS below.
+let _lsCache = null;
+window.addEventListener('storage', (e) => { if (e.key === LS_KEY) _lsCache = null; });
 function loadLS() {
+  if (_lsCache) return _lsCache;
   const a = readJSON(LS_KEY, []);
-  return withoutSeededShadows(cleanInstances(a, 'local'));
+  _lsCache = withoutSeededShadows(cleanInstances(a, 'local'));
+  return _lsCache;
 }
-function saveLS(records) { return writeJSON(LS_KEY, records); } // → bool so callers detect silent loss (C1)
+function saveLS(records) { _lsCache = null; return writeJSON(LS_KEY, records); } // → bool so callers detect silent loss (C1)
 
 // Mutations are synchronous because localStorage is synchronous. A short lease
 // narrows the cross-tab read-modify-write race; ownership is checked again just

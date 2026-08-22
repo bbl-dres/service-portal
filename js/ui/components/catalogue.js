@@ -131,7 +131,8 @@ export function catalogueHash(base, { q = '', page = 1, view = '', defaultView =
 // `onSearch` receives the RAW value: trimming and case are the caller's
 // business, and the two existing conventions (trim here, keep there) are
 // preserved by leaving them at the call site.
-export function wireSearchField(root, { formId, inputId, mode = 'live', debounceMs = 250, onSearch, isAlive }) {
+// (internal — no external consumer; un-exported in the 2026-08 review, F-S28)
+function wireSearchField(root, { formId, inputId, mode = 'live', debounceMs = 250, onSearch, isAlive }) {
   const form = formId ? root.querySelector('#' + formId) : null;
   const input = inputId ? root.querySelector('#' + inputId) : null;
   if (!form && !input) return () => {};

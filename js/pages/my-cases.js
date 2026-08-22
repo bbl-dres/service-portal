@@ -12,7 +12,13 @@ import { bookmarkNeeds, resolveBookmarks } from '../ui/bookmark-kinds.js';
 // `users` carries the bookmark seed for the favourites band below the table.
 // The band loads whatever ITS OWN entries reference on top of this, after first
 // paint (renderBookmarks).
-export const needs = ['buildings', 'projects', 'users'];
+// `buildings` (66 KB) and `projects` are read ONLY by the detail view
+// (case → linked building/project), so the LIST no longer blocks on them —
+// needs is a function of the route params (the data.js pattern; code review
+// 2026-08, F-S17).
+export const needs = (params) => (params && params[0]
+  ? ['buildings', 'projects', 'users']
+  : ['users']);
 export default async function render(ctx) {
   const { mount, params, session, core, engine, C, setTitle, setCrumbs, onUnmount } = ctx;
 
@@ -57,7 +63,11 @@ export default async function render(ctx) {
         edge. It also fills in AFTER first paint — favourites can span any
         inventory, so rendering inline would make the cases table wait for
         whichever files this person's own bookmarks happen to need. */''}
-  <div id="cases-bookmarks"></div>`;
+  ${/* Not empty while its data loads: the band used to drop in below the
+        table with no warning (layout shift). The shared grey spinner holds
+        the slot; renderBookmarks replaces it — or clears it when this person
+        has no favourites (code review 2026-08, F-S19). */''}
+  <div id="cases-bookmarks">${C.loading({ label: 'Favoriten werden geladen…' })}</div>`;
 
   void renderBookmarks(ctx, mount.querySelector('#cases-bookmarks'));
 
@@ -107,7 +117,9 @@ async function renderBookmarks(ctx, host) {
   if (!host) return;
   const { core, C } = ctx;
   const saved = bookmarks.list();
-  if (!saved.length) return;
+  // Clear the placeholder spinner on every early exit — otherwise a person
+  // without favourites would watch it spin forever (F-S19).
+  if (!saved.length) { host.innerHTML = ''; return; }
 
   // Load only what this person's own bookmarks need, then resolve. A failed
   // collection simply yields no rows for its kind — core.ensure records the
@@ -118,7 +130,7 @@ async function renderBookmarks(ctx, host) {
 
   const ordered = saved.slice().sort((a, b) => String(b.addedAt).localeCompare(String(a.addedAt)));
   const { rows } = resolveBookmarks(core, ordered);
-  if (!rows.length) return;
+  if (!rows.length) { host.innerHTML = ''; return; }
 
   const tile = (row) => `
     <a class="quick-tile plain-link" href="${C.escape(row.href)}">

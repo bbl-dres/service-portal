@@ -13,7 +13,13 @@ const MISSING_TARGET_MESSAGE = 'Im Prototyp ist kein Zielsystem angebunden.';
 // #/data/catalog: the catalogue marks saved services and offers the favourites
 // filter, the detail page draws the star, and neither can know what is saved
 // before the directory is loaded (js/core/bookmarks.js seedOnce).
-export const needs = ['applications', 'contacts', 'documents', 'users'];
+// `documents` feeds exactly one surface: the «Auch in …» cross-counter while
+// a search query is active — so the plain catalogue no longer blocks on the
+// largest content file (needs as a function of the query, the data.js
+// pattern; code review 2026-08, F-S17).
+export const needs = (params, query) => (params && params[0]) || (query && query.get('q'))
+  ? ['applications', 'contacts', 'documents', 'users']
+  : ['applications', 'contacts', 'users'];
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
   if (params[0]) return detail(ctx, params[0]);
@@ -215,7 +221,7 @@ function detail(ctx, id) {
       backHref: '#/services', backLabel: 'Dienstleistungen',
       title: service.title, lead: service.short,
       tags: `${audienceTags(core, C, service.audience)}${service.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
-      image: C.heroFigure({ src: image, ratio: '16x9' }),
+      image: C.heroFigure({ src: image, ratio: '16x9', loading: 'eager' }),   // LCP element (F-S21)
       // The same «merken» star as the dataset and application heads, in the same
       // corner of the same picture: the three detail pages are the surfaces
       // people arrive at from search, so one gesture has to mean one thing.

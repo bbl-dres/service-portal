@@ -123,16 +123,24 @@ try {
   check(raced.length === 0 || raced.some(t => /St(ö|oe)rung/i.test(t)),
     'the list belongs to the last query typed, not the first', raced.slice(0, 2).join(' · '));
 
-  // Emptying the field must leave it closed, including against an in-flight query.
+  // Emptying the field must not let the in-flight query paint its RESULTS
+  // over it. An empty field deliberately shows the EXAMPLE questions
+  // (search-suggest.js showExamples — «Beispiele» group), so the assertion is
+  // «no result rows», not «no rows»: the original zero-options expectation
+  // predated the examples feature and failed against it (pre-existing drift
+  // found in the 2026-08 code review; reproduced at pristine HEAD).
   const cleared = await page.evaluate(`(async () => {
     const w = ms => new Promise(r => setTimeout(r, ms));
     const input = document.querySelector('#home-q');
     input.value = 'raum'; input.dispatchEvent(new Event('input', { bubbles: true }));
     input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true }));
     await w(500);
-    return document.querySelectorAll('.listbox--suggest .listbox__option').length;
+    const metas = [...document.querySelectorAll('.listbox--suggest .listbox__option .listbox__meta')]
+      .map(el => el.textContent);
+    return { total: metas.length, results: metas.filter(t => !t.includes('Beispiel')).length };
   })()`);
-  check(cleared === 0, 'clearing the field closes the list and keeps it closed', `${cleared} option(s)`);
+  check(cleared.results === 0, 'clearing the field never shows stale query results (examples only)',
+    `${cleared.results} result row(s) of ${cleared.total} option(s)`);
 
   head('Header rerender releases transient search state');
   const headerState = await page.evaluate(`(async () => {

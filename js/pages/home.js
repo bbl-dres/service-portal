@@ -19,11 +19,16 @@ import * as links from '../links.js';
 // BEFORE render(); without this declaration, an accessor would read the still
 // empty list and the view would show «no entries» instead of data
 // (docs/code-review.md §3).
-export const needs = ['news', 'applications'];   // Tile images come from application records.
+// `applications` (~85 KB) is deliberately NOT in needs: the route used to
+// block on it to look up four tile images. The cards render with their
+// coloured placeholder tiles and the images are patched in when the file
+// arrives (code review 2026-08, F-S7).
+export const needs = ['news'];
 const CLOSED = ['abgeschlossen', 'erledigt', 'geliefert'];
 
-// «Aktuell» carousel page — module-scoped so paging survives re-renders
-// without leaking to window (the tenant portal keeps its page the same way).
+// «Aktuell» carousel page — module-scoped so paging survives the IN-PAGE
+// carousel repaints without leaking to window; render() resets it, so a new
+// visit always opens on the first slide (F-S2).
 let aktuellPage = 0;
 
 // Topic tiles (construction projects · accommodation · building operations ·
@@ -38,6 +43,12 @@ export default async function render(ctx) {
   // “Overview”, a word reserved for drawer first rows and detail tabs (D7).
   setTitle('Startseite');
   setCrumbs([]);
+
+  // Fresh visit, first slide: the module scope only has to carry the page
+  // across the in-page carousel repaints, not across navigations — coming
+  // back from #/news used to reopen on whatever slide was last viewed
+  // (code review 2026-08, F-S2).
+  aktuellPage = 0;
 
   const services = core.services();
   const news = core.news();
@@ -184,13 +195,14 @@ export default async function render(ctx) {
       desc: 'Pläne, Dokumentationen und Berichte je Gebäude suchen und beziehen.',
       foot: 'Anwendung' },
   ];
+  const highlightsGrid = () => `<div class="grid grid--responsive-cols-3" id="home-highlights">${HIGHLIGHTS.map(h => C.card({
+    title: h.title, desc: h.desc, href: h.href,
+    photo: { src: h.appId ? (core.application(h.appId)?.['bild']?.src || '') : h.src, alt: '' },
+    footerInfo: h.foot, footerAction: C.cardAction(),
+  })).join('')}</div>`;
   blocks.push({
     title: 'Anwendungen, Hilfsmittel und weitere Angebote',
-    body: `<div class="grid grid--responsive-cols-3">${HIGHLIGHTS.map(h => C.card({
-      title: h.title, desc: h.desc, href: h.href,
-      photo: { src: h.appId ? (core.application(h.appId)?.['bild']?.src || '') : h.src, alt: '' },
-      footerInfo: h.foot, footerAction: C.cardAction(),
-    })).join('')}</div>`,
+    body: highlightsGrid(),
   });
 
   // 5 · Aktuell — the news carousel, byte-matching the tenant portal's home
@@ -208,7 +220,7 @@ export default async function render(ctx) {
       <div class="card--profile__body">
         <p class="card--profile__date"><strong>${C.escape(n.source)}</strong> &nbsp;|&nbsp; ${C.escape(formatDate(n.date))}</p>
         <h3 class="card--profile__title">${C.escape(n.title)}</h3>
-        <p class="card--profile__desc">${C.escape(n.teaser.length > 160 ? n.teaser.slice(0, 157) + '…' : n.teaser)}</p>
+        <p class="card--profile__desc">${C.escape((n.teaser || '').length > 160 ? n.teaser.slice(0, 157) + '…' : (n.teaser || ''))}</p>
       </div>
       <span class="arrow-btn card--profile__arrow" aria-hidden="true">${C.icon('ArrowRight', 'icon--base')}</span>
     </a>`;
@@ -230,9 +242,12 @@ export default async function render(ctx) {
                   data-news-page="${page + 1}" ${page >= totalPages - 1 ? 'disabled' : ''}>${C.icon('ChevronRight')}</button>
         </div>
         <div class="news-section__footer">
-          <div class="news-section__dots" role="tablist" aria-label="Seiten">
+          ${/* role=group, NOT tablist: these are plain page buttons without
+                tab/tabpanel semantics — a tablist with non-tab children reads
+                as empty to AT (code review 2026-08, F-S8). */''}
+          <div class="news-section__dots" role="group" aria-label="Seiten">
             ${Array.from({ length: totalPages }, (_, i) => `
-              <button class="news-section__dot ${i === page ? 'news-section__dot--active' : ''}"
+              <button type="button" class="news-section__dot ${i === page ? 'news-section__dot--active' : ''}"
                       aria-label="Seite ${i + 1}${i === page ? ', aktiv' : ''}"
                       ${i === page ? 'aria-current="true"' : ''}
                       data-news-page="${i}"></button>
@@ -300,16 +315,32 @@ export default async function render(ctx) {
 
   // Carousel paging — delegated to `mount` so the handler survives the
   // section swap; only the carousel repaints, the rest of the page keeps its
-  // state (search input, open menus).
-  mount.addEventListener('click', (e) => {
+  // state (search input, open menus). `mount` is #main-content and PERSISTS
+  // across routes, so the handler must go through ctx.onUnmount like every
+  // other mount-level listener on this page — without it, each visit stacked
+  // another handler for the life of the tab (code review 2026-08, F-S1).
+  const onCarouselClick = (e) => {
     const btn = e.target.closest('[data-news-page]');
-    if (!btn || btn.disabled) return;
+    if (!btn || btn.disabled || !btn.closest('.news-section')) return;
     const next = parseInt(btn.getAttribute('data-news-page'), 10);
     if (Number.isNaN(next)) return;
+    const wasDot = btn.classList.contains('news-section__dot');
+    const wasNext = btn.classList.contains('news-section__nav--next');
     aktuellPage = Math.max(0, next);
     const sec = mount.querySelector('.news-section');
-    if (sec) sec.outerHTML = aktuellSection();
-  });
+    if (!sec) return;
+    sec.outerHTML = aktuellSection();
+    // The swap destroys the activated control — put focus on its successor
+    // instead of letting it drop to <body> (WCAG 2.4.3; F-S9).
+    const fresh = mount.querySelector('.news-section');
+    const target = wasDot
+      ? fresh?.querySelector(`.news-section__dot[data-news-page="${aktuellPage}"]`)
+      : (fresh?.querySelector(`.news-section__nav--${wasNext ? 'next' : 'prev'}:not([disabled])`)
+        || fresh?.querySelector('.news-section__nav:not([disabled])'));
+    target?.focus();
+  };
+  mount.addEventListener('click', onCarouselClick);
+  if (ctx.onUnmount) ctx.onUnmount(() => mount.removeEventListener('click', onCarouselClick));
 
   // Row clicks in the cases table (C.table `rowsClickable`).
   const unwireRows = C.wireTableRows(mount);
@@ -329,8 +360,26 @@ export default async function render(ctx) {
   const detach = attachSuggest(mount.querySelector('#home-q'), searchForm, core, C);
   if (ctx.onUnmount) ctx.onUnmount(detach);
 
-  // A changed source selection changes what the field finds, so the page renders
-  // again; `restoreSourcesFocus` returns the caret to the control just used.
-  wireSources(mount, () => { void render(ctx); });
+  // A changed source selection only changes the sentence under the search
+  // field (searches read the selection at query time) — so only the control
+  // repaints. The former full `render(ctx)` rebuilt hero, tables, cards and
+  // carousel per checkbox tick, and stacked one more carousel listener each
+  // time via the re-entrant render (code review 2026-08, F-S10).
+  const repaintSources = () => {
+    const el = mount.querySelector('.search-sources');
+    if (!el) return;
+    el.outerHTML = sourcesControl();
+    wireSources(mount, repaintSources);
+    restoreSourcesFocus(mount);
+  };
+  wireSources(mount, repaintSources);
   restoreSourcesFocus(mount);
+
+  // Deferred tile images (F-S7): the applications file arrives after first
+  // paint; patch the four highlight cards when it does. If the user has
+  // already navigated on, the grid is gone and the patch is a no-op.
+  void core.ensure(['applications']).then(() => {
+    const grid = mount.querySelector('#home-highlights');
+    if (grid) grid.outerHTML = highlightsGrid();
+  }).catch(() => { /* the data banner reports the failure */ });
 }

@@ -145,7 +145,7 @@ function overview(ctx) {
     pjMap.free();
     if (state.view === 'map') {
       if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> ${list.length === 1 ? 'Projekt' : 'Projekte'}`;
-      main.innerHTML = `<div class="pf-map dash-map" id="pj-map-el" role="group" aria-label="Karte der Bauprojekte"></div>`;
+      main.innerHTML = `<div class="pf-map dash-map" id="pj-map-el" role="group" aria-label="Karte der Bauprojekte">${C.loading({ label: 'Karte wird geladen…' })}</div>`;
       mountMap(list, state.focus);
     } else if (!list.length) {
       if (cnt) cnt.innerHTML = `<strong>0</strong> von ${objects.length} Projekten`;

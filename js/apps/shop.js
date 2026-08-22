@@ -304,7 +304,7 @@ function detail(ctx, id) {
       <div class="detail-layout__main">
         <div class="shop-product-hero">
           <div class="shop-product-hero__media">
-            ${photos.length ? `<img src="${C.escape(photos[0])}" alt="${C.escape(p.name)}">` : C.icon('Image', 'icon--xl')}
+            ${photos.length ? `<img src="${C.escape(photos[0])}" alt="${C.escape(p.name)}" loading="eager" decoding="async">` : C.icon('Image', 'icon--xl')}
           </div>
           <div>
             <p class="eyebrow">${C.escape(p.brand || 'BBL Sortiment')}</p>
