@@ -1,10 +1,12 @@
-// The «merken» control and its wiring — ONE heart for every bookmarkable record.
+// The «merken» control and its wiring — ONE star for every bookmarkable record.
 //
-// The glyph is a HEART (user decision, 2026-08-12; a star before that). Class
-// and variant names stay glyph-neutral — `.bookmark-icon`, variant `icon` — so
-// the next such change touches the icon call and nothing else. The room-booking
-// favourites moved with it (js/apps/room-booking.js): same word «Favoriten», so
-// two different symbols for it would be the inconsistency, not the consistency.
+// The glyph is a STAR (user feedback, 2026-08-22; a heart from 2026-08-12, a
+// star before that). Class and variant names stay glyph-neutral —
+// `.bookmark-icon`, variant `icon` — so the change touched the icon calls and
+// nothing else. The room-booking favourites moved with it
+// (js/apps/room-booking.js): same word «Favoriten», so two different symbols for
+// it would be the inconsistency, not the consistency — and its own copy already
+// said «Stern» while a heart was drawn.
 //
 // Lives here rather than in js/ui/components/ because it reads the session and
 // the bookmark store, and the component layer is deliberately data-free (pages
@@ -45,7 +47,7 @@ const TITLE = (on) => (on ? 'Aus meinen Favoriten entfernen' : 'Zu meinen Favori
 const shapeOf = (variant) => (variant === 'link' ? 'link' : 'icon');
 
 function inner(variant, name, on) {
-  const symbol = icon(on ? 'HeartFilled' : 'Heart', 'btn__icon');
+  const symbol = icon(on ? 'StarFilled' : 'Star', 'btn__icon');
   return shapeOf(variant) === 'link'
     ? `${symbol}<span class="btn__text">${TITLE(on)}</span>`
     : `${symbol}<span class="sr-only">${escape(name)} — ${TITLE(on)}</span>`;
@@ -79,7 +81,7 @@ export function bookmarkButton({ kind, id, name = '', variant = 'icon' } = {}) {
 // link, and saving is a decision you make on the record, not while scanning past
 // it. So this states a fact and offers no action — no aria-pressed, no title, no
 // focus. It renders NOTHING when the record is not saved: an empty outline
-// heart on every row would be twelve invitations to click something inert.
+// star on every row would be twelve invitations to click something inert.
 //
 // It needs no wireBookmarks entry for the same reason: nothing on these pages
 // can change the state, so a mark is correct from paint until the next render.
@@ -88,7 +90,7 @@ export function bookmarkMark({ kind, id } = {}) {
   if (!bookmarks.has(kind, id)) return '';
   // The symbol alone is not a label. In a list the column header names the
   // dimension and this names the value; on a card it is the whole statement.
-  return `<span class="bookmark-mark">${icon('HeartFilled', 'icon--md')}<span class="sr-only">Gemerkt</span></span>`;
+  return `<span class="bookmark-mark">${icon('StarFilled', 'table__icon')}<span class="sr-only">Gemerkt</span></span>`;
 }
 
 // A saved-only catalogue filter — the read side of the same store, expressed in
@@ -134,7 +136,7 @@ export function savedFilterPill(selected, hash) {
 // control survives every route change without per-page wiring.
 //
 // EVERY control for the same record is redrawn, not just the clicked one. The
-// same record can carry a heart in its page head and a «Merken» button in its
+// same record can carry a star in its page head and a «Merken» button in its
 // access card; updating only the one that was clicked would leave the other
 // showing the opposite state on the same screen.
 export function wireBookmarks(root = document) {

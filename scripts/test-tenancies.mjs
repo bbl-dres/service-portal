@@ -33,7 +33,10 @@ let o = JSON.parse(await p.evaluate(`JSON.stringify({
 })`));
 check(o.h1 === 'Mietende', 'The page has its title', o.h1);
 check(o.cards === 9, 'The gallery shows nine cards per page', String(o.cards));
-check(/18 von 18/.test(o.count || ''), 'The result count is complete', o.count);
+// The bar states «N Einheit» when nothing is filtered — the redundant
+// «N von N» is gone (docs/pagination-alignment.md): CD's search header
+// carries a plain total, and the page position lives in the pagination.
+check(/18 Mietverhältnisse/.test(o.count || ''), 'The result count is complete', o.count);
 check(!/m²/.test(o.count || '') && !/CHF/.test(o.count || ''), 'The count line contains no dashboard metrics');
 check(o.tileGrid === 0, 'The retired three-column tile grid is absent');
 check(o.chips.length === 2, 'Each image has administrative-unit and floor chips', o.chips.join(' | '));
@@ -123,9 +126,11 @@ o = JSON.parse(await p.evaluate(`JSON.stringify({
   inventoryLink: document.querySelector('a[href*="app/portfolio?id="]')?.getAttribute('href'),
   launchLinks: [...document.querySelectorAll('.detail-layout__aside a.fp-svc[href^="#/app/"]')]
     .map(a => ({ target: a.getAttribute('target') || '', rel: a.getAttribute('rel') || '' })),
-  requestTitle: [...document.querySelectorAll('.detail-layout h2')].map(h => h.textContent.trim())
-    .find(x => /Anträge/.test(x)),
+  // «Anträge» is its own reiter now, not a section under Übersicht.
+  requestTab: [...document.querySelectorAll('[role="tab"]')].map(t => t.textContent.trim())
+    .find(x => /^Anträge/.test(x)),
   requestTable: !!document.querySelector('#tenancy-case-table table'),
+  requestInOverview: !!document.querySelector('#mt-tab-panel-overview #tenancy-case-table'),
 })`));
 check(o.h1 === 'Verwaltungszentrum Guisanplatz', 'The property name is the h1', o.h1);
 
@@ -133,9 +138,13 @@ check(o.h1 === 'Verwaltungszentrum Guisanplatz', 'The property name is the h1', 
 
 
 
-check(o.tabs.length === 3 && /^Grundrisse/.test(o.tabs[1]), 'There are three tabs including floor plans', o.tabs.join(' | '));
-check(o.requestTitle === 'Anträge zu diesem Mietobjekt' && o.requestTable,
-  'Requests appear in the overview section', `${o.requestTitle} · table ${o.requestTable}`);
+check(o.tabs.length === 4 && /^Grundrisse/.test(o.tabs[1]), 'There are four tabs including floor plans', o.tabs.join(' | '));
+// «Anträge» moved OUT of Übersicht into its own reiter (2026-08): it is a
+// table, and a table is what a tab is for. Under Übersicht it competed with
+// the contract facts for the same glance and pushed the key figures out of view.
+check(/^Anträge/.test(o.requestTab || '') && o.requestTable && !o.requestInOverview,
+  'Requests have their own tab, not a section under Übersicht',
+  `${o.requestTab} · table ${o.requestTable} · in overview ${o.requestInOverview}`);
 check(o.kv.includes('Verwaltungseinheit') && o.kv.includes('Geschosse'), 'The overview contains its core facts', o.kv.join(', '));
 check(o.shortcuts.length >= 4, 'Service shortcuts are sourced from the service registry', String(o.shortcuts.length));
 check(/building=1080%2F4850%2FAG/.test(o.spaceRequestLink || ''),
@@ -219,7 +228,7 @@ check(o.headers.includes('Räume') && o.headers.includes('HNF') && o.headers.inc
 
 check(/^Total \(\d+\)$/.test((o.total[0] || '').replace(/\s+/g, ' ').trim()),
   'The footer follows the inventory “Total (n)” pattern', o.total.join(' '));
-check(/2 von 2 Geschosse/.test(o.count || ''), 'The table reports its result count', o.count);
+check(/2 Geschosse/.test(o.count || ''), 'The table reports its result count', o.count);
 await clean(p, 'Floor table');
 
 head('Row click opens a floor plan');

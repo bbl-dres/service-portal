@@ -305,12 +305,28 @@
   border-bottom-color:var(--color-secondary-300); }
 .mobile-menu .top-bar-navigation--mobile li > a:hover { background:var(--color-secondary-700); color:var(--color-text-negative); }
 
-/* Detail header bar: back link left, share bar right, one row. */
+/* Detail header bar: back link left, share bar right, one row.
+   CD pairs `.back-bar` and `.share-bar`, each `mt-5 lg:mt-4`
+   (share-bar.postcss:5-13) — the bar sits ~20/16px under the breadcrumb, NOT a
+   section's 80px away from it. Where the bar opens a `.container.section`, that
+   section's top padding lands ABOVE the bar and pushed it 80px down the page,
+   leaving a hole between the trail and the back button (measured 340→420 at
+   1440). The rule below hands that gap back to the bar at CD's value; the
+   section keeps its rhythm BELOW, via the bar's own margin-bottom. */
 .detail-bar { display:flex; justify-content:space-between; align-items:center; gap:var(--sp-4); flex-wrap:wrap;
-  margin-bottom:var(--sp-6); }
-@media (min-width:1024px){ .detail-bar { margin-bottom:var(--sp-10); } }
+  margin-top:var(--sp-5); margin-bottom:var(--sp-6); }
+@media (min-width:1024px){ .detail-bar { margin-top:var(--sp-4); margin-bottom:var(--sp-10); } }
+/* `:has()` rather than a class on every caller: the bar is rendered by
+   C.detailBar into whatever wrapper a page already has, and the correction
+   belongs to the pairing, not to fourteen call sites. */
+.container.section:has(> .detail-bar:first-child) { padding-top:0; }
 .detail-bar .back-link-row { padding-bottom:0; }
-.detail-bar .share-bar { margin:0; }
+/* Keep CD's `-mr-3` (share-bar.postcss:7) inside the bar: the buttons' own
+   padding is pulled back over the container edge so the ICON — not the
+   invisible hit area — lines up with the text column. `margin:0` here used to
+   drop it, which left the icons inset against every other row on the page and
+   12px away from where the tenant portal put them. */
+.detail-bar .share-bar { margin:0 calc(-1 * var(--sp-3)) 0 0; }
 /* The detail-bar owns the gap to the following hero (its margin-bottom); the hero
    must not add its own top padding on top of that, or the title floats too low. */
 .detail-bar + .hero { padding-top:0; }

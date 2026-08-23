@@ -185,8 +185,8 @@ function overview(ctx) {
     const main = mount.querySelector('#mt-main');
     mtMap.free();
 
-    const updateCount = (n, suffix = '') => {
-      if (cnt) cnt.innerHTML = `<strong>${n}</strong> von ${all.length} Mietverhältnissen${suffix}`;
+    const updateCount = (n) => {
+      if (cnt) cnt.innerHTML = C.countText({ nom: 'Mietverhältnisse', dat: 'Mietverhältnissen' }, all.length, n);
     };
 
     mount.querySelector('#mt-activefilters').innerHTML = C.activeFilters({
@@ -221,7 +221,7 @@ function overview(ctx) {
         page: 1, totalPages: 1, view: state.view });
       return;
     }
-    updateCount(list.length, pages > 1 ? ` · Seite ${state.page} von ${pages}` : '');
+    updateCount(list.length);   // page position lives in `.pagination__text` below
 
     main.innerHTML = (state.view === 'gallery' ? galleryHTML(visible) : listHTML(visible))
       + C.pagination({ page: state.page, totalPages: pages, inputId: 'mt-page' });
@@ -337,14 +337,18 @@ function detail(ctx, id) {
   const cases = (engine.instances() || []).filter((i) => i.linkedEntities && i.linkedEntities.buildingId === t.buildingId);
 
   // German tab and floor-plan mode values remain stable public-link adapters.
-  const tabByLegacyValue = { 'uebersicht': 'overview', 'grundriss': 'floorplans', 'vertrag': 'contracts' };
+  const tabByLegacyValue = { 'uebersicht': 'overview', 'grundriss': 'floorplans', 'vertrag': 'contracts', 'antrag': 'cases' };
   const legacyValueByTab = Object.fromEntries(Object.entries(tabByLegacyValue).map(([legacy, tab]) => [tab, legacy]));
   const tabs = [
     { id: 'overview', label: 'Übersicht' },
 
     { id: 'floorplans', label: `Grundrisse (${floors.length})` },
     { id: 'contracts', label: `Verträge (${contracts.length})` },
-
+    // «Anträge» is a TABLE, and a table is what a tab is for. It used to sit as
+    // a second section under Übersicht, where it competed with the contract
+    // facts for the same glance and pushed the key figures up out of view —
+    // and it was the only table in this app not reachable by its own reiter.
+    { id: 'cases', label: `Anträge (${cases.length})` },
   ];
   let active = tabByLegacyValue[query.get('tab')] || 'overview';
   if (!tabs.some((x) => x.id === active)) active = 'overview';
@@ -404,12 +408,6 @@ function detail(ctx, id) {
           <h2 class="detail-section__title">Vertrag und Mengengerüst</h2>
           ${kpis}
           ${kv}
-        </section>
-        ${
-''}
-        <section class="detail-section">
-          <h2 class="detail-section__title">Anträge zu diesem Mietobjekt</h2>
-          <div id="tenancy-case-table"></div>
         </section>
       </div>${asideHtml()}</div>`;
   }
@@ -567,6 +565,7 @@ function detail(ctx, id) {
     .concat({ label: 'Dokumente zum Gebäude', href: `#/app/document-archive?building=${encodeURIComponent(t.buildingId)}`, newWindow: true });
 
   const contractsPanel = () => '<div id="tenancy-contract-table"></div>';
+  const casesPanel = () => '<div id="tenancy-case-table"></div>';
 
   function dataTables() {
     return {
@@ -637,7 +636,7 @@ function detail(ctx, id) {
     };
   }
 
-  const panels = { overview: overviewPanel, floorplans: floorplansPanel, contracts: contractsPanel };
+  const panels = { overview: overviewPanel, floorplans: floorplansPanel, contracts: contractsPanel, cases: casesPanel };
 
   function draw() {
 

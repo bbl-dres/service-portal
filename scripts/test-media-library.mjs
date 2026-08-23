@@ -30,7 +30,9 @@ console.log(`   (Registry: ${media.length} media records, ${localMedia.length} w
     await navigate('#/app/media-library', 2400);
     let result = JSON.parse(await readView());
     check(/Mediathek Bauten/.test(result.h1), `The page has its title (${result.h1})`);
-    check(new RegExp(`^${media.length} von ${media.length}`).test(result.count), `All ${media.length} records are counted (${result.count})`);
+    // Unfiltered the bar states a plain total; the redundant «N von N» is gone
+    // (docs/pagination-alignment.md).
+    check(new RegExp(`^${media.length} Aufnahmen`).test(result.count), `All ${media.length} records are counted (${result.count})`);
     check(result.cards > 0 && !result.empty, `The gallery renders cards (${result.cards})`);
 
     console.log('■ Sort modes');

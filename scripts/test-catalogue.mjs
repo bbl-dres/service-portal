@@ -236,7 +236,7 @@ const dec = (h) => decodeURIComponent(h);
         exports: [...panel.querySelectorAll('.action-menu__item')].map((b) => b.dataset.action),
         afterSearch: panel.querySelectorAll('tbody tr').length,
         // The bar drops pagination once the result fits on one page.
-        paginationGoneAfterSearch: !panel.querySelector('.pagination'),
+        paginationStaysAfterSearch: !!panel.querySelector('.pagination'),
         count: panel.querySelector('.catbar__count')?.textContent.replace(/\\s+/g, ' ').trim(),
         // The tab owns no heading of its own (user decision, 2026-08-12).
         headings: panel.querySelectorAll('.detail-section__title, p.muted').length,
@@ -262,7 +262,11 @@ const dec = (h) => decodeURIComponent(h);
     })()`);
     check(ft.perPage === 20, `field table pages at 20 rows (${ft.perPage})`);
     check(ft.paginated, 'field table is paginated at 75 fields');
-    check(ft.paginationGoneAfterSearch, 'pagination disappears once one page is enough');
+    // The footer NEVER disappears (user decision, 2026-08-22). It is where a
+    // reader finds out how long a list is, and «one page» is an answer; a
+    // control that only shows up once the data grows past ten rows makes the
+    // same surface look different for different people's data.
+    check(ft.paginationStaysAfterSearch, 'pagination stays when one page is enough');
     check(ft.sorts === 5, `four sort options plus the placeholder (${ft.sorts})`);
     check(ft.exports.join(',') === 'csv,xls', `export menu offers CSV and Excel (${ft.exports.join(',')})`);
     check(ft.afterSearch === 2 && /^2 von 75/.test(ft.count), `search narrows the field list (${ft.count})`);

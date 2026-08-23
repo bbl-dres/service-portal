@@ -56,6 +56,13 @@
 @media (min-width:1024px){ .btn, .btn--base { line-height:var(--line-6); } .btn--sm { line-height:var(--line-5); } }
 @media (min-width:1280px){ .btn, .btn--base { min-height:var(--control-size-md); } .btn--sm { min-height:var(--sp-10); } .btn--lg { min-height:var(--control-size-lg); } }
 @media (min-width:1920px){ .btn, .btn--base { min-height:var(--control-size-lg); } .btn--sm { min-height:var(--control-size-sm); } .btn--lg { min-height:var(--sp-14); } }
+/* The back button carries the 44px touch floor instead of following the
+   `btn--sm` ramp (40px at 1440). It is the one control in the detail bar a
+   reader aims at, and the tenant portal already floors it there on the same
+   WCAG 2.5.5 reasoning — so the two bars now measure the same height. Scoped to
+   `.btn--back`; `.btn--sm` keeps CD's ramp everywhere else. Declared after the
+   ramp's media queries, which is what lets it win at every width. */
+.btn.btn--back { min-height:var(--target-min); }
 /* The compact CD button remains on fine desktop pointers. Up through tablet
    and on coarse pointers, the portal brief's 44px target size applies. */
 @media (max-width:1023.98px), (pointer:coarse), (hover:none){

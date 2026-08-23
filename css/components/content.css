@@ -178,8 +178,13 @@ body.body--overlay-open .back-to-top-rail { display:none; }
    belongs beside the component, in the always-loaded layer. */
 .fp-svc-list { display:flex; flex-direction:column; }
 
+/* `min-height` is the WCAG 2.5.5 touch floor: a row carrying only a label (no
+   description) measured ~36px, which the tenant portal's a11y sweep flagged.
+   The rows are the primary controls of a detail page, so they take the same
+   floor the buttons do. */
 .fp-svc { display:grid; grid-template-columns:minmax(0,1fr) 1rem;
-  align-items:center; width:100%; column-gap:var(--sp-2-5); padding:var(--sp-2) var(--sp-0-5); text-align:left;
+  align-items:center; width:100%; min-height:var(--target-min);
+  column-gap:var(--sp-2-5); padding:var(--sp-2) var(--sp-0-5); text-align:left;
   background:transparent; border:0; border-bottom:var(--stroke-1) solid var(--color-secondary-100);
   color:var(--color-text); font-family:inherit; font-size:var(--text-sm); line-height:inherit; text-decoration:none; }
 .fp-svc:last-child { border-bottom:0; }
@@ -332,3 +337,124 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 .card--profile__desc { font-size:var(--text-sm); color:var(--color-text-muted); margin:0;
   line-height:var(--lh-relaxed); }
 .card--profile__arrow { position:absolute; bottom:var(--sp-6); right:var(--sp-6); }
+
+/* ==========================================================================
+   CASE VIEW — one anatomy for every process (docs/case-view-alignment.md)
+   Shared, class for class, with the tenant portal's Vorgangsansicht.
+   ========================================================================== */
+
+/* --- Kopfbereich (CD Hero.vue:9-27: MetaInfo ABOVE the h1) --------------- */
+/* The meta strip carries process, reference, object and date in ONE CD
+   component instead of an uppercase kicker plus a lead plus a badge row. The
+   actions column holds the status badge, so the state sits on the same optical
+   line as the title rather than floating above it. */
+.case-header { display:flex; flex-wrap:wrap; align-items:flex-start;
+  justify-content:space-between; gap:var(--sp-4); }
+.case-header__main { min-width:0; flex:1 1 28rem; }
+.case-header__meta { margin:0 0 var(--sp-2); }
+.case-header__title { margin:0; overflow-wrap:anywhere; }
+/* `align-items:center` on the actions column, not on the header: the badge
+   should sit against the title's first line, and a title wrapping to three
+   lines must not drag it to the middle. */
+.case-header__actions { display:flex; flex-wrap:wrap; align-items:center;
+  gap:var(--sp-3); padding-top:var(--sp-1); }
+
+/* --- Übersicht: reading column + action rail ----------------------------- */
+/* The frame is `.detail-layout` (utilities.css) — the portal's established
+   detail anatomy, as used by the property view. Only the Übersicht tab is two
+   columns: the other three carry one full-width surface each (a table, a
+   timeline, a comment list), and a 352px rail beside a table would take the
+   width the table needs.
+   Sections stack in the reading column and carry their own rhythm; the grid's
+   gap separates the two COLUMNS, not the sections inside one. */
+.case-overview__main { display:flex; flex-direction:column; gap:var(--stack-gap); min-width:0; }
+/* ONE label column across every section, so the values line up down the whole
+   panel. Each `.kv` sizes its own by default, which put «Referenz :» and
+   «Wirtschaftseinheit (WE) :» at different x positions two sections apart.
+   14rem clears the longest label the case view carries («Personen /
+   Arbeitsplätze», «Wirtschaftseinheit (WE)») at the 16px body size. */
+.case-overview__main .kv { --kv-label-col:14rem; }
+@media (max-width:479.98px){ .case-overview__main .kv { --kv-label-col:auto; } }
+@media (min-width:1024px){
+  /* NOT `align-items:start` (which `.detail-layout` sets): a start-aligned grid
+     item is only as tall as its own content and therefore its own sticky
+     containing block, so the rail has zero travel and scrolls away. The item
+     stretches to the row height and the sticky sits on the inner wrapper — the
+     technique the tenant portal measured and documented on its property view.
+     Scoped to the case view so the portfolio's rail is untouched. */
+  .case-overview { align-items:stretch; }
+  .case-overview > .detail-layout__aside { position:static; }
+  .case-overview .detail-layout__aside-inner { position:sticky; top:var(--sp-4); }
+}
+@media (max-width:1023.98px){
+  /* The rail carries the actions, so on one column it leads. A property is a
+     thing you read about and its facts come first; a Vorgang is a thing you ACT
+     on, and burying «Auflagen erfüllen» under six sections would hide the
+     reason the page was opened. */
+  .case-overview > .detail-layout__aside { order:-1; }
+}
+/* NO bottom rule. It was there to separate a title from its values while two
+   sections sat side by side; stacked in one reading column the rules read as
+   page-wide dividers and chop the panel into slices. The reference this layout
+   follows — «Eckdaten» on the property view — has none either, and the section
+   gap plus the bold title already do the separating. */
+.case-section__title { margin:0 0 var(--sp-3);
+  font-size:var(--text-lg); font-weight:var(--fw-bold); line-height:var(--lh-snug);
+  overflow-wrap:anywhere; }
+.case-section__icon { margin-right:var(--sp-2); color:var(--color-primary-600); }
+/* The list sizes its own label column. A pinned width was right while four
+   lists sat stacked and had to line up; side by side it only pushes short
+   labels' values needlessly right (docs/case-view-alignment.md § 2.2). */
+.case-section__list { margin:0; row-gap:var(--sp-2); }
+.case-section__actions { margin:var(--sp-4) 0 0; }
+.case-section__note { margin:0 0 var(--sp-3); }
+
+/* --- Verlauf ------------------------------------------------------------- */
+/* An <ol> with a rail: the dot marks position AND kind, so scanning the column
+   distinguishes «approved» from «returned» without reading every line. */
+.history-timeline { list-style:none; margin:0; padding:0; position:relative; }
+.history-timeline::before { content:""; position:absolute; top:var(--sp-2); bottom:var(--sp-2);
+  left:calc(var(--sp-1) + var(--stroke-1)); width:var(--stroke-2); background:var(--color-border); }
+.history-timeline__item { position:relative; padding:0 0 var(--sp-6) var(--sp-8); }
+.history-timeline__item:last-child { padding-bottom:0; }
+.history-timeline__dot { position:absolute; left:0; top:var(--sp-1); width:var(--sp-3); height:var(--sp-3);
+  border-radius:var(--radius-full); background:var(--color-gray-400);
+  /* The ring is the page background, so the dot punches through the rail
+     rather than sitting on top of a line that shows either side of it. */
+  box-shadow:0 0 0 var(--stroke-2) var(--color-bg); }
+.history-timeline__dot--info    { background:var(--color-info); }
+.history-timeline__dot--success { background:var(--color-success-text); }
+.history-timeline__dot--warning { background:var(--color-warning); }
+.history-timeline__dot--neutral { background:var(--color-secondary-500); }
+.history-timeline__time { display:block; font-size:var(--text-xs); color:var(--color-text-muted); }
+.history-timeline__action { margin:var(--sp-0-5) 0 0; }
+.history-timeline__note { margin:var(--sp-1) 0 0; font-size:var(--text-sm); color:var(--color-text-muted); }
+
+/* --- Kommentare ---------------------------------------------------------- */
+.case-comments { list-style:none; margin:0; padding:0; }
+.case-comment { padding:var(--sp-4) 0; border-bottom:var(--stroke-1) solid var(--color-border); }
+.case-comment:last-child { border-bottom:none; }
+.case-comment:first-child { padding-top:0; }
+.case-comment__meta { display:flex; flex-wrap:wrap; gap:var(--sp-3); margin:0 0 var(--sp-1);
+  font-size:var(--text-sm); color:var(--color-text-muted); }
+.case-comment__text { margin:0; line-height:var(--lh-relaxed); }
+
+/* --- Leerzustand einer Registerkarte ------------------------------------- */
+.case-empty { margin:0; padding:var(--sp-6) 0; }
+
+/* --- Anhänge in der Tabelle ---------------------------------------------- */
+/* The icon sits in the same cell as the name, so the column keeps ONE
+   accessible name and the file type is legible before the «Typ» column is
+   read. `vertical-align` is set on the mask span, which has no baseline. */
+.attachment__icon { margin-right:var(--sp-2); color:var(--color-primary-600); vertical-align:-.2em; }
+.attachment__name { overflow-wrap:anywhere; }
+
+/* --- Kommentar erfassen -------------------------------------------------- */
+/* The compose box under the comment list. Shared, value for value, with the
+   tenant portal: a labelled full-width textarea and one primary button, with
+   the gap above it coming from the list it follows. */
+.case-comment-form { margin-top:var(--sp-6); max-width:42rem; }
+.case-comment-form > label { display:block; margin-bottom:var(--sp-2); font-weight:var(--fw-bold); }
+.case-comment-form textarea { display:block; width:100%; resize:vertical; }
+.case-comment-form__actions { display:flex; flex-wrap:wrap; align-items:center;
+  gap:var(--sp-4); margin:var(--sp-4) 0 0; }

@@ -186,3 +186,29 @@
 .table--compact { border:0; box-shadow:var(--shadow-none); }
 .table--compact thead th, .table--compact td,
 .table--compact tbody th, .table--compact tfoot th { padding:var(--sp-2); font-size:var(--text-sm); }
+
+/* A footnote BELOW the table, for what the table does rather than what it holds
+   — «click a row to open it» is an interaction, and there is nowhere else the
+   reader would learn it. `note` (above the table) explains the data instead.
+   Shared, value for value, with the tenant portal's `.table-hint`. */
+.table-hint { margin-top:var(--sp-4); font-size:var(--text-xs); color:var(--color-text-muted); }
+
+/* ── ONE TABLE STYLE ──────────────────────────────────────────────────────
+   Two rules that every table in the portal obeys, with no per-surface
+   exceptions (docs/table-consistency.md).
+
+   1 · ICON SIZE. A glyph in a cell is 16px, the body text's own size, so a row
+   reads as one line rather than as an icon with a caption. Cells previously
+   carried 16px (`icon--base`, file glyphs) and 24px (`icon--md`, the saved
+   star) in the same portal, which made two tables look like two components. */
+.table__icon { width:var(--sp-4); height:var(--sp-4); flex:none; vertical-align:-.2em; }
+.table__icon + * { margin-left:var(--sp-2); }
+
+/* 2 · NO BOLD. Weight is not a column property: a bold first cell made every
+   list look ranked, and different tables bolded different columns. The one
+   exception is the TOTAL row in <tfoot>, where bold marks a different KIND of
+   row rather than a more important one. */
+.table tbody td, .table tbody th,
+.table tbody td *, .table tbody th * { font-weight:var(--fw-regular); }
+.table tfoot td, .table tfoot th,
+.table tfoot td *, .table tfoot th * { font-weight:var(--fw-bold); }

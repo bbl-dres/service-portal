@@ -1,6 +1,6 @@
 # Lucide icon subset
 
-This directory contains the 18 Lucide icons used by the portal. They are
+This directory contains the 22 Lucide icons used by the portal. They are
 bundled locally so navigation, status indicators, and offline use never depend
 on a runtime icon CDN. The larger PascalCase set in `assets/icons/` comes from
 the Swiss Confederation Design System; keep the two visual families separate
@@ -38,3 +38,7 @@ or unreferenced SVGs.
 | `app-window.svg` | Customer-portal processes |
 | `circle-check-big.svg` | Completed pipeline step |
 | `clock-3.svg` | Current pipeline step |
+| `arrow-right.svg` | Action row — does something on this page |
+| `link.svg` | Action row — leads to another page in the portal |
+| `external-link.svg` | Action row — leads to another system |
+| `lock.svg` | Action row — not available in the prototype |

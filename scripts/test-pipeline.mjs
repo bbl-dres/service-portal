@@ -28,8 +28,12 @@ const cdp = await launch();
 let page;
 try {
   page = await openPage(cdp, `${APP_BASE}/my-cases/seed-2`, { login: true });
+  // The reference lives in the CD meta strip ABOVE the h1, not inside it: the
+  // case header follows Hero.vue's anatomy, where MetaInfo carries process,
+  // reference, object and date and the h1 is only the title
+  // (docs/case-view-alignment.md V1).
   const ready = await page.waitFor(`document.querySelectorAll('.pipeline__step').length === 4
-    && document.querySelector('h1')?.textContent.includes('BBL-2026-0931')`, { timeout: 7000 });
+    && document.querySelector('.case-header__meta')?.textContent.includes('BBL-2026-0931')`, { timeout: 7000 });
   check(ready, 'authenticated seed-2 renders its four-step pipeline');
 
   for (const expected of VIEWPORTS) {

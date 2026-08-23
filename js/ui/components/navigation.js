@@ -22,14 +22,28 @@ export function backLink(href, label) {
 // (green, check), current (primary colour, clock), and upcoming (grey) steps.
 // `steps` = [{ label }]; `currentIndex` is the current step index. Long pipelines
 // wrap instead of creating a keyboard-scrollable region.
+// A step may override its computed state with `state: 'rueckfrage' | 'rejected'`
+// — two outcomes that are not a position in the chain but a thing that happened
+// AT one, and that a done/active/todo vocabulary can only mis-report as
+// progress. Ported with the tenant portal (docs/case-view-alignment.md V10).
+const PIPELINE_MARK = {
+  done:       { icon: 'lucide/circle-check-big', sr: 'Erledigt: ' },
+  active:     { icon: 'lucide/clock-3', sr: 'Aktueller Schritt: ' },
+  rueckfrage: { icon: 'Refresh', sr: 'Rückfrage: ' },
+  rejected:   { icon: 'CancelCircle', sr: 'Abgelehnt: ' },
+  todo:       { icon: '', sr: '' },
+};
 export function pipeline(steps, currentIndex = 0, { label = 'Statusverlauf' } = {}) {
   const seg = (st, i) => {
-    const state = i < currentIndex ? 'done' : i === currentIndex ? 'active' : 'todo';
-    const glyph = state === 'done' ? icon('lucide/circle-check-big', 'icon--md pipeline__glyph')
-      : state === 'active' ? icon('lucide/clock-3', 'icon--md pipeline__glyph') : '';
-    const sr = state === 'done' ? '<span class="sr-only">Erledigt: </span>'
-      : state === 'active' ? '<span class="sr-only">Aktueller Schritt: </span>' : '';
-    return `<li class="pipeline__step pipeline__step--${state}"${state === 'active' ? ' aria-current="step"' : ''}>${glyph}<span>${sr}${escape(st.label)}</span></li>`;
+    const state = st.state && PIPELINE_MARK[st.state] ? st.state
+      : i < currentIndex ? 'done' : i === currentIndex ? 'active' : 'todo';
+    const mark = PIPELINE_MARK[state];
+    const glyph = mark.icon ? icon(mark.icon, 'icon--md pipeline__glyph') : '';
+    const sr = mark.sr ? `<span class="sr-only">${mark.sr}</span>` : '';
+    // `aria-current="step"` names where the reader is. A returned or refused
+    // case is still the step the process stands on, so it carries it too.
+    const current = state === 'active' || state === 'rueckfrage' || state === 'rejected';
+    return `<li class="pipeline__step pipeline__step--${state}"${current ? ' aria-current="step"' : ''}>${glyph}<span>${sr}${escape(st.label)}</span></li>`;
   };
   // Move aria-label to the wrapper so <ol> remains a pure list and retains list
   // semantics. No more `data-scroll-region`: the strip wraps instead of
@@ -193,8 +207,16 @@ export function wireTabs(root, { onSelect, syncHash } = {}) {
 // icon-only outline buttons (disabled at the ends). `href(page)` builds the
 // target hash so the caller keeps its own filters; `inputId` is wired by the
 // caller for typed page jumps.
+// THE FOOTER IS NEVER HIDDEN. `if (totalPages <= 1) return ''` used to live
+// here, so a list that fitted on one page lost its footer entirely — «Meine
+// Vorgänge» with six rows showed none at all. Two things were wrong with that:
+// the footer is where a reader looks to find out how long a list is, and the
+// answer «one page» is an answer; and a control that appears only once a list
+// grows past ten rows makes the same surface look different for different
+// people's data. At one page both arrows are disabled and the field reads
+// «1 von 1 Seite», which is what the tenant portal has always shown
+// (docs/case-view-alignment.md).
 export function pagination({ page, totalPages, href, inputId, label = 'Seitennavigation', align }) {
-  if (totalPages <= 1) return '';
   // A missing inputId used to render id="undefined"/for="undefined" — and two
   // paginations on one page then collided on that id (code review 2026-08,
   // F-S26). The field id also goes through escape like every other
@@ -218,13 +240,19 @@ export function pagination({ page, totalPages, href, inputId, label = 'Seitennav
   return `
     <nav class="pagination-wrap${align === 'right' ? ' pagination-wrap--right' : ''}" aria-label="${escape(label)}">
       <div class="pagination">
+        ${/* NO count here. CD's Pagination (Pagination.vue:2-24) is an input, a
+              `.pagination__text` naming the page total, and the prev/next list —
+              nothing else. The RESULT COUNT belongs above the results, beside
+              the sort, which is where CD puts it (`.search-results__header`:
+              «<strong>127</strong>Suchergebnisse»). Carrying it in both places
+              stated the same number twice on one screen. */''}
         ${/* ONE name per control (CD Pagination.vue uses exactly one source): the
               sr-only label names the field. An additional aria-label would
               silently override it and could drift. */''}
         <label class="sr-only" for="${escape(inputId)}">Seite</label>
         <input id="${escape(inputId)}" class="pagination__input input--outline input--base" type="text" inputmode="numeric"
           value="${page}" autocomplete="off">
-        <div class="pagination__text">von ${totalPages} Seiten</div>
+        <div class="pagination__text">von ${totalPages} ${totalPages === 1 ? 'Seite' : 'Seiten'}</div>
         <ul class="pagination__items">
           ${control(page - 1, 'Vorherige Seite', 'ChevronLeft', page === 1, 'prev')}
           ${control(page + 1, 'Nächste Seite', 'ChevronRight', page === totalPages, 'next')}

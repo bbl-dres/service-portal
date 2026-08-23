@@ -20,7 +20,12 @@
 @media (min-width:480px) { .notification { padding:var(--sp-4); } }
 @media (min-width:1024px){ .notification { padding:var(--sp-6); } }
 @media (min-width:1544px){ .notification { padding:var(--sp-8); } }
-.notification__icon { flex:none; width:var(--sp-10); height:var(--sp-10); }
+/* `margin-right` is CD's own (`notification.postcss:78-83`: `mr-3 h-10 w-10
+   flex-shrink-0 fill-current`) and was the one declaration missing here, so
+   every notification in this portal set its icon 12px tighter against the text
+   than the design system draws it — and than the tenant portal, which had the
+   rule all along. */
+.notification__icon { flex:none; margin-right:var(--sp-3); width:var(--sp-10); height:var(--sp-10); }
 .notification__content { min-width:0; margin-block:var(--sp-2-5); }
 @media (min-width:1280px){ .notification__content { margin-block:var(--sp-2); } }
 .notification__content > p { margin:0; overflow-wrap:anywhere; }
@@ -184,6 +189,13 @@
   clip-path:polygon(0 0, 100% 0, 100% 100%, 0 100%, var(--arrow) 50%); }
 .pipeline__step--done { background:var(--color-success-text); color:var(--color-text-negative); }
 .pipeline__step--active { background:var(--color-primary-600); color:var(--color-text-negative); }
+/* Two states a process can be IN rather than a position it has reached: a case
+   returned with conditions, and one that ended in refusal. Ported from the
+   tenant portal so both portals own the same pipeline vocabulary
+   (docs/case-view-alignment.md V10). Neither replaces the badge — they keep the
+   chain from claiming forward progress that did not happen. */
+.pipeline__step--rueckfrage { background:var(--color-warning); color:var(--color-text); }
+.pipeline__step--rejected { background:var(--color-error); color:var(--color-text-negative); }
 /* pipeline() uses the shared CD `icon--md` tier: 20px on phones and 24px from
    768px. Keep sizing in that tier so every pipeline consumer stays aligned. */
 .pipeline__glyph { flex:none; }

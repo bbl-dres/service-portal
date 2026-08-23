@@ -27,7 +27,7 @@ import {
 } from './forms.js';
 import {
   announceCatalogue, catalogueBar, catalogueHash, catalogueResults,
-  catalogueState, catalogueView, filterGroup, mountDataTable, panelReset, wireCatalogue,
+  catalogueState, catalogueView, countText, filterGroup, mountDataTable, panelReset, wireCatalogue,
   wireCatalogueState, wireTableRows,
 } from './catalogue.js';
 
@@ -38,7 +38,7 @@ export {
   contactCard, contextLine, detailBar, detailHead, detailSection, domainTile, landscape,
   downloadItem, downloadLink, empty, errorSummary, escape, field, filterGroup,
   flashError, focusProcessDone, focusWizardStep, heroFigure, icon, loading,
-  loginGate, markLang, menu, mountBanner, mountDataTable, notification, notificationHtml, openModal,
+  countText, loginGate, markLang, menu, mountBanner, mountDataTable, notification, notificationHtml, openModal,
   openShareModal, pageHeader, pageSection, pagination, panelReset, photo,
   photoUrl, pipeline, preserveFocus, processDone, readForm, registerOverlay,
   renderNotFound, safeDecode, select, selectBox, sidebarTree, statusBadge, tabBar, table,
@@ -55,6 +55,7 @@ const C = {
   renderNotFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueBar, catalogueView, filterGroup, wireCatalogue, pipeline,
   catalogueState, wireCatalogueState, panelReset, wireFieldErrors, focusProcessDone, wizardHead, focusWizardStep, contextLine,
+  countText,
   sidebarTree,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
   notification, notificationHtml, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, field, val, readForm, downloadItem, contactBox, downloadLink,

@@ -279,8 +279,8 @@ function catalogue(ctx, objects) {
       ],
     });
 
-    const setCount = (suffix = '') => {
-      if (count) count.innerHTML = `<strong>${list.length}</strong> von ${objects.length} Objekten · ${plannedCount} mit Multispace-Planung${suffix}`;
+    const setCount = () => {
+      if (count) count.innerHTML = `${C.countText({ nom: 'Objekte', dat: 'Objekten' }, objects.length, list.length)} · ${plannedCount} mit Multispace-Planung`;
     };
     if (state.view === 'map') {
       setCount();
@@ -303,7 +303,7 @@ function catalogue(ctx, objects) {
     const totalPages = Math.max(1, Math.ceil(list.length / perPage));
     if (state.page > totalPages) state.page = totalPages;
     const visible = list.slice((state.page - 1) * perPage, state.page * perPage);
-    setCount(totalPages > 1 ? ` · Seite ${state.page} von ${totalPages}` : '');
+    setCount();   // page position lives in `.pagination__text` below
     main.innerHTML = (state.view === 'gallery' ? galleryHtml(visible) : listHtml(visible))
       + C.pagination({ page: state.page, totalPages, inputId: 'workspace-page', label: 'Seitennavigation Workspace-Objekte' });
     C.wirePagination(main, 'workspace-page', state.page, totalPages, (page) => {
@@ -514,8 +514,8 @@ function detail(ctx, id) {
           description: 'Eigenständige Anwendung · öffnet ein neues Fenster', newWindow: true },
         { type: 'link', label: 'Planprüfung öffnen', href: planCheck(item.id),
           description: 'Lokale DWG-Datei prüfen · öffnet ein neues Fenster', newWindow: true },
-        { type: 'button', id: 'workspace-export', label: 'Aggregierte Planannahmen exportieren', description: 'CSV aus den Prototypdaten', icon: 'Download', disabled: !equipment.length },
-        { type: 'disabled', label: 'SIA-Flächennachweis erstellen', description: 'Fachreport folgt', icon: 'Printer' },
+        { type: 'button', id: 'workspace-export', label: 'Aggregierte Planannahmen exportieren', description: 'CSV aus den Prototypdaten', disabled: !equipment.length },
+        { type: 'disabled', label: 'SIA-Flächennachweis erstellen', description: 'Fachreport folgt' },
         { type: 'link', label: 'Ersatz- oder Reparaturauftrag', href: `#/app/fault-report?${buildingQuery}`, newWindow: true },
         { type: 'link', label: 'Raumbedarf melden', href: `#/app/space-request?${buildingQuery}`, newWindow: true },
       ],
@@ -643,7 +643,7 @@ function detail(ctx, id) {
       ],
       columns: [
         { key: 'number', label: 'Modul', render: (group) => `<span class="mono">M${C.escape(group.number)}</span>` },
-        { key: 'name', label: 'Ausstattungsstandard', render: (group) => `<strong>${C.escape(group.name)}</strong>` },
+        { key: 'name', label: 'Ausstattungsstandard', render: (group) => C.escape(group.name) },
         { key: 'count', label: 'Positionen', align: 'right', render: (group) => formatNumber(group.count) },
       ],
       foot: (_visible, filteredRows) => `<tr><th scope="row" colspan="2">Total (${filteredRows.length})</th><td class="text-right">${formatNumber(filteredRows.reduce((sum, group) => sum + group.count, 0))}</td></tr>`,

@@ -47,6 +47,11 @@ console.log(`   (from data/: ${BUILDINGS.length} buildings + ${PARCELS.length} p
       document.querySelector('[data-view="gallery"]').click(); await s(300);
       r.galCards = document.querySelectorAll('.pf-gallery .pf-card').length;
       r.galPag = (document.querySelector('#pf-count') || {}).textContent || '';
+      // The PAGE position lives in the pagination, not in the bar count
+      // (docs/pagination-alignment.md): CD's Pagination owns the page text and
+      // CD's search header owns the count. NO backticks in this comment — the
+      // probe is itself a template literal.
+      r.galPages = (document.querySelector('.pagination__text') || {}).textContent || '';
       r.hasCdPag = !!document.querySelector('.pagination-wrap .pagination__items');
       // Sort dropdown reorders the gallery (bare CD select: 4 selectable opts + 1 disabled «Sortieren» hint)
       const firstCard = () => { const t = document.querySelector('.pf-gallery .pf-card .card__title'); return t ? t.textContent.trim() : ''; };
@@ -103,7 +108,7 @@ console.log(`   (from data/: ${BUILDINGS.length} buildings + ${PARCELS.length} p
 
     check(R.mapCanvas2, 'The map view renders its clustered map');
     check(R.hasCatbar, 'compact catbar: search + sort + filter + view-switch in one bar');
-    check(R.galCards === 9 && new RegExp(`Seite 1 von ${GALLERY_PAGES}`).test(R.galPag) && R.hasCdPag, `Gallery pagination shows nine cards per page (${R.galCards}, ${JSON.stringify(R.galPag)})`);
+    check(R.galCards === 9 && new RegExp(`von ${GALLERY_PAGES} Seiten`).test(R.galPages) && R.hasCdPag, `Gallery pagination shows nine cards per page (${R.galCards}, ${JSON.stringify(R.galPages)})`);
     check(R.sortOpts === 4 && !!R.sortNameFirst && R.sortNameFirst !== R.sortAreaFirst, `sort reorders gallery (${R.sortOpts} opts; name:"${R.sortNameFirst}" ≠ area:"${R.sortAreaFirst}")`);
     console.log('   active-filters: pills', R.afPills, '| badge', JSON.stringify(R.afBadge), '| count filtered', R.afCountFiltered, '→ restored', R.afCountRestored);
     check(R.afPills === 2 && R.afBadge === '(2)' && R.afCountFiltered < BUILDING_COUNT, `The active-filter chip applies beside the building chip (${R.afPills} pills, badge ${R.afBadge}, ${R.afCountFiltered}/${BUILDING_COUNT})`);

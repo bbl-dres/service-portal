@@ -75,7 +75,8 @@ try {
     check(result.cards === 7 && result.treeLeaves === 7,
       'uses the seven canonical objects that have floors', `${result.cards} cards / ${result.treeLeaves} tree leaves`);
     check(result.views === 3, 'offers gallery, list, and map views', String(result.views));
-    check(/7 von 7 Objekten/.test(result.count) && /1 mit Multispace-Planung/.test(result.count),
+    // Unfiltered the bar states a plain total (docs/pagination-alignment.md).
+    check(/7 Objekte/.test(result.count) && /1 mit Multispace-Planung/.test(result.count),
       'reports canonical and planned result counts', result.count);
     check(/Liebefeld/.test(result.firstTitle) && /1080%2F6650%2FAA/i.test(result.firstHref),
       'sorts the planned Liebefeld object first', `${result.firstTitle} · ${result.firstHref}`);

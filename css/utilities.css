@@ -212,7 +212,11 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    longest word instead of staying visually stable. An extra 2rem clearly
    separates the columns; the 18rem cap prevents one long label from taking
    space away from the value. */
-.kv { display:grid; grid-template-columns:fit-content(18rem) minmax(0,1fr);
+/* `--kv-label-col` lets a surface PIN the label column. Left unset the column
+   is `fit-content`, which is right for a single list (it takes what its longest
+   label needs). It is wrong for a stack of several lists, where each one sizes
+   itself and the values then start at a different x in every section. */
+.kv { display:grid; grid-template-columns:var(--kv-label-col, fit-content(18rem)) minmax(0,1fr);
   gap:var(--sp-2) var(--sp-8); font-size:var(--text-sm); }
 .kv dt { color:var(--color-text-muted); }
 /* Add the colon in CSS, not in strings: it belongs to list presentation, so all
@@ -225,6 +229,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    that do not fit beside their label even in a 411px aside; an email address
    would otherwise break in the middle of the name. */
 .kv--stack { grid-template-columns:minmax(0,1fr); gap:0; }
+.kv--stack dt::after { content:none; }
 .kv--stack dt { margin-top:var(--sp-4); }
 .kv--stack dt:first-of-type { margin-top:0; }
 /* Do not indent the value: in the aside, label and value align to the same edge

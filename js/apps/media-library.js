@@ -166,7 +166,7 @@ export default async function render(ctx) {
 
       count: view === 'map'
         ? `<strong>${sorted.length}</strong> ${sorted.length === 1 ? 'Aufnahme' : 'Aufnahmen'}`
-        : `<strong>${sorted.length}</strong> von ${all.length} Aufnahmen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
+        : C.countText({ nom: 'Aufnahmen', dat: 'Aufnahmen' }, all.length, sorted.length),
       sort: { id: 'med-sort', value: sortKey, options: SORT_OPTS },
       filterId: 'med-filter', filterLabel: 'Filter', filterCount: mediaTypes.length + periods.length + objectIds.length,
       panelId: 'med-filters', panel: `

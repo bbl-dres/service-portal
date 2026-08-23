@@ -13,9 +13,28 @@ import { safeLinkUrl } from '../../security/urls.js';
 // (design review A14). `unit` may therefore be an object `{ nom, dat }`;
 // a plain string continues to serve both slots (most plurals are case-invariant:
 // Objekte, Dokumente, Kosten).
+// `one` is the SINGULAR, for a footer that would otherwise read «1 Vorgänge».
+// It defaults to the nominative plural, so a caller that has not supplied one
+// still reads as it did before.
 const unitCase = (unit) => (unit && typeof unit === 'object')
-  ? { nom: unit.nom || unit.dat || '', dat: unit.dat || unit.nom || '' }
-  : { nom: unit || '', dat: unit || '' };
+  ? { nom: unit.nom || unit.dat || '', dat: unit.dat || unit.nom || '', one: unit.one || unit.nom || unit.dat || '' }
+  : { nom: unit || '', dat: unit || '', one: unit || '' };
+
+// THE result-count sentence, and the only place a count is stated: above the
+// results, beside the sort — CD's `.search-results__header`
+// («<strong>127</strong>Suchergebnisse», searchResults.vue:83-87). The
+// pagination below names the PAGE, never the count.
+//
+// Unfiltered it is a plain total; filtered it says what the filter left, which
+// is the question a reader has after touching a control. «6 von 6» said the
+// same number twice.
+export const countText = (unit, total, shown = total) => {
+  const u = unitCase(unit);   // accepts a bare plural or { one, nom, dat }
+  if (!total) return `Keine ${escape(u.nom)}`;
+  if (shown === total) return `<strong>${escape(String(total))}</strong> ${escape(total === 1 ? u.one : u.nom)}`;
+  if (!shown) return `Keine ${escape(u.nom)} für diese Auswahl`;
+  return `<strong>${escape(String(shown))}</strong> von ${escape(String(total))} ${escape(u.dat)}`;
+};
 
 // Shared result block for catalogue pages (services/applications/datasets),
 // previously copied three times (P1-7). Filtering/sorting/slicing stays in each
@@ -329,13 +348,19 @@ export function mountDataTable(host, opts = {}) {
   const {
     id = 'dt', rows: allRows = [], columns = [], unit = 'Einträge', caption,
     searchKeys = [], search, searchLabel, placeholder,
-    sorts = [], facets = [], perPage = 10, foot, emptyMsg, note = '', rowsClickable = false,
+    sorts = [], sort = '', facets = [], perPage = 10, foot, emptyMsg, note = '', hint = '', rowsClickable = false,
     rowClass, extra = '', onAction, flush = false, groupBy = null,
     showSearch = true, showCount = true, compact = false, bar = true,
   } = opts;
   // `shut` holds the sections the reader has closed. Keyed by group value, so a
   // search or a sort that reorders the sections still remembers which ones.
-  const state = { q: '', sort: '', page: 1, open: false, sel: {}, shut: {} };
+  // `sort` preselects one of `sorts`. Left empty the table opens in the order it
+  // was handed the rows and the control reads «Sortieren» — right for a
+  // catalogue whose data order is meaningful, wrong for a list that HAS a
+  // natural order (a case list opens newest-first), where the control should
+  // name the order the reader is looking at.
+  const initialSort = sorts.some((s) => s.value === sort) ? sort : '';
+  const state = { q: '', sort: initialSort, page: 1, open: false, sel: {}, shut: {} };
   facets.forEach((f) => { state.sel[f.dim] = []; });
 
   // Named rather than inline, so every redraw adds and removes the SAME function
@@ -410,9 +435,11 @@ export function mountDataTable(host, opts = {}) {
         searchLabel: searchLabel || `${u.nom} durchsuchen`,
         placeholder: placeholder || `${u.nom} durchsuchen…`, q: state.q,
         countId: `${id}-count`,
-        count: `<strong>${escape(String(sorted.length))}</strong> von ${escape(String(allRows.length))} ${escape(u.dat)}${
-          sections ? ` · ${sections.length} ${sections.length === 1 ? 'Gruppe' : 'Gruppen'}`
-            : totalPages > 1 ? ` · Seite ${state.page} von ${totalPages}` : ''}`,
+        // «0 von 0 Anhängen» counts a set that does not exist. With no data at
+        // all the bar states that plainly, the same words the tenant portal
+        // uses (docs/case-view-alignment.md § 3).
+        count: countText(u, allRows.length, sorted.length)
+          + (sections ? ` · ${sections.length} ${sections.length === 1 ? 'Gruppe' : 'Gruppen'}` : ''),
         sort: sorts.length ? { id: `${id}-sort`, value: state.sort, options: sorts.map((s) => ({ value: s.value, label: s.label })) } : null,
         filterId: facets.length ? `${id}-filter` : '', filterCount: activeFacetCount,
         panelId: facets.length ? `${id}-panel` : '',
@@ -431,6 +458,10 @@ export function mountDataTable(host, opts = {}) {
           ? `Keine ${u.nom} für diese Suche oder Filterung.`
           : (emptyMsg || `Keine ${u.nom} erfasst.`),
         foot: sorted.length && foot ? foot(visible, sorted) : undefined })}
+      ${/* A footnote about the table, below it: `note` sits ABOVE and explains
+            the data, `hint` sits BELOW and explains the interaction («click a
+            row»). Only shown while there is something to interact with. */''}
+      ${hint && visible.length ? `<p class="table-hint">${escape(hint)}</p>` : ''}
       ${pagination({ page: state.page, totalPages, inputId: `${id}-page`, label: `Seitennavigation ${u.nom}` })}`;
 
     // --- Wiring (within host only) ---
@@ -540,14 +571,16 @@ export function catalogueView({
 } = {}) {
   const id = (part) => `${prefix}-${part}`;
   const plural = typeof unit === 'string' ? unit : (unit?.nom || '');
-  const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
+  // The page position is NOT stated here: `.pagination__text` below the results
+  // already says «von N Seiten», and CD's search header carries the count alone
+  // (searchResults.vue:83-87). See docs/pagination-alignment.md.
   const html = `
   <div class="container section">
     ${pageHeader({ title, lead, leadHtml })}
     ${catalogueBar({
     formId: id('search'), inputId: id('q'), q,
     searchLabel: `${noun} suchen`, placeholder: `${noun} suchen…`,
-    countId: id('count'), count: `<strong>${count}</strong> von ${total} ${escape(plural)}${pageInfo}`,
+    countId: id('count'), count: countText(unit, total, count),
     sort: sort ? { id: id('sort'), value: sort.value, options: sort.options } : undefined,
     filterId: id('filter'), filterLabel: 'Filter', filterCount,
     panelId: id('filters'), panel,

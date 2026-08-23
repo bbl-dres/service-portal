@@ -548,10 +548,8 @@ export function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) 
 // WITHOUT a leading symbol. Symbols represented the linked service («Wrench» for
 // fault reporting, «File» for documents) and merely repeated the adjacent label;
 // a symbol must add something the text does not already say. The arrow remains
-// on the right because it indicates that the row leads away. `icon` in the old
-// `links` contract remains ignored, so existing inventory callers retain their
-// follow arrow and current appearance.
-const ACTION_ICON = /^[A-Za-z][A-Za-z0-9_-]*$/;
+// on the right because it indicates what the row does. `icon` on an item is
+// ignored — see actionCardRow.
 function actionCardRow(item = {}) {
   let type = ['link', 'button', 'handoff', 'disabled'].includes(item.type) ? item.type : 'disabled';
   if (type === 'handoff') type = 'disabled';
@@ -561,8 +559,16 @@ function actionCardRow(item = {}) {
   const description = item.description || '';
   const content = `<span class="fp-svc__content"><span class="fp-svc__label">${escape(item.label)}</span>${
     description ? `<small class="fp-svc__description">${escape(description)}</small>` : ''}</span>`;
-  const fallbackIcon = type === 'disabled' || item.disabled ? 'Lock' : item.newWindow ? 'External' : 'ArrowRight';
-  const iconName = ACTION_ICON.test(String(item.icon || '')) ? item.icon : fallbackIcon;
+  // THREE glyphs, and the ROW TYPE picks them — a row leads somewhere, does
+  // something here, or cannot be used yet. A per-item override is gone: a card
+  // of rows each carrying its own picture is a card you have to read twice, and
+  // the label already says what the row is.
+  //
+  // Lucide, not the CD set: these render at 16px, where a stroked outline stays
+  // legible and a filled silhouette closes up into a blob.
+  const iconName = type === 'disabled' || item.disabled ? 'lucide/lock'
+    : type === 'link' ? (item.newWindow ? 'lucide/external-link' : 'lucide/link')
+      : 'lucide/arrow-right';
   const rowIcon = icon(iconName, 'icon--sm fp-svc__go');
   const id = item.id != null && item.id !== '' ? ` id="${escape(item.id)}"` : '';
 
@@ -578,7 +584,7 @@ function actionCardRow(item = {}) {
   return `<span class="fp-svc fp-svc--disabled" role="link" aria-disabled="true"${id}>${content}${rowIcon}</span>`;
 }
 
-export function actionCard({ title = 'Aktionen', lead = '', links = [], items } = {}) {
+export function actionCard({ title = 'Aktionen', lead = '', links = [], items, titleTag = 'h2' } = {}) {
   // `items` deliberately becomes the primary contract whenever passed as an
   // array, allowing a caller to hide the card explicitly with `items:[]`.
   // Legacy links are normalised to the new shape; their historical `icon` fields
@@ -590,8 +596,11 @@ export function actionCard({ title = 'Aktionen', lead = '', links = [], items } 
       type: 'link', label: link.label, href: link.href, newWindow: !!link.newWindow,
     }));
   if (!rows.length) return '';
+  // `titleTag`: a card in a detail rail sits beside <h3> sections and has to
+  // match them, or the outline jumps back up a level mid-page.
+  const heading = safeHeadingTag(titleTag, 'h2');
   return `<div class="box">
-    <h2>${escape(title)}</h2>
+    <${heading}>${escape(title)}</${heading}>
     ${lead ? `<p class="small muted">${escape(lead)}</p>` : ''}
     <div class="fp-svc-list">${rows.map(actionCardRow).join('')}</div>
   </div>`;
@@ -600,10 +609,11 @@ export function actionCard({ title = 'Aktionen', lead = '', links = [], items } 
 // `contacts` = [{ label, name, email, phone }]. Omit `name` where it merely
 // repeats the role; «Portfoliomanagement / Portfoliomanagement» looked like a
 // display error.
-export function contactCard({ title = 'Ansprechpersonen', contacts = [] } = {}) {
+export function contactCard({ title = 'Ansprechpersonen', contacts = [], titleTag = 'h2' } = {}) {
   if (!contacts.length) return '';
+  const heading = safeHeadingTag(titleTag, 'h2');
   return `<div class="box">
-    <h2>${escape(title)}</h2>
+    <${heading}>${escape(title)}</${heading}>
     <dl class="kv kv--stack">${contacts.map((c) => `
       <dt>${escape(c.label)}</dt>
       <dd>${c.name && c.name !== c.label ? `${escape(c.name)}<br>` : ''}${

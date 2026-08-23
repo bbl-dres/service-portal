@@ -39,6 +39,7 @@ const STATE = `JSON.stringify({
     b => b.textContent.replace(/\\s+/g,' ').trim()),
   openGroups: document.querySelectorAll('#mc-panel .table__group-toggle[aria-expanded="true"]').length,
   pager: !!document.querySelector('#mc-panel .pagination'),
+  pagerPages: document.querySelector('#mc-panel .pagination__text')?.textContent.replace(/\s+/g,' ').trim() || '',
   boxes: [...document.querySelectorAll('#mc-panel .lscape__toggle')].map(
     b => b.textContent.replace(/\\s+/g,' ').trim()),
   openBoxes: document.querySelectorAll('#mc-panel .lscape__toggle[aria-expanded="true"]').length,
@@ -864,7 +865,11 @@ try {
   check(o.groups.length > 1, 'a whole branch is sectioned by its axis', o.groups.join(' | '));
   check(/^Bauwerk und Liegenschaft/.test(o.groups[0]),
     'biggest section first — the map reads from the largest territory down', o.groups[0]);
-  check(!o.pager, 'sections replace paging — a section must not continue on page 3');
+  // The footer is never hidden (user decision, 2026-08-22), so what proves
+  // «sections replace paging» is no longer its ABSENCE but the single page it
+  // reports: every section is whole, none continues on page 3.
+  check(o.pager && /von 1 Seite$/.test(o.pagerPages),
+    'sections replace paging — one page, so no section continues on page 3', o.pagerPages);
   check(o.openGroups === o.groups.length, 'every section opens expanded', String(o.openGroups));
   await p.evaluate('(document.querySelector(".table__group-toggle").click(), 1)');
   await sleep(500);

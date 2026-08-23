@@ -171,7 +171,7 @@ function catalogue(ctx) {
       formId: 'shop-search', inputId: 'shopq', searchLabel: 'Produkte suchen',
       placeholder: 'Produkt, Marke oder Kategorie suchen...', q: rawQ,
       countId: 'shop-count',
-      count: `<strong>${sorted.length}</strong> von ${products.length} Produkten${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
+      count: C.countText({ nom: 'Produkte', dat: 'Produkten' }, products.length, sorted.length),
       sort: { id: 'shop-sort', value: sortKey, options: SORT_OPTS },
       filterId: 'shop-filter', filterLabel: 'Filter',
       filterCount: brands.length + flags.length + (activeCat === 'alle' ? 0 : 1),

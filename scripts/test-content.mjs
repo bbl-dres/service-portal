@@ -1,6 +1,6 @@
 // D4 download-item + contact-box unification — verifies the pages that render
 // C.downloadItem (foundations, guides, digitalisation docs, application
-// entries, my-cases attachments) and C.contactBox (application, services detail)
+// entries) and C.contactBox (application, services detail)
 // still render, with the expected download-items / mailto links and no exceptions.
 //
 //   node scripts/test-content.mjs      (dev server must be running; see README)
@@ -19,7 +19,11 @@ const ROUTES = [
   { name: 'app/workspace (planning)',           url: `${APP_BASE}/app/workspace` },
   { name: 'app/room-booking (form)',            url: `${APP_BASE}/app/room-booking` },
   { name: 'services/report space requirement', url: `${APP_BASE}/services/raumbedarf-melden`,       mailto: true, hero: true },
-  { name: 'my-cases/seed-1 (attachments)',     url: `${APP_BASE}/my-cases/seed-1`,                  items: 1, login: true },
+  // The case attachments are a TABLE now, not a download-item list: the tab
+  // keeps its bar, its column headers and its footer even at zero rows
+  // (docs/case-view-alignment.md § 3). It stays in this suite for the heading
+  // hierarchy and the exception check, with no download-item expectation.
+  { name: 'my-cases/seed-1 (case view)',       url: `${APP_BASE}/my-cases/seed-1`,                  login: true },
 ];
 
 const PROBE = `(async () => {

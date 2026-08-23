@@ -29,6 +29,15 @@ const ICONS = [
   ['app-window', 'Customer-portal processes'],
   ['circle-check-big', 'Completed pipeline step'],
   ['clock-3', 'Current pipeline step'],
+  // Detail-rail action rows. The ROW TYPE picks the glyph and there are only
+  // three: a link leads somewhere, an action does something here, a locked row
+  // cannot be used yet. Lucide rather than the CD set because these render at
+  // 16px, where a stroked outline stays legible and a filled silhouette closes
+  // up (js/ui/components/content.js, actionCardRow).
+  ['arrow-right', 'Action row — does something on this page'],
+  ['link', 'Action row — leads to another page in the portal'],
+  ['external-link', 'Action row — leads to another system'],
+  ['lock', 'Action row — not available in the prototype'],
 ];
 
 const ROOT_ATTRIBUTES = new Map([

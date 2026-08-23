@@ -99,6 +99,26 @@
       "name": "clock-3",
       "purpose": "Current pipeline step",
       "sha256": "8022399e9301d64b5b010f1874e84d09a237d81cd04219cf94c2e1eb84b72e02"
+    },
+    {
+      "name": "arrow-right",
+      "purpose": "Action row — does something on this page",
+      "sha256": "e84261e838e5f81b97864b6bb68939072e56a8ae096a9cffd241d9d68d90e58a"
+    },
+    {
+      "name": "link",
+      "purpose": "Action row — leads to another page in the portal",
+      "sha256": "e1c78e15569cdcfdb2c6b574c54e49aaafa57c949217de1f046313b3837b0985"
+    },
+    {
+      "name": "external-link",
+      "purpose": "Action row — leads to another system",
+      "sha256": "8b6e300ef1fda463e579fa48f0dee9d05afabe8af8671cf59433da6d0f7dd00a"
+    },
+    {
+      "name": "lock",
+      "purpose": "Action row — not available in the prototype",
+      "sha256": "93f5c9a12e6146ff5a745c223030bfccf0eb7d2b92b07257e619860691f75577"
     }
   ]
 }

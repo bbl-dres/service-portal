@@ -197,8 +197,7 @@ export default async function render(ctx) {
     // No second search field; the query comes from the large field in the hero.
     showSearch: false, formId: 'sr-form', inputId: 'sr-q', searchLabel: 'Treffer eingrenzen',
     countId: 'sr-count',
-    count: `<strong>${sorted.length}</strong> von ${total} Treffern für «${C.escape(rawQ)}»${
-      totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
+    count: `${C.countText({ nom: 'Treffer', dat: 'Treffern' }, total, sorted.length)} für «${C.escape(rawQ)}»`,
     sort: { id: 'sr-sort', value: sortKey, options: SORT_OPTIONS.filter(o => o.value) },
     filterId: 'sr-filter', filterCount: selectedKinds.length,
     panelId: 'sr-filters',

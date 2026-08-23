@@ -157,7 +157,7 @@ function overview(ctx) {
     } else {
       const per = state.perPage[state.view];
       const slice = list.slice((state.page - 1) * per, state.page * per);
-      if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> von ${objects.length} Projekten${pages > 1 ? ` · Seite ${state.page} von ${pages}` : ''}`;
+      if (cnt) cnt.innerHTML = C.countText({ nom: 'Projekte', dat: 'Projekten' }, objects.length, list.length);
 
       main.innerHTML = (state.view === 'gallery' ? galleryHTML(slice) : listHTML(slice))
         + C.pagination({ page: state.page, totalPages: pages, inputId: 'pj-page' });
@@ -339,7 +339,7 @@ function detail(ctx, id) {
     </div>
     ${rows.length ? `<h2 class="detail-section__title mt-6">Kosten nach BKP-Hauptgruppen</h2>
     ${C.table({ zebra: true, caption: 'Kosten nach BKP-Hauptgruppen', columns: [
-      { key: 'id', label: 'BKP', render: (r) => `<strong>${C.escape(r.id)}</strong>` },
+      { key: 'id', label: 'BKP', render: (r) => C.escape(r.id) },
       { key: 'label', label: 'Hauptgruppe' },
       { key: 'cost', label: 'Kosten', align: 'right', render: (r) => C.escape(formatCurrency(r.cost)) },
       { key: 'share', label: 'Anteil', align: 'right', render: (r) => C.escape(share(r.cost)) },

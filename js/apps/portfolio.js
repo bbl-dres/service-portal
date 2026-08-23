@@ -141,7 +141,7 @@ export default async function render(ctx) {
   const galleryHTML = (slice) => `<div class="pf-gallery">${slice.map(pfCard).join('')}</div>`;
 
   const listHTML = (slice) => C.table({ zebra: true, rowsClickable: true, caption: 'Liegenschaften', columns: [
-    { key: 'kind', label: 'Typ', render: (o) => `<span class="pf-type" title="${o.kind === 'building' ? 'Gebäude' : 'Grundstück'}" aria-label="${o.kind === 'building' ? 'Gebäude' : 'Grundstück'}">${C.icon(o.kind === 'building' ? 'Building' : 'Crop', 'icon--base')}</span>` },
+    { key: 'kind', label: 'Typ', render: (o) => `<span class="pf-type" title="${o.kind === 'building' ? 'Gebäude' : 'Grundstück'}" aria-label="${o.kind === 'building' ? 'Gebäude' : 'Grundstück'}">${C.icon(o.kind === 'building' ? 'Building' : 'Crop', 'table__icon')}</span>` },
     { key: 'name', label: 'Bezeichnung', render: (o) => `<a href="#/app/portfolio?id=${encodeURIComponent(o.id)}">${esc(o.name)}</a><br><span class="small muted">${esc(o.id)}</span>` },
     { key: 'location', label: 'Ort', render: (o) => `${esc(o.city)}<br><span class="small muted">${esc(countryName(o.country))}</span>` },
     { key: 'category', label: 'Kategorie', render: (o) => esc(o.category) },
@@ -211,7 +211,7 @@ export default async function render(ctx) {
       const rst = mount.querySelector('#pf-empty-reset');
       if (rst) rst.addEventListener('click', fullReset);
     } else {
-      if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> von ${objects.length} Objekten${pages > 1 ? ` · Seite ${state.page} von ${pages}` : ''}`;
+      if (cnt) cnt.innerHTML = C.countText({ nom: 'Objekte', dat: 'Objekten' }, objects.length, list.length);
 
       main.innerHTML = (state.view === 'gallery' ? galleryHTML(visible) : listHTML(visible))
         + C.pagination({ page: state.page, totalPages: pages, inputId: 'pf-page' });
@@ -457,7 +457,7 @@ function buildingDetail(ctx, b) {
         { dim: 'status', legend: 'Status', options: uniqueOptions(assets, 'status', { locale: 'de' }), match: (r, v) => v.includes(String(r.status)) },
       ]),
       columns: [
-        { key: 'name', label: 'Bezeichnung', render: (a) => `<strong>${C.escape(a.name)}</strong>` },
+        { key: 'name', label: 'Bezeichnung', render: (a) => C.escape(a.name) },
         { key: 'category', label: 'Kategorie', render: (a) => C.badge(a.category, 'blue') },
         { key: 'manufacturer', label: 'Hersteller', render: (a) => C.escape(a.manufacturer || '—') },
         { key: 'installationYear', label: 'Baujahr', align: 'right', render: (a) => C.escape(String(a.installationYear || '—')) },
@@ -519,7 +519,7 @@ function buildingDetail(ctx, b) {
         { value: 'role', label: 'Rolle', cmp: (x, y) => String(x.role || '').localeCompare(String(y.role || ''), 'de') },
       ],
       columns: [
-        { key: 'name', label: 'Name', render: (c) => `<strong>${C.escape(c.name)}</strong>${c.isPrimary ? ' ' + C.badge('Primär', 'info') : ''}` },
+        { key: 'name', label: 'Name', render: (c) => `${C.escape(c.name)}${c.isPrimary ? ' ' + C.badge('Primär', 'info') : ''}` },
         { key: 'role', label: 'Rolle', render: (c) => C.escape(c.role || '—') },
         { key: 'organisation', label: 'Organisation', render: (c) => C.escape(c.organisation || '—') },
         { key: 'phone', label: 'Telefon', render: (c) => {
@@ -549,7 +549,7 @@ function buildingDetail(ctx, b) {
         { dim: 'classification', legend: 'Klassifizierung', options: uniqueOptions(documents, 'classification', { locale: 'de' }), match: (r, v) => v.includes(String(r.classification)) },
       ]),
       columns: [
-        { key: 'title', label: 'Titel', render: (d) => `${C.icon('File', 'icon--base')} <strong>${C.escape(d.title)}</strong>` },
+        { key: 'title', label: 'Titel', render: (d) => `${C.icon('File', 'table__icon')}<span>${C.escape(d.title)}</span>` },
         { key: 'type', label: 'Typ', render: (d) => C.escape(d.type) },
         { key: 'format', label: 'Format', render: (d) => C.escape(d.format) },
         { key: 'sizeKB', label: 'Grösse', align: 'right', render: (d) => C.escape(formatFileSize(d.sizeKB)) },

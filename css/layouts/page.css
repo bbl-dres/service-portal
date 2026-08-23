@@ -243,3 +243,14 @@ code { font-family:var(--font-mono); }
    the min-content floor. Let long identifiers and locally scrollable tables
    shrink with the track instead of widening a 320px page. */
 :where(.grid, .container--grid) > * { min-width:0; }
+
+/* A list header that carries its own primary action: title and lead on the
+   left, the action on the right, wrapping under the text when the row runs out
+   of width. `align-items:flex-start` keeps the button on the title's line
+   rather than centred against a two-line lead. The inner `.page-header` keeps
+   its own margins, so a header WITHOUT an action is laid out exactly as before.
+   Shared with the tenant portal's inbox header (docs/case-view-alignment.md L1). */
+.page-head-row { display:flex; flex-wrap:wrap; align-items:flex-start;
+  justify-content:space-between; gap:var(--sp-4); }
+.page-head-row > .page-header { flex:1 1 24rem; min-width:0; }
+.page-head-row__actions { display:flex; flex-wrap:wrap; gap:var(--sp-3); padding-top:var(--sp-2); }

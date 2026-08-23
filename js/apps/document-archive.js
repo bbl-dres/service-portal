@@ -137,7 +137,7 @@ export default async function render(ctx) {
     state.page = page;
     const cnt = mount.querySelector('#doc-count');
 
-    if (cnt) cnt.innerHTML = `<strong>${rows.length}</strong> von ${all.length} Dokumenten${totalPages > 1 ? ` · Seite ${state.page} von ${totalPages}` : ''}`;
+    if (cnt) cnt.innerHTML = C.countText({ nom: 'Dokumente', dat: 'Dokumenten' }, all.length, rows.length);
     const main = mount.querySelector('#doc-main');
     main.innerHTML = rows.length
 
