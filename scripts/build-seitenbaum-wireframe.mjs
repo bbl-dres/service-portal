@@ -1,4 +1,4 @@
-// Builds docs/wireframes/260814 - Seitenbaum als Bauteil.html from its source
+// Builds docs/wireframes/260814 - Page Tree Component.html from its source
 // template, injecting three things:
 //   · the CD-kompakt font and colour tokens, so the study looks like the app;
 //   · REAL data out of data/*.json, so the trees are the portal's own and not a
@@ -21,9 +21,9 @@ const PICK = {
 };
 // Override when the design-system checkout is not a sibling of this repository.
 const DS = resolve(process.env.BBL_DESIGN_SYSTEM_ROOT || join(SP, '..', 'designsystem'));
-const SRC = join(SP, 'docs', 'wireframes', '260813 - Katalog mit Reitern_CD-kompakt.html');
+const SRC = join(SP, 'docs', 'wireframes', '260813 - Catalogue Tabs_CD-compact.html');
 const TPL = join(SP, 'scripts', 'seitenbaum-wireframe.src.html');
-const OUT = join(SP, 'docs', 'wireframes', '260814 - Seitenbaum als Bauteil.html');
+const OUT = join(SP, 'docs', 'wireframes', '260814 - Page Tree Component.html');
 
 const json = (file) => JSON.parse(readFileSync(join(SP, 'data', file), 'utf8'));
 const list = (v) => (Array.isArray(v) ? v : Object.values(v)[0]);

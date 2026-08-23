@@ -27,11 +27,17 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 
-# Test screenshots (headless CDP captures default to the OS temp dir; never commit stray ones)
-/dashboard.png
-/estate.png
-/portfolio.png
+# Test screenshots (headless CDP captures default to the OS temp dir; never commit
+# stray ones). The repository root holds NO images: portal assets live in assets/,
+# wireframe captures beside their study in docs/wireframes/<study>/screenshots/.
+/*.png
+/*.jpg
+/*.jpeg
 
 # Recherche-Rohmaterial (BBL-PDFs, abgerufene Katasterdaten, Wegwerf-Sonden).
-# ~60 MB, nicht versioniert — siehe research/README.md
-/research/
+# ~464 MB, nicht versioniert — siehe docs/research/README.md
+docs/research/
+
+# Design-Review-Screenshots (Vorher/Nachher-Baselines, ~135 MB).
+# Lokal erzeugt mit `node scripts/review-screenshots.mjs`; nicht versioniert.
+docs/review-assets/
