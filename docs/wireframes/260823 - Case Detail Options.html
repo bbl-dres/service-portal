@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vorgangsdetail — fünf Layouts</title>
+<!--
+  Layoutstudie zum Vorgangsdetail (#/my-cases/:id), Stand 23.08.2026.
+  Grundlage: docs/case-detail-review.md, Befunde B1–B20 und die dort
+  beschriebenen Optionen.
+
+  WAS DIESE STUDIE IST — UND WAS NICHT.
+  Sie prüft ANORDNUNG und ABLAUF, nicht Pixel und nicht CD-Treue. Farben,
+  Abstände und Radien sind grob am Portal orientiert, aber bewusst NICHT aus
+  swiss/designsystem übernommen; wer hier Tokens misst, misst das Falsche. Der
+  CD-Abgleich kommt erst, wenn eine Richtung gewählt ist.
+
+  DIE DATEN SIND ECHT. Beide Vorgänge stammen unverändert aus
+  data/process-instances.json (seed-6, seed-1), die Schritte samt `role` und
+  `kind` aus data/processes.json, die Objektangaben aus data/buildings.geojson,
+  die Statusbezeichnungen aus data/reference-data.json. Eingebettet statt
+  geladen, damit die Datei per Doppelklick läuft.
+
+  EINE AUSNAHME, ausdrücklich markiert: der dritte Fall «Rückfrage» ist
+  KONSTRUIERT. Kein Seed führt diesen Zustand — genau das ist Befund §6.4 des
+  Reviews: «Er ist der einzige Zustand, in dem die Aktionsschiene etwas zu
+  sagen hat, und er ist deshalb nie gestaltet worden.» Ohne ihn würde die
+  Studie die Aktionsspalte an drei Fällen zeigen, in denen sie leer ist.
+
+  DIE VARIANTE «HEUTE» BILDET DIE FEHLER MIT AB. Sie zeigt den blauen
+  «Aktueller Schritt» auf einem abgeschlossenen Vorgang (B1), die rohen
+  ISO-Daten (B2) und «Anna Keller,Marco Rossi» (B3). Eine bereinigte
+  Ausgangslage würde den Vergleich schmeicheln.
+
+  DIE SHELL IST EIN PLATZHALTER, aber ein gemessener: Kopf, Navigation und
+  Brotkrumen belegen bei 1440 px die obersten 356 px, bevor die Seite
+  überhaupt anfängt. Ohne diesen Block läge die Falzlinie 356 px zu tief und
+  jede Variante sähe besser aus, als sie ist.
+-->
+<style>
+  @font-face { font-family:'Noto Sans'; font-style:normal; font-weight:100 900;
+    font-display:swap; src:url('../../assets/fonts/NotoSans-latin.woff2') format('woff2'); }
+
+  :root{
+    --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --line2:#d1d5db;
+    --bg:#ffffff; --tint:#f3f4f6; --tint2:#f9fafb;
+    --blue:#2563eb; --blue-d:#1e40af; --green:#15803d; --green-bg:#dcfce7;
+    --amber:#b45309; --amber-bg:#fef3c7; --grey:#9ca3af;
+    --studio:#0f172a; --studio-2:#1e293b; --studio-line:#334155; --studio-ink:#e2e8f0;
+    --r:3px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;font-family:'Noto Sans',system-ui,Segoe UI,sans-serif;color:var(--ink);
+    background:var(--studio);line-height:1.5}
+
+  /* ---------- Studio-Rahmen (alles ausserhalb der Bühne) ---------- */
+  .studio{max-width:1100px;margin:0 auto;padding:40px 24px 12px;color:var(--studio-ink)}
+  .studio h1{font-size:30px;line-height:1.2;margin:0 0 6px;font-weight:700}
+  .studio .sub{color:#94a3b8;margin:0 0 22px;font-size:15px}
+  .studio p{font-size:14.5px;color:#cbd5e1;max-width:78ch}
+  .studio a{color:#93c5fd}
+  .studio code{background:var(--studio-2);padding:1px 5px;border-radius:var(--r);font-size:.9em}
+  .warn{border-left:3px solid #f59e0b;background:#1c1917;padding:10px 14px;margin:16px 0;
+    font-size:14px;color:#fde68a;max-width:78ch}
+
+  /* ---------- Schaltpult ---------- */
+  .desk{position:sticky;top:0;z-index:40;background:rgba(15,23,42,.97);
+    border-bottom:1px solid var(--studio-line);backdrop-filter:blur(6px)}
+  .desk__in{max-width:1100px;margin:0 auto;padding:12px 24px;display:flex;
+    flex-wrap:wrap;gap:18px;align-items:flex-end}
+  .grp{display:flex;flex-direction:column;gap:5px}
+  .grp__lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8}
+  .seg{display:flex;flex-wrap:wrap;gap:3px;background:var(--studio-2);padding:3px;border-radius:var(--r)}
+  .seg button{font:inherit;font-size:13px;padding:5px 11px;border:0;border-radius:2px;
+    background:transparent;color:#cbd5e1;cursor:pointer;white-space:nowrap}
+  .seg button:hover{background:#334155}
+  .seg button[aria-pressed="true"]{background:#e2e8f0;color:#0f172a;font-weight:700}
+  .desk__read{margin-left:auto;font-size:12.5px;color:#94a3b8;text-align:right;line-height:1.7}
+  .desk__read b{color:#e2e8f0;font-weight:700}
+  label.chk{font-size:13px;color:#cbd5e1;display:flex;gap:6px;align-items:center;cursor:pointer}
+
+  /* ---------- Notiz zur Variante ---------- */
+  .note{max-width:1100px;margin:0 auto;padding:18px 24px 4px}
+  .note__card{background:var(--studio-2);border:1px solid var(--studio-line);
+    border-radius:var(--r);padding:16px 18px}
+  .note__card h2{margin:0 0 4px;font-size:17px;color:#f1f5f9}
+  .note__card p{margin:0 0 10px;font-size:14px;color:#cbd5e1;max-width:78ch}
+  .note__meta{display:flex;flex-wrap:wrap;gap:8px}
+  .pill{font-size:11.5px;padding:3px 9px;border-radius:999px;background:#0f172a;
+    border:1px solid var(--studio-line);color:#cbd5e1}
+  .pill--fix{border-color:#166534;color:#86efac}
+  .pill--open{border-color:#7c2d12;color:#fdba74}
+  .pill--cost{border-color:#3730a3;color:#a5b4fc}
+
+  /* ---------- Bühne ---------- */
+  .stagewrap{padding:20px 24px 60px;display:flex;justify-content:center}
+  .stage{position:relative;background:var(--bg);color:var(--ink);
+    box-shadow:0 18px 50px rgba(0,0,0,.5);transform-origin:top center}
+  .fold{position:absolute;left:0;right:0;border-top:2px dashed #dc2626;pointer-events:none;z-index:9}
+  .fold::after{content:"Falz — hier endet der erste Bildschirm";position:absolute;right:6px;top:3px;
+    font-size:10.5px;color:#dc2626;background:rgba(255,255,255,.92);padding:1px 5px;letter-spacing:.02em}
+  .shellbox{background:repeating-linear-gradient(135deg,#eef2f7 0 10px,#e6ebf2 10px 20px);
+    border-bottom:1px solid var(--line);display:grid;place-items:center;
+    color:#64748b;font-size:12px;text-align:center;padding:8px}
+
+  /* ---------- Portalnachbau (grob) ---------- */
+  .pg{padding:22px 24px 44px}
+  .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .back{border:1px solid var(--line2);border-radius:var(--r);padding:6px 13px;font-size:14px;background:#fff;cursor:pointer;font-family:inherit}
+  .tools{display:flex;gap:12px;color:var(--muted);font-size:15px}
+  .meta{font-size:13.5px;color:var(--muted);margin:0 0 6px;display:flex;flex-wrap:wrap;gap:0 4px}
+  .meta span:not(:last-child)::after{content:"|";margin-left:8px;color:var(--line2)}
+  .hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  h1.t{font-size:34px;line-height:1.18;margin:0;font-weight:700;flex:1 1 24rem;min-width:0;
+    overflow-wrap:anywhere}
+  .narrow h1.t{font-size:27px}
+  .badge{font-size:13px;padding:4px 14px;border-radius:999px;white-space:nowrap;font-weight:400}
+  .badge--ok{background:var(--green-bg);color:var(--green)}
+  .badge--warn{background:var(--amber-bg);color:var(--amber)}
+
+  /* Pipeline */
+  .pipe{display:flex;flex-wrap:wrap;gap:2px;margin:20px 0 0}
+  .pipe__s{flex:1 1 0;min-width:120px;min-height:42px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-size:13px;padding:5px 12px;text-align:center;
+    background:var(--tint);color:#4b5563}
+  .pipe__s b{font-weight:700}
+  .pipe__s small{font-size:11px;opacity:.85;font-weight:400}
+  .pipe__s--done{background:#166534;color:#fff}
+  .pipe__s--active{background:var(--blue);color:#fff}
+  .pipe__s--rueck{background:#c2410c;color:#fff}
+
+  /* Reiter */
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin:24px 0 0;overflow-x:auto;
+    scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{font:inherit;font-size:15px;padding:14px 16px;border:0;background:none;cursor:pointer;
+    color:var(--ink);border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+  .tabs button:first-child{padding-left:0}
+  .tabs button[aria-selected="true"]{border-bottom-color:var(--blue);color:var(--blue)}
+  .panel{padding-top:26px}
+
+  /* Zweispalter */
+  .split{display:grid;grid-template-columns:minmax(0,1fr) 22rem;gap:48px;align-items:start}
+  .split--spine{grid-template-columns:26rem minmax(0,1fr);gap:40px}
+  .narrow .split,.narrow .split--spine{grid-template-columns:minmax(0,1fr);gap:26px}
+
+  /* Abschnitte + kv */
+  .sec{margin:0 0 30px}
+  .sec h3{font-size:18px;margin:0 0 12px;font-weight:700}
+  .kv{display:grid;grid-template-columns:14rem minmax(0,1fr);row-gap:8px;column-gap:32px;margin:0;font-size:15px}
+  .kv dt{color:#4b5563;margin:0}
+  .kv dt::after{content:"\00A0:"}
+  .kv dd{margin:0}
+  .narrow .kv{grid-template-columns:minmax(0,1fr);row-gap:2px}
+  .narrow .kv dd{margin:0 0 10px;font-weight:700}
+  .kv--lead{font-size:16px}
+  .kv--lead dd{font-weight:700}
+
+  /* Karten in der Schiene */
+  .card{background:var(--tint);padding:16px 18px;margin:0 0 22px}
+  .card h3{font-size:16px;margin:0 0 10px;font-weight:700}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;
+    border-bottom:1px solid #e0e2e6;font-size:14.5px}
+  .row:last-child{border-bottom:0}
+  .row small{display:block;color:var(--muted);font-size:12.5px}
+  .row--off{color:var(--grey)}
+  .row a,.row button{color:var(--blue);text-decoration:none;background:none;border:0;
+    font:inherit;font-size:14.5px;padding:0;cursor:pointer;text-align:left}
+
+  /* Antwortkopf */
+  .answer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center;
+    border:1px solid var(--line2);border-left:5px solid var(--blue);padding:16px 20px;margin:22px 0 0;background:var(--tint2)}
+  .answer--ok{border-left-color:var(--green)}
+  .answer--rueck{border-left-color:#c2410c;background:#fff7ed}
+  .answer__now{font-size:20px;font-weight:700;margin:0 0 3px}
+  .answer__l{font-size:14.5px;color:#374151;margin:0}
+  .answer__l b{font-weight:700}
+  .answer__act{display:flex;flex-direction:column;gap:8px}
+  .narrow .answer{grid-template-columns:minmax(0,1fr)}
+  .btn{background:var(--blue);color:#fff;border:0;padding:10px 18px;border-radius:var(--r);
+    font:inherit;font-size:14.5px;cursor:pointer;white-space:nowrap;text-align:center}
+  .btn--2{background:#fff;color:var(--ink);border:1px solid var(--line2)}
+
+  /* Prozess-Rückgrat */
+  .spine{list-style:none;margin:0;padding:0;position:relative}
+  .spine::before{content:"";position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:var(--line)}
+  .spine li{position:relative;padding:0 0 22px 30px}
+  .spine li:last-child{padding-bottom:0}
+  .dot{position:absolute;left:0;top:3px;width:14px;height:14px;border-radius:50%;
+    background:var(--grey);box-shadow:0 0 0 3px #fff}
+  .dot--done{background:var(--green)}
+  .dot--active{background:var(--blue)}
+  .dot--rueck{background:#c2410c}
+  .dot--todo{background:#fff;border:2px solid var(--line2);box-shadow:none}
+  .spine time{font-size:12px;color:var(--muted);display:block}
+  .spine .st{font-size:15.5px;font-weight:700;margin:1px 0 0}
+  .spine .who{font-size:13px;color:var(--muted)}
+  .spine .nt{font-size:13.5px;color:#374151;margin:3px 0 0}
+  .spine li.fut .st{color:var(--grey);font-weight:400}
+  .spine li.fut .who{color:#b6bcc6}
+
+  /* Klapp-Abschnitt */
+  .acc{border-top:1px solid var(--line);margin-top:6px}
+  .acc>button{width:100%;text-align:left;background:none;border:0;font:inherit;font-size:16px;
+    font-weight:700;padding:15px 0;cursor:pointer;display:flex;justify-content:space-between}
+  .acc__body{padding:0 0 18px}
+  .cnt{color:var(--muted);font-weight:400;font-size:14px}
+
+  .empty{color:var(--muted);font-size:14.5px;margin:0;padding:8px 0 18px}
+  .tbl{width:100%;border-collapse:collapse;font-size:14.5px}
+  .tbl th,.tbl td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line)}
+  .tbl th{font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700}
+  .cmt{border-bottom:1px solid var(--line);padding:14px 0}
+  .cmt__m{font-size:13px;color:var(--muted);margin:0 0 3px}
+  .cmt p{margin:0;font-size:14.5px}
+  .box-note{font-size:12.5px;color:var(--muted);border-left:2px solid var(--line2);
+    padding-left:10px;margin:14px 0 0}
+
+  /* ---------- Matrix am Fuss ---------- */
+  .matrix{max-width:1100px;margin:0 auto;padding:10px 24px 70px;color:var(--studio-ink)}
+  .matrix h2{font-size:20px;margin:34px 0 12px}
+  .mt{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--studio-2);
+    border:1px solid var(--studio-line)}
+  .mt th,.mt td{padding:8px 10px;border-bottom:1px solid var(--studio-line);
+    border-right:1px solid var(--studio-line);text-align:left;vertical-align:top}
+  .mt th{background:#0b1220;font-size:12px;color:#94a3b8;font-weight:700}
+  .mt td.y{color:#86efac;text-align:center}
+  .mt td.n{color:#7f8ea3;text-align:center}
+  .mt td.p{color:#fdba74;text-align:center}
+  .mt tbody tr:hover{background:#243044}
+</style>
+</head>
+<body>
+
+<div class="studio">
+  <h1>Vorgangsdetail — fünf Layouts</h1>
+  <p class="sub">Layoutstudie zu <code>#/my-cases/:id</code> · 23.08.2026 · Grundlage:
+    <a href="../case-detail-review.md">docs/case-detail-review.md</a></p>
+  <p>Die Studie stellt den heutigen Stand neben die vier Optionen des Reviews. Sie prüft
+    <strong>Anordnung und Ablauf</strong> — nicht Pixel, nicht CD-Treue. Die Vorgangsdaten sind echt
+    (<code>seed-6</code>, <code>seed-1</code> aus <code>data/process-instances.json</code>), die
+    Schritte samt Zuständigkeit stammen aus <code>data/processes.json</code>.</p>
+  <div class="warn">
+    <strong>Die Variante «Heute» bildet die Fehler mit ab</strong> — den blauen «Aktueller Schritt»
+    auf einem abgeschlossenen Vorgang (B1), die rohen ISO-Daten (B2), «Anna Keller,Marco&nbsp;Rossi»
+    (B3). Eine bereinigte Ausgangslage würde den Vergleich schmeicheln.<br>
+    <strong>Der Fall «Rückfrage» ist konstruiert.</strong> Kein Seed führt diesen Zustand — und genau
+    darum ist er nie gestaltet worden (Review §6, Frage 4).
+  </div>
+</div>
+
+<div class="desk">
+  <div class="desk__in">
+    <div class="grp">
+      <span class="grp__lbl">Fall</span>
+      <div class="seg" id="segCase"></div>
+    </div>
+    <div class="grp">
+      <span class="grp__lbl">Variante</span>
+      <div class="seg" id="segVar"></div>
+    </div>
+    <div class="grp">
+      <span class="grp__lbl">Breite</span>
+      <div class="seg" id="segW"></div>
+    </div>
+    <div class="grp">
+      <span class="grp__lbl">Bühne</span>
+      <label class="chk"><input type="checkbox" id="foldOn" checked> Falz</label>
+    </div>
+    <div class="desk__read" id="read"></div>
+  </div>
+</div>
+
+<div class="note"><div class="note__card" id="note"></div></div>
+
+<div class="stagewrap">
+  <div class="stage" id="stage"></div>
+</div>
+
+<div class="matrix">
+  <h2>Was jede Variante erledigt</h2>
+  <table class="mt">
+    <thead><tr>
+      <th style="width:32%">Befund aus dem Review</th>
+      <th>Heute</th><th>1 Minimal</th><th>2 Antwortkopf</th><th>3 Ohne Reiter</th><th>4 Verlauf</th>
+    </tr></thead>
+    <tbody id="mtBody"></tbody>
+  </table>
+  <h2>Die fünf Prüffragen aus §6 des Reviews</h2>
+  <ol id="questions" style="font-size:14.5px;color:#cbd5e1;max-width:78ch;line-height:1.75"></ol>
+</div>
+
+<script>
+/* ==================================================================
+   DATEN — unverändert aus dem Repositorium, eingebettet damit die
+   Datei ohne Server läuft.
+   ================================================================== */
+const HEUTE = '2026-08-23';   // Datum der Studie; «seit n Tagen» rechnet dagegen.
+
+const BUILDINGS = {
+  '1080/6650/AA': { name:'Verwaltungsgebäude Liebefeld (BAG / BLV)',
+    adr:'Schwarzenburgstrasse 157, 3097 Liebefeld', we:'6650', egid:'191458950' },
+  '1080/4850/AG': { name:'Verwaltungszentrum Guisanplatz',
+    adr:'Guisanplatz 1, 3014 Bern', we:'4850', egid:'191682279' },
+};
+
+const DEFS = {
+  raumbedarf: { name:'Raumbedarf-Antrag', serviceId:'raumbedarf-melden',
+    description:'Zusätzlichen Raumbedarf oder bauliche Anpassungen für Ihre Verwaltungseinheit anmelden.',
+    steps:[
+      { status:'eingereicht',    label:'Eingereicht',           role:'Antragstellende Stelle', kind:'user' },
+      { status:'in_pruefung_gs', label:'In Prüfung (GS)',       role:'Generalsekretariat',     kind:'user' },
+      { status:'in_pruefung_pfm',label:'In Prüfung (PFM)',      role:'Portfoliomanagement BBL',kind:'user' },
+      { status:'genehmigt',      label:'Genehmigt',             role:'Portfoliomanagement BBL',kind:'user' },
+      { status:'in_projekt',     label:'In Projekt überführt',  role:'BBL Bau',                kind:'auto' },
+      { status:'abgeschlossen',  label:'Abgeschlossen',         role:'BBL',                    kind:'auto' },
+    ] },
+  buchung: { name:'Raumbuchung', serviceId:'raumbuchung',
+    description:'Sitzungs- oder Besprechungsraum an einem BBL-Standort reservieren.',
+    steps:[
+      { status:'eingereicht',   label:'Angefragt',  role:'Buchende Person', kind:'user' },
+      { status:'abgeschlossen', label:'Bestätigt',  role:'Workspace BBL',   kind:'auto' },
+    ] },
+};
+
+const STATUS = { eingereicht:['Eingereicht','info'], in_pruefung_gs:['In Prüfung (GS)','warning'],
+  in_pruefung_pfm:['In Prüfung (PFM)','warning'], rueckfrage:['Rückfrage','warning'],
+  genehmigt:['Genehmigt','success'], in_projekt:['In Projekt überführt','info'],
+  abgeschlossen:['Abgeschlossen','success'] };
+
+const CASES = {
+  'seed-6': { instanceId:'seed-6', defId:'buchung', defName:'Raumbuchung', reference:'BBL-2026-1099',
+    title:'EG 06 — Verwaltungsgebäude Liebefeld', requester:'Andrea Muster',
+    organization:'Bundesamt für Umwelt BAFU', status:'abgeschlossen', stepIndex:1,
+    createdAt:'2026-08-01', updatedAt:'2026-08-01', linkedEntities:{ buildingId:'1080/6650/AA' },
+    data:{ gebaeude:'Verwaltungsgebäude Liebefeld (BAG / BLV)', raum:'EG 06',
+      raumId:'1080-6650-AA-eg-06', geschoss:'EG', datum:'2026-08-07', start:'09:00', ende:'12:00',
+      zeit:'09:00–12:00', teilnehmende:8, zweck:'Bereichssitzung',
+      eingeladene:['Anna Keller','Marco Rossi'] },
+    attachments:[], comments:[],
+    history:[ { when:'2026-08-01', status:'Angefragt', note:'Vorgang erstellt' },
+              { when:'2026-08-01', status:'Bestätigt', note:'Ressource reserviert' } ] },
+
+  'seed-1': { instanceId:'seed-1', defId:'raumbedarf', defName:'Raumbedarf-Antrag',
+    reference:'BBL-2026-1042', title:'Zusätzliche 12 Arbeitsplätze, Campus Guisanplatz',
+    requester:'Andrea Muster', organization:'Bundesamt für Umwelt BAFU', status:'in_pruefung_pfm',
+    stepIndex:2, createdAt:'2026-05-18', updatedAt:'2026-06-03',
+    linkedEntities:{ buildingId:'1080/4850/AG' },
+    data:{ costCenter:'810.140', persons:'12', naw:'Kollaborativ-Standard', area:'≈ 92 m² HNF',
+      termin:'2026-09-01',
+      begruendung:'Wachstum im Team Klimaanpassung; für zwölf neue Mitarbeitende werden zusätzliche Arbeitsplätze am Campus Guisanplatz benötigt.' },
+    attachments:[ { name:'Bedarfsnachweis.pdf', type:'PDF', size:'240 KB' },
+                  { name:'Organigramm_Team.pdf', type:'PDF', size:'88 KB' } ],
+    comments:[],
+    history:[ { when:'2026-05-18', status:'Eingereicht',      note:'Vorgang erstellt' },
+              { when:'2026-05-22', status:'In Prüfung (GS)',  note:'Bedarf bestätigt durch Generalsekretariat' },
+              { when:'2026-06-03', status:'In Prüfung (PFM)', note:'Flächenprüfung Portfoliomanagement' } ] },
+};
+
+/* KONSTRUIERT — der Zustand, den kein Seed führt (Review §6, Frage 4). */
+CASES['seed-R'] = Object.assign({}, CASES['seed-1'], {
+  instanceId:'seed-R', reference:'BBL-2026-1042', status:'rueckfrage', stepIndex:2,
+  updatedAt:'2026-08-18', konstruiert:true,
+  auflagen:[ 'Flächennachweis mit HNF je Arbeitsplatz nachreichen (SIA 416).',
+             'Zustimmung des Generalsekretariats zur Kostenstelle 810.140 beilegen.' ],
+  comments:[ { author:'Portfoliomanagement BBL', when:'2026-08-18',
+    text:'Der Flächenbedarf von ≈ 92 m² HNF ist mit der NAW-Klasse «Kollaborativ-Standard» nicht belegt. Bitte Nachweis je Arbeitsplatz nachreichen.' } ],
+  history: CASES['seed-1'].history.concat([
+    { when:'2026-08-18', status:'Rückfrage', note:'Zwei Auflagen an die antragstellende Stelle' } ]),
+});
+
+/* ==================================================================
+   HILFEN
+   ================================================================== */
+const esc = (s) => String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/** B2 — d.m.yyyy statt ISO. */
+const dt = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso||'')); return m
+  ? `${+m[3]}.${+m[2]}.${m[1]}` : String(iso||'—'); };
+const WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+/** Wochentag dazu — bei einem Termin ist «Freitag» die halbe Auskunft. */
+const dtLong = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso||'')); if (!m) return dt(iso);
+  return `${WD[new Date(Date.UTC(+m[1],+m[2]-1,+m[3])).getUTCDay()]} ${+m[3]}.${+m[2]}.${m[1]}`; };
+/** B3 — «A und B» statt «A,B». */
+const list = (v) => Array.isArray(v)
+  ? (v.length < 2 ? v.join('') : v.slice(0,-1).join(', ') + ' und ' + v[v.length-1]) : String(v);
+const days = (iso) => Math.round((Date.parse(HEUTE) - Date.parse(iso)) / 864e5);
+const seit = (iso) => { const d = days(iso); return d === 0 ? 'heute' : d === 1 ? 'seit gestern' : `seit ${d} Tagen`; };
+const CLOSED = new Set(['abgeschlossen','erledigt','geliefert']);
+
+/**
+ * B1 — der Zustand eines Schritts.
+ * `buggy` bildet den heutigen Code nach: allein aus stepIndex abgeleitet, wodurch
+ * der letzte Schritt eines abgeschlossenen Vorgangs «active» wird.
+ */
+function stepState(cs, def, i, buggy) {
+  if (buggy) return i < cs.stepIndex ? 'done' : i === cs.stepIndex ? 'active' : 'todo';
+  if (CLOSED.has(cs.status)) return i <= cs.stepIndex ? 'done' : 'todo';
+  if (i < cs.stepIndex) return 'done';
+  if (i === cs.stepIndex) return cs.status === 'rueckfrage' ? 'rueck' : 'active';
+  return 'todo';
+}
+const bld = (cs) => BUILDINGS[cs.linkedEntities.buildingId];
+const def = (cs) => DEFS[cs.defId];
+const badge = (cs) => { const [l,v] = STATUS[cs.status];
+  return `<span class="badge badge--${v === 'success' ? 'ok' : 'warn'}">${esc(l)}</span>`; };
+
+/** Was als Nächstes ansteht — aus der Definition, nicht erfunden. */
+function nextStep(cs) {
+  const s = def(cs).steps;
+  if (CLOSED.has(cs.status)) return null;
+  return s[cs.stepIndex + 1] || null;
+}
+
+/* ==================================================================
+   FELDER — Beschriftungen und die RANGFOLGE je Prozess.
+   Das ist der Kern des Reviews (§3): das Layout darf prozessunabhängig
+   sein, die Rangfolge nicht. `lead` nennt, was diesen Vorgang ausmacht.
+   ================================================================== */
+const LBL = { costCenter:'Kostenstelle', persons:'Personen / Arbeitsplätze', naw:'NAW-Klasse',
+  area:'Flächenbedarf', termin:'Wunschtermin', begruendung:'Begründung',
+  gebaeude:'Gebäude', raum:'Raum', raumId:'Raum-ID', geschoss:'Geschoss', datum:'Datum',
+  start:'Von', ende:'Bis', zeit:'Zeit', teilnehmende:'Teilnehmende', zweck:'Zweck',
+  eingeladene:'Eingeladene' };
+
+const SHAPE = {
+  buchung: {
+    lead: [ ['Termin', (c) => `${dtLong(c.data.datum)}, ${c.data.zeit} Uhr`],
+            ['Raum',   (c) => `${c.data.raum}, ${c.data.geschoss === 'EG' ? 'Erdgeschoss' : c.data.geschoss}`],
+            ['Zweck',  (c) => c.data.zweck],
+            ['Teilnehmende', (c) => `${c.data.teilnehmende} Personen`],
+            ['Eingeladene',  (c) => list(c.data.eingeladene)] ],
+    tech: ['raumId'],
+    rest: [],
+  },
+  raumbedarf: {
+    lead: [ ['Flächenbedarf', (c) => c.data.area],
+            ['Arbeitsplätze', (c) => `${c.data.persons} Personen`],
+            ['NAW-Klasse',    (c) => c.data.naw],
+            ['Wunschtermin',  (c) => dtLong(c.data.termin)] ],
+    tech: ['costCenter'],
+    rest: ['begruendung'],
+  },
+};
+
+/* ==================================================================
+   BAUSTEINE
+   ================================================================== */
+function shell(w) {
+  const h = w >= 1024 ? 356 : w >= 768 ? 300 : 250;
+  return `<div class="shellbox" style="height:${h}px"><div>Portal-Shell — Kopf, Navigation, Brotkrumen<br>
+    <strong>${h} px</strong>, gemessen bei ${w} px. Sie ist da, bevor die Seite anfängt.</div></div>`;
+}
+
+function head(cs, { extraMeta = false } = {}) {
+  const b = bld(cs);
+  const items = [ cs.defName, cs.reference, b.name, cs.organization, `Eingereicht ${dt(cs.createdAt)}` ];
+  if (extraMeta) items.push(`Aktualisiert ${dt(cs.updatedAt)}`);
+  return `
+  <div class="bar"><button class="back">← Zurück</button><div class="tools">🖨 &nbsp; ↗ &nbsp; ☆</div></div>
+  <p class="meta">${items.map((m) => `<span>${esc(m)}</span>`).join('')}</p>
+  <div class="hd"><h1 class="t">${esc(cs.title)}</h1>${badge(cs)}</div>`;
+}
+
+function pipeline(cs, { buggy = false, roles = false } = {}) {
+  const d = def(cs);
+  return `<div class="pipe">${d.steps.map((s, i) => {
+    const st = stepState(cs, d, i, buggy);
+    const mark = st === 'done' ? '✓ ' : st === 'active' ? '◷ ' : st === 'rueck' ? '⚠ ' : '';
+    return `<div class="pipe__s pipe__s--${st}"><b>${mark}${esc(s.label)}</b>${
+      roles ? `<small>${esc(s.role)}</small>` : ''}</div>`;
+  }).join('')}</div>`;
+}
+
+/** Der Antwortkopf: aktueller Schritt · Zuständigkeit · seit wann · was folgt. */
+function answerHead(cs) {
+  const d = def(cs), cur = d.steps[cs.stepIndex], nx = nextStep(cs);
+  const closed = CLOSED.has(cs.status), rueck = cs.status === 'rueckfrage';
+  const tone = rueck ? 'rueck' : closed ? 'ok' : '';
+  let now, who, then_;
+  if (rueck) {
+    now = `Rückfrage · ${seit(cs.updatedAt)}`;
+    who = `<b>Von:</b> ${esc(cur.role)}`;
+    then_ = `<b>Zu erledigen:</b> ${cs.auflagen.length} Auflagen, dann geht der Vorgang zurück in die Prüfung`;
+  } else if (closed) {
+    now = `Abgeschlossen · ${seit(cs.updatedAt)}`;
+    who = `<b>${esc(cur.label)}</b> durch ${esc(cur.role)}`;
+    then_ = 'Keine weiteren Schritte. Der Vorgang ist erledigt.';
+  } else {
+    now = `${esc(cur.label)} · ${seit(cs.updatedAt)} hier`;
+    who = `<b>Bei:</b> ${esc(cur.role)}`;
+    then_ = nx ? `<b>Als Nächstes:</b> ${esc(nx.label)} — ${esc(nx.role)}` : '';
+  }
+  const acts = rueck
+    ? `<button class="btn">Auflagen erfüllen</button><button class="btn btn--2">Nachfragen</button>`
+    : closed && cs.defId === 'buchung'
+      ? `<button class="btn">Kalendereintrag (.ics)</button><button class="btn btn--2">Erneut buchen</button>`
+      : closed ? `<button class="btn btn--2">Vorgang drucken</button>`
+      : `<button class="btn btn--2">Nachfragen</button>`;
+  return `<div class="answer answer--${tone}">
+    <div><p class="answer__now">${now}</p><p class="answer__l">${who}</p>
+      ${then_ ? `<p class="answer__l">${then_}</p>` : ''}</div>
+    <div class="answer__act">${acts}</div></div>`;
+}
+
+/** Standortabschnitt (aus dem verknüpften Gebäude). */
+function secStandort(cs, { tech = true } = {}) {
+  const b = bld(cs);
+  const rows = [['Objekt', b.name], ['Adresse', b.adr]];
+  if (tech) rows.push(['Wirtschaftseinheit (WE)', b.we], ['EGID', b.egid]);
+  return `<section class="sec"><h3>Standort</h3><dl class="kv">${
+    rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></section>`;
+}
+
+/** Der heutige «Angaben»-Eimer, roh — inklusive B2/B3. */
+function secAngabenHeute(cs) {
+  const skip = new Set(['gebaeude','raum','geschoss','raumId']);
+  const rows = Object.entries(cs.data).filter(([k]) => !skip.has(k));
+  return `<section class="sec"><h3>Angaben</h3><dl class="kv">${
+    rows.map(([k, v]) => `<dt>${esc(LBL[k] || k)}</dt><dd>${esc(String(v))}</dd>`).join('')}</dl></section>`;
+}
+
+/** Dieselben Felder, formatiert (B2/B3) — aber weiter unter «Angaben». */
+function secAngabenSauber(cs) {
+  const skip = new Set(['gebaeude','raum','geschoss','raumId']);
+  const rows = Object.entries(cs.data).filter(([k]) => !skip.has(k)).map(([k, v]) => [
+    LBL[k] || k, k === 'termin' || k === 'datum' ? dtLong(v) : Array.isArray(v) ? list(v) : String(v) ]);
+  return `<section class="sec"><h3>Angaben</h3><dl class="kv">${
+    rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></section>`;
+}
+
+/** Kernangaben — die prozesseigene Rangfolge aus SHAPE. */
+function secKern(cs) {
+  const sh = SHAPE[cs.defId];
+  return `<section class="sec"><h3>${cs.defId === 'buchung' ? 'Die Buchung' : 'Der Bedarf'}</h3>
+    <dl class="kv kv--lead">${sh.lead.map(([k, f]) =>
+      `<dt>${esc(k)}</dt><dd>${esc(f(cs))}</dd>`).join('')}</dl>
+    ${sh.rest.map((k) => `<p class="box-note" style="border:0;padding:0;margin-top:16px;color:#1f2937;font-size:15px">
+      <strong>${esc(LBL[k])}</strong><br>${esc(cs.data[k])}</p>`).join('')}</section>`;
+}
+
+function secTechnisch(cs, open) {
+  const sh = SHAPE[cs.defId], b = bld(cs);
+  const rows = sh.tech.map((k) => [LBL[k], String(cs.data[k])])
+    .concat([['Wirtschaftseinheit (WE)', b.we], ['EGID', b.egid], ['Referenz', cs.reference]]);
+  return `<div class="acc"><button type="button" data-acc>Technische Merkmale
+    <span class="cnt">${rows.length} Felder ${open ? '▾' : '▸'}</span></button>
+    <div class="acc__body" ${open ? '' : 'hidden'}><dl class="kv">${
+      rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></div></div>`;
+}
+
+function railToday(cs) {
+  const b = bld(cs), closed = CLOSED.has(cs.status), rueck = cs.status === 'rueckfrage';
+  return `<aside>
+    <div class="card"><h3>Aktionen</h3>
+      ${rueck ? `<div class="row"><a href="#">Auflagen erfüllen — erneut einreichen<small>Öffnet das Formular dieser Dienstleistung.</small></a>→</div>` : ''}
+      <div class="row"><button>Kommentar hinzufügen<small>Öffnet den Reiter «Kommentare».</small></button>→</div>
+      ${!closed ? `<div class="row row--off">Weiterleiten …<small>Im Prototyp nicht verfügbar.</small><span>🔒</span></div>
+      <div class="row row--off">Vorgang zurückziehen<small>Im Prototyp nicht verfügbar.</small><span>🔒</span></div>` : ''}
+      <div class="row"><button>Vorgang drucken</button>→</div>
+    </div>
+    <div class="card"><h3>Antragsteller</h3>
+      <p style="margin:0;font-size:14.5px">${esc(cs.organization)}<br>${esc(cs.requester)}</p></div>
+    <div class="card"><h3>Verknüpfungen</h3>
+      <div class="row"><a href="#">Gebäude ansehen<small>${esc(b.name)}</small></a>🔗</div></div>
+  </aside>`;
+}
+
+function tabbar(cs, active, id) {
+  const t = [['overview','Übersicht'], ['attachments',`Anhänge (${cs.attachments.length})`],
+    ['history','Verlauf'], ['comments',`Kommentare (${(cs.comments||[]).length})`]];
+  return `<div class="tabs" data-tabs="${id}">${t.map(([k, l]) =>
+    `<button role="tab" data-tab="${k}" aria-selected="${k === active}">${esc(l)}</button>`).join('')}</div>`;
+}
+
+function panelAttachments(cs) {
+  if (!cs.attachments.length) return `<table class="tbl"><thead><tr><th>Dokument</th><th>Typ</th><th>Grösse</th></tr></thead>
+    <tbody><tr><td colspan="3" style="text-align:center;color:#6b7280;padding:34px 0">Zu diesem Vorgang sind keine Anhänge hinterlegt.</td></tr></tbody></table>`;
+  return `<table class="tbl"><thead><tr><th>Dokument</th><th>Typ</th><th>Grösse</th></tr></thead><tbody>${
+    cs.attachments.map((a) => `<tr><td>📄 ${esc(a.name)}</td><td>${esc(a.type)}</td><td>${esc(a.size)}</td></tr>`).join('')}</tbody></table>`;
+}
+
+function timeline(cs) {
+  return `<ol class="spine">${cs.history.map((h) => `<li>
+    <span class="dot dot--${/Rückfrage/.test(h.status) ? 'rueck' : 'done'}"></span>
+    <time>${dt(h.when)}</time><p class="st">${esc(h.status)}</p>
+    <p class="nt">${esc(h.note)}</p></li>`).join('')}</ol>`;
+}
+
+function panelComments(cs) {
+  const c = cs.comments || [];
+  return (c.length ? c.map((k) => `<div class="cmt"><p class="cmt__m"><strong>${esc(k.author)}</strong> · ${dt(k.when)}</p><p>${esc(k.text)}</p></div>`).join('')
+    : `<p class="empty">Zu diesem Vorgang wurden noch keine Kommentare erfasst.</p>`)
+    + `<div style="margin-top:22px;max-width:42rem"><label style="display:block;font-weight:700;margin-bottom:6px;font-size:14.5px">Kommentar hinzufügen</label>
+       <textarea rows="3" style="width:100%;font:inherit;padding:9px;border:1px solid var(--line2);border-radius:var(--r)" placeholder="Ihre Anmerkung zu diesem Vorgang …"></textarea>
+       <p style="margin:12px 0 0"><button class="btn">Kommentar speichern</button></p></div>`;
+}
+
+/** Das Prozess-Rückgrat: Vergangenheit MIT Daten, Zukunft ausgegraut. Ersetzt Pipeline + Verlauf. */
+function spine(cs) {
+  const d = def(cs);
+  const byLabel = new Map(cs.history.map((h) => [h.status, h]));
+  const rueck = cs.status === 'rueckfrage';
+  const rows = d.steps.map((s, i) => {
+    // Die Rückfrage bekommt unten eine eigene Zeile; der Schritt selbst bleibt
+    // deshalb «active». Zwei orange Punkte übereinander läsen sich als zwei
+    // Störungen statt als eine.
+    const st0 = stepState(cs, d, i, false);
+    const st = st0 === 'rueck' ? 'active' : st0;
+    const h = byLabel.get(s.label);
+    return `<li class="${st === 'todo' ? 'fut' : ''}">
+      <span class="dot dot--${st}"></span>
+      <time>${h ? dt(h.when) : '&nbsp;'}</time>
+      <p class="st">${esc(s.label)}</p>
+      <p class="who">${esc(s.role)}${s.kind === 'auto' ? ' · automatisch' : ''}</p>
+      ${h ? `<p class="nt">${esc(h.note)}</p>` : ''}</li>`;
+  });
+  // Eine Rückfrage ist kein Schritt der Definition, sondern ein Ereignis auf dem
+  // aktuellen Schritt — sie wird dort eingeschoben, wo sie passiert ist.
+  if (rueck) {
+    const h = cs.history[cs.history.length - 1];
+    rows.splice(cs.stepIndex + 1, 0, `<li><span class="dot dot--rueck"></span>
+      <time>${dt(h.when)}</time><p class="st">Rückfrage an Sie</p>
+      <p class="who">${esc(d.steps[cs.stepIndex].role)}</p>
+      <ul style="margin:6px 0 0;padding-left:18px;font-size:13.5px;color:#374151">${
+        cs.auflagen.map((a) => `<li style="padding:0;margin:0 0 4px">${esc(a)}</li>`).join('')}</ul></li>`);
+  }
+  return `<ol class="spine">${rows.join('')}</ol>`;
+}
+
+/* ==================================================================
+   DIE FÜNF VARIANTEN
+   ================================================================== */
+const VARIANTS = {
+
+/* ---------- HEUTE ---------- */
+heute: {
+  label:'Heute', short:'Heute',
+  title:'Heutiger Stand',
+  desc:'Kopf, Pipeline, vier Reiter, Übersicht als drei gestapelte Abschnitte neben einer 352-px-Schiene. Die Fehler B1–B3 sind absichtlich mit abgebildet.',
+  fixes:[], opens:['B1','B2','B3','B6','B7','B8','B9','B10','B11','B13','B16','B19','B20'],
+  cost:'—',
+  render(cs) {
+    return `<div class="pg">${head(cs)}${pipeline(cs, { buggy:true })}
+      ${tabbar(cs, 'overview', 'a')}
+      <div class="panel" data-panel="a">
+        <div data-p="overview"><div class="split"><div>
+          <section class="sec"><h3>Vorgangsdaten</h3><dl class="kv">
+            <dt>Referenz</dt><dd>${esc(cs.reference)}</dd>
+            <dt>Prozess</dt><dd>${esc(cs.defName)}</dd>
+            <dt>Status</dt><dd>${esc(STATUS[cs.status][0])}</dd>
+            <dt>Eingereicht</dt><dd>${dt(cs.createdAt)}</dd>
+            <dt>Letzte Änderung</dt><dd>${dt(cs.updatedAt)}</dd></dl></section>
+          ${secStandort(cs)}${secAngabenHeute(cs)}
+        </div>${railToday(cs)}</div></div>
+        <div data-p="attachments" hidden>${panelAttachments(cs)}</div>
+        <div data-p="history" hidden>${timeline(cs)}</div>
+        <div data-p="comments" hidden>${panelComments(cs)}</div>
+      </div></div>`;
+  } },
+
+/* ---------- OPTION 1 ---------- */
+o1: {
+  label:'1 · Minimalkorrektur', short:'1 Minimal',
+  title:'Option 1 — Minimalkorrektur',
+  desc:'Dieselbe Anatomie, ohne die Fehler. «Vorgangsdaten» entfällt (der Kopf sagt es bereits), «Letzte Änderung» wandert in die Meta-Zeile, Daten und Listen sind formatiert, der Pipeline-Zustand stimmt.',
+  fixes:['B1','B2','B3','B5','B6','B7','B17','B18'], opens:['B8','B9','B10','B11','B13','B16','B19','B20'],
+  cost:'klein · ~1 Tag · kein neues Bauteil',
+  render(cs) {
+    return `<div class="pg">${head(cs, { extraMeta:true })}${pipeline(cs)}
+      ${tabbar(cs, 'overview', 'b')}
+      <div class="panel" data-panel="b">
+        <div data-p="overview"><div class="split"><div>
+          ${secStandort(cs)}${secAngabenSauber(cs)}
+        </div>${railToday(cs)}</div></div>
+        <div data-p="attachments" hidden>${panelAttachments(cs)}</div>
+        <div data-p="history" hidden>${timeline(cs)}</div>
+        <div data-p="comments" hidden>${panelComments(cs)}</div>
+      </div></div>`;
+  } },
+
+/* ---------- OPTION 2 ---------- */
+o2: {
+  label:'2 · Antwortkopf', short:'2 Antwortkopf',
+  title:'Option 2 — Antwortkopf',
+  desc:'Option 1 plus ein Statusblock über der Pipeline: aktueller Schritt, Zuständigkeit, seit wann, was folgt — und rechts die eine Handlung, die ansteht. Die Pipeline nennt jetzt die Rolle je Schritt. Darunter bleibt alles wie gehabt.',
+  fixes:['B1','B2','B3','B5','B6','B7','B9','B10','B11','B17','B18'], opens:['B8','B13','B16','B19','B20'],
+  cost:'mittel · ein Deskriptor mehr, kein Umbau',
+  render(cs) {
+    return `<div class="pg">${head(cs, { extraMeta:true })}${answerHead(cs)}${pipeline(cs, { roles:true })}
+      ${tabbar(cs, 'overview', 'c')}
+      <div class="panel" data-panel="c">
+        <div data-p="overview"><div class="split"><div>
+          ${secStandort(cs)}${secAngabenSauber(cs)}
+        </div>${railToday(cs)}</div></div>
+        <div data-p="attachments" hidden>${panelAttachments(cs)}</div>
+        <div data-p="history" hidden>${timeline(cs)}</div>
+        <div data-p="comments" hidden>${panelComments(cs)}</div>
+      </div></div>`;
+  } },
+
+/* ---------- OPTION 3 ---------- */
+o3: {
+  label:'3 · Ohne Reiter', short:'3 Ohne Reiter',
+  title:'Option 3 — eine Seite, kein Reiter',
+  desc:'Pipeline und Verlauf verschmelzen zum senkrechten Prozess-Rückgrat: erledigte Schritte mit Datum, Rolle und Notiz, künftige ausgegraut. Rechts der Datensatz — angeführt von dem, was DIESEN Prozess ausmacht (Termin bei der Buchung, Flächenbedarf beim Raumbedarf). Anhänge und Kommentare sind Abschnitte, interne Schlüssel liegen unter «Technische Merkmale».',
+  fixes:['B1','B2','B3','B5','B6','B7','B8','B9','B10','B11','B13','B16','B19','B20'], opens:['B14 (neu zu prüfen)'],
+  cost:'gross · case-view.js + CSS + drei Prüfungen · bricht Kanon V3 (vier Reiter), Mieterportal müsste mitziehen',
+  render(cs) {
+    const b = bld(cs);
+    return `<div class="pg">${head(cs, { extraMeta:true })}${answerHead(cs)}
+      <div class="split split--spine" style="margin-top:34px">
+        <div><h3 style="font-size:18px;margin:0 0 16px">Ablauf</h3>${spine(cs)}</div>
+        <div>
+          ${secKern(cs)}
+          <section class="sec"><h3>Standort</h3><dl class="kv">
+            <dt>Objekt</dt><dd>${esc(b.name)}</dd>
+            <dt>Adresse</dt><dd>${esc(b.adr)}</dd></dl>
+            <p style="margin:12px 0 0"><a href="#" style="color:var(--blue)">Gebäude ansehen →</a></p></section>
+          <div class="acc"><button type="button" data-acc>Anhänge
+            <span class="cnt">${cs.attachments.length} ${cs.attachments.length ? '▾' : '▸'}</span></button>
+            <div class="acc__body" ${cs.attachments.length ? '' : 'hidden'}>${panelAttachments(cs)}</div></div>
+          <div class="acc"><button type="button" data-acc>Kommentare
+            <span class="cnt">${(cs.comments||[]).length} ${(cs.comments||[]).length ? '▾' : '▸'}</span></button>
+            <div class="acc__body" ${(cs.comments||[]).length ? '' : 'hidden'}>${panelComments(cs)}</div></div>
+          ${secTechnisch(cs, false)}
+          <p class="box-note">Antragsteller: ${esc(cs.requester)}, ${esc(cs.organization)}</p>
+        </div></div></div>`;
+  } },
+
+/* ---------- OPTION 4 ---------- */
+o4: {
+  label:'4 · Verlaufszentriert', short:'4 Verlauf',
+  title:'Option 4 — verlaufszentriert (im Review verworfen)',
+  desc:'Die Zeitachse IST die Seite, der Datensatz wird ein Klappfach. Hier mit abgebildet, damit die Verwerfung nachprüfbar ist statt behauptet: bei der zweistufigen Raumbuchung entsteht eine Zeitachse mit zwei Punkten über einer versteckten Buchung. Beim sechsstufigen Raumbedarf trägt sie.',
+  fixes:['B8','B9','B10'], opens:['B19 bei kurzen Prozessen verschärft','Datensatz einen Klick entfernt'],
+  cost:'gross — und im Review verworfen',
+  render(cs) {
+    return `<div class="pg">${head(cs, { extraMeta:true })}${answerHead(cs)}
+      <div style="max-width:56rem;margin-top:34px">
+        <h3 style="font-size:18px;margin:0 0 16px">Ablauf</h3>${spine(cs)}
+        <div style="margin-top:30px">
+          <div class="acc"><button type="button" data-acc>Angaben zum Vorgang
+            <span class="cnt">${Object.keys(cs.data).length} Felder ▸</span></button>
+            <div class="acc__body" hidden>${secKern(cs)}${secStandort(cs, { tech:false })}</div></div>
+          <div class="acc"><button type="button" data-acc>Anhänge
+            <span class="cnt">${cs.attachments.length} ▸</span></button>
+            <div class="acc__body" hidden>${panelAttachments(cs)}</div></div>
+          <div class="acc"><button type="button" data-acc>Kommentare
+            <span class="cnt">${(cs.comments||[]).length} ▸</span></button>
+            <div class="acc__body" hidden>${panelComments(cs)}</div></div>
+        </div></div></div>`;
+  } },
+};
+
+/* ==================================================================
+   BÜHNE
+   ================================================================== */
+const CASE_LABELS = {
+  'seed-6':'Raumbuchung · abgeschlossen · 2 Schritte',
+  'seed-1':'Raumbedarf · offen · 6 Schritte',
+  'seed-R':'Raumbedarf · Rückfrage · konstruiert',
+};
+const WIDTHS = [1440, 1024, 375];
+/** Sichtbare Höhe eines Browserfensters abzüglich seiner eigenen Leisten — grob. */
+const FOLD = { 1440:820, 1024:700, 375:640 };
+
+const state = { c:'seed-6', v:'heute', w:1440, fold:true };
+
+function seg(host, items, key) {
+  host.innerHTML = items.map(([val, lbl]) =>
+    `<button type="button" data-v="${val}" aria-pressed="${String(state[key]) === String(val)}">${esc(lbl)}</button>`).join('');
+  host.onclick = (e) => { const b = e.target.closest('button'); if (!b) return;
+    state[key] = key === 'w' ? +b.dataset.v : b.dataset.v; draw(); };
+}
+
+function draw() {
+  const cs = CASES[state.c], V = VARIANTS[state.v], stage = document.getElementById('stage');
+  stage.style.width = state.w + 'px';
+  stage.classList.toggle('narrow', state.w < 768);
+  stage.innerHTML = shell(state.w) + V.render(cs)
+    + (state.fold ? `<div class="fold" style="top:${FOLD[state.w]}px"></div>` : '');
+
+  // Bühne einpassen, ohne das Layout zu verfälschen: skalieren, nicht umbrechen.
+  const room = Math.min(document.documentElement.clientWidth - 56, 1400);
+  const scale = state.w > room ? room / state.w : 1;
+  stage.style.transform = `scale(${scale})`;
+  stage.style.marginBottom = `${(scale - 1) * stage.offsetHeight}px`;
+
+  seg(document.getElementById('segCase'), Object.entries(CASE_LABELS), 'c');
+  seg(document.getElementById('segVar'), Object.entries(VARIANTS).map(([k, v]) => [k, v.short]), 'v');
+  seg(document.getElementById('segW'), WIDTHS.map((w) => [w, w + ' px']), 'w');
+
+  document.getElementById('note').innerHTML = `<h2>${esc(V.title)}</h2><p>${V.desc}</p>
+    <div class="note__meta">
+      ${V.fixes.length ? `<span class="pill pill--fix">erledigt: ${V.fixes.join(' · ')}</span>` : ''}
+      ${V.opens.length ? `<span class="pill pill--open">bleibt offen: ${V.opens.join(' · ')}</span>` : ''}
+      <span class="pill pill--cost">Aufwand: ${esc(V.cost)}</span></div>`;
+
+  // Messwerte — dieselbe Frage, die der Review an die heutige Seite gestellt hat.
+  const h = stage.scrollHeight;
+  const foldY = FOLD[state.w];
+  const top0 = stage.getBoundingClientRect().top;
+  const above = [...stage.querySelectorAll('.sec h3, .answer__now, .acc>button, .spine .st')]
+    .filter((el) => { const r = el.getBoundingClientRect();
+      // Panels hinter einem Reiter sind im DOM, aber ohne Fläche — sie stünden
+      // sonst mit y=0 in jeder Messung.
+      return r.width > 0 && r.height > 0 && r.top - top0 < foldY; })
+    .map((el) => el.textContent.trim().split('\n')[0]).slice(0, 4);
+  document.getElementById('read').innerHTML =
+    `Seitenhöhe <b>${h} px</b> · Falz bei ${foldY} px<br>
+     über der Falz: <b>${above.length ? esc(above.join(' · ')) : 'nichts ausser Kopf und Ablauf'}</b>`;
+}
+
+document.addEventListener('click', (e) => {
+  const tab = e.target.closest('[role="tab"]');
+  if (tab) {
+    const bar = tab.closest('[data-tabs]'), id = bar.dataset.tabs;
+    bar.querySelectorAll('[role="tab"]').forEach((b) => b.setAttribute('aria-selected', String(b === tab)));
+    document.querySelectorAll(`[data-panel="${id}"] > [data-p]`).forEach((p) =>
+      p.toggleAttribute('hidden', p.dataset.p !== tab.dataset.tab));
+    return;
+  }
+  const acc = e.target.closest('[data-acc]');
+  if (acc) {
+    const body = acc.nextElementSibling, open = body.hasAttribute('hidden');
+    body.toggleAttribute('hidden', !open);
+    const c = acc.querySelector('.cnt');
+    if (c) c.textContent = c.textContent.replace(open ? '▸' : '▾', open ? '▾' : '▸');
+  }
+});
+document.getElementById('foldOn').onchange = (e) => { state.fold = e.target.checked; draw(); };
+addEventListener('resize', draw);
+
+/* ---------- Matrix und Prüffragen ---------- */
+const MATRIX = [
+  ['B1 Abgeschlossen wird als «laufend» gezeigt', 0,1,1,1,1],
+  ['B2/B3 ISO-Daten, «A,B» statt «A und B»',      0,1,1,1,1],
+  ['B5 Druck enthält den ganzen Vorgang',         0,1,1,1,1],
+  ['B6/B7 Kopf wird im Text wiederholt',          0,1,1,1,1],
+  ['B8 Pipeline und Verlauf doppeln sich',        0,0,0,1,1],
+  ['B9 Zuständigkeit je Schritt sichtbar',        0,0,1,1,1],
+  ['B10 «Und jetzt?» wird beantwortet',           0,0,1,1,1],
+  ['B11 Prozesseigene Aktion (.ics, Auflagen)',   0,0,1,1,1],
+  ['B13 Leere rechte Hälfte der Lesespalte',      0,0,0,1,2],
+  ['B16 Telefon: Inhalt vor Aktionskarten',       0,0,2,1,1],
+  ['B19 «Angaben» als Nicht-Überschrift',         0,0,0,1,0],
+  ['B20 Interne Schlüssel gleichrangig',          0,0,0,1,2],
+];
+document.getElementById('mtBody').innerHTML = MATRIX.map(([l, ...v]) =>
+  `<tr><td>${esc(l)}</td>${v.map((x) => `<td class="${x === 1 ? 'y' : x === 2 ? 'p' : 'n'}">${
+    x === 1 ? '✓' : x === 2 ? '~' : '—'}</td>`).join('')}</tr>`).join('');
+
+document.getElementById('questions').innerHTML = [
+  'Was steht bei 1440 px über der Falz — und was bei 375 px? <em>Die Messanzeige oben rechts nennt es je Variante; die Shell verbraucht bei 1440 px bereits 356 px.</em>',
+  'Wie sieht Option 3 aus, wenn der Prozess <strong>zwei</strong> Schritte hat? <em>Fall «Raumbuchung» wählen — das Rückgrat wird kurz, die rechte Spalte trägt die Seite.</em>',
+  'Wo steht der Termin einer Raumbuchung, wo die Begründung eines Raumbedarfs? <em>Heute an vorletzter Stelle unter «Angaben»; ab Option 3 im Leitblock.</em>',
+  'Wie sieht «Rückfrage / Auflagen erfüllen» aus? <em>Dritter Fall. In «Heute» ist es eine Zeile in der Schiene, ab Option 2 die Antwort auf die Frage.</em>',
+  'Wie druckt sich jede Variante? <em>Offen — Option 3 und 4 sind trivial (eine Ansicht), Heute bis Option 2 brauchen die Panel-Regel aus B5.</em>',
+].map((q) => `<li>${q}</li>`).join('');
+
+draw();
+</script>
+</body>
+</html>
