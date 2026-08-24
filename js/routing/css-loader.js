@@ -85,6 +85,25 @@ function loadSheet(sheet) {
   return promise;
 }
 
+/**
+ * Load and await named sheets directly, for a PAGE that borrows an app's chrome.
+ *
+ * The search page's answer block renders data-portal KPI tiles, chart cards and
+ * a map when a skill produced them (js/search/insight-view.js). Adding
+ * dataportal.css to index.html would put that chrome in the critical path of
+ * every route for a block most searches never show; adding the search page to
+ * APP_SHEETS would be a lie about what it is. So it asks for the sheet at the
+ * moment the skill ran — the same deferral the router performs for an app,
+ * through the same cache and the same cascade anchors.
+ */
+export function loadSheets(...keys) {
+  return Promise.all(keys.map((key) => {
+    const sheet = byKey.get(key);
+    if (!sheet) return Promise.reject(new Error(`Unbekanntes Stylesheet: ${key}`));
+    return loadSheet(sheet);
+  }));
+}
+
 /** Load and await every stylesheet required by one registered micro-app. */
 export function loadAppStyles(appName) {
   const keys = APP_SHEETS[appName];

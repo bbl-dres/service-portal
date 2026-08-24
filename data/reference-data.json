@@ -63,6 +63,83 @@
       "variant": "green"
     }
   ],
+  "departments": [
+    {
+      "id": "EDA",
+      "label": "Eidgenössisches Departement für auswärtige Angelegenheiten EDA"
+    },
+    {
+      "id": "EDI",
+      "label": "Eidgenössisches Departement des Innern EDI"
+    },
+    {
+      "id": "EJPD",
+      "label": "Eidgenössisches Justiz- und Polizeidepartement EJPD"
+    },
+    {
+      "id": "VBS",
+      "label": "Eidgenössisches Departement für Verteidigung, Bevölkerungsschutz und Sport VBS"
+    },
+    {
+      "id": "EFD",
+      "label": "Eidgenössisches Finanzdepartement EFD"
+    },
+    {
+      "id": "WBF",
+      "label": "Eidgenössisches Departement für Wirtschaft, Bildung und Forschung WBF"
+    },
+    {
+      "id": "UVEK",
+      "label": "Eidgenössisches Departement für Umwelt, Verkehr, Energie und Kommunikation UVEK"
+    },
+    {
+      "id": "BK",
+      "label": "Bundeskanzlei BK"
+    },
+    {
+      "id": "GER",
+      "label": "Eidgenössische Gerichte"
+    }
+  ],
+  "agencyDepartment": {
+    "BBL": "EFD",
+    "BAZG": "EFD",
+    "BIT": "EFD",
+    "ESTV": "EFD",
+    "EFV": "EFD",
+    "EPA": "EFD",
+    "SIF": "EFD",
+    "EDA": "EDA",
+    "PRS": "EDA",
+    "DEZA": "EDA",
+    "BAK": "EDI",
+    "BLV": "EDI",
+    "BAG": "EDI",
+    "BFS": "EDI",
+    "MeteoSchweiz": "EDI",
+    "SNM": "EDI",
+    "NB": "EDI",
+    "fedpol": "EJPD",
+    "BJ": "EJPD",
+    "SEM": "EJPD",
+    "swisstopo": "VBS",
+    "armasuisse": "VBS",
+    "BABS": "VBS",
+    "BASPO": "VBS",
+    "SECO": "WBF",
+    "BLW": "WBF",
+    "SBFI": "WBF",
+    "BAFU": "UVEK",
+    "ARE": "UVEK",
+    "BAV": "UVEK",
+    "BAZL": "UVEK",
+    "BFE": "UVEK",
+    "ASTRA": "UVEK",
+    "BAKOM": "UVEK",
+    "BVGer": "GER",
+    "BGer": "GER",
+    "BStGer": "GER"
+  },
   "statusModel": [
     {
       "id": "entwurf",

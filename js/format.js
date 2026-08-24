@@ -18,8 +18,8 @@ const LOC = 'de-CH';
 /** 1234567 → «1'234'567» */
 export const formatNumber = (x, options) => Number(x || 0).toLocaleString(LOC, options);
 
-/** 1920000 → «CHF 1'920'000» */
-export const formatCurrency = (x, currency = 'CHF') => `${currency} ${formatNumber(x)}`;
+/** 1920000 → «CHF 1'920'000»; with `options`, «CHF 49.30» for a rappen amount. */
+export const formatCurrency = (x, currency = 'CHF', options) => `${currency} ${formatNumber(x, options)}`;
 
 /** 1180 → «1'180 m²» */
 export const formatArea = (x, options) => `${formatNumber(x, options)} m²`;

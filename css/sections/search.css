@@ -203,6 +203,101 @@
 .answer-slot--idle .muted { margin:0; font-size:var(--text-sm); }
 .answer__examples { display:flex; flex-wrap:wrap; gap:var(--sp-1) var(--sp-4);
   margin:var(--sp-3) 0 0; font-size:var(--text-sm); }
+/* The skill label beside an example. It is the only thing in the idle block
+   that says a question can come back as something other than a paragraph, so it
+   sits ON the link rather than in a legend nobody reads. */
+.answer__example-skill { margin-left:var(--sp-2); padding:0 var(--sp-1-5);
+  border:var(--stroke-1) solid var(--color-secondary-300); border-radius:var(--radius-sm);
+  font-size:var(--text-xs); color:var(--color-text-muted); text-decoration:none;
+  vertical-align:.08em; white-space:nowrap; }
+
+/* ── Skill results (js/search/insight-view.js) ─────────────────────────────
+   The block borrows the data portal's tiles, chart cards and map wholesale
+   (css/apps/dataportal.css, loaded on demand). What is defined here is only
+   what the SEARCH context adds: the tool trace, the lead, the provenance line
+   and the spacing that keeps a dashboard from bursting the notification it
+   sits in. */
+/* ONE RHYTHM FOR THE WHOLE BLOCK. The parts arrive from three stylesheets —
+   `.kpi-row` brings 24px from dataportal.css, `.chart` brings its own card
+   padding, the prose here brought 12-16px — so stacked they produced four
+   different distances in one block. The container owns the gap and every child's
+   own margin is switched off; `--answer-gap` is the single value to change.
+   Scoped by `.answer-slot--insight` so it outranks `.kpi-row`'s own margin
+   without touching the data portal. */
+.answer__insight { --answer-gap:var(--sp-6);
+  display:flex; flex-direction:column; gap:var(--answer-gap); }
+.answer-slot--insight .answer__insight > * { margin:0; }
+
+/* The trace and the sentence under it are one unit, so they sit closer to each
+   other than the gap above. */
+.answer__intro { display:flex; flex-direction:column; gap:var(--sp-1); }
+.answer__skill { display:flex; align-items:flex-start; gap:var(--sp-2);
+  margin:0; font-size:var(--text-sm); color:var(--color-text-muted); }
+.answer__skill-icon { flex:none; width:1.125rem; height:1.125rem; margin-top:.15em;
+  color:var(--color-primary-600); }
+.answer__skill-name { font-weight:var(--fw-bold); color:var(--color-text); }
+/* An em dash rather than a middle dot: the two halves are a name and a
+   description, not two items of a list. */
+.answer__skill-detail::before { content:" — "; }
+.answer-slot--insight .answer__lead { margin:0; }
+
+/* `.notification__content` is shrink-to-fit (css/components/feedback.css) —
+   right for a one-line status, wrong for a dashboard: measured, a three-tile
+   answer stopped 400 px short of the block's own right edge while the block
+   stayed full width, so the white surface ran on past the content. Scoped to
+   this variant, because the plain notification's narrower measure is correct
+   for prose. */
+.answer-slot--insight .notification__content { flex:1 1 auto; }
+
+/* The chart grid uses the SAME gap as the column it sits in, so the distance
+   between two cards side by side and between a card and the tiles above is one
+   number rather than two. `align-items:start` stops a short card from being
+   stretched to its taller neighbour and ending in a panel of empty white. */
+/* Scoped by the block, because `.dash-grid` widens its own gap to 32px from
+   1280px up and would otherwise win on source order — leaving the one distance
+   in the block that did not match the others. */
+.answer-slot--insight .answer__charts,
+.answer-slot--insight .answer__kpis { gap:var(--answer-gap); }
+.answer__charts { align-items:start; }
+/* The chart cards KEEP their shadow. Measured without it: `.chart` has no
+   border and no radius, so on the block's white surface the card dissolved and
+   the two diagrams read as one long strip of loose marks. The shadow is the
+   only thing separating them. */
+.answer-slot--insight .dash-map { height:clamp(14rem, 42vw, 22rem); }
+
+/* Inside the answer block the tiles sit on the same white surface as the block
+   itself, so the card shadow would float them; the border alone separates
+   them. */
+.answer-slot--insight .kpi { box-shadow:none; background:var(--color-secondary-50); }
+
+/* Collapsed by default — the table repeats the chart. The summary is a control,
+   so it keeps a focus ring and a hit area rather than reading as a caption. */
+.answer__data-summary { cursor:pointer; font-size:var(--text-sm);
+  padding:var(--sp-2) 0; color:var(--color-primary-600); }
+.answer__data-summary:hover { text-decoration:underline; }
+.answer__data[open] .answer__data-summary { margin-bottom:var(--sp-2); }
+
+/* Where the numbers came from. Deliberately the same size and colour as the
+   disclaimer in the foot: both are statements about the answer, not part of it. */
+.answer__basis { font-size:var(--text-xs); color:var(--color-text-muted); }
+
+/* The action is what somebody does NEXT, so it is not another paragraph in the
+   stack — it gets the block gap plus a step of its own. The CD's
+   `.notification .btn { margin-top }` is a stand-off for a button following
+   notification copy; here the buttons are a row, and that margin re-appeared on
+   every button in every wrapped line. */
+.answer__actions { display:flex; flex-wrap:wrap; gap:var(--sp-3); margin:0; }
+.answer-slot--insight .answer__actions { margin-top:var(--sp-2); }
+.answer__actions .btn { margin-top:0; }
+
+/* The inline form under a cited paragraph. Same rhythm, one step in from the
+   sentences so the button reads as an offer rather than as the next line. */
+.answer__inline { display:flex; flex-direction:column; gap:var(--sp-2);
+  margin-top:var(--sp-4); }
+
+/* The keyword search found nothing while the skill answered — one line, not a
+   no-results page (js/pages/search.js). */
+.search-results__note { margin-top:var(--sp-5); font-size:var(--text-sm); }
 
 /* ── CD RESULTS CHROME (news + search; alignment D46/D47) ───────────────────
    Verified against the design-system source: the filter drawer is

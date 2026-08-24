@@ -30,6 +30,8 @@
 import { search as runSearch, fold, prepare as prepareRow } from '../search/search-engine.js';
 import { isQuestion, resolve } from '../search/query-resolve.js';
 import { build as buildAnswer } from '../search/answer.js';
+import { buildInsight } from '../search/insights.js';
+import { ensureInsightStyles, wireInsight } from '../search/insight-view.js';
 import * as searchSources from '../search/search-sources.js';
 import { answerBlock, sourcesControl, wireSources, restoreSourcesFocus } from '../search/search-ui.js';
 import { byKind } from '../search/search-kinds.js';
@@ -100,6 +102,21 @@ export default async function render(ctx) {
   // switches the answers off wants no answer — not a broken search.
   const question = !!rawQ && !showLog && isQuestion(rawQ);
   const answer = question ? buildAnswer(rawQ, index) : null;
+
+  // THE SKILL LAYER (js/search/insights.js). It runs only for a question, only
+  // when answers are switched on at all, and it loads the datasets it needs
+  // itself — the route's own `needs` above stays untouched, so a keyword search
+  // still costs what it cost before. Awaited BEFORE the markup is written: a
+  // block that appears empty and fills in half a second later would move the
+  // result list twice, which is the jump the idle state exists to prevent.
+  const insight = question && searchSources.answersAllowed()
+    ? await buildInsight(rawQ, core, answer)
+    : null;
+  if (ctx.stale && ctx.stale()) return;
+  // The KPI tiles, chart cards and map borrow the data portal's chrome, which
+  // this page does not otherwise load (js/routing/css-loader.js `loadSheets`).
+  if (insight && !insight.inline) await ensureInsightStyles().catch(() => {});
+  if (ctx.stale && ctx.stale()) return;
 
   // The relevance gate (js/search/answer.js) decides WHETHER the question was
   // understood, not how much is shown afterwards. The two sides need different
@@ -216,7 +233,7 @@ export default async function render(ctx) {
   // all, and it keeps the list from jumping by the block's height depending on
   // the input. It disappears only when somebody switches it off.
   const answerHtml = rawQ && !showLog && searchSources.answersAllowed()
-    ? answerBlock(answer, total)
+    ? answerBlock(answer, total, insight)
     : '';
 
   const sourcesHint = hiddenElsewhere
@@ -231,6 +248,14 @@ export default async function render(ctx) {
     ? logView(C, index.length)
     : !rawQ
       ? `<p class="muted">Geben Sie einen Suchbegriff ein — zum Beispiel «Störung», «Mustervorlage» oder «Guisanplatz». Durchsucht werden ${index.length} Einträge aus Dienstleistungen, Anwendungen, Wissen und Hilfsmitteln, Datensätzen, Dokumenten, News, Liegenschaften und Bauprojekten.</p>`
+      : !total && insight && !insight.inline
+        ? /* The keyword search found nothing and the SKILL answered. The full
+             no-results page under a finished dashboard would read as a failure
+             report about the answer directly above it; what is true is narrower
+             and fits in one line. */
+          `<p class="muted search-results__note">Die Antwort oben wurde aus den
+            Datensätzen des Portals berechnet. Die Stichwortsuche findet zu
+            «${C.escape(rawQ)}» keine einzelnen Treffer.</p>`
       : total
         ? `${toolbar}${activePills}${C.catalogueResults({
             visible, count: sorted.length, view, page, totalPages,
@@ -270,9 +295,20 @@ export default async function render(ctx) {
     body: `<div class="search-results">${answerHtml}${body}</div>`,
   });
 
+  // Charts need a measured width and the map needs MapLibre, so both are drawn
+  // after the markup is in the document. The disposer goes to ctx.onUnmount:
+  // a ResizeObserver on a removed node and a WebGL context on an orphaned
+  // element outlive the route otherwise.
+  if (insight) {
+    const dispose = wireInsight(mount, insight);
+    if (ctx.onUnmount) ctx.onUnmount(dispose);
+  }
+
   // Announce the hit count; results were previously silent for screen readers.
   if (!showLog) C.announce(rawQ
-    ? (answer && answer.state === 'answer'
+    ? (insight && !insight.inline
+        ? `Antwort als ${insight.skillLabel} verfügbar. ${total} Treffer für ${rawQ}.`
+      : answer && answer.state === 'answer'
         ? `KI-Antwort verfügbar, ${answer.sources.length} Quellen. ${total} Treffer für ${rawQ}.`
         : total
           ? `${total} Treffer für ${rawQ}`

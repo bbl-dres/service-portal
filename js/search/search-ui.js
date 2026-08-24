@@ -14,16 +14,39 @@
 import { escape as escapeHtml, icon } from '../components.js';
 import { safeLinkUrl } from '../security/urls.js';
 import { KINDS } from './search-kinds.js';
+import { insightBody, insightInline } from './insight-view.js';
 import * as sources from './search-sources.js';
 
-/** Example questions offered where somebody has not asked one yet. REAL ones:
- *  each is answered by the portal's own records, and an example that leads
- *  nowhere would be worse than none. */
+/**
+ * Example questions offered where somebody has not asked one yet. REAL ones:
+ * each is answered by the portal's own records, and an example that leads
+ *  nowhere would be worse than none.
+ *
+ * SIX, AND DELIBERATELY OF THREE DIFFERENT SHAPES. The list used to hold four
+ * workflow questions, and four questions with one answer shape teach that the
+ * portal has one answer shape. It does not: the answer to «Wie kann ich
+ * Raumbedarf melden?» is a link to a case, the answer to «Wieviel m² Bürofläche
+ * belegen die Ämter im EFD?» is an aggregate that exists in no record until it
+ * is computed, and the answer to «Wo stehen die Liegenschaften der BAZG?» is a
+ * map.
+ *
+ * The ORDER is the balance: three questions that lead straight into a case come
+ * first, because that is still what most people come here to do, and the two
+ * computed answers and the map follow as what is also possible. Reversed, the
+ * list would advertise the rare shape and bury the common one.
+ *
+ * `skill` is what the question is EXPECTED to trigger (js/search/insights.js).
+ * It is shown beside the example, so the list also teaches what the portal can
+ * do with a question — and it is the first thing to check when a skill stops
+ * matching, because the label and the behaviour are then visibly apart.
+ */
 export const EXAMPLE_QUESTIONS = [
-  'Wie melde ich eine defekte Heizung?',
-  'Kann ich einen Sitzungsraum reservieren?',
-  'Was brauche ich für eine IKT-Beschaffung?',
-  'Wo finde ich die Pläne eines Gebäudes?',
+  { text: 'Wie kann ich Raumbedarf melden?', skill: 'Direktlink' },
+  { text: 'Wie melde ich eine defekte Heizung?', skill: 'Direktlink' },
+  { text: 'Wo finde ich die Pläne eines Gebäudes?', skill: 'Direktlink' },
+  { text: 'Wieviel m² Bürofläche belegen die Ämter im EFD?', skill: 'Dashboard' },
+  { text: 'Wie hoch sind die Betriebskosten der Liegenschaft Guisanplatz 1?', skill: 'Dashboard' },
+  { text: 'Wo stehen die Liegenschaften der Zollverwaltung BAZG?', skill: 'Karte' },
 ];
 
 const searchHref = (query) => `#/search?q=${encodeURIComponent(query)}`;
@@ -197,22 +220,64 @@ function answerIdle() {
     icon('SpeechBubble', 'notification__icon')}
     <div class="notification__content">
       ${answerHead('KI-Antwort')}
-      <p class="muted">Stellen Sie eine ganze Frage, und hier steht eine Antwort —
-        jeder Satz mit Beleg aus den Treffern.</p>
+      ${/* The copy names all THREE shapes now. It used to promise «jeder Satz mit
+            Beleg», which describes only the cited paragraph — somebody reading
+            that had no reason to expect a dashboard, and the two data examples
+            below would have looked like they were going to return prose. */''}
+      <p class="muted">Stellen Sie eine ganze Frage. Je nachdem steht hier ein
+        belegter Satz, ein direkter Link zum Vorgang, eine Auswertung aus den
+        Daten des Portals oder eine Karte.</p>
       ${/* The quotation marks sit INSIDE the link: four underlined questions in
             a row read as one long stroke, and where one ended and the next began
             was not visible. */''}
-      <p class="answer__examples">${EXAMPLE_QUESTIONS.map((question) =>
-        `<a href="${escapeHtml(safeLinkUrl(searchHref(question)))}">«${escapeHtml(question)}»</a>`).join('')}</p>
+      <p class="answer__examples">${EXAMPLE_QUESTIONS.map((example) =>
+        `<a href="${escapeHtml(safeLinkUrl(searchHref(example.text)))}">«${escapeHtml(example.text)}»<span
+          class="answer__example-skill">${escapeHtml(example.skill)}</span></a>`).join('')}</p>
       ${answerFoot}
     </div></div>`;
 }
 
 /**
- * Render the answer block. `result` is what js/search/answer.js returned, or
- * null for a query that is not a question.
+ * The numbered source list. Shared by both answer paths — a cited paragraph
+ * numbers the records its sentences came from, a skill result numbers the
+ * records its figures were computed over. The list is the same contract in both
+ * cases, so it is one function.
  */
-export function answerBlock(result, resultCount) {
+const sourceList = (sources) => (sources && sources.length
+  ? `<div class="answer__sources">
+      <p class="answer__sources-label">Quellen</p>
+      ${sources.map((source, index) => `<span class="source">
+          <span class="source__n">${source.n || index + 1}</span>
+          <span><span class="meta-info"><span class="meta-info__item">${escapeHtml(source.type)}</span>${
+    source.meta ? `<span class="meta-info__item">${escapeHtml(source.meta)}</span>` : ''
+  }</span><br><a href="${escapeHtml(safeLinkUrl(source.href))}">${escapeHtml(source.title)}</a></span>
+        </span>`).join('')}
+    </div>`
+  : '');
+
+/**
+ * Render the answer block. `result` is what js/search/answer.js returned, or
+ * null for a query that is not a question; `insight` is what
+ * js/search/insights.js returned, or null.
+ *
+ * WHY THE SKILL WINS. For a question whose answer has to be computed, the cited
+ * path has nothing to cite — measured, «Wieviel m² Bürofläche belegen die Ämter
+ * im EFD?» retrieves nothing at all, because no record carries that sentence.
+ * Showing «Keine KI-Antwort» above a block that HAS the answer would be the
+ * component contradicting itself. A skill marked `inline` is the exception: it
+ * adds to the cited answer instead of replacing it.
+ */
+export function answerBlock(result, resultCount, insight = null) {
+  if (insight && !insight.inline) {
+    return `<div class="notification notification--hint answer-slot answer-slot--insight">${
+      icon('SpeechBubble', 'notification__icon')}
+      <div class="notification__content">
+        ${answerHead('KI-Antwort')}
+        ${insightBody(insight)}
+        ${sourceList(insight.sources)}
+        ${answerFoot}
+      </div></div>`;
+  }
   if (!result) return answerIdle();
 
   if (result.state === 'none') {
@@ -234,27 +299,22 @@ export function answerBlock(result, resultCount) {
   // guards on the one property the component exists to demonstrate.
   const parts = result.parts.filter((part) =>
     Number.isInteger(part.cite) && part.cite > 0 && result.sources[part.cite - 1]);
-  if (!parts.length) return answerBlock({ ...result, state: 'none' }, resultCount);
+  if (!parts.length) return answerBlock({ ...result, state: 'none' }, resultCount, insight);
 
   const sentences = parts.map((part) => `<p>${escapeHtml(part.text)}<a class="cite"
       href="${escapeHtml(safeLinkUrl(result.sources[part.cite - 1].href))}"
       aria-label="Beleg ${part.cite}">${part.cite}</a></p>`).join('');
 
-  const sourceList = `<div class="answer__sources">
-      <p class="answer__sources-label">Quellen</p>
-      ${result.sources.map((source) => `<span class="source">
-          <span class="source__n">${source.n}</span>
-          <span><span class="meta-info"><span class="meta-info__item">${escapeHtml(source.type)}</span>${
-            source.meta ? `<span class="meta-info__item">${escapeHtml(source.meta)}</span>` : ''
-          }</span><br><a href="${escapeHtml(safeLinkUrl(source.href))}">${escapeHtml(source.title)}</a></span>
-        </span>`).join('')}
-    </div>`;
-
   return `<div class="notification notification--hint answer-slot">${icon('SpeechBubble', 'notification__icon')}
     <div class="notification__content">
       ${answerHead('KI-Antwort')}
       ${sentences}
-      ${sourceList}
+      ${/* A skill may ALSO run on a cited answer, and then it adds one line and
+            one button rather than replacing anything: «Wie melde ich eine
+            defekte Heizung?» is answered by the paragraph AND by the button that
+            starts the case. */''}
+      ${insight && insight.inline ? insightInline(insight) : ''}
+      ${sourceList(result.sources)}
       ${answerFoot}
     </div></div>`;
 }

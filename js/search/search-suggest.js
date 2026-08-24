@@ -268,13 +268,17 @@ export function attachSuggest(input, form, core, C) {
    * the deferred catalogues that the first keystroke pays for.
    */
   function showExamples() {
-    items = EXAMPLE_QUESTIONS.map((question) => ({ query: question }));
+    items = EXAMPLE_QUESTIONS.map((example) => ({ query: example.text }));
+    // The meta line names the SKILL the example triggers rather than repeating
+    // «Beispiel» five times. What a person learns from this list is not that
+    // examples exist — it is that a question can come back as a dashboard, a map
+    // or a link, which is the one thing the field cannot say by itself.
     list.innerHTML = `<div class="suggest__group" role="group" aria-label="Beispiele">
         <div class="suggest__grouptitle" aria-hidden="true">Beispiele</div>${
-        EXAMPLE_QUESTIONS.map((question, i) => `<div class="listbox__option" role="option"
+        EXAMPLE_QUESTIONS.map((example, i) => `<div class="listbox__option" role="option"
             id="${listId}-${i}" aria-selected="false">
-            <span class="listbox__title">${C.escape(question)}</span>
-            <span class="listbox__meta">Beispiel · als Frage stellen</span>
+            <span class="listbox__title">${C.escape(example.text)}</span>
+            <span class="listbox__meta">Beispiel · Antwort als ${C.escape(example.skill)}</span>
           </div>`).join('')}</div>`;
     action.hidden = true;
     shell.hidden = false;
