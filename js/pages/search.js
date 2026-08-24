@@ -245,6 +245,12 @@ export default async function render(ctx) {
   // section anatomy (B18); output is byte-identical.
   mount.innerHTML = C.pageSection({
     alt: true,
+    // Suchfeld und Trefferliste sind EIN Block, nicht zwei Bänder. Die Referenz
+    // sagt das über die Klassen: ihr getöntes Band trägt zusätzlich
+    // `section--default`, wodurch CD's Paarregel greift und der Ergebnis-
+    // Abschnitt bündig anschliesst (gemessen: padding-top 0 statt 80 px).
+    // Den Abstand darunter setzt der Ergebniskopf selbst.
+    collapseNext: true,
     body: `<h1 tabindex="-1">Suche</h1>
         <form class="search search--large search--page-result" id="search-page-form" role="search">
           <div class="search__group">

@@ -145,7 +145,7 @@ function newsList(ctx) {
        aria-label="${label}"${state.view === view ? ' aria-current="true"' : ''}>${C.icon(iconName, 'icon--md')}</a>`;
 
   mount.innerHTML = `
-  <section class="section section--default bg--secondary-50">
+  <section class="section bg--secondary-50">
     <div class="container">
       <h1 tabindex="-1">News</h1>
       <div class="search__filters">

@@ -19,6 +19,17 @@
 /* Results list (SearchResultsList): lean rows with metadata, title, and text.
    The `.search-group*` rules were removed when the page changed to a single
    results stream with a type facet (there is no remaining JS consumer). */
+/* KEIN oberer Abstand auf `.search-results` selbst. Die Referenz misst zwischen
+   der Unterkante des getönten Bandes und der Oberkante von `.search-results`
+   exakt 0 px (www.bbl.admin.ch/de/search, 1440 px), und ebenso 0 px bis zum
+   ersten Kind: den Abstand trägt dort das erste Kind INNEN, als
+   `.search-results__header { pt-4 sm:pt-6 2xl:pt-8 }`
+   (designsystem css/components/search.postcss:208-217). Eine Polsterung hier
+   oben wäre ein 24-px-Streifen, den die Referenz nicht hat. */
+.search-results .catbar:first-child { padding-top:var(--sp-4); }
+@media (min-width:640px)  { .search-results .catbar:first-child { padding-top:var(--sp-6); } }
+@media (min-width:1544px) { .search-results .catbar:first-child { padding-top:var(--sp-8); } }
+
 .search-results-list { list-style:none; margin:0; padding:0; }
 /* A rule ONLY at the bottom, like the CD card containing these rows
    (card.postcss:106-112 `.card--list`: `border-b border-secondary-200`). Before,
@@ -146,13 +157,21 @@
 /* The block owns its spacing — the call site does not (css/README.md).
    The doubled selector is deliberate: `.search-results .notification` above
    gives every notification in this block CD's 4rem stand-off, which is right for
-   the contact note trailing the no-results tips and wrong here. The answer is
-   not an aside at the end, it is the FIRST thing under the search field, and
-   that rule added 4rem on top of the two section paddings already between
-   them. */
-.search-results .notification.answer-slot { margin-top:0; margin-bottom:var(--sp-6); }
+   the contact note trailing the no-results tips and too large here. The answer
+   is the FIRST thing in the results section, so it uses the same compact start
+   offset as the catalogue bar rather than the generic notification spacing. */
+.search-results .notification.answer-slot { margin-top:var(--sp-5); margin-bottom:var(--sp-6); }
 @media (min-width:1024px){
   .search-results .notification.answer-slot { margin-bottom:var(--sp-8); }
+}
+/* AI answers carry the hint variant's quiet text semantics, but they are a
+   content surface rather than another tinted status band. The white surface
+   retains the notification's CD shadow, radius and padding; a border would
+   make it read like another input or filter panel. Keep this doubled class
+   scoped: `.notification--warning.answer-slot` is a real warning and must
+   retain its semantic surface. */
+.notification--hint.answer-slot {
+  background:var(--color-bg);
 }
 .answer__head { display:flex; align-items:center; gap:var(--sp-3);
   flex-wrap:wrap; margin:0 0 var(--sp-2); }

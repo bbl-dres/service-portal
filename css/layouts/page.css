@@ -136,21 +136,31 @@
 
 .section--default, .section--py, .section[class*="bg--"] { padding-block:var(--section-py); }
 .section--py-half { padding-block:var(--section-py-half); }
-/* Consecutive sections with the SAME background color: remove the second one's
-   top spacing (section.postcss:31-49, whose comment says "same background").
-   On a color change, the second section keeps its spacing; otherwise content
-   in a colored band sticks to its top edge. `section--default` without bg-- is
-   white; with bg--, the background color counts. Full CD pair list
-   (section.postcss:31-51), including --py/--py-half permutations and self-pairs
-   200-900, with the same color-change guard so future colored bands collapse
-   correctly without maintenance. */
-.section--default:not([class*="bg--"]) + .section--default:not([class*="bg--"]),
-.section--default:not([class*="bg--"]) + .section--py:not([class*="bg--"]),
-.section--py:not([class*="bg--"]) + .section--default:not([class*="bg--"]),
-.section--default:not([class*="bg--"]) + .section--py-half:not([class*="bg--"]),
-.section--py-half:not([class*="bg--"]) + .section--default:not([class*="bg--"]),
-.section--default:not([class*="bg--"]) + .bg--white,
-.bg--white + .section--default:not([class*="bg--"]),
+/* CD pair list (section.postcss:31-51), LITERAL — the second section of a pair
+   drops its top spacing.
+   The `:not([class*="bg--"])` guards that used to sit on these selectors are
+   gone. They were added to read the rule as «same BACKGROUND collapses», which
+   is what CD's comment says — but not what CD's code does. CD matches on
+   CLASSES, and the reference implementation depends on the difference:
+     · www.bbl.admin.ch/de          tinted bands are `.section.bg--secondary-50`
+                                    WITHOUT `section--default`, so no pair
+                                    matches and both neighbours keep 80 px;
+     · www.bbl.admin.ch/de/search   the tinted band carries
+                                    `.section.section--default.bg--secondary-50`,
+                                    so `.section--default + .section--default`
+                                    DOES match and the results section measures
+                                    `padding-top: 0` (verified at 1440 px).
+   The band therefore declares whether it forms a unit with what follows, by
+   carrying `section--default` or not. `C.pageSection({ collapseNext })` sets it;
+   the guards made that declaration unreachable and left the search results with
+   a full 80 px gap where the reference has none. */
+.section--default + .section--default,
+.section--default + .section--py,
+.section--py + .section--default,
+.section--default + .section--py-half,
+.section--py-half + .section--default,
+.section--default + .bg--white,
+.bg--white + .section--default,
 .bg--white + .bg--white,
 .bg--secondary-50 + .bg--secondary-50,
 .bg--secondary-100 + .bg--secondary-100,
@@ -162,8 +172,8 @@
 .bg--secondary-700 + .bg--secondary-700,
 .bg--secondary-800 + .bg--secondary-800,
 .bg--secondary-900 + .bg--secondary-900,
-.hero + .section--default:not([class*="bg--"]),
-.hero + .section--py:not([class*="bg--"]),
+.hero + .section--default,
+.hero + .section--py,
 .hero + .bg--white { padding-top:0; }
 
 /* The fixed strip retains exactly its measured height in document flow. This

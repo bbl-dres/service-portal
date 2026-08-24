@@ -24,10 +24,23 @@ const columnWidth = (value) => COLUMN_WIDTH.test(String(value || '')) ? String(v
 // `alt` tints the band (secondary-50). Callers alternate it by position so bands
 // switch cleanly. No new CSS: .section, .section--default, .section__title,
 // .section__action, and .bg--secondary-50 already exist.
-export function pageSection({ title = '', body = '', more = null, alt = false, titleTag = 'h2' }) {
+// `collapseNext` follows CD's own markup convention, which is a CLASS decision,
+// not a colour one (css/layouts/page.css documents the measurement):
+//   · a plain alternating band is `.section.bg--secondary-50` — no
+//     `section--default`, so the next section keeps its full top spacing.
+//     This is what www.bbl.admin.ch/de does between its bands.
+//   · a band that forms ONE unit with what follows adds `section--default`,
+//     which makes CD's `.section--default + .section--default` pair match and
+//     the next section start flush. This is what the reference search page does
+//     between its search field and its results.
+// A white section always carries `section--default`; it is what gives it padding.
+export function pageSection({ title = '', body = '', more = null, alt = false, titleTag = 'h2', collapseNext = false }) {
   const moreHref = more && safeLinkUrl(more.href);
   const titleElement = safeHeadingTag(titleTag, 'h2');
-  return `<section class="section section--default${alt ? ' bg--secondary-50' : ''}">
+  const band = alt
+    ? `section${collapseNext ? ' section--default' : ''} bg--secondary-50`
+    : 'section section--default';
+  return `<section class="${band}">
       <div class="container">
         ${title ? `<${titleElement} class="section__title">${escape(title)}</${titleElement}>` : ''}
         ${body}
