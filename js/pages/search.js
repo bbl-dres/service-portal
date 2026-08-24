@@ -27,7 +27,7 @@
 // The engine itself is untouched: the finding behind all three is that the
 // retriever is not weak, it is missing the step in front of it.
 
-import { search as runSearch, fold, prepare as prepareRow } from '../search/search-engine.js';
+import { search as runSearch, prepare as prepareRow } from '../search/search-engine.js';
 import { isQuestion, resolve } from '../search/query-resolve.js';
 import { build as buildAnswer } from '../search/answer.js';
 import { buildInsight } from '../search/insights.js';
@@ -110,12 +110,12 @@ export default async function render(ctx) {
   // block that appears empty and fills in half a second later would move the
   // result list twice, which is the jump the idle state exists to prevent.
   const insight = question && searchSources.answersAllowed()
-    ? await buildInsight(rawQ, core, answer)
+    ? await buildInsight(rawQ, core)
     : null;
   if (ctx.stale && ctx.stale()) return;
   // The KPI tiles, chart cards and map borrow the data portal's chrome, which
   // this page does not otherwise load (js/routing/css-loader.js `loadSheets`).
-  if (insight && !insight.inline) await ensureInsightStyles().catch(() => {});
+  if (insight) await ensureInsightStyles().catch(() => {});
   if (ctx.stale && ctx.stale()) return;
 
   // The relevance gate (js/search/answer.js) decides WHETHER the question was
@@ -248,14 +248,6 @@ export default async function render(ctx) {
     ? logView(C, index.length)
     : !rawQ
       ? `<p class="muted">Geben Sie einen Suchbegriff ein — zum Beispiel «Störung», «Mustervorlage» oder «Guisanplatz». Durchsucht werden ${index.length} Einträge aus Dienstleistungen, Anwendungen, Wissen und Hilfsmitteln, Datensätzen, Dokumenten, News, Liegenschaften und Bauprojekten.</p>`
-      : !total && insight && !insight.inline
-        ? /* The keyword search found nothing and the SKILL answered. The full
-             no-results page under a finished dashboard would read as a failure
-             report about the answer directly above it; what is true is narrower
-             and fits in one line. */
-          `<p class="muted search-results__note">Die Antwort oben wurde aus den
-            Datensätzen des Portals berechnet. Die Stichwortsuche findet zu
-            «${C.escape(rawQ)}» keine einzelnen Treffer.</p>`
       : total
         ? `${toolbar}${activePills}${C.catalogueResults({
             visible, count: sorted.length, view, page, totalPages,
@@ -264,7 +256,7 @@ export default async function render(ctx) {
             paginationInputId: 'sr-page', paginationLabel: 'Seitennavigation Suchergebnisse',
             paginationHref: (p) => hash({ page: p }),
           })}`
-        : `${sourcesHint}${noResults(C, rawQ, pool)}`;
+        : `${sourcesHint}${noResults(C, rawQ)}`;
 
   // Bands through C.pageSection. This was the only page that hand-wrote the
   // section anatomy (B18); output is byte-identical.
@@ -306,7 +298,7 @@ export default async function render(ctx) {
 
   // Announce the hit count; results were previously silent for screen readers.
   if (!showLog) C.announce(rawQ
-    ? (insight && !insight.inline
+    ? (insight
         ? `Antwort als ${insight.skillLabel} verfügbar. ${total} Treffer für ${rawQ}.`
       : answer && answer.state === 'answer'
         ? `KI-Antwort verfügbar, ${answer.sources.length} Quellen. ${total} Treffer für ${rawQ}.`
@@ -577,28 +569,48 @@ function buildIndex(core) {
 // «vorlage vertrag xyz» finds nothing, while «vorlage» does. This costs less than
 // spelling correction and addresses the most common case (one restrictive term
 // too many).
-function noResults(C, rawQ, index) {
-  const words = fold(rawQ).split(/[^a-z0-9]+/).filter(w => w.length >= 3);
-  const alt = words.length > 1
-    ? words.map(w => ({ w, n: runSearch(index, w).length })).filter(x => x.n)
-    : [];
-  const altHtml = alt.length
-    ? `<h3>Einzelne Begriffe führen weiter</h3><ul class="list--default">${
-        alt.map(x => `<li><a href="#/search?q=${encodeURIComponent(x.w)}">${C.escape(x.w)}</a> — ${x.n} Treffer</li>`).join('')}</ul>`
-    : '';
+/**
+ * THE EMPTY STATE, matched to the live agency search
+ * (bbl.admin.ch/de/search?search=…). Four things in it are deliberate:
+ *
+ *   * The heading is REGULAR weight and bolds only the two names in it — the
+ *     query and the site. Bolding the whole sentence made the page shout its
+ *     one piece of bad news; bolding the two variables makes it scannable,
+ *     which is what a person arriving here is doing.
+ *   * The heading names WHERE it was searched — this portal, by name. «ergab
+ *     keine Treffer» alone invites the reading that the thing does not exist.
+ *     The Hinweis then widens the frame by one step, from the portal to the
+ *     agency website it belongs to, so the two name different scopes on purpose
+ *     and must not be made to match.
+ *   * The tips are the live site's phrasing, not a paraphrase of it. This block
+ *     appears on every admin.ch site, and a person who has read it once should
+ *     not have to read a variant of it here.
+ *   * The Hinweis is PLAIN TEXT, not a notification. On the live site it is a
+ *     heading and a paragraph; as a tinted info box it read as a status about
+ *     the failed search rather than as a standing statement about the search's
+ *     scope, and it drew more attention than the tips above it.
+ *
+ * There was also a «Einzelne Begriffe führen weiter» list here — each word of
+ * the query with its own hit count — and it is gone: the live search does not
+ * offer it, and it turned a three-part page every visitor recognises into a
+ * four-part one only this portal has.
+ */
+function noResults(C, rawQ) {
   return `
     <div class="search-results__no-results">
-      <h2 class="text--xl">Die Suche nach <strong>«${C.escape(rawQ)}»</strong> ergab keine Treffer.</h2>
-      ${altHtml}
+      <h2 class="text--xl search-results__no-results-title">Die Suche nach
+        <strong>«${C.escape(rawQ)}»</strong> ergab keine Treffer auf dem Kundenportal
+        <strong>«Bundesamt für Bauten und Logistik BBL»</strong></h2>
       <h3>Tipps zur Suche</h3>
       <ul class="list--default">
-        <li>Überprüfen Sie die Schreibweise Ihres Suchbegriffs.</li>
-        <li>Verwenden Sie einen anderen oder allgemeineren Begriff.</li>
-        <li>Verwenden Sie weniger Suchbegriffe — es müssen alle vorkommen.</li>
+        <li>Überprüfen Sie die Schreibweise Ihres Suchbegriffes</li>
+        <li>Verwenden Sie einen anderen bzw. allgemeineren Begriff</li>
+        <li>Verwenden Sie ggf. weniger Suchbegriffe</li>
       </ul>
-      ${C.notificationHtml(`<strong>Nicht gefunden, wonach Sie suchen?</strong><br>
-        Wenden Sie sich an die zuständige Stelle oder öffnen Sie die
-        <a href="#/services">Dienstleistungen</a>.`, 'info')}
+      <h3>Hinweis</h3>
+      <p>Die Suche ist momentan auf die Behördenwebsite «Bundesamt für Bauten und
+        Logistik BBL» beschränkt. Eine behördenübergreifende Suche über die Domain
+        *.admin.ch ist erst in Erarbeitung.</p>
     </div>`;
 }
 

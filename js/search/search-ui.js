@@ -14,7 +14,7 @@
 import { escape as escapeHtml, icon } from '../components.js';
 import { safeLinkUrl } from '../security/urls.js';
 import { KINDS } from './search-kinds.js';
-import { insightBody, insightInline } from './insight-view.js';
+import { insightBody } from './insight-view.js';
 import * as sources from './search-sources.js';
 
 /**
@@ -35,10 +35,13 @@ import * as sources from './search-sources.js';
  * computed answers and the map follow as what is also possible. Reversed, the
  * list would advertise the rare shape and bury the common one.
  *
- * `skill` is what the question is EXPECTED to trigger (js/search/insights.js).
- * It is shown beside the example, so the list also teaches what the portal can
- * do with a question — and it is the first thing to check when a skill stops
- * matching, because the label and the behaviour are then visibly apart.
+ * `skill` names the SHAPE OF THE ANSWER, not a function. «Dashboard» and
+ * «Karte» are skills in js/search/insights.js; «Direktlink» is not — those three
+ * questions are answered by the cited paragraph of js/search/answer.js, whose
+ * numbered sources link straight into the case. The label is shown beside the
+ * example so the list teaches what a question can come back as, and it is the
+ * first thing to check when a skill stops matching, because the label and the
+ * behaviour are then visibly apart.
  */
 export const EXAMPLE_QUESTIONS = [
   { text: 'Wie kann ich Raumbedarf melden?', skill: 'Direktlink' },
@@ -264,11 +267,14 @@ const sourceList = (sources) => (sources && sources.length
  * path has nothing to cite — measured, «Wieviel m² Bürofläche belegen die Ämter
  * im EFD?» retrieves nothing at all, because no record carries that sentence.
  * Showing «Keine KI-Antwort» above a block that HAS the answer would be the
- * component contradicting itself. A skill marked `inline` is the exception: it
- * adds to the cited answer instead of replacing it.
+ * component contradicting itself.
+ *
+ * The reverse never happens: where a skill has nothing to compute it returns
+ * null (js/search/insights.js) and this path is untouched — a cited paragraph
+ * is not improved by a line announcing that no tool ran.
  */
 export function answerBlock(result, resultCount, insight = null) {
-  if (insight && !insight.inline) {
+  if (insight) {
     return `<div class="notification notification--hint answer-slot answer-slot--insight">${
       icon('SpeechBubble', 'notification__icon')}
       <div class="notification__content">
@@ -309,11 +315,6 @@ export function answerBlock(result, resultCount, insight = null) {
     <div class="notification__content">
       ${answerHead('KI-Antwort')}
       ${sentences}
-      ${/* A skill may ALSO run on a cited answer, and then it adds one line and
-            one button rather than replacing anything: «Wie melde ich eine
-            defekte Heizung?» is answered by the paragraph AND by the button that
-            starts the case. */''}
-      ${insight && insight.inline ? insightInline(insight) : ''}
       ${sourceList(result.sources)}
       ${answerFoot}
     </div></div>`;

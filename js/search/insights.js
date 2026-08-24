@@ -309,10 +309,6 @@ function officeArea(core, raw) {
       ],
       rows: buildingRows.slice(0, 8),
     } : null,
-    actions: [
-      { label: 'Flächen im Mieterportal öffnen', href: '#/app/tenancies' },
-      { label: 'Liegenschaften im Portfolio', href: '#/app/portfolio' },
-    ],
     basis: `Aggregiert aus ${formatNumber(rooms.length)} Raumdatensätzen `
       + `(${OFFICE_USES.join(', ')}) zu ${formatNumber(buildingName.size)} Liegenschaften. `
       + `Die Zuordnung Amt → Departement stammt aus den Referenzdaten des Portals.`,
@@ -454,9 +450,6 @@ function operatingCosts(core, raw) {
       ],
       rows: typeRows,
     },
-    actions: [
-      { label: `${building.name} im Portfolio öffnen`, href: links.portfolioItem(building.bbl_id) },
-    ],
     basis: `Summiert über ${formatNumber(lines.length)} Kostenpositionen aus dem Kostenregister `
       + `der Liegenschaft ${building.bbl_id}. Bezugsfläche: ${referenceLabel}.`,
     sources: [{
@@ -534,7 +527,6 @@ function propertyMap(core, raw) {
         occupants: building.occupants || '—', href: links.portfolioItem(building.bbl_id),
       })),
     },
-    actions: [{ label: 'Im Immobilienportfolio öffnen', href: '#/app/portfolio' }],
     basis: `Gefiltert über ${formatNumber(buildings.length)} Liegenschaften des Portalbestands `
       + `anhand des Feldes «Nutzer» im Gebäudedatensatz.`,
     sources: matches.slice(0, 3).map((building) => ({
@@ -550,31 +542,6 @@ const RUNNERS = {
   'property-map': propertyMap,
 };
 
-/* ========================================================== DIRECT LINK == */
-
-// The third answer shape, and the cheapest: sometimes the answer IS a link.
-// «Wie melde ich eine defekte Heizung?» does not need a paragraph — it needs the
-// button that starts the case. This runs off the ordinary answer's own top
-// source, so it costs no retrieval and no data.
-const STARTABLE = new Set(['Dienstleistungen', 'Anwendungen', 'Prozesse']);
-
-function directLink(answer) {
-  if (!answer || answer.state !== 'answer' || !answer.sources.length) return null;
-  const top = answer.strong.find((hit) => STARTABLE.has(hit.kind) && hit.href);
-  if (!top) return null;
-  return {
-    id: 'direct-link', skill: 'link', skillLabel: 'Direktlink',
-    // Names the DESTINATION rather than repeating «Link». The trace reads
-    // «Direktlink — Vorgang starten», which says what the button does.
-    title: top.kind === 'Anwendungen' ? 'Anwendung öffnen' : 'Vorgang starten',
-    lead: '', kpis: [], charts: [], table: null,
-    actions: [{ label: top.title, href: top.href, primary: true, meta: top.type }],
-    basis: '',
-    sources: [],
-    inline: true,      // Rendered INSIDE the cited answer, not instead of it.
-  };
-}
-
 /* ================================================================ PUBLIC == */
 
 /**
@@ -582,20 +549,25 @@ function directLink(answer) {
  *
  * Async because a matched skill loads its own datasets first. The caller awaits
  * this BEFORE rendering, so the block never appears empty and then fills in.
+ *
+ * NULL IS THE COMMON CASE and it is not a failure: most questions are answered
+ * better by the cited paragraph of js/search/answer.js than by anything here.
+ * There was once a fourth «Direktlink» skill that fired for those — a trace line
+ * and a button pointing at the service. Both were removed on review: the button
+ * and the line named the entry that was already numbered in the answer's own
+ * source list, so the block said the same thing three times. Where a skill has
+ * nothing to add, adding nothing is the answer.
  */
-export async function buildInsight(raw, core, answer) {
+export async function buildInsight(raw, core) {
   // Priming FIRST: `matchSkill` recognises «EFD» or «BAZG» only through the
   // abbreviation vocabulary in the reference data, which is loaded at startup.
   primeScopeIndex(core.ref());
   const match = matchSkill(raw);
-  if (match) {
-    try {
-      await core.ensure(match.needs);
-    } catch {
-      return directLink(answer);      // Data missing: fall back, never invent.
-    }
-    const insight = RUNNERS[match.id](core, raw);
-    if (insight) return insight;
+  if (!match) return null;
+  try {
+    await core.ensure(match.needs);
+  } catch {
+    return null;                      // Data missing: fall back, never invent.
   }
-  return directLink(answer);
+  return RUNNERS[match.id](core, raw) || null;
 }

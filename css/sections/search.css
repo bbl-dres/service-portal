@@ -57,6 +57,12 @@
 @media (min-width:1024px){ .search-results__no-results h2, .search-results__no-results ul { margin-bottom:var(--sp-8); } }
 @media (min-width:1544px){ .search-results__no-results h2, .search-results__no-results ul { margin-bottom:var(--sp-10); } }
 .search-results__no-results h3 { margin-top:var(--sp-8); }
+/* REGULAR weight, with `<strong>` on the query and the site name only — the
+   live agency search sets the sentence in body weight and bolds the two names
+   inside it. A fully bold heading made the page shout its one piece of bad
+   news; this way the two variable parts are what the eye lands on. */
+.search-results__no-results-title { font-weight:var(--fw-regular); }
+.search-results__no-results-title strong { font-weight:var(--fw-bold); }
 /* `.search-results .notification { my-16 }` (search.postcss:236-238) — the
    notification band deliberately stands apart instead of trailing the tips list. */
 .search-results .notification { margin-top:var(--sp-16); margin-bottom:var(--sp-16); }
@@ -281,23 +287,7 @@
    disclaimer in the foot: both are statements about the answer, not part of it. */
 .answer__basis { font-size:var(--text-xs); color:var(--color-text-muted); }
 
-/* The action is what somebody does NEXT, so it is not another paragraph in the
-   stack — it gets the block gap plus a step of its own. The CD's
-   `.notification .btn { margin-top }` is a stand-off for a button following
-   notification copy; here the buttons are a row, and that margin re-appeared on
-   every button in every wrapped line. */
-.answer__actions { display:flex; flex-wrap:wrap; gap:var(--sp-3); margin:0; }
-.answer-slot--insight .answer__actions { margin-top:var(--sp-2); }
-.answer__actions .btn { margin-top:0; }
 
-/* The inline form under a cited paragraph. Same rhythm, one step in from the
-   sentences so the button reads as an offer rather than as the next line. */
-.answer__inline { display:flex; flex-direction:column; gap:var(--sp-2);
-  margin-top:var(--sp-4); }
-
-/* The keyword search found nothing while the skill answered — one line, not a
-   no-results page (js/pages/search.js). */
-.search-results__note { margin-top:var(--sp-5); font-size:var(--text-sm); }
 
 /* ── CD RESULTS CHROME (news + search; alignment D46/D47) ───────────────────
    Verified against the design-system source: the filter drawer is

@@ -23,7 +23,6 @@ import { chart, paintCharts, wireCharts, wireChartMenus } from '../ui/charts.js'
 import { kpiTile } from '../ui/dashboard-chrome.js';
 import { loadSheets } from '../routing/css-loader.js';
 import { createMapSlot } from '../map/map-slot.js';
-import { safeLinkUrl } from '../security/urls.js';
 
 const esc = C.escape;
 
@@ -91,16 +90,11 @@ const dataTable = (table) => (table && table.rows && table.rows.length
     </details>`
   : '');
 
-const actionRow = (actions) => (actions && actions.length
-  ? `<p class="answer__actions">${actions.map((action) => {
-    const href = safeLinkUrl(action.href);
-    if (!href) return '';
-    // `btn--filled` is this design system's emphasised variant — there is no
-    // `btn--primary`, and naming one would have rendered as an unstyled button.
-    return `<a class="btn ${action.primary ? 'btn--filled' : 'btn--outline'} btn--sm" href="${esc(href)}">
-        <span class="btn__text">${esc(action.label)}</span>${C.icon('ArrowRight', 'btn__icon')}</a>`;
-  }).join('')}</p>`
-  : '');
+// NO ACTION ROW. There was one — a button per `actions` entry — and it was
+// removed on review: every link it offered already stood in the source list two
+// rows below it, so the block ended with the same destination twice under two
+// different labels. The sources ARE the actions here; a second row of buttons
+// only made the reader check whether they went somewhere else.
 
 /**
  * WHERE THE NUMBERS CAME FROM. A cited sentence points at the record it came
@@ -141,16 +135,7 @@ export function insightBody(insight) {
     ${chartGrid(insight.charts)}
     ${dataTable(insight.table)}
     ${basisLine(insight)}
-    ${actionRow(insight.actions)}
   </div>`;
-}
-
-/** The compact form: a skill trace and an action, rendered INSIDE a cited
- *  answer rather than instead of it (js/search/insights.js `directLink`).
- *  Its own wrapper, so it carries the same rhythm as the full body instead of
- *  inheriting the sentence spacing of the paragraph it follows. */
-export function insightInline(insight) {
-  return `<div class="answer__inline">${skillLine(insight)}${actionRow(insight.actions)}</div>`;
 }
 
 /* ================================================================ WIRING == */
@@ -164,7 +149,7 @@ export function insightInline(insight) {
  * two leaks js/map/map-slot.js was written to prevent.
  */
 export function wireInsight(root, insight) {
-  if (!insight || insight.inline) return () => {};
+  if (!insight) return () => {};
   const disposers = [];
 
   if (insight.charts && insight.charts.length) {
