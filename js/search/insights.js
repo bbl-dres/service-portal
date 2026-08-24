@@ -320,10 +320,18 @@ function officeArea(core, raw) {
   };
 }
 
-// Cost-group labels for the two-digit prefixes the register actually uses.
+// Cost-group labels for the two-digit prefixes the data actually uses.
 // Kept as a LOOKUP rather than as prose in the answer: the numbers come from
 // data/costs.json, so the grouping has to follow them and a group that appears
 // there without an entry here still shows up — under its own number.
+//
+// NO SOURCE SYSTEM IS NAMED, here or in the chart note. There was one — the
+// note read «… (SAP RE-FX)» — and it was wrong twice over: RE-FX carries
+// real-estate MASTER data, not financial postings, and more to the point
+// data/costs.json holds no source field at all, so the claim could not have
+// come from anywhere but a guess. A demo that invents provenance is worse than
+// one that omits it: the invented kind survives review, because it reads
+// exactly like a fact.
 const COST_GROUPS = {
   21: 'Miete und Baurechtszinsen',
   22: 'Versicherungen und Abgaben',
@@ -433,8 +441,7 @@ function operatingCosts(core, raw) {
     ],
     charts: [
       { spec: { id: 'answer-cost-group', form: 'barH', title: 'Betriebskosten nach Kostengruppe',
-          unit: 'CHF', x: 'Kostengruppe', y: 'Betrag',
-          note: 'Kostengruppen nach den Nummern des Kostenregisters (SAP RE-FX).' },
+          unit: 'CHF', x: 'Kostengruppe', y: 'Betrag' },
         result: { columns: ['Kostengruppe', 'Betrag'], rows: groupRows, label: 'Kosten' } },
       { spec: { id: 'answer-cost-type', form: 'barH', title: 'Grösste Kostenpositionen',
           unit: 'CHF', x: 'Kostenart', y: 'Betrag' },
@@ -450,8 +457,8 @@ function operatingCosts(core, raw) {
       ],
       rows: typeRows,
     },
-    basis: `Summiert über ${formatNumber(lines.length)} Kostenpositionen aus dem Kostenregister `
-      + `der Liegenschaft ${building.bbl_id}. Bezugsfläche: ${referenceLabel}.`,
+    basis: `Summiert über ${formatNumber(lines.length)} Kostenpositionen der Liegenschaft `
+      + `${building.bbl_id}. Bezugsfläche: ${referenceLabel}.`,
     sources: [{
       title: building.name, type: 'Liegenschaft',
       meta: `${building.bbl_id} · ${addressOf(building)}`,

@@ -124,7 +124,10 @@ const DEFERRED = {
   // Golden Record: GeoJSON, normalised during loading (see loadDeferred).
   buildings:    'data/buildings.geojson',           // 66 KB, portfolio + 9 other apps
   parcels:      'data/parcels.geojson',             // 79 KB, portfolio + media library ONLY
-  // Property-inventory detail registers (SAP RE-FX subtables, re-keyed by bbl_id):
+  // Property-inventory detail registers, re-keyed by bbl_id. Assets, contracts
+  // and measurements belong to the real-estate master data; COSTS do not — the
+  // financial postings live in the finance modules, and this file carries no
+  // source field for them either way, so no system is named here.
   assets:           'data/assets.json',              // Equipment
   contracts:        'data/contracts.json',           // Contracts
   costs:            'data/costs.json',               // Costs
