@@ -1297,6 +1297,66 @@
     }
   },
   {
+    "appId": "gever",
+    "name": "GEVER Bund (Acta Nova)",
+    "group": "Bundesverwaltung",
+    "icon": "Folder",
+    "audience": [
+      "staff",
+      "customers"
+    ],
+    "hero": true,
+    "link": {
+      "kind": "external",
+      "href": "#"
+    },
+    "description": "Elektronische Geschäftsverwaltung der Bundesverwaltung — Aktenführung, Ablaufsteuerung und Geschäftskontrolle (Standarddienst der Bundeskanzlei).",
+    "area": "federal",
+    "long": "GEVER ist die elektronische Geschäftsverwaltung der Bundesverwaltung: Sie führt die geschäftsrelevanten Informationen der Verwaltungseinheiten über den ganzen Lebenszyklus — von der Entstehung über die Dossierbildung bis zur Archivierung oder Vernichtung — und unterstützt Aktenführung, Ablaufsteuerung und Geschäftskontrolle. Den Standarddienst führt die Bundeskanzlei (Bereich Digitale Transformation und IKT-Lenkung); Grundlage ist die GEVER-Verordnung. Im Einsatz steht das im WTO-Verfahren beschaffte Standardprodukt Acta Nova, das im Programm GENOVA bis Anfang 2020 in der gesamten zentralen Bundesverwaltung eingeführt wurde. Für das BBL wie für jede Verwaltungseinheit ist GEVER das führende System der Geschäftsdossiers: Korrespondenz, Verträge und Entscheide werden dort aktenrelevant in Dossiers geführt, departementsübergreifende Prozesse laufen medienbruchfrei, und die Ablieferung ans Schweizerische Bundesarchiv folgt den eCH-Standards.",
+    "access": {
+      "note": "Für alle Mitarbeitenden der zentralen Bundesverwaltung; die Dossierzugriffe sind je Verwaltungseinheit geregelt.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Berechtigungen und Zugriffe vergibt die GEVER-Fachstelle der eigenen Verwaltungseinheit."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Standarddienst GEVER — Bundeskanzlei",
+        "href": "https://www.bk.admin.ch/de/standarddienst-gever",
+        "kind": "external",
+        "note": "Beschreibung des Standarddienstes mit Rechtsgrundlagen und eCH-Standards."
+      },
+      {
+        "label": "GEVER Bund — Koordination der elektronischen Geschäftsverwaltung",
+        "href": "https://www.bk.admin.ch/de/gever-bund",
+        "kind": "external",
+        "note": "Gesamtkoordination der Bundeskanzlei, Programm GENOVA und Produkt Acta Nova."
+      },
+      {
+        "label": "GEVER-Verordnung",
+        "href": "https://www.fedlex.admin.ch/eli/cc/2019/253/de",
+        "kind": "external",
+        "note": "Verordnung über die elektronische Geschäftsverwaltung in der Bundesverwaltung."
+      }
+    ],
+    "related": [
+      "egate",
+      "superb",
+      "dala-filenet"
+    ],
+    "contact": "bk-dti",
+    "updated": "2026-08-26",
+    "bild": {
+      "src": "assets/images/applications/gever.jpg",
+      "titel": "Zwei Personen arbeiten zwischen Laptops an einem Papierdossier (Symbolbild aus dem Helden-Pool)",
+      "credit": "Unsplash",
+      "lizenz": "Unsplash-Lizenz",
+      "quelle": "https://unsplash.com/photos/1454165804606-c3d57bc86b40",
+      "bemerkung": "Kopie von assets/images/heroes/domain-o.jpg (Nachweis dort im README)."
+    }
+  },
+  {
     "appId": "admin-directory",
     "name": "Admin-Directory",
     "group": "Bundesverwaltung",

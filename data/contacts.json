@@ -212,6 +212,13 @@
     "quelle": "https://www.i14y.admin.ch/"
   },
   {
+    "contactId": "bk-dti",
+    "name": "Digitale Transformation und IKT-Lenkung (DTI)",
+    "unit": "Bundeskanzlei (BK)",
+    "role": "Standarddienst GEVER — elektronische Geschäftsverwaltung der Bundesverwaltung",
+    "quelle": "https://www.bk.admin.ch/de/standarddienst-gever"
+  },
+  {
     "contactId": "bk-terminologie",
     "name": "Sektion Terminologie",
     "unit": "Bundeskanzlei (BK) — Zentrale Sprachdienste",
