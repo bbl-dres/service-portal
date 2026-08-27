@@ -39,7 +39,6 @@ const MIME = {
   '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
   '.png': 'image/png', '.avif': 'image/avif', '.webp': 'image/webp', '.ico': 'image/x-icon',
   '.pdf': 'application/pdf', '.wasm': 'application/wasm', '.dwg': 'application/octet-stream',
-  '.pbf': 'application/x-protobuf',
   '.txt': 'text/plain; charset=utf-8',
 };
 // Compress text only; fonts, images and PDFs are already compressed.

@@ -11,7 +11,8 @@ import { formatArea } from '../format.js';
 import { safeLinkUrl } from '../security/urls.js';
 import { createLatestNavigationGuard, navigateCluster } from './cluster-navigation.js';
 import { shouldSuppressMapError } from './error-policy.js';
-import { createBaseMapStyle } from './map-style.js';
+import { createHomeControl } from './home-control.js';
+import { MAP_FONT, createBaseMapStyle } from './map-style.js';
 
 const MAPLIBRE_VERSION = '4.7.1';
 const MAPLIBRE_ASSETS = {
@@ -217,6 +218,13 @@ export async function initEstateMap(container, points, parcels, focus, options =
     console.error('[map]', err || e);
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: false }), 'top-right');
+  // Home replays `camera` — the framing computed from the points above — rather
+  // than a camera sampled here: with several points that framing is a
+  // `fitBounds`, which resolves after this line runs.
+  map.addControl(createHomeControl(() => {
+    if (camera.bounds) map.fitBounds(camera.bounds, { ...camera.fitBoundsOptions, duration: 600 });
+    else map.flyTo({ center: camera.center, zoom: camera.zoom, duration: 600 });
+  }), 'top-right');
   map.addControl(new maplibregl.FullscreenControl({ container }), 'top-right');
   showMapSpinner(container, map);
 
@@ -233,13 +241,13 @@ export async function initEstateMap(container, points, parcels, focus, options =
           'circle-radius': ['step', ['get', 'point_count'], 16, 3, 20, 6, 26, 10, 32] } });
       // text-size 12 = --fs-xs, the smallest CD type-scale step (11/13 were off-scale).
       map.addLayer({ id: 'cluster-count', type: 'symbol', source: 'estate-labels', filter: ['has', 'point_count'],
-        layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 12 },
+        layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': [MAP_FONT.bold], 'text-size': 12 },
         paint: { 'text-color': '#fff' } });
       map.addLayer({ id: 'points', type: 'circle', source: 'estate', filter: ['!', ['has', 'point_count']],
         paint: { 'circle-color': MARKER, 'circle-opacity': 0.85, 'circle-stroke-color': '#fff', 'circle-stroke-width': 2, 'circle-radius': 7 } });
       // bbl_id above the marker, only from a closer zoom so the overview stays calm
       map.addLayer({ id: 'point-labels', type: 'symbol', source: 'estate-labels', filter: ['!', ['has', 'point_count']], minzoom: 8.5,
-        layout: { 'text-field': ['get', 'bbl_id'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-offset': [0, -1.2], 'text-anchor': 'bottom' },
+        layout: { 'text-field': ['get', 'bbl_id'], 'text-font': [MAP_FONT.regular], 'text-size': 12, 'text-offset': [0, -1.2], 'text-anchor': 'bottom' },
         paint: { 'text-color': LABEL_INK, 'text-halo-color': LABEL_HALO, 'text-halo-width': 1.4 } });
       // Parcel polygons — only from a close zoom (plot-sized), like the id labels.
       // Drawn below the building markers (beforeId 'clusters') so points stay on top.
@@ -372,6 +380,14 @@ export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } =
     zoom: hasStart ? zoom : 7,
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+  // Home returns to the opening framing, not to the pin: the pin is draggable
+  // and the picker's whole job is comparing a candidate location against its
+  // surroundings, so «back to where I started looking» is the useful reset.
+  map.addControl(createHomeControl(() => map.flyTo({
+    center: hasStart ? [lng, lat] : [8.2275, 46.8182],
+    zoom: hasStart ? zoom : 7,
+    duration: 600,
+  })), 'top-right');
   map.addControl(new maplibregl.FullscreenControl({ container }), 'top-right');
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
   showMapSpinner(holder, map);

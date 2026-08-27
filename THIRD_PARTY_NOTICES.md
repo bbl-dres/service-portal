@@ -42,21 +42,25 @@ the exact upstream license text. Lucide is ISC licensed, and its license also
 retains the MIT notice for icons derived from Feather. The portal's root MIT
 license does not replace those notices.
 
-## Bundled MapLibre glyphs (Noto Sans)
+## Basemap style, tiles, glyphs and sprite (CARTO Positron)
 
-MapLibre labels use the bundled `Noto Sans Regular` and `Noto Sans Bold`
-`0-255.pbf` ranges below [`assets/map-glyphs/`](assets/map-glyphs/). The files
-were obtained from `maplibre/demotiles` commit
-`ef4389e954d46e97cd9d3b0130881d9fb789ae2e` (BSD-3-Clause); that project records
-the glyphs as generated from `openmaptiles/fonts`, whose Noto Sans source at
-commit `d48c5fce2fc58b55c98d353558d807cac45e7262` is under the SIL Open Font
-License 1.1.
+Every MapLibre view in the portal loads the CARTO Positron **vector** style from
+`basemaps.cartocdn.com`, which in turn fetches its vector tiles, glyph ranges and
+sprite from `tiles.basemaps.cartocdn.com`. None of the four is bundled here, and
+none can be covered by this repository's Subresource Integrity hashes: they are
+runtime requests to a managed service, governed by
+[CARTO's terms](https://carto.com/legal/), and the underlying map data is
+OpenStreetMap under ODbL 1.0. Rendered maps retain the provider attribution the
+style declares.
 
-The local asset manifest records the exact upstream links and SHA-256 hashes.
-The directory also contains the complete
-[demotiles BSD notice](assets/map-glyphs/LICENSE-maplibre-demotiles.txt) and
-[Noto Sans OFL text](assets/map-glyphs/LICENSE-Noto-Sans.txt). The portal's root
-MIT license does not replace either license.
+The portal previously bundled `Noto Sans Regular` and `Noto Sans Bold`
+`0-255.pbf` ranges under `assets/map-glyphs/` and served them from its own
+origin. Those files were removed when the basemap moved from CARTO's raster
+endpoint to the vector style: a MapLibre style has a single glyph endpoint for
+all of its text, and Positron's 93 layers need Open Sans, Montserrat, Noto Sans,
+HanWangHei and NanumBarunGothic across the full Unicode range, which two Latin-1
+ranges cannot serve. The glyphs therefore arrive from CARTO with the tiles. The
+removed files and their notices remain in this repository's Git history.
 
 ## Report generators (jsPDF, jsPDF-AutoTable, SheetJS)
 

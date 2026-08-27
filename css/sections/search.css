@@ -179,6 +179,21 @@
 .notification--hint.answer-slot {
   background:var(--color-bg);
 }
+/* NO speech-bubble glyph on a phone. The icon column costs 64px — a 40px glyph,
+   CD's 12px `margin-right` and the notification's own 12px gap — out of the
+   358px a 390px screen leaves the block, so nearly a fifth of the measure went
+   to decoration. It is exactly that: `aria-hidden`, and the block already says
+   «KI-Antwort» in words, so nothing is lost by dropping it where the space is
+   scarce. It returns at 640, where the column costs a sixth as much of the line.
+   Deliberately every HINT answer-slot and not the dashboard variant alone: the
+   idle block and the answer that replaces it are the same component at two
+   moments, and an icon that appeared in one and not the other would read as a
+   rendering fault. `.notification--warning.answer-slot` is excluded for the
+   same reason it keeps its own surface a few lines above — there the glyph is
+   the warning, not decoration around it. */
+@media (max-width:639.98px){
+  .notification--hint.answer-slot > .notification__icon { display:none; }
+}
 .answer__head { display:flex; align-items:center; gap:var(--sp-3);
   flex-wrap:wrap; margin:0 0 var(--sp-2); }
 .answer__title { font-weight:var(--fw-bold); }
@@ -265,10 +280,19 @@
 .answer-slot--insight .answer__charts,
 .answer-slot--insight .answer__kpis { gap:var(--answer-gap); }
 .answer__charts { align-items:start; }
-/* The chart cards KEEP their shadow. Measured without it: `.chart` has no
-   border and no radius, so on the block's white surface the card dissolved and
-   the two diagrams read as one long strip of loose marks. The shadow is the
-   only thing separating them. */
+/* NOTHING FLOATS INSIDE THE ANSWER BLOCK. The cards used to keep CD's card
+   shadow, on the reasoning that `.chart` carries no border and no radius, so
+   without it two diagrams on the block's white surface dissolved into one long
+   strip of loose marks. That reasoning was about SEPARATION, and a border does
+   that job — while the shadow was the wrong instrument for it here: the block
+   IS a notification and carries a shadow of its own, so every card inside it
+   produced a drop shadow within a drop shadow (user finding, 2026-08). The
+   border is the same one the dashboard layout gives these cards, and it is the
+   treatment `.kpi` already gets below; the map is a `.chart` card too
+   (js/search/insight-view.js), so it is covered by the same rule rather than a
+   second one beside it. */
+.answer-slot--insight .chart { box-shadow:none;
+  border:var(--stroke-1) solid var(--panel-border); }
 .answer-slot--insight .dash-map { height:clamp(14rem, 42vw, 22rem); }
 
 /* Inside the answer block the tiles sit on the same white surface as the block

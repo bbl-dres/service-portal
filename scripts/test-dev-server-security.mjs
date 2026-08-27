@@ -49,9 +49,11 @@ check(resolveRequestFile('/GIT~1/config').status === 404
 check(resolveRequestFile('/index.html').status === 200
   && resolveRequestFile('/css/tokens.css').status === 200
   && resolveRequestFile('/assets/icons/Cancel.svg').status === 200
-  && resolveRequestFile('/assets/map-glyphs/Noto%20Sans%20Regular/0-255.pbf').status === 200
-  && resolveRequestFile('/assets/map-glyphs/Noto%20Sans%20Bold/0-255.pbf').status === 200,
-  'real-path resolution still serves ordinary assets');
+  // A percent-encoded SPACE in the path is the property under test, not the file:
+  // it moved from the retired map-glyph directories to the one other asset whose
+  // name carries one.
+  && resolveRequestFile('/assets/images/datasets/SAP%20Technische%20Anlage.jpg').status === 200,
+  'real-path resolution still serves ordinary assets, including an encoded space');
 check(resolveRequestFile('/?cache-bust=1').file?.endsWith('index.html'),
   'root requests still resolve to the app entry point');
 check(resolveServerHost({}) === '127.0.0.1', 'server defaults to the loopback interface');
@@ -79,10 +81,13 @@ try {
   check(healthy.status === 200 && /<!doctype html>/i.test(healthy.body),
     'server remains alive and serves the next request', String(healthy.status));
 
-  const glyph = await request(address.port, '/assets/map-glyphs/Noto%20Sans%20Bold/0-255.pbf');
-  check(glyph.status === 200 && glyph.type === 'application/x-protobuf'
-    && glyph.headers['x-content-type-options'] === 'nosniff',
-  'same-origin map glyphs use an explicit protobuf MIME type', `${glyph.status}/${glyph.type}`);
+  // Same contract, different fixture: an explicit MIME plus nosniff on a binary
+  // asset the browser must not be allowed to re-interpret. The map glyphs used to
+  // stand here; the vector basemap fetches those from its provider now.
+  const binary = await request(address.port, '/assets/fonts/NotoSans-latin.woff2');
+  check(binary.status === 200 && binary.type === 'font/woff2'
+    && binary.headers['x-content-type-options'] === 'nosniff',
+  'binary assets carry an explicit MIME type and nosniff', `${binary.status}/${binary.type}`);
 
   const traversal = await request(address.port, '/%2e%2e%2foutside');
   check(traversal.status === 403, 'HTTP boundary rejects encoded traversal', String(traversal.status));

@@ -1,8 +1,6 @@
-import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { createLatestNavigationGuard, navigateCluster } from '../js/map/cluster-navigation.js';
 import { shouldSuppressMapError } from '../js/map/error-policy.js';
-import { createBaseMapStyle, mapGlyphTemplate } from '../js/map/map-style.js';
+import { MAP_FONT, createBaseMapStyle } from '../js/map/map-style.js';
 
 let failures = 0;
 const check = (ok, label) => {
@@ -21,25 +19,23 @@ const deferred = () => {
   return { promise, resolve, reject };
 };
 
-console.log('\nMap style and pinned glyphs');
-const glyphTemplate = mapGlyphTemplate('https://portal.example/sub/js/map/map-style.js');
-const style = createBaseMapStyle('https://portal.example/sub/js/map/map-style.js');
-check(glyphTemplate === 'https://portal.example/sub/assets/map-glyphs/{fontstack}/{range}.pbf',
-  'resolves a same-origin glyph template below a deployment subpath without encoding its tokens');
-check(style.glyphs === glyphTemplate && !JSON.stringify(style).includes('demotiles.maplibre.org'),
-  'the runtime style has no demo-glyph network dependency');
-check(style.layers[0].id === 'map-background' && style.layers[0].type === 'background',
-  'a neutral local background remains when raster tiles fail');
-
-const expectedGlyphs = [
-  ['Noto Sans Bold/0-255.pbf', 'f60ce4cb899455c2203bd8293b550394ade53ffce8032bf9cc7f59255e49259c'],
-  ['Noto Sans Regular/0-255.pbf', 'ef1f38a3f1978591e846e9eaddf8a54f7047f546fc6aaed7872cc53151a5de78'],
-];
-for (const [relativePath, expectedHash] of expectedGlyphs) {
-  const bytes = readFileSync(new URL(`../assets/map-glyphs/${relativePath}`, import.meta.url));
-  check(bytes.length > 70_000 && createHash('sha256').update(bytes).digest('hex') === expectedHash,
-    `${relativePath} matches its pinned provenance hash`);
-}
+console.log('Map style and fontstack');
+// The keyless CARTO RASTER endpoint is now watermarked in the image bytes
+// («API KEY REQUIRED»), which no styling, layer order or attribution setting
+// can undo; a vector tile carries no pixels to stamp. Pin the decision so a
+// well-meaning revert to `light_all` fails here rather than in a screenshot.
+const style = createBaseMapStyle();
+check(style === 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+  'the basemap is the CARTO Positron VECTOR style');
+check(typeof style === 'string' && !/light_all|dark_all|rastertiles/.test(style),
+  'no keyless raster endpoint remains, so no tile can arrive watermarked');
+// Positron's glyph endpoint has no «Noto Sans Bold» — it answers 404 — and a
+// symbol layer that names a missing fontstack renders no text at all. The
+// portal's own cluster counts and object ids must therefore ask for a stack
+// that endpoint actually serves. This is the one assertion standing between a
+// font rename and silently unlabelled clusters.
+check(MAP_FONT.bold === 'Open Sans Bold' && MAP_FONT.regular === 'Open Sans Regular',
+  'the portal fontstack is one the style provider serves');
 
 console.log('■ Map cluster fallback');
 let fit;

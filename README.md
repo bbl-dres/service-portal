@@ -35,6 +35,7 @@ The BBL service portal is a process-oriented prototype for the [Federal Office f
 - Static JSON and GeoJSON repository fixtures shared across the portal and its micro-apps
 - UI patterns and tokens aligned with the official [`swiss/designsystem`](https://github.com/swiss/designsystem)
 - Pinned MapLibre GL JS, Swagger UI, bpmn-js, jsPDF and SheetJS assets are loaded only when needed over HTTPS, with SHA-384 Subresource Integrity, anonymous CORS, and no-referrer policy
+- Maps draw the CARTO Positron vector style; the keyless raster endpoint it replaced now stamps «API KEY REQUIRED» into the tile image itself
 - Three.js is vendored locally; route-specific CSS is also loaded lazily and awaited before a micro-app renders
 - Plan Check accepts local DWG files for non-production parsing and completeness testing with bundled `libredwg-web` 0.7.9; selected files stay in the browser and are not uploaded to a service. The 40 rules are evaluated and scored even when parts of a drawing cannot be normalised, and no drawing is refused for its size. PDF and Excel Prüfberichte are generated locally from the finished result
 - Dependency-free Node/CDP browser checks documented in [`scripts/README.md`](scripts/README.md)
@@ -61,11 +62,13 @@ Root modules such as `components.js`, `links.js`, and `format.js` keep stable
 imports for existing consumers; `components.js` is the compatibility facade
 over the grouped `ui/components/` implementation.
 
-Map tiles, geocoding, address search, and some stylesheet-owned fonts remain
-dynamic third-party resources and cannot be covered by the top-level SRI
-hashes. Map glyphs are pinned and self-hosted so label-provider failures cannot
-remove clustered geometry. Basemap views and live searches still require
-network access and can be affected by provider availability or policy changes.
+The basemap style, its vector tiles, its glyphs and its sprite, plus geocoding,
+address search and some stylesheet-owned fonts, remain dynamic third-party
+resources and cannot be covered by the top-level SRI hashes. Clustered maps keep
+interactive geometry on a source separate from its labels, so a label-provider
+failure costs the count text and never the clusters or their navigation.
+Basemap views and live searches require network access and can be affected by
+provider availability or policy changes.
 The app reports these failures; a production deployment should review the
 residual risks and self-host where appropriate; see the
 [technical review](docs/code-review-2026-08-16.md).
@@ -136,7 +139,6 @@ brand elements.
 | [Noto Sans](https://github.com/notofonts/latin-greek-cyrillic) | `2.015` | [SIL Open Font License 1.1](https://github.com/notofonts/latin-greek-cyrillic/blob/main/OFL.txt) | Self-hosted variable WOFF2 typeface used by the portal interface. |
 | [Three.js](https://github.com/mrdoob/three.js/tree/r184) | `0.184.0` / r184 | [MIT](js/vendor/three.LICENSE.txt) | Locally vendored 3D and walk-view renderer for the floor-plan editor. |
 | [MapLibre GL JS](https://github.com/maplibre/maplibre-gl-js/tree/v4.7.1) | `4.7.1` | [BSD-3-Clause and bundled notices](https://github.com/maplibre/maplibre-gl-js/blob/v4.7.1/LICENSE.txt) | SRI-pinned, lazily loaded renderer for interactive maps. |
-| [MapLibre demo glyphs](https://github.com/maplibre/demotiles/tree/ef4389e954d46e97cd9d3b0130881d9fb789ae2e/font) / [OpenMapTiles fonts](https://github.com/openmaptiles/fonts/tree/d48c5fce2fc58b55c98d353558d807cac45e7262) | Commits `ef4389e954d46e97cd9d3b0130881d9fb789ae2e` / `d48c5fce2fc58b55c98d353558d807cac45e7262` | [BSD-3-Clause](assets/map-glyphs/LICENSE-maplibre-demotiles.txt) and [SIL OFL 1.1](assets/map-glyphs/LICENSE-Noto-Sans.txt) | Pinned, same-origin Noto Sans Regular/Bold `0-255.pbf` glyph ranges for MapLibre labels; provenance and SHA-256 hashes are recorded in [the asset manifest](assets/map-glyphs/README.md). |
 | [Swagger UI](https://github.com/swagger-api/swagger-ui/tree/v5.17.14) | `5.17.14` | [Apache-2.0](https://github.com/swagger-api/swagger-ui/blob/v5.17.14/LICENSE); upstream NOTICE applies | SRI-pinned, lazily loaded renderer for the OpenAPI documentation. |
 | [bpmn-js](https://github.com/bpmn-io/bpmn-js/tree/v17.11.1) | `17.11.1` | [bpmn.io License](https://bpmn.io/license/) | SRI-pinned BPMN viewer; its built-in bpmn.io watermark and link must remain visible and unchanged. |
 | [OpenAPI Specification](https://spec.openapis.org/oas/v3.0.3) | `3.0.3` | [Apache-2.0 specification](https://github.com/OAI/OpenAPI-Specification/blob/3.0.3/LICENSE) | Machine-readable API contracts displayed through Swagger UI. |
@@ -146,7 +148,7 @@ brand elements.
 | [Node.js](https://nodejs.org/) | `>=22` | [MIT and bundled third-party notices](https://github.com/nodejs/node/blob/main/LICENSE) | Local development server, maintenance scripts, and dependency-free verification suites; not a browser runtime dependency. |
 | [Microsoft Edge and Chrome DevTools Protocol](https://learn.microsoft.com/en-us/microsoft-edge/devtools-protocol/) | System-installed; unpinned | Microsoft software terms; [CDP is BSD-3-Clause](https://github.com/ChromeDevTools/devtools-protocol/blob/master/LICENSE) | Headless regression, accessibility, and interaction testing without Puppeteer. |
 | [unpkg](https://unpkg.com/) | Managed service; package versions pinned above | Delivery-service terms; each delivered package retains its own license | HTTPS delivery for MapLibre GL JS, Swagger UI, bpmn-js, jsPDF and SheetJS, with SHA-384 Subresource Integrity. |
-| [CARTO Positron](https://carto.com/basemaps/) and [OpenStreetMap](https://www.openstreetmap.org/copyright) | Managed services and continuously updated data | [CARTO terms](https://carto.com/legal/); OSM data under ODbL 1.0; provider terms apply | Runtime raster basemap and OpenStreetMap data; rendered maps retain provider attribution. |
+| [CARTO Positron vector style](https://github.com/CartoDB/basemap-styles) and [OpenStreetMap](https://www.openstreetmap.org/copyright) | Managed services and continuously updated data; style, tiles, glyphs and sprite unpinned | [CARTO terms](https://carto.com/legal/); OSM data under ODbL 1.0; provider terms apply | Runtime vector basemap for every MapLibre view, plus its glyph ranges and sprite; rendered maps retain provider attribution. Replaced the keyless raster endpoint, whose tiles now arrive with an «API KEY REQUIRED» watermark rendered into the image. |
 | [swisstopo / geo.admin.ch API](https://docs.geo.admin.ch/) | Managed service; API version not pinned | [Federal Spatial Data Infrastructure terms](https://www.geo.admin.ch/en/general-terms-of-use-fsdi) | Live Swiss address and geodata search used by location workflows. |
 | [GitHub Pages](https://pages.github.com/) | Managed service | [GitHub Terms of Service](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service); repository content retains its own licenses | Static hosting for the public prototype demonstration. |
 | [bbl-dres/plan-check](https://github.com/bbl-dres/plan-check/tree/7320840a53dcd71859700fe4c90256cbdb6b01f3) | Commit `7320840a53dcd71859700fe4c90256cbdb6b01f3` | [MIT](js/plan-check/PLAN_CHECK_REFERENCE_LICENSE) | Reference implementation whose checker concepts and official BBL test fixture were adapted for Planprüfung. |

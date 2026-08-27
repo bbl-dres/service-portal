@@ -18,13 +18,28 @@
   border-radius:var(--radius-none);
   box-shadow:var(--shadow-lg);
 }
+/* The popup FLOATS at every width. It used to switch to `position:static` below
+   640, which turned it into a flex ITEM of its own anchor: the home field is
+   `.home-search__field { display:flex }`, so the list lined up BESIDE the input
+   instead of under it — measured at 390px, input 162px wide and 370px tall,
+   popup 196px, placeholder cut off mid-word. The static variant depended on
+   whichever `display` the anchor happened to carry, which is exactly how it
+   broke; absolute positioning resolves against `.listbox-anchor`, which is
+   `position:relative` by definition, and holds whatever the anchor is.
+   The height cap is bound to the VIEWPORT, not to a width breakpoint: what
+   makes 22rem too much is a short window, and that arrives on a landscape phone
+   (844x390: the list ran 197px past the fold) as readily as on a narrow one.
+   `dvh` follows the collapsing browser chrome; the plain `vh` line is the
+   fallback where it is unsupported (the tenant portal's modal uses the pair).
+   On any normal desktop window 22rem still wins, so nothing there changes. */
 .listbox--suggest {
   position:absolute;
   z-index:var(--z-header);
   top:calc(100% + var(--sp-1));
   left:0;
   right:0;
-  max-height:22rem;
+  max-height:min(22rem, 60vh);
+  max-height:min(22rem, 60dvh);
   padding-inline:0;
 }
 .listbox--map { order:-1; max-height:13rem; }
@@ -78,10 +93,6 @@
 .listbox__title { font-weight:var(--fw-bold); color:var(--color-text); }
 .listbox__meta { font-size:var(--text-xs); color:var(--color-text-muted); }
 
-@media (max-width:639.98px){
-  .listbox--suggest { position:static; margin-top:var(--sp-2); max-height:none; }
-}
-
 @media (forced-colors:active){
   .listbox__option.is-active { outline:var(--stroke-2) solid Highlight; outline-offset:calc(-1 * var(--stroke-2)); }
 }
@@ -121,11 +132,10 @@
   background:var(--color-bg); border:var(--stroke-1) solid var(--color-border-input);
   border-radius:var(--radius-none); box-shadow:var(--shadow-lg); overflow:hidden; }
 .suggest__shell .listbox { position:static; border:0; border-radius:0;
-  box-shadow:none; max-height:22rem; }
+  box-shadow:none; max-height:min(22rem, 60vh); max-height:min(22rem, 60dvh); }
 /* Without results the shell carries only the action row. An empty list would
    otherwise keep its padding and leave a strip above it. */
 .suggest__shell .listbox:empty { display:none; }
-@media (max-width:639.98px){ .suggest__shell { position:static; margin-top:var(--sp-2); } }
 
 /* «… als Frage stellen»: not a result, a way out. It sits OUTSIDE the
    role="listbox" element — an option may contain neither prose nor links, and

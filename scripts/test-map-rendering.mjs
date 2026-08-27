@@ -1,5 +1,13 @@
-// Focused MapLibre regression for same-origin glyphs, complete clustered
-// representation, real pointer navigation, and the label-failure fallback.
+// Focused MapLibre regression for the basemap glyph source, complete
+// clustered representation, real pointer navigation, and the label-failure
+// fallback.
+//
+// The glyphs used to be same-origin and pinned by hash. They now arrive from
+// CARTO with the vector style (js/map/map-style.js explains why), so these
+// checks moved from «is it ours» to «does the provider actually serve the
+// fontstack our own layers ask for» — the failure this file exists to catch
+// is unlabelled clusters, and a 404 fontstack produces exactly that in
+// silence.
 import { readFileSync } from 'node:fs';
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
@@ -27,7 +35,7 @@ const mapProbe = `(async () => {
   }
   const glyphTemplate = map.getStyle().glyphs || '';
   const glyphChecks = await Promise.all([
-    ['Noto Sans Bold', '0-255'], ['Noto Sans Regular', '0-255'],
+    ['Open Sans Bold', '0-255'], ['Open Sans Regular', '0-255'],
   ].map(async ([font, range]) => {
     const url = glyphTemplate.replace('{fontstack}', encodeURIComponent(font)).replace('{range}', range);
     const response = await fetch(url);
@@ -108,13 +116,13 @@ async function clickCluster(cdp, page, point) {
 
 const cdp = await launch({ webgl: true });
 try {
-  console.log('■ Same-origin clustered map');
+  console.log('■ Clustered map');
   const page = await openPage(cdp, 'about:blank', { login: true });
   const glyphResponses = [];
   cdp.on((message) => {
     if (message.sessionId !== page.sessionId || message.method !== 'Network.responseReceived') return;
     const response = message.params.response;
-    if (/\/assets\/map-glyphs\//.test(response.url)) {
+    if (/\/fonts\//.test(response.url)) {
       glyphResponses.push({ url: response.url, status: response.status, type: response.mimeType });
     }
   });
@@ -138,16 +146,17 @@ try {
     `cluster geometry and its count label both render (${result.renderedClusters}/${result.renderedCounts})`);
   check(result.geometrySource === 'estate' && result.labelSource === 'estate-labels',
     'labels use a source isolated from interactive cluster geometry');
-  check(result.glyphTemplate.startsWith(new URL(APP_BASE.replace(/#.*$/, '')).origin)
-    && result.glyphTemplate.includes('/assets/map-glyphs/{fontstack}/{range}.pbf')
+  check(result.glyphTemplate.includes('{fontstack}') && result.glyphTemplate.includes('{range}')
     && !result.glyphTemplate.includes('demotiles.maplibre.org'),
-  'the live style uses the same-origin glyph template');
+  'the live style declares a usable glyph template');
+  // The whole point of the fontstack pin in js/map/map-style.js: «Noto Sans
+  // Bold» 404s on this endpoint, and a symbol layer naming a missing stack
+  // renders nothing at all — no error banner, just clusters without numbers.
   check(result.glyphChecks.every((entry) => entry.status === 200
-      && entry.type.startsWith('application/x-protobuf') && entry.bytes > 70_000),
-  'both pinned glyph ranges return protobuf responses with complete bodies');
-  check(glyphResponses.some((entry) => entry.status === 200
-      && entry.type === 'application/x-protobuf'),
-  'MapLibre requests the glyphs from the portal origin');
+      && entry.type.startsWith('application/x-protobuf') && entry.bytes > 10_000),
+  'the provider serves BOTH fontstacks the portal layers ask for');
+  check(glyphResponses.some((entry) => entry.status === 200),
+  'MapLibre actually fetches glyph ranges while rendering');
   const clickResult = await clickCluster(cdp, page, result.click);
   check(clickResult.hit && clickResult.trusted && clickResult.events > 0 && clickResult.moved,
     `a real pointer click on a rendered cluster changes the camera (${JSON.stringify(clickResult)})`);
@@ -159,7 +168,11 @@ try {
   console.log('■ Label-network failure fallback');
   const blocked = await openPage(cdp, 'about:blank', { login: true });
   await cdp.send('Network.enable', {}, blocked.sessionId);
-  await cdp.send('Network.setBlockedURLs', { urls: ['*assets/map-glyphs/*'] }, blocked.sessionId);
+  // Blocking the glyph host is now blocking a THIRD PARTY, which is precisely
+  // why the source split below still matters: `estate` carries the interactive
+  // cluster geometry and `estate-labels` only the text, so losing the label
+  // provider costs the numbers and never the clusters or their navigation.
+  await cdp.send('Network.setBlockedURLs', { urls: ['*/fonts/*'] }, blocked.sessionId);
   await cdp.send('Emulation.setDeviceMetricsOverride',
     { width: 1440, height: 1200, deviceScaleFactor: 1, mobile: false }, blocked.sessionId);
   await cdp.send('Page.navigate', { url: `${APP_BASE}/app/dataportal/immobilien?glyphs=blocked` }, blocked.sessionId);

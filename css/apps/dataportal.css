@@ -84,12 +84,27 @@
 @media (min-width:1024px) and (pointer:fine){
   .maplibregl-map .maplibregl-ctrl-group button { width:var(--sp-10); height:var(--sp-10); } }
 .maplibregl-map .maplibregl-ctrl-group button .maplibregl-ctrl-icon { background-size:60%; }
-.maplibregl-map .maplibregl-ctrl-attrib-button { width:var(--target-min); height:var(--target-min); }
+/* The attribution «i» is drawn as a 24px BACKGROUND IMAGE, and MapLibre's own
+   sheet declares no `background-repeat` — it gets away with the default
+   `repeat` only because its box is exactly 24x24. Both sizes below are larger
+   (44 for the touch target, 28 from lg), so the glyph tiled: FOUR «i» in a 2x2
+   grid inside one button, which read as four stacked controls. Growing the hit
+   area is right; it just has to come with the two declarations MapLibre could
+   omit at its own size. */
+.maplibregl-map .maplibregl-ctrl-attrib-button { width:var(--target-min); height:var(--target-min);
+  background-repeat:no-repeat; background-position:center; }
 @media (min-width:1024px) and (pointer:fine){
   .maplibregl-map .maplibregl-ctrl-attrib-button { width:var(--sp-7); height:var(--sp-7); }
 }
 .maplibregl-map .maplibregl-ctrl-group {
   border-radius:var(--radius-lg); box-shadow:var(--shadow-md); }
+/* «Ganze Ausdehnung» (js/map/home-control.js). MapLibre draws its own controls
+   with a background image; this one carries a portal mask icon instead, so it
+   needs the centring the sibling buttons get from that background. Everything
+   else — box, hover, focus ring, touch target — is inherited from the group
+   rule above, which is the point of borrowing MapLibre'''s class names. */
+.maplibregl-map .map-home-btn { display:flex; align-items:center; justify-content:center;
+  color:var(--color-text); }
 .maplibregl-map .maplibregl-ctrl-group button:focus-visible,
 .maplibregl-map .maplibregl-ctrl-attrib-button:focus-visible {
   outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-1); }
