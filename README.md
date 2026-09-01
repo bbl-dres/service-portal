@@ -7,10 +7,10 @@
 [![Demo](https://img.shields.io/badge/demo-GitHub%20Pages-2ea44f?logo=github&logoColor=white)](https://bbl-dres.github.io/service-portal/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A process-oriented BBL service-portal prototype that brings services, cases, specialist applications, property information, documents, and data access into one interface based on the Swiss Confederation design system.
-
 > [!CAUTION]
 > This is an unofficial demonstration prototype. It contains only fictional or publicly releasable material, not every function is implemented, and it is not intended for production use.
+
+A process-oriented BBL service-portal prototype that brings services, cases, specialist applications, property information, documents, and data access into one interface based on the Swiss Confederation design system.
 
 ## Demo
 
