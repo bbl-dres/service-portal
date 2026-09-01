@@ -17,8 +17,8 @@ A process-oriented BBL service-portal prototype that brings services, cases, spe
 **Live demo:** https://bbl-dres.github.io/service-portal/
 
 <p align="center">
-  <img src="assets/images/preview-1.jpg" alt="BBL Kundenportal home page" width="49%"/>
-  <img src="assets/images/preview-2.jpg" alt="BBL Kundenportal service catalogue" width="49%"/>
+  <img src="assets/images/preview-1.jpg" alt="BBL Kundenportal home page" width="49%" align="top"/>
+  <img src="assets/images/preview-2.jpg" alt="BBL Kundenportal service catalogue" width="49%" align="top"/>
 </p>
 
 ## Features
