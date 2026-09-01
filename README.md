@@ -4,6 +4,9 @@
   <img src="assets/images/hero-options/service-portal-painted-convergence-v1-readme.jpg" width="100%" alt="Illustration of BBL services, plans, logistics, and data converging through one portal"/>
 </p>
 
+[![Demo](https://img.shields.io/badge/demo-GitHub%20Pages-2ea44f?logo=github&logoColor=white)](https://bbl-dres.github.io/service-portal/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A process-oriented BBL service-portal prototype that brings services, cases, specialist applications, property information, documents, and data access into one interface based on the Swiss Confederation design system.
 
 > [!CAUTION]
@@ -13,7 +16,12 @@ A process-oriented BBL service-portal prototype that brings services, cases, spe
 
 **Live demo:** https://bbl-dres.github.io/service-portal/
 
-[![Preview of the BBL Kundenportal prototype](assets/images/preview1.jpg)](https://bbl-dres.github.io/service-portal/)
+<table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+  <tr>
+    <td width="50%" valign="top"><img src="assets/images/preview-1.jpg" alt="BBL Kundenportal home page" width="100%"/></td>
+    <td width="50%" valign="top"><img src="assets/images/preview-2.jpg" alt="BBL Kundenportal service catalogue" width="100%"/></td>
+  </tr>
+</table>
 
 ## Features
 

@@ -62,12 +62,12 @@ check(header.includes('&lt;img') && !header.includes('<img')
   && authorHeader.includes('<a href="#/safe">Safe</a>'),
   'page headers separate text leads from explicit author markup');
 
-const photo = C.photo({ src: 'assets/images/social1.jpg', alt: 'Image' });
+const photo = C.photo({ src: 'assets/images/social-preview.jpg', alt: 'Image' });
 check(photo.includes('data-photo-fallback') && !photo.includes('onerror='),
   'photo fallback uses delegated handling rather than executable inline attributes');
 check(photo.includes('loading="lazy"') && !photo.includes('fetchpriority='),
   'ordinary photos remain lazy and do not claim high fetch priority');
-const eagerPhoto = C.photo({ src: 'assets/images/social1.jpg', alt: 'Image', loading: 'eager' });
+const eagerPhoto = C.photo({ src: 'assets/images/social-preview.jpg', alt: 'Image', loading: 'eager' });
 check(eagerPhoto.includes('loading="eager"') && eagerPhoto.includes('fetchpriority="high"'),
   'above-the-fold photos can opt into eager high-priority loading');
 
@@ -97,7 +97,7 @@ check(pipeline.includes('role="group" aria-label="Status des Vorgangs"')
   'pipeline exposes one current step and textual state equivalents');
 
 const hostilePhoto = C.photo({
-  src: 'assets/images/social1.jpg', cls: `safe-class bad" onclick="alert(1)`,
+  src: 'assets/images/social-preview.jpg', cls: `safe-class bad" onclick="alert(1)`,
   color: 'red;background-image:url(https://attacker.invalid)',
   overlayHtml: '<span>Author overlay</span>',
 });

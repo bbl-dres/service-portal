@@ -29,7 +29,7 @@ check(formatArea(1).endsWith(' m²'),
   'area values retain their square-metre unit', formatArea(1));
 
 const mosaic = heroMosaic(components, {
-  items: [{ id: 'one', title: 'A & B', photoSrc: 'assets/images/social1.jpg' }],
+  items: [{ id: 'one', title: 'A & B', photoSrc: 'assets/images/social-preview.jpg' }],
   mapId: 'map', mapLabel: 'A & B',
 });
 check(mosaic.includes('alt="A &amp; B"') && !mosaic.includes('A &amp;amp; B'),
